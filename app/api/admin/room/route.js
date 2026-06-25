@@ -126,8 +126,9 @@ export async function GET(request) {
   const taskStatus = (rec, deadlineDay) => {
     if (!rec || !rec.is_done) {
       const today = new Date()
-      const dl = deadlineDate(deadlineDay)
-      return today > dl ? 'overdue' : 'pending'
+      // Chỉ tính "Quá hạn" khi đã qua HẾT ngày hạn (từ 0h ngày kế tiếp)
+      const deadlineEnd = new Date(deadlineDate(deadlineDay).getTime() + 86400000)
+      return today >= deadlineEnd ? 'overdue' : 'pending'
     }
     const late = daysLate(rec.done_at, deadlineDay)
     if (late <= 0) return 'done_ontime'

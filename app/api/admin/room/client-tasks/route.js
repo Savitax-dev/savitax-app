@@ -69,7 +69,9 @@ export async function GET(request) {
       else if (late <= 2) status = 'done_late1'
       else status = 'done_late3'
     } else {
-      status = today > deadlineDate(t.deadline_day) ? 'overdue' : 'pending'
+      // Chỉ tính "Quá hạn" khi đã qua HẾT ngày hạn (từ 0h ngày kế tiếp), không phải ngay khi vừa tới ngày hạn
+      const deadlineEnd = new Date(deadlineDate(t.deadline_day).getTime() + 86400000)
+      status = today >= deadlineEnd ? 'overdue' : 'pending'
     }
     return { ...t, rec, status }
   })
