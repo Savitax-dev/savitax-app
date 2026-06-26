@@ -19,7 +19,7 @@ export async function GET(request) {
   const [{ data: roomList }, { data: staffList }, { data: clientList }, { data: feesKetoan }, { data: feesKhach }, { data: secondaryRows }] = await Promise.all([
     supabase.from('rooms').select('id, name, type').order('name'),
     supabase.from('staff').select('id, full_name, room_id').order('full_name'),
-    supabase.from('clients').select('id, name, tax_code, monthly_fee, other_debt, assigned_to, status').eq('status', 'active'),
+    supabase.from('clients').select('id, name, tax_code, monthly_fee, other_debt, report_type, assigned_to, status').eq('status', 'active'),
     supabase.from('service_fees').select('client_id, amount').eq('year', year).eq('month', month).eq('type', 'ketoan'),
     supabase.from('service_fees').select('client_id, amount').eq('year', year).eq('month', month).eq('type', 'khach'),
     supabase.from('client_secondary_staff').select('client_id, staff_id'),

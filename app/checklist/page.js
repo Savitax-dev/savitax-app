@@ -181,9 +181,12 @@ export default function ChecklistPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-gray-900 truncate">{client.name}</p>
-                            {client.report_type === 'quarterly' && (
-                              <span className="text-xs bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Quý</span>
-                            )}
+                            <span className={'text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 border ' +
+                              (client.report_type === 'quarterly'
+                                ? 'bg-purple-100 text-purple-700 border-purple-300'
+                                : 'bg-blue-100 text-blue-700 border-blue-300')}>
+                              {client.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
+                            </span>
                             {client.isSecondary && (
                               <span className="text-xs bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Phụ trách phụ</span>
                             )}

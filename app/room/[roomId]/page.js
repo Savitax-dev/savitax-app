@@ -361,7 +361,15 @@ export default function RoomPage({ params }) {
                             <button onClick={() => toggleClient(c.id)}
                               className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-gray-50 transition-colors text-left">
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium text-gray-800 truncate">{c.name}</p>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <p className="text-sm font-medium text-gray-800 truncate">{c.name}</p>
+                                  <span className={'text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 border ' +
+                                    (c.report_type === 'quarterly'
+                                      ? 'bg-purple-100 text-purple-700 border-purple-300'
+                                      : 'bg-blue-100 text-blue-700 border-blue-300')}>
+                                    {c.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
+                                  </span>
+                                </div>
                                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                   <span className="text-xs text-gray-400">{c.tax_code}</span>
                                   <span className="text-xs text-blue-600 font-medium">{fmt(c.monthly_fee)}đ</span>
@@ -510,9 +518,15 @@ export default function RoomPage({ params }) {
                               <div key={c.id} className={'px-4 py-2.5 ' + st.bg}>
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
                                       <span className={'w-2 h-2 rounded-full flex-shrink-0 mt-0.5 ' + st.dot} />
                                       <p className="text-sm font-medium text-gray-800 truncate">{c.name}</p>
+                                      <span className={'text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 border ' +
+                                        (c.report_type === 'quarterly'
+                                          ? 'bg-purple-100 text-purple-700 border-purple-300'
+                                          : 'bg-blue-100 text-blue-700 border-blue-300')}>
+                                        {c.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
+                                      </span>
                                     </div>
                                     <div className="ml-3.5 mt-0.5 space-y-0.5">
                                       {/* Kế toán row */}

@@ -220,7 +220,15 @@ export default function DebtPage() {
                                 <div key={c.id} className="px-4 py-2.5">
                                   <div className="flex items-center justify-between gap-2">
                                     <div className="min-w-0 flex-1">
-                                      <p className="text-sm text-gray-800 font-medium truncate">{c.name}</p>
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <p className="text-sm text-gray-800 font-medium truncate">{c.name}</p>
+                                        <span className={'text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 border ' +
+                                          (c.report_type === 'quarterly'
+                                            ? 'bg-purple-100 text-purple-700 border-purple-300'
+                                            : 'bg-blue-100 text-blue-700 border-blue-300')}>
+                                          {c.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
+                                        </span>
+                                      </div>
                                       <p className="text-xs text-gray-400">{c.tax_code}</p>
                                     </div>
                                     <div className="text-right flex-shrink-0">
@@ -252,8 +260,14 @@ export default function DebtPage() {
                                 return (
                                   <div key={'sec-' + c.id} className="px-4 py-2.5 flex items-center justify-between gap-2">
                                     <div className="min-w-0 flex-1">
-                                      <div className="flex items-center gap-1.5">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
                                         <p className="text-sm text-gray-700 font-medium truncate">{c.name}</p>
+                                        <span className={'text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 border ' +
+                                          (c.report_type === 'quarterly'
+                                            ? 'bg-purple-100 text-purple-700 border-purple-300'
+                                            : 'bg-blue-100 text-blue-700 border-blue-300')}>
+                                          {c.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
+                                        </span>
                                         <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full flex-shrink-0">Phụ trách phụ</span>
                                       </div>
                                       <p className="text-xs text-gray-400">{c.tax_code}</p>
