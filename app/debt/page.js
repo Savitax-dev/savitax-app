@@ -17,12 +17,20 @@ function Bar({ value, className = 'h-1.5' }) {
   )
 }
 
+const PERIODS = [
+  { v: 'month',   l: 'Tháng' },
+  { v: 'quarter', l: 'Quý' },
+  { v: 'year',    l: 'Năm' },
+]
+
 export default function DebtPage() {
   const router = useRouter()
   const now = new Date()
 
+  const [period,   setPeriod]   = useState('month') // 'month' | 'quarter' | 'year'
   const [selYear,  setSelYear]  = useState(now.getFullYear())
   const [selMonth, setSelMonth] = useState(now.getMonth() + 1)
+  const [selQuarter, setSelQuarter] = useState(Math.floor(now.getMonth() / 3) + 1)
   const [rooms,    setRooms]    = useState([])
   const [data,     setData]     = useState([]) // [{room, staff:[{...clients}]}]
   const [loading,  setLoading]  = useState(true)
@@ -39,6 +47,8 @@ export default function DebtPage() {
     monthOpts.push({ y: my, m: mm, label: 'T' + mm + '/' + my, val: my + '-' + String(mm).padStart(2,'0') })
     mm--; if (mm === 0) { mm = 12; my-- }
   }
+  const quarterOpts = [1,2,3,4].map(q => ({ q, label: 'Quý ' + q }))
+  const yearOpts = [now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2]
 
   useEffect(() => {
     const load = async () => {
@@ -55,8 +65,11 @@ export default function DebtPage() {
         setChecking(false)
 
         // Dùng API server-side (service role) để tránh lỗi RLS recursion trên bảng staff/clients
+        const periodParams = period === 'month' ? `&month=${selMonth}`
+          : period === 'quarter' ? `&period=quarter&quarter=${selQuarter}`
+          : `&period=year`
         const res = await fetch(
-          `/api/admin/debt-overview?year=${selYear}&month=${selMonth}&_t=${Date.now()}`,
+          `/api/admin/debt-overview?year=${selYear}${periodParams}&_t=${Date.now()}`,
           { cache: 'no-store' }
         )
         const json = await res.json()
@@ -70,17 +83,22 @@ export default function DebtPage() {
       setLoading(false)
     }
     load()
-  }, [selYear, selMonth, router])
+  }, [selYear, selMonth, selQuarter, period, router])
 
-  const isMonthPast = now > new Date(selYear, selMonth - 1, new Date(selYear, selMonth, 0).getDate(), 23, 59)
+  // Tháng cuối cùng của kỳ đang xem — dùng để biết kỳ đã qua hay chưa
+  const lastMonthOfPeriod = period === 'month' ? selMonth : period === 'quarter' ? selQuarter * 3 : 12
+  const isPeriodPast = now > new Date(selYear, lastMonthOfPeriod, 0, 23, 59)
+  const periodLabel = period === 'month' ? 'T' + selMonth + '/' + selYear
+    : period === 'quarter' ? 'Quý ' + selQuarter + '/' + selYear
+    : 'Năm ' + selYear
 
   const debtStatus = (c) => {
-    const fee = Number(c.monthly_fee) || 0
+    const fee = Number(c.periodFee) || 0
     const col = c.collected || 0
     if (fee === 0) return null
     if (col >= fee) return { label: '✅ Đã thu đủ',    cls: 'text-green-600 bg-green-50' }
     if (col > 0)    return { label: '⚠️ Thu một phần', cls: 'text-yellow-700 bg-yellow-50' }
-    if (isMonthPast) return { label: '🔴 Quá hạn',    cls: 'text-red-700 bg-red-50' }
+    if (isPeriodPast) return { label: '🔴 Quá hạn',    cls: 'text-red-700 bg-red-50' }
     return              { label: '○ Chưa thu',          cls: 'text-gray-500 bg-gray-50' }
   }
 
@@ -88,8 +106,8 @@ export default function DebtPage() {
   const grandFee = data.reduce((a, r) => a + r.totalFee, 0)
   const grandCol = data.reduce((a, r) => a + r.totalCollected, 0)
   const grandPct = grandFee === 0 ? 0 : Math.round(grandCol / grandFee * 100)
-  const grandUnpaid = data.flatMap(r => r.staff.flatMap(s => s.clients)).filter(c => c.collected < c.monthly_fee && c.monthly_fee > 0)
-  const grandOverdue = grandUnpaid.filter(() => isMonthPast)
+  const grandUnpaid = data.flatMap(r => r.staff.flatMap(s => s.clients)).filter(c => c.collected < c.periodFee && c.periodFee > 0)
+  const grandOverdue = grandUnpaid.filter(() => isPeriodPast)
   const grandOtherDebt = data.flatMap(r => r.staff.flatMap(s => [...s.clients, ...(s.secondaryClients || [])]))
     .reduce((a, c) => a + (Number(c.other_debt) || 0), 0)
 
@@ -107,16 +125,47 @@ export default function DebtPage() {
       <div className="px-4 md:px-8 py-5">
 
         {/* Header */}
-        <div className="flex items-start justify-between mb-5">
+        <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Công nợ toàn công ty</h1>
             <p className="text-sm text-gray-400 mt-0.5">Theo dõi thu hồi phí dịch vụ kế toán</p>
           </div>
-          <select value={selYear + '-' + String(selMonth).padStart(2,'0')}
-            onChange={e => { const p = e.target.value.split('-'); setSelYear(Number(p[0])); setSelMonth(Number(p[1])) }}
-            className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white flex-shrink-0">
-            {monthOpts.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
-          </select>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+              {PERIODS.map(p => (
+                <button key={p.v} onClick={() => setPeriod(p.v)}
+                  className={'px-3 py-1.5 rounded-lg text-xs font-medium transition-all ' +
+                    (period === p.v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                  {p.l}
+                </button>
+              ))}
+            </div>
+            {period === 'month' && (
+              <select value={selYear + '-' + String(selMonth).padStart(2,'0')}
+                onChange={e => { const p = e.target.value.split('-'); setSelYear(Number(p[0])); setSelMonth(Number(p[1])) }}
+                className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                {monthOpts.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
+              </select>
+            )}
+            {period === 'quarter' && (
+              <>
+                <select value={selQuarter} onChange={e => setSelQuarter(Number(e.target.value))}
+                  className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                  {quarterOpts.map(o => <option key={o.q} value={o.q}>{o.label}</option>)}
+                </select>
+                <select value={selYear} onChange={e => setSelYear(Number(e.target.value))}
+                  className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                  {yearOpts.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </>
+            )}
+            {period === 'year' && (
+              <select value={selYear} onChange={e => setSelYear(Number(e.target.value))}
+                className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                {yearOpts.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -147,7 +196,7 @@ export default function DebtPage() {
                 <span className="text-red-500 text-xl">🔴</span>
                 <div>
                   <p className="text-sm font-semibold text-red-700">Cảnh báo: {grandOverdue.length} công ty quá hạn thu phí</p>
-                  <p className="text-xs text-red-500 mt-0.5">Tháng {selMonth}/{selYear} đã qua — chưa thu đủ phí dịch vụ</p>
+                  <p className="text-xs text-red-500 mt-0.5">{periodLabel} đã qua — chưa thu đủ phí dịch vụ</p>
                 </div>
               </div>
             )}
@@ -155,14 +204,14 @@ export default function DebtPage() {
             {/* Progress bar tổng */}
             <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3 mb-5">
               <div className="flex justify-between text-xs mb-1.5">
-                <span className="text-gray-500 font-medium">Tiến độ thu hồi T{selMonth}/{selYear}</span>
+                <span className="text-gray-500 font-medium">Tiến độ thu hồi {periodLabel}</span>
                 <span className={pctClr(grandPct) + ' font-bold'}>{grandPct}%</span>
               </div>
               <Bar value={grandPct} className="h-2.5" />
               <div className="flex gap-4 mt-2 text-xs text-gray-400">
-                <span>✅ {data.flatMap(r=>r.staff.flatMap(s=>s.clients)).filter(c=>c.collected>=c.monthly_fee && c.monthly_fee>0).length} cty đủ phí</span>
-                <span>⚠️ {data.flatMap(r=>r.staff.flatMap(s=>s.clients)).filter(c=>c.collected>0&&c.collected<c.monthly_fee).length} cty một phần</span>
-                <span>○ {data.flatMap(r=>r.staff.flatMap(s=>s.clients)).filter(c=>c.collected===0&&c.monthly_fee>0).length} cty chưa thu</span>
+                <span>✅ {data.flatMap(r=>r.staff.flatMap(s=>s.clients)).filter(c=>c.collected>=c.periodFee && c.periodFee>0).length} cty đủ phí</span>
+                <span>⚠️ {data.flatMap(r=>r.staff.flatMap(s=>s.clients)).filter(c=>c.collected>0&&c.collected<c.periodFee).length} cty một phần</span>
+                <span>○ {data.flatMap(r=>r.staff.flatMap(s=>s.clients)).filter(c=>c.collected===0&&c.periodFee>0).length} cty chưa thu</span>
               </div>
             </div>
 
@@ -213,7 +262,7 @@ export default function DebtPage() {
                           <div className="divide-y divide-gray-50">
                             {s.clients.map(c => {
                               const st = debtStatus(c)
-                              const fee = Number(c.monthly_fee) || 0
+                              const fee = Number(c.periodFee) || 0
                               const col = c.collected
                               const colPct = fee === 0 ? 100 : Math.min(100, Math.round(col / fee * 100))
                               return (
@@ -255,7 +304,7 @@ export default function DebtPage() {
                           {s.secondaryClients && s.secondaryClients.length > 0 && (
                             <div className="divide-y divide-gray-50 bg-amber-50/30">
                               {s.secondaryClients.map(c => {
-                                const fee = Number(c.monthly_fee) || 0
+                                const fee = Number(c.periodFee) || 0
                                 const col = c.collected
                                 return (
                                   <div key={'sec-' + c.id} className="px-4 py-2.5 flex items-center justify-between gap-2">
