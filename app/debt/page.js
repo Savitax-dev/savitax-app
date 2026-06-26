@@ -99,7 +99,7 @@ export default function DebtPage() {
     if (col >= fee) return { label: '✅ Đã thu đủ',    cls: 'text-green-600 bg-green-50' }
     if (col > 0)    return { label: '⚠️ Thu một phần', cls: 'text-yellow-700 bg-yellow-50' }
     if (isPeriodPast) return { label: '🔴 Quá hạn',    cls: 'text-red-700 bg-red-50' }
-    return              { label: '○ Chưa thu',          cls: 'text-gray-500 bg-gray-50' }
+    return              { label: '✕ Chưa thu',          cls: 'text-red-600 bg-red-50' }
   }
 
   // Grand totals
