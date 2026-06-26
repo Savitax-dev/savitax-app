@@ -97,14 +97,13 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   }
 
   const loadDebtHistory = async () => {
-    const supabase = createClient()
-    const { data } = await supabase.from('service_fees')
-      .select('year, month, amount, note, type, created_at')
-      .eq('client_id', client.id)
-      .order('year', { ascending: false })
-      .order('month', { ascending: false })
-      .limit(24)
-    setDebtHistory(data || [])
+    try {
+      const res = await fetch('/api/admin/debt-history?clientId=' + client.id)
+      const json = await res.json()
+      setDebtHistory(json.data || [])
+    } catch (_) {
+      setDebtHistory([])
+    }
   }
 
   const loadCreds = async () => {
