@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
-import { loadPermissionData, can } from '@/lib/permissions'
+import { loadPermissionData, can, clearPermissionCache } from '@/lib/permissions'
 
 /* ─── Brand colors ───────────────────────────────────────────────
    Đỏ chủ đạo : #8B1A1A   Gold chủ đạo : #C9A84C
@@ -106,17 +106,34 @@ function NavItem({ href, icon, label, pathname, onClose }) {
 }
 
 /* ─── Main Sidebar ───────────────────────────────────────────── */
+// Cache cấp module: user + rooms chỉ tải 1 lần cho cả phiên, dùng lại khi chuyển
+// trang (AppShell mount lại mỗi trang nên không có cache sẽ fetch lặp mỗi lần điều
+// hướng → chậm). Xóa khi đăng xuất.
+let _sidebarCache = null // { user, rooms }
+export function clearSidebarCache() { _sidebarCache = null }
+
 export default function Sidebar({ onClose }) {
   const router   = useRouter()
   const pathname = usePathname()
-  const [user,       setUser]       = useState(null)
-  const [rooms,      setRooms]      = useState([])
+  const [user,       setUser]       = useState(_sidebarCache ? _sidebarCache.user : null)
+  const [rooms,      setRooms]      = useState(_sidebarCache ? _sidebarCache.rooms : [])
   const [roomsOpen,  setRoomsOpen]  = useState(false)
   const [logoError,  setLogoError]  = useState(false)
   const [permData,   setPermData]   = useState(null)
 
   useEffect(() => {
+    let cancelled = false
     const load = async () => {
+      // Permission data đã có cache riêng trong lib/permissions
+      const pd = await loadPermissionData()
+      if (!cancelled) setPermData(pd)
+
+      // Dùng lại user + rooms từ cache nếu đã tải trong phiên
+      if (_sidebarCache) {
+        if (!cancelled) { setUser(_sidebarCache.user); setRooms(_sidebarCache.rooms) }
+        return
+      }
+
       const supabase = createClient()
       const { data: sessionData } = await supabase.auth.getSession()
       const session = sessionData.session
@@ -142,11 +159,12 @@ export default function Sidebar({ onClose }) {
           ? { ...staffData, role: fallbackRole }
           : { id: session.user.id, full_name: email.split('@')[0], role: fallbackRole, rooms: null }
       }
-      setUser(staffData)
-      setRooms(resRooms.data || [])
-      setPermData(await loadPermissionData())
+      const roomsData = resRooms.data || []
+      _sidebarCache = { user: staffData, rooms: roomsData }
+      if (!cancelled) { setUser(staffData); setRooms(roomsData) }
     }
     load()
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
@@ -156,6 +174,8 @@ export default function Sidebar({ onClose }) {
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
+    clearSidebarCache()
+    clearPermissionCache()
     router.push('/login')
   }
 

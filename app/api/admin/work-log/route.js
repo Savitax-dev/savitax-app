@@ -89,6 +89,7 @@ export async function GET(request) {
     return {
       actorId:   id,
       actorName: s ? s.full_name : '(không rõ)',
+      roomId:    s && s.room_id ? s.room_id : '',
       roomName:  s && s.room_id ? (roomById[s.room_id] || '') : '',
     }
   }

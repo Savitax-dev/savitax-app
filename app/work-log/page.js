@@ -52,19 +52,19 @@ export default function WorkLogPage() {
     init()
   }, [router])
 
+  // Chỉ gọi API khi đổi tháng — lọc (phòng/nhân viên/công ty/loại) làm client-side
+  // cho tức thì, không tốn round-trip mỗi lần đổi bộ lọc.
   useEffect(() => {
     if (!userId) return
     loadData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, selYear, selMonth, fStaff, fClient, fRoom, fType])
+  }, [userId, selYear, selMonth])
 
   const loadData = async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams({
-        userId, year: String(selYear), month: String(selMonth),
-        staffId: fStaff, clientId: fClient, roomId: fRoom, type: fType,
-        _t: String(Date.now()),
+        userId, year: String(selYear), month: String(selMonth), _t: String(Date.now()),
       })
       const res = await fetch('/api/admin/work-log?' + params.toString(), { cache: 'no-store' })
       const json = await res.json()
@@ -79,12 +79,20 @@ export default function WorkLogPage() {
     setLoading(false)
   }
 
-  // Đếm tóm tắt theo loại
-  const counts = entries.reduce((a, e) => { a[e.type] = (a[e.type] || 0) + 1; return a }, {})
+  // Lọc client-side theo phòng/nhân viên/công ty (chưa áp loại — để đếm tóm tắt theo loại)
+  const scoped = entries.filter(e =>
+    (!fRoom   || e.roomId === fRoom) &&
+    (!fStaff  || e.actorId === fStaff) &&
+    (!fClient || e.clientId === fClient)
+  )
+  // Đếm tóm tắt theo loại (trong phạm vi phòng/nhân viên/công ty đang chọn)
+  const counts = scoped.reduce((a, e) => { a[e.type] = (a[e.type] || 0) + 1; return a }, {})
+  // Áp thêm lọc loại để ra danh sách hiển thị
+  const visible = fType ? scoped.filter(e => e.type === fType) : scoped
 
   // Nhóm theo ngày (yyyy-mm-dd)
   const groups = {}
-  for (const e of entries) {
+  for (const e of visible) {
     const d = new Date(e.happenedAt)
     const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0')
     if (!groups[key]) groups[key] = []
