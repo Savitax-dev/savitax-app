@@ -141,7 +141,8 @@ export default function WorkLogPage() {
         {/* Thanh lọc */}
         <div className="flex flex-wrap items-center gap-2 mb-4">
           {showRoomFilter && (
-            <select value={fRoom} onChange={e => setFRoom(e.target.value)}
+            <select value={fRoom}
+              onChange={e => { setFRoom(e.target.value); setFStaff('') }}
               className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
               <option value="">Tất cả phòng</option>
               {roomOptions.map(r => <option key={r.id} value={r.id}>Phòng {r.name}</option>)}
@@ -151,7 +152,9 @@ export default function WorkLogPage() {
             <select value={fStaff} onChange={e => setFStaff(e.target.value)}
               className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
               <option value="">Tất cả nhân viên</option>
-              {staffOptions.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {staffOptions
+                .filter(s => !fRoom || s.roomId === fRoom)
+                .map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           )}
           <select value={fClient} onChange={e => setFClient(e.target.value)}

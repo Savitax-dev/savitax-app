@@ -161,7 +161,7 @@ export async function GET(request) {
   const scopeSet = new Set(scopeStaffIds)
   const staffOptions = (allStaff || [])
     .filter(s => scopeSet.has(s.id))
-    .map(s => ({ id: s.id, name: s.full_name }))
+    .map(s => ({ id: s.id, name: s.full_name, roomId: s.room_id || '' }))
     .sort((a, b) => a.name.localeCompare(b.name, 'vi'))
 
   const clientOptions = (clients || [])
