@@ -173,7 +173,7 @@ export default function ChecklistPage() {
                   const cMonth      = clientMonth[client.id] || selMonth
 
                   return (
-                    <div key={client.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                    <div key={client.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                       {/* Company header — click to expand */}
                       <button
                         onClick={() => setOpenClient(p => ({ ...p, [client.id]: !p[client.id] }))}

@@ -352,14 +352,14 @@ export default function RoomPage({ params }) {
 
                     {/* Companies under this staff */}
                     {openStaff[s.id] && (
-                      <div className="border-t border-gray-50 divide-y divide-gray-50">
+                      <div className="border-t border-gray-100 divide-y divide-gray-200">
                         {s.clients.length === 0 ? (
                           <p className="text-xs text-gray-400 px-4 py-3 text-center">Chưa có công ty nào</p>
-                        ) : s.clients.map(c => (
-                          <div key={c.id}>
+                        ) : s.clients.map((c, ci) => (
+                          <div key={c.id} className={ci % 2 ? 'bg-gray-50/70' : 'bg-white'}>
                             {/* Company row */}
                             <button onClick={() => toggleClient(c.id)}
-                              className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-gray-50 transition-colors text-left">
+                              className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-blue-50/60 transition-colors text-left">
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <p className="text-sm font-medium text-gray-800 break-words">{c.name}</p>

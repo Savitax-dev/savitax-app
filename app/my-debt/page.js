@@ -254,7 +254,7 @@ export default function MyDebtPage() {
                   const pct = client.periodFee > 0 ? Math.min(100, Math.round(client.collected / client.periodFee * 100)) : 100
 
                   return (
-                    <div key={client.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                    <div key={client.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                       <button onClick={() => setOpenClient(p => ({ ...p, [client.id]: !p[client.id] }))}
                         className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors text-left">
                         <div className="min-w-0 flex-1">

@@ -259,14 +259,14 @@ export default function DebtPage() {
                             </div>
                           </div>
                           {/* Client rows */}
-                          <div className="divide-y divide-gray-50">
-                            {s.clients.map(c => {
+                          <div className="divide-y divide-gray-200">
+                            {s.clients.map((c, ci) => {
                               const st = debtStatus(c)
                               const fee = Number(c.periodFee) || 0
                               const col = c.collected
                               const colPct = fee === 0 ? 100 : Math.min(100, Math.round(col / fee * 100))
                               return (
-                                <div key={c.id} className="px-4 py-2.5">
+                                <div key={c.id} className={'px-4 py-2.5 ' + (ci % 2 ? 'bg-gray-50/70' : 'bg-white')}>
                                   <div className="flex items-center justify-between gap-2">
                                     <div className="min-w-0 flex-1">
                                       <div className="flex items-center gap-1.5 flex-wrap">
