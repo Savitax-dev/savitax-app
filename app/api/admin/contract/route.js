@@ -24,7 +24,7 @@ export async function GET(request) {
 
   const origin   = new URL(request.url).origin
   const logoUrl  = origin + '/logo-savitax.png'       // logo cũ (watermark + fallback)
-  const hdLogo   = origin + '/logo-savitax-hd.jpg'    // logo HD cho header
+  const hdLogo   = origin + '/logo-savitax-hddv.png'  // logo HD cho header
   const startRaw = c.contract_start || new Date()
   const soHD     = contractNumber(startRaw, c.client_code || c.tax_code || '')
   const ngayLap  = viFullDate(startRaw)
