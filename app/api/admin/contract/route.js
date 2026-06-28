@@ -67,14 +67,16 @@ export async function GET(request) {
   .watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:340px;opacity:.05;z-index:0;pointer-events:none}
   .layout{position:relative;z-index:1;width:100%;border-collapse:collapse}
   .hdr td,.ftr td{border:none;padding:0}
-  /* Header lặp mỗi trang — trái: logo, phải: tên + địa chỉ (canh giữa). padding-top tạo lề trên mỗi trang */
-  .hdr-band{display:flex;align-items:center;gap:14px;border-bottom:2.5px solid #C9A84C;padding:12mm 16mm 8px}
-  .hdr-band .logo{width:118px;height:auto;flex-shrink:0}
+  /* Header lặp mỗi trang — trái: logo, phải: tên + địa chỉ (canh giữa).
+     margin ngang 16mm để đường line không chạm mép giấy; padding-top tạo lề trên mỗi trang */
+  .hdr-band{display:flex;align-items:center;gap:14px;border-bottom:2px solid #C9A84C;margin:0 16mm;padding:10mm 0 6px}
+  .hdr-band .logo-box{width:104px;height:56px;overflow:hidden;flex-shrink:0;display:flex;align-items:center}
+  .hdr-band .logo{width:104px;display:block}
   .hdr-band .info{flex:1;text-align:center}
   .hdr-name{font-weight:bold;color:#8B1A1A;font-size:13.5pt;line-height:1.25}
   .hdr-addr{font-size:10pt;color:#444}
   /* Footer lặp mỗi trang — 3 dòng canh giữa. padding-bottom tạo lề dưới mỗi trang */
-  .ftr-band{border-top:2px solid #C9A84C;padding:6px 16mm 12mm;text-align:center;line-height:1.45}
+  .ftr-band{border-top:2px solid #C9A84C;margin:0 16mm;padding:6px 0 10mm;text-align:center;line-height:1.45}
   .ftr-band .name{color:#8B1A1A;font-weight:bold;font-size:10.5pt}
   .ftr-band .ln{font-size:9.5pt;color:#555}
   td.body{border:none;padding:6px 16mm 0}
@@ -93,7 +95,7 @@ export async function GET(request) {
   table.fee th{background:#8B1A1A;color:#fff;text-align:center;font-weight:bold;font-size:9.5pt}
   table.fee td.c{text-align:center}table.fee td.r{text-align:right}
   table.fee tr.odd td{background:#FCF6E6}
-  .plx{text-align:center;font-size:14pt;font-weight:bold;color:#8B1A1A;margin:26px 0 8px}
+  .plx{text-align:center;font-size:14pt;font-weight:bold;color:#8B1A1A;margin:0 0 8px;padding-top:6px;page-break-before:always;break-before:page}
   .sign{width:100%;border-collapse:collapse;margin-top:22px;page-break-inside:avoid;break-inside:avoid}
   .sign td{border:none;width:50%;text-align:center;vertical-align:top;padding:0 6px}
   .sign .role{font-weight:bold;font-size:12pt;color:#8B1A1A}
@@ -110,7 +112,7 @@ export async function GET(request) {
   <table class="layout">
     <thead class="hdr"><tr><td>
       <div class="hdr-band">
-        <img class="logo" src="${hdLogo}" width="118" alt="SAVITAX" onerror="this.onerror=null;this.src='${logoUrl}'"/>
+        <div class="logo-box"><img class="logo" src="${hdLogo}" alt="SAVITAX" onerror="this.onerror=null;this.src='${logoUrl}'"/></div>
         <div class="info">
           <div class="hdr-name">CÔNG TY CỔ PHẦN TƯ VẤN THUẾ SAVITAX</div>
           <div class="hdr-addr">16 Bình Lợi, Phường Bình Lợi Trung, Thành phố Hồ Chí Minh</div>
