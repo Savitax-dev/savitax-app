@@ -6,11 +6,13 @@ import AppShell from '@/components/AppShell'
 import { hasPermission } from '@/lib/permissions'
 
 const STATUS_OPTS = [
+  { v: 'pending',     l: 'Trình ký' },
   { v: 'active',      l: 'Đang sử dụng' },
   { v: 'inactive',    l: 'Ngưng dịch vụ' },
   { v: 'transferred', l: 'Chuyển NV' },
 ]
 const STATUS_COLOR = {
+  pending:     'bg-amber-100 text-amber-700',
   active:      'bg-green-100 text-green-700',
   inactive:    'bg-gray-100 text-gray-500',
   transferred: 'bg-orange-100 text-orange-600',

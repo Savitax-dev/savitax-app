@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { ensureRollovers } from '@/lib/debtRollover'
 import { getPeriodMonths } from '@/lib/period'
+import { startedByMonth } from '@/lib/contractDates'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -25,7 +26,7 @@ export async function GET(request) {
   const [{ data: roomList }, { data: staffList }, { data: clientList }, { data: feesKetoan }, { data: feesKhach }, { data: secondaryRows }] = await Promise.all([
     supabase.from('rooms').select('id, name, type').order('name'),
     supabase.from('staff').select('id, full_name, room_id').order('full_name'),
-    supabase.from('clients').select('id, name, tax_code, monthly_fee, other_debt, report_type, assigned_to, status').eq('status', 'active'),
+    supabase.from('clients').select('id, name, tax_code, monthly_fee, other_debt, report_type, assigned_to, status, contract_start').eq('status', 'active'),
     supabase.from('service_fees').select('client_id, amount').eq('year', year).in('month', months).eq('type', 'ketoan'),
     supabase.from('service_fees').select('client_id, amount').eq('year', year).in('month', months).eq('type', 'khach'),
     supabase.from('client_secondary_staff').select('client_id, staff_id'),
@@ -51,12 +52,14 @@ export async function GET(request) {
   const clientMap = {}
   for (const c of (clientList || [])) clientMap[c.id] = c
 
-  const feeForPeriod = (c) => (Number(c.monthly_fee) || 0) * months.length
+  // Số tháng trong kỳ mà công ty đã bắt đầu hợp đồng (gate theo contract_start)
+  const monthsActive = (c) => months.filter(m => startedByMonth(c.contract_start, year, m)).length
+  const feeForPeriod = (c) => (Number(c.monthly_fee) || 0) * monthsActive(c)
 
   const built = (roomList || []).map(room => {
     const roomStaff = (staffList || []).filter(s => s.room_id === room.id)
     const staffWithClients = roomStaff.map(s => {
-      const clients = (clientList || []).filter(c => c.assigned_to === s.id).map(c => ({
+      const clients = (clientList || []).filter(c => c.assigned_to === s.id && monthsActive(c) > 0).map(c => ({
         ...c,
         periodFee:      feeForPeriod(c),
         collected:      feeMap[c.id] || 0,
@@ -66,7 +69,7 @@ export async function GET(request) {
       const secondaryClients = (secondaryRows || [])
         .filter(r => r.staff_id === s.id)
         .map(r => clientMap[r.client_id])
-        .filter(Boolean)
+        .filter(c => c && monthsActive(c) > 0)
         .map(c => ({ ...c, periodFee: feeForPeriod(c), collected: feeMap[c.id] || 0, collectedKhach: feeKhachMap[c.id] || 0 }))
 
       const fee = clients.reduce((a, c) => a + c.periodFee, 0)

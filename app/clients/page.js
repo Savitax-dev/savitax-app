@@ -4,13 +4,15 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 
-const STATUS_LABEL = { active: 'Đang sử dụng', inactive: 'Ngưng dịch vụ', transferred: 'Đã chuyển đi' }
+const STATUS_LABEL = { pending: 'Trình ký', active: 'Đang sử dụng', inactive: 'Ngưng dịch vụ', transferred: 'Đã chuyển đi' }
 const STATUS_COLOR = {
+  pending: 'bg-amber-100 text-amber-700',
   active: 'bg-green-100 text-green-700',
   inactive: 'bg-gray-100 text-gray-500',
   transferred: 'bg-orange-100 text-orange-600',
 }
 const STATUS_OPTS = [
+  { v: 'pending', l: 'Trình ký (đang lên hợp đồng)' },
   { v: 'active', l: 'Đang sử dụng' },
   { v: 'inactive', l: 'Ngưng dịch vụ' },
   { v: 'transferred', l: 'Chuyển đi (sang đơn vị khác)' },
@@ -107,7 +109,7 @@ export default function ClientsPage() {
   const [expanded, setExpanded] = useState(null)
   const [feeHistory, setFeeHistory] = useState({})
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '' })
+  const [form, setForm] = useState({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '' })
   const [editClientId, setEditClientId] = useState(null)
   const [editClientForm, setEditClientForm] = useState({})
   const [formRoom, setFormRoom] = useState('')
@@ -122,6 +124,7 @@ export default function ClientsPage() {
   const [transferEdit, setTransferEdit] = useState(null)
   const [transferTo, setTransferTo] = useState('')
   const [statusEdit, setStatusEdit] = useState(null)
+  const [activateMonth, setActivateMonth] = useState('')
   const [assignEdit, setAssignEdit] = useState(null)
   const [assignRoom, setAssignRoom] = useState('')
   const [assignStaff, setAssignStaff] = useState('')
@@ -314,7 +317,7 @@ export default function ClientsPage() {
       setSaving(false)
       return
     }
-    setForm({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '' })
+    setForm({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '' })
     setLookupError('')
     setFormRoom('')
     setShowForm(false)
@@ -366,14 +369,16 @@ export default function ClientsPage() {
     setSaving(false)
   }
 
-  const saveStatus = async (clientId, newStatus) => {
+  const saveStatus = async (clientId, newStatus, contractStart) => {
     setSaving(true)
+    const payload = { id: clientId, status: newStatus }
+    if (contractStart) payload.contract_start = contractStart
     await fetch('/api/admin/clients', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: clientId, status: newStatus }),
+      body: JSON.stringify(payload),
     })
-    setStatusEdit(null)
+    setStatusEdit(null); setActivateMonth('')
     await loadClients()
     setSaving(false)
   }
@@ -426,6 +431,7 @@ export default function ClientsPage() {
         tax_status:     editClientForm.tax_status,
         client_code:    editClientForm.client_code,
         representative: editClientForm.representative,
+        contract_start: editClientForm.contract_start || null,
       }),
     })
     setEditClientId(null)
@@ -487,6 +493,7 @@ export default function ClientsPage() {
 
   const counts = {
     all: visibleClients.length,
+    pending: visibleClients.filter(c => (c.status || 'active') === 'pending').length,
     active: visibleClients.filter(c => (c.status || 'active') === 'active').length,
     inactive: visibleClients.filter(c => (c.status || 'active') === 'inactive').length,
     transferred: visibleClients.filter(c => (c.status || 'active') === 'transferred').length,
@@ -658,6 +665,28 @@ export default function ClientsPage() {
                   placeholder="VD: KH001, AORAKI-01..."
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
+              {/* Trạng thái + Ngày bắt đầu hợp đồng */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Trạng thái</label>
+                  <select value={form.status}
+                    onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+                    className={'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ' + (form.status === 'pending' ? 'border-amber-300 bg-amber-50' : 'border-gray-200')}>
+                    <option value="pending">Trình ký (đang lên hợp đồng)</option>
+                    <option value="active">Đang sử dụng</option>
+                  </select>
+                  {form.status === 'pending' && (
+                    <p className="text-xs text-amber-600 mt-1">Chưa tính tỉ lệ công việc/công nợ cho đến khi chuyển "Đang sử dụng".</p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Ngày bắt đầu hợp đồng</label>
+                  <input type="date" value={form.contract_start}
+                    onChange={e => setForm(f => ({ ...f, contract_start: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <p className="text-xs text-gray-400 mt-1">Dùng cho hợp đồng + mốc bắt đầu tính tỉ lệ.</p>
+                </div>
+              </div>
               {/* 6. Phòng ban phụ trách */}
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Phòng ban phụ trách</label>
@@ -702,6 +731,7 @@ export default function ClientsPage() {
         {/* Filter tabs */}
         <div className="flex gap-1 mb-3 bg-gray-100 p-1 rounded-xl overflow-x-auto">
           {[
+            ['pending',     'Trình ký (' + counts.pending + ')'],
             ['active',      'Đang dùng (' + counts.active + ')'],
             ['inactive',    'Ngưng (' + counts.inactive + ')'],
             ['transferred', 'Chuyển đi (' + counts.transferred + ')'],
@@ -833,6 +863,13 @@ export default function ClientsPage() {
                             </a>
                           )}
                         </div>
+                        <div>
+                          <label className="text-xs text-gray-500 mb-0.5 block">Ngày bắt đầu hợp đồng</label>
+                          <input type="date" value={editClientForm.contract_start || ''}
+                            onChange={e => setEditClientForm(f => ({ ...f, contract_start: e.target.value }))}
+                            className="w-full px-2.5 py-1.5 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white" />
+                          <p className="text-xs text-gray-400 mt-0.5">Dùng cho hợp đồng + mốc bắt đầu tính tỉ lệ.</p>
+                        </div>
                         <div className="flex gap-2 pt-1">
                           <button onClick={saveEditClient} disabled={saving}
                             className="flex-1 bg-blue-600 text-white py-2 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
@@ -855,7 +892,7 @@ export default function ClientsPage() {
                           <span className="text-xs text-gray-500">{client.name}</span>
                         </div>
                         <button
-                          onClick={() => { setEditClientId(client.id); setEditClientForm({ name: client.name, tax_code: client.tax_code, address: client.address || '', tax_status: client.tax_status || '', client_code: client.client_code || '', representative: client.representative || '' }) }}
+                          onClick={() => { setEditClientId(client.id); setEditClientForm({ name: client.name, tax_code: client.tax_code, address: client.address || '', tax_status: client.tax_status || '', client_code: client.client_code || '', representative: client.representative || '', contract_start: client.contract_start ? String(client.contract_start).slice(0,10) : '' }) }}
                           className="text-xs text-blue-600 hover:underline font-medium bg-blue-50 px-3 py-1.5 rounded-lg flex-shrink-0">
                           ✏️ Sửa thông tin
                         </button>
@@ -1069,18 +1106,50 @@ export default function ClientsPage() {
                       )}
                     </div>
 
+                    {/* Hợp đồng dịch vụ */}
+                    <div>
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Hợp đồng dịch vụ</p>
+                      <div className="flex gap-2 flex-wrap">
+                        <button onClick={() => window.open('/api/admin/contract?clientId=' + client.id + '&format=pdf', '_blank')}
+                          className="text-xs px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 font-medium transition-colors">
+                          📄 Xuất PDF
+                        </button>
+                        <button onClick={() => window.open('/api/admin/contract?clientId=' + client.id + '&format=word', '_blank')}
+                          className="text-xs px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 font-medium transition-colors">
+                          📝 Tải Word
+                        </button>
+                      </div>
+                      {!client.contract_start && (
+                        <p className="text-xs text-amber-500 mt-1">Chưa có "Ngày bắt đầu hợp đồng" — hãy sửa thông tin để hợp đồng hiển thị đúng thời hạn.</p>
+                      )}
+                    </div>
+
                     {/* Status change */}
                     <div>
                       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Trạng thái</p>
                       {statusEdit === client.id ? (
                         <div className="space-y-2">
-                          {STATUS_OPTS.map(o => (
+                          {(client.status === 'pending') && (
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 space-y-1.5">
+                              <label className="text-xs text-amber-700 font-medium block">Chuyển sang "Đang sử dụng" — áp dụng từ tháng:</label>
+                              <input type="month" value={activateMonth}
+                                onChange={e => setActivateMonth(e.target.value)}
+                                className="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white" />
+                              <button onClick={() => saveStatus(client.id, 'active', activateMonth ? activateMonth + '-01' : (client.contract_start || null))}
+                                disabled={saving}
+                                className="w-full bg-green-600 text-white py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
+                                ✓ Chốt hợp đồng — Đang sử dụng{activateMonth ? ' từ ' + activateMonth.split('-').reverse().join('/') : ''}
+                              </button>
+                              <p className="text-xs text-amber-500">Từ tháng này mới bắt đầu tính tỉ lệ công việc/công nợ.</p>
+                            </div>
+                          )}
+                          {STATUS_OPTS.filter(o => !(client.status === 'pending' && o.v === 'active')).map(o => (
                             <button key={o.v} onClick={() => saveStatus(client.id, o.v)}
                               className={'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ' +
                                 (client.status === o.v ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-50 text-gray-700')
                               }>{o.l}</button>
                           ))}
-                          <button onClick={() => setStatusEdit(null)} className="text-xs text-gray-400 hover:text-gray-600">Hủy</button>
+                          <button onClick={() => { setStatusEdit(null); setActivateMonth('') }} className="text-xs text-gray-400 hover:text-gray-600">Hủy</button>
                         </div>
                       ) : (
                         <button onClick={() => setStatusEdit(client.id)}

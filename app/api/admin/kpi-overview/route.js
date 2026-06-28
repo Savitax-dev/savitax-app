@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { startedByMonth } from '@/lib/contractDates'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -25,11 +26,13 @@ export async function GET(request) {
   const [{ data: rooms }, { data: staffList }, { data: clients }, { data: taskDefs }] = await Promise.all([
     supabase.from('rooms').select('id, name, type').order('type').order('name'),
     supabase.from('staff').select('id, full_name, room_id'),
-    supabase.from('clients').select('id, monthly_fee, report_type, assigned_to').eq('status', 'active'),
+    supabase.from('clients').select('id, monthly_fee, report_type, assigned_to, contract_start').eq('status', 'active'),
     supabase.from('task_definitions').select('id, deadline_day, month, report_type, is_active').eq('is_active', true).eq('month', month),
   ])
 
-  const clientIds = (clients || []).map(c => c.id)
+  // Công ty chỉ được tính từ tháng bắt đầu hợp đồng trở đi (Trình ký đã bị loại bởi status filter)
+  const clientsActive = (clients || []).filter(c => startedByMonth(c.contract_start, year, month))
+  const clientIds = clientsActive.map(c => c.id)
 
   const [{ data: taskRecords }, { data: fees }] = clientIds.length > 0
     ? await Promise.all([
@@ -77,7 +80,7 @@ export async function GET(request) {
   }
 
   const clientsByStaff = {}
-  for (const c of (clients || [])) {
+  for (const c of clientsActive) {
     if (!c.assigned_to) continue
     if (!clientsByStaff[c.assigned_to]) clientsByStaff[c.assigned_to] = []
     clientsByStaff[c.assigned_to].push(c)

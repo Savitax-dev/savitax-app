@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { effectiveDeadlineDate } from '@/lib/deadline'
+import { startedByMonth } from '@/lib/contractDates'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -16,6 +17,11 @@ export async function GET(request) {
   if (!clientId) return Response.json({ error: 'Missing clientId' }, { status: 400 })
 
   const supabase = getAdmin()
+
+  // Công ty chưa tới mốc bắt đầu hợp đồng (hoặc đang Trình ký) → không có công việc tháng này
+  const { data: cli } = await supabase.from('clients').select('status, contract_start').eq('id', clientId).single()
+  if (cli && cli.status === 'pending') return Response.json({ tasks: [] })
+  if (cli && !startedByMonth(cli.contract_start, year, month)) return Response.json({ tasks: [] })
 
   // Get tasks for this month + report type
   const { data: taskDefs, error: tdErr } = await supabase

@@ -33,11 +33,14 @@ export async function GET() {
 
 export async function POST(request) {
   const body = await request.json()
-  const { name, tax_code, report_type, monthly_fee, assigned_to, address, tax_status, fee_period, fee_start, other_debt, client_code, representative } = body
+  const { name, tax_code, report_type, monthly_fee, assigned_to, address, tax_status, fee_period, fee_start, other_debt, client_code, representative, status, contract_start } = body
   if (!name || !tax_code || !assigned_to) {
     return Response.json({ error: 'Thiếu thông tin bắt buộc' }, { status: 400 })
   }
   const supabase = getAdmin()
+
+  // Trạng thái: 'pending' (Trình ký) hoặc 'active' (Đang sử dụng) — mặc định active
+  const newStatus = status === 'pending' ? 'pending' : (status || 'active')
 
   // Base fields that always exist
   const insertData = {
@@ -46,8 +49,8 @@ export async function POST(request) {
     report_type: report_type || 'monthly',
     monthly_fee: Number(monthly_fee) || 0,
     assigned_to,
-    is_active: true,
-    status: 'active',
+    is_active: newStatus === 'active',
+    status: newStatus,
   }
   // Optional columns — only include if they have a value to avoid
   // "column not found in schema cache" errors on fresh deployments
@@ -57,6 +60,7 @@ export async function POST(request) {
   if (other_debt) insertData.other_debt = Number(other_debt)
   if (client_code)    insertData.client_code    = client_code
   if (representative) insertData.representative = representative
+  if (contract_start) insertData.contract_start = contract_start
 
   let { data, error } = await supabase.from('clients').insert(insertData).select().single()
 
@@ -76,7 +80,7 @@ export async function POST(request) {
   // Retry with progressively fewer columns if schema is missing optional fields
   if (error && error.message && error.message.includes('schema cache')) {
     // Strip new optional columns first, then older ones
-    const cols2 = ['representative', 'client_code', 'other_debt', 'address', 'tax_status', 'fee_period', 'monthly_fee', 'report_type', 'status', 'is_active']
+    const cols2 = ['contract_start', 'representative', 'client_code', 'other_debt', 'address', 'tax_status', 'fee_period', 'monthly_fee', 'report_type', 'status', 'is_active']
     let attempt = { ...insertData }
     for (const col of cols2) {
       if (!error || !error.message.includes('schema cache')) break
@@ -89,11 +93,13 @@ export async function POST(request) {
 
   if (error) return Response.json({ error: error.message }, { status: 400 })
 
-  // Record initial fee to service_fees if monthly_fee is provided
-  if (data && monthly_fee && Number(monthly_fee) > 0) {
+  // Record initial fee to service_fees if monthly_fee is provided.
+  // Công ty "Trình ký" (pending) CHƯA tính phí/tỉ lệ → không ghi service_fees ban đầu.
+  if (data && newStatus !== 'pending' && monthly_fee && Number(monthly_fee) > 0) {
     let effectY, effectM
-    if (fee_start) {
-      const parts = fee_start.split('-')
+    const startSrc = contract_start || fee_start
+    if (startSrc) {
+      const parts = String(startSrc).split('-')
       effectY = Number(parts[0])
       effectM = Number(parts[1])
     } else {
@@ -115,7 +121,7 @@ export async function POST(request) {
 
 export async function PATCH(request) {
   const body = await request.json()
-  const { id, assigned_to, address, tax_status, fee_period, status, monthly_fee, fee_history, other_debt, client_code, name, tax_code, representative, updatedBy } = body
+  const { id, assigned_to, address, tax_status, fee_period, status, monthly_fee, fee_history, other_debt, client_code, name, tax_code, representative, contract_start, updatedBy } = body
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })
   const supabase = getAdmin()
 
@@ -131,7 +137,8 @@ export async function PATCH(request) {
   if (address !== undefined) updateData.address = address
   if (tax_status !== undefined) updateData.tax_status = tax_status
   if (fee_period !== undefined) updateData.fee_period = fee_period
-  if (status !== undefined) updateData.status = status
+  if (status !== undefined) { updateData.status = status; updateData.is_active = status === 'active' }
+  if (contract_start !== undefined) updateData.contract_start = contract_start || null
   if (monthly_fee !== undefined) updateData.monthly_fee = Number(monthly_fee)
   if (other_debt   !== undefined) updateData.other_debt   = Number(other_debt)
   if (client_code    !== undefined) updateData.client_code    = client_code
@@ -168,6 +175,27 @@ export async function PATCH(request) {
       amount: Number(amount),
       note: note || null,
     }, { onConflict: 'client_id,year,month,type' })
+  }
+
+  // Khi chuyển sang "Đang sử dụng" kèm ngày bắt đầu hợp đồng: ghi mốc phí ban đầu
+  // tại tháng đó (nếu chưa có) để bắt đầu tính từ tháng áp dụng.
+  if (status === 'active' && contract_start) {
+    const parts = String(contract_start).split('-')
+    const effectY = Number(parts[0]), effectM = Number(parts[1])
+    if (effectY && effectM) {
+      const { data: cli } = await supabase.from('clients').select('monthly_fee').eq('id', id).single()
+      const fee = cli ? Number(cli.monthly_fee) || 0 : 0
+      if (fee > 0) {
+        const { data: existed } = await supabase.from('service_fees')
+          .select('id').eq('client_id', id).eq('year', effectY).eq('month', effectM).eq('type', 'fee_plan').maybeSingle()
+        if (!existed) {
+          await supabase.from('service_fees').upsert({
+            client_id: id, year: effectY, month: effectM, type: 'fee_plan',
+            amount: fee, note: 'Áp dụng từ T' + effectM + '/' + effectY,
+          }, { onConflict: 'client_id,year,month,type' })
+        }
+      }
+    }
   }
 
   return Response.json({ success: true })

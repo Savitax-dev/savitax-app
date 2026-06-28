@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { ensureRollovers } from '@/lib/debtRollover'
 import { effectiveDeadlineDate } from '@/lib/deadline'
+import { startedByMonth } from '@/lib/contractDates'
 
 function getAdmin() {
   return createClient(
@@ -39,7 +40,7 @@ export async function GET(request) {
   const staffIds = staffList.map(s => s.id)
   // Đã gộp address/tax_status/other_debt vào select chính — bỏ hẳn round-trip "extraMap" cũ
   // (trước đây truy vấn lại y nguyên bảng clients chỉ để lấy thêm 3 cột này).
-  const CLIENT_COLS = 'id, name, tax_code, assigned_to, monthly_fee, report_type, fee_period, status, client_code, address, tax_status, other_debt'
+  const CLIENT_COLS = 'id, name, tax_code, assigned_to, monthly_fee, report_type, fee_period, status, client_code, address, tax_status, other_debt, contract_start'
 
   // Clients chính (assigned_to) và "phụ trách phụ" không phụ thuộc nhau — chạy song song
   const [{ data: ownedClients }, { data: secondaryRows }] = await Promise.all([
@@ -56,8 +57,11 @@ export async function GET(request) {
   const extraMap = {}
   for (const c of clients) extraMap[c.id] = c
 
-  const activeOwnedClients = (ownedClients || []).filter(c => (c.status || 'active') === 'active')
-  const activeSecondaryClients = (secondaryClientRecords || []).filter(c => (c.status || 'active') === 'active')
+  // Active = đang sử dụng + đã tới mốc bắt đầu hợp đồng cho tháng đang xem (Trình ký + chưa
+  // tới mốc đều bị loại khỏi tính toán tháng này)
+  const isCounted = (c) => (c.status || 'active') === 'active' && startedByMonth(c.contract_start, year, month)
+  const activeOwnedClients = (ownedClients || []).filter(isCounted)
+  const activeSecondaryClients = (secondaryClientRecords || []).filter(isCounted)
   const clientIds = [...new Set([...activeOwnedClients, ...activeSecondaryClients].map(c => c.id))]
 
   if (clientIds.length === 0) {
