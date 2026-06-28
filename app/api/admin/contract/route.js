@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 import { amountInWords } from '@/lib/numberToWords'
 import { contractEndDate, contractNumber, viFullDate, viShortDate } from '@/lib/contractDates'
 
@@ -8,6 +10,17 @@ function getAdmin() {
 
 const fmt = (n) => Number(n || 0).toLocaleString('vi-VN')
 const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+// Nhúng logo base64 (cho bản Word — Word thường không tải ảnh online)
+function logoDataUri() {
+  for (const f of ['logo-savitax-hddv.png', 'logo-savitax.png']) {
+    try {
+      const buf = readFileSync(join(process.cwd(), 'public', f))
+      return 'data:image/png;base64,' + buf.toString('base64')
+    } catch (_) {}
+  }
+  return ''
+}
 
 // GET /api/admin/contract?clientId=xxx&format=pdf|word
 export async function GET(request) {
@@ -59,21 +72,21 @@ export async function GET(request) {
     <tr><td class="nm">${esc(c.representative)}</td><td class="nm">ĐINH THỊ HUYỀN</td></tr>
   </table>`
 
-  // Header band (logo trái + tên/địa chỉ canh giữa) & footer band (3 dòng canh giữa)
-  const headerBand = `<div class="hdr-band">
-      <img class="logo" src="${hdLogo}" alt="SAVITAX" onerror="this.onerror=null;this.src='${logoUrl}'"/>
-      <div class="info">
+  // Header band dạng bảng (logo trái + tên/địa chỉ canh giữa) — render đúng cả browser & Word
+  const headerBand = (logoSrc) => `<table class="hdrtbl"><tr>
+      <td class="logocell"><img class="logo" src="${logoSrc}" alt="SAVITAX"/></td>
+      <td class="infocell">
         <div class="hdr-name">CÔNG TY CỔ PHẦN TƯ VẤN THUẾ SAVITAX</div>
         <div class="hdr-addr">16 Bình Lợi, Phường Bình Lợi Trung, Thành phố Hồ Chí Minh</div>
-      </div>
-    </div>`
+      </td>
+    </tr></table>`
   const footerBand = `<div class="ftr-band">
       <div class="name">CÔNG TY CỔ PHẦN TƯ VẤN THUẾ SAVITAX</div>
       <div class="ln">Website: www.savitax.vn</div>
       <div class="ln">Hotline: 0989 666 253 (Ms. Huyền) – 0916 084 266 (Ms. Trang)</div>
     </div>`
 
-  // Phần nội dung chính (dùng chung cho cả PDF & Word)
+  // Nội dung chính dùng chung
   const content = `
       <h1>HỢP ĐỒNG DỊCH VỤ</h1>
       <p class="sohd">Số: ${esc(soHD)}</p>
@@ -207,23 +220,25 @@ export async function GET(request) {
 
       ${signBlock}`
 
-  // CSS dùng chung cho thân hợp đồng
+  // CSS dùng chung
   const baseCss = `
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Times New Roman',serif;font-size:13pt;color:#1a1a1a;line-height:1.5;background:#fff}
-    .hdr-band{display:flex;align-items:center;gap:14px;border-bottom:2px solid #C9A84C;padding-bottom:6px}
-    .hdr-band .logo{height:54px;width:auto;flex-shrink:0;object-fit:contain}
-    .hdr-band .info{flex:1;text-align:center}
+    .hdrtbl{width:100%;border-collapse:collapse;border-bottom:2px solid #C9A84C}
+    .hdrtbl td{border:none;padding:0 0 5px;vertical-align:middle}
+    .hdrtbl .logocell{width:118px}
+    .hdrtbl .logo{height:50px;width:auto}
+    .hdrtbl .infocell{text-align:center}
     .hdr-name{font-weight:bold;color:#8B1A1A;font-size:13.5pt;line-height:1.25}
     .hdr-addr{font-size:10pt;color:#444}
-    .ftr-band{border-top:2px solid #C9A84C;padding-top:5px;text-align:center;line-height:1.4}
+    .ftr-band{border-top:2px solid #C9A84C;padding-top:4px;text-align:center;line-height:1.4}
     .ftr-band .name{color:#8B1A1A;font-weight:bold;font-size:10.5pt}
     .ftr-band .ln{font-size:9.5pt;color:#555}
     h1{text-align:center;font-size:16pt;font-weight:bold;margin:6px 0 4px;color:#8B1A1A;letter-spacing:.5px}
-    .sohd{text-align:center;font-size:12pt;margin-bottom:12px;color:#8B1A1A;font-weight:bold}
+    .sohd{text-align:center;font-size:12pt;margin-bottom:10px;color:#8B1A1A;font-weight:bold}
     p{margin:5px 0;text-align:justify}
     .b{font-weight:bold}.red{color:#c0392b}
-    h2{font-size:13pt;font-weight:bold;margin:13px 0 4px;color:#8B1A1A;border-left:3px solid #C9A84C;padding-left:8px}
+    h2{font-size:13pt;font-weight:bold;margin:12px 0 4px;color:#8B1A1A;border-left:3px solid #C9A84C;padding-left:8px}
     ul{margin:4px 0 6px 6px;list-style:none}
     li{margin:3px 0;text-align:justify;padding-left:18px;position:relative}
     li:before{content:"–";position:absolute;left:2px;color:#C9A84C;font-weight:bold}
@@ -231,41 +246,36 @@ export async function GET(request) {
     .rep{width:100%;border-collapse:collapse;margin:5px 0}
     .rep td{border:none;padding:0;vertical-align:top}
     .rep td.cv{width:34%}
-    .feeline{background:#FFF8E1;border:1px solid #F0D98C;border-radius:4px;padding:4px 8px}
+    .feeline{background:#FFF8E1;border:1px solid #F0D98C;border-radius:4px;padding:3px 7px}
     table.fee{width:100%;border-collapse:collapse;margin:8px 0;font-size:10.5pt}
     table.fee th,table.fee td{border:1px solid #b8923a;padding:5px 6px;vertical-align:top}
     table.fee th{background:#8B1A1A;color:#fff;text-align:center;font-weight:bold;font-size:9.5pt}
     table.fee td.c{text-align:center}table.fee td.r{text-align:right}
     table.fee tr.odd td{background:#FCF6E6}
     .plx{text-align:center;font-size:14pt;font-weight:bold;color:#8B1A1A;margin:0 0 8px;padding-top:6px;page-break-before:always;break-before:page}
-    .sign{width:100%;border-collapse:collapse;margin-top:22px;page-break-inside:avoid;break-inside:avoid}
+    .sign{width:100%;border-collapse:collapse;margin-top:20px;page-break-inside:avoid;break-inside:avoid}
     .sign td{border:none;width:50%;text-align:center;vertical-align:top;padding:0 6px}
     .sign .role{font-weight:bold;font-size:12pt;color:#8B1A1A}
     .sign .note{font-size:9pt;font-style:italic;color:#666;padding-top:2px}
-    .sign .gap{height:60px}
+    .sign .gap{height:58px}
     .sign .nm{font-weight:bold;font-size:11.5pt;text-transform:uppercase}`
 
-  let html
   if (isWord) {
-    // WORD: header/footer trong thead/tfoot để lặp mỗi trang khi mở trong Word
-    html = `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8">
+    // WORD: dùng cơ chế header/footer của Word (mso-element) để lặp mỗi trang;
+    // logo nhúng base64; nội dung full khổ giấy nhờ lề @page Section1.
+    const wordHtml = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" lang="vi"><head><meta charset="UTF-8">
 <title>Hợp đồng dịch vụ - ${esc(c.name)}</title>
 <style>${baseCss}
-  .wrap{width:210mm;margin:0 auto}
-  .layout{width:100%;border-collapse:collapse}
-  .hdr td,.ftr td{border:none;padding:0}
-  .hdr-band{margin:0 16mm;padding-top:8mm}
-  .ftr-band{margin:0 16mm;padding-bottom:8mm}
-  td.body{border:none;padding:6px 16mm 0}
+  @page Section1{size:21.0cm 29.7cm;margin:2.4cm 1.8cm 2.0cm 1.8cm;mso-header-margin:0.8cm;mso-footer-margin:0.6cm;mso-header:h1;mso-footer:f1}
+  div.Section1{page:Section1}
+  p.MsoHeader,p.MsoFooter{margin:0}
 </style></head><body>
-  <div class="wrap"><table class="layout">
-    <thead class="hdr"><tr><td>${headerBand}</td></tr></thead>
-    <tfoot class="ftr"><tr><td>${footerBand}</td></tr></tfoot>
-    <tbody><tr><td class="body">${content}</td></tr></tbody>
-  </table></div>
+  <div style="mso-element:header" id="h1">${headerBand(logoDataUri())}</div>
+  <div style="mso-element:footer" id="f1">${footerBand}</div>
+  <div class="Section1">${content}</div>
 </body></html>`
     const fileName = 'HopDong_' + (c.client_code || c.tax_code || 'KH') + '.doc'
-    return new Response(html, {
+    return new Response(wordHtml, {
       headers: {
         'Content-Type': 'application/msword; charset=utf-8',
         'Content-Disposition': "attachment; filename*=UTF-8''" + encodeURIComponent(fileName),
@@ -273,23 +283,22 @@ export async function GET(request) {
     })
   }
 
-  // PDF: header/footer position:fixed ghim cứng top/bottom mỗi trang khi IN; @page chừa lề.
-  // Trên màn hình (xem trực tiếp) dùng @media screen để chừa khoảng cho 2 dải này, tránh đè nội dung.
-  html = `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8">
+  // PDF: header/footer position:fixed ghim cứng mỗi trang khi IN; @media screen chừa chỗ để xem trực tiếp.
+  let html = `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8">
 <title>Hợp đồng dịch vụ - ${esc(c.name)}</title>
 <style>${baseCss}
-  @page{size:A4;margin:28mm 16mm 24mm 16mm}
+  @page{size:A4;margin:19mm 15mm 17mm 15mm}
   .pf-header,.pf-footer{position:fixed;left:0;right:0;background:#fff;z-index:3}
   .pf-header{top:0}
   .pf-footer{bottom:0}
-  .bandwrap{max-width:210mm;margin:0 auto;padding:0 16mm}
+  .bandwrap{max-width:210mm;margin:0 auto;padding:0 15mm}
   .watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;opacity:.045;z-index:0;pointer-events:none}
   .sheet{position:relative;z-index:1}
   .noprint{position:fixed;top:10px;right:14px;z-index:9}
   .btn{cursor:pointer;border:none;padding:8px 18px;border-radius:6px;font-size:12pt;font-weight:bold;background:#8B1A1A;color:#fff}
   @media screen{
     body{background:#e9e9ee}
-    .sheet{max-width:210mm;margin:0 auto;background:#fff;padding:32mm 16mm 30mm;min-height:100vh;box-shadow:0 0 10px rgba(0,0,0,.15)}
+    .sheet{max-width:210mm;margin:0 auto;background:#fff;padding:26mm 15mm 24mm;min-height:100vh;box-shadow:0 0 10px rgba(0,0,0,.15)}
     .pf-header{box-shadow:0 2px 5px rgba(0,0,0,.06)}
     .pf-footer{box-shadow:0 -2px 5px rgba(0,0,0,.06)}
   }
@@ -297,7 +306,7 @@ export async function GET(request) {
 </style></head><body>
   <div class="noprint"><button class="btn" onclick="window.print()">🖨️ In / Lưu PDF</button></div>
   <img class="watermark" src="${logoUrl}" alt="" onerror="this.style.display='none'"/>
-  <div class="pf-header"><div class="bandwrap">${headerBand}</div></div>
+  <div class="pf-header"><div class="bandwrap">${headerBand(hdLogo)}</div></div>
   <div class="pf-footer"><div class="bandwrap">${footerBand}</div></div>
   <div class="sheet">${content}</div>
 </body></html>`
