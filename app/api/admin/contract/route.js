@@ -23,7 +23,8 @@ export async function GET(request) {
   if (!c) return new Response('Client not found', { status: 404 })
 
   const origin   = new URL(request.url).origin
-  const logoUrl  = origin + '/logo-savitax.png'
+  const logoUrl  = origin + '/logo-savitax.png'       // logo cũ (watermark + fallback)
+  const hdLogo   = origin + '/logo-savitax-hd.png'    // logo HD cho header
   const startRaw = c.contract_start || new Date()
   const soHD     = contractNumber(startRaw, c.client_code || c.tax_code || '')
   const ngayLap  = viFullDate(startRaw)
@@ -58,75 +59,81 @@ export async function GET(request) {
 <html lang="vi"><head><meta charset="UTF-8">
 <title>Hợp đồng dịch vụ - ${esc(c.name)}</title>
 <style>
+  @page{size:A4;margin:0}
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Times New Roman',serif;font-size:13pt;color:#1a1a1a;line-height:1.5;background:#fff}
-  .wrap{width:210mm;margin:0 auto;padding:10mm 16mm}
+  .wrap{width:210mm;margin:0 auto}
   /* Watermark logo chìm */
-  .watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:360px;opacity:.05;z-index:0;pointer-events:none}
+  .watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:340px;opacity:.05;z-index:0;pointer-events:none}
   .layout{position:relative;z-index:1;width:100%;border-collapse:collapse}
-  /* Header / footer lặp mỗi trang (thead/tfoot) khi in PDF & mở Word */
   .hdr td,.ftr td{border:none;padding:0}
-  .hdr-band{display:flex;align-items:center;gap:12px;border-bottom:2.5px solid #C9A84C;padding:6px 0 8px;margin-bottom:10px}
-  .hdr-band img{height:46px;width:auto}
-  .hdr-name{font-weight:bold;color:#8B1A1A;font-size:13pt;line-height:1.2}
-  .hdr-sub{font-size:9pt;color:#555}
-  .ftr-band{border-top:1.5px solid #C9A84C;margin-top:10px;padding-top:5px;text-align:center;font-size:8.5pt;color:#8B1A1A}
-  .ftr-band .gold{color:#C9A84C}
-  td.body{border:none;padding:0}
+  /* Header lặp mỗi trang — trái: logo, phải: tên + địa chỉ (canh giữa). padding-top tạo lề trên mỗi trang */
+  .hdr-band{display:flex;align-items:center;gap:14px;border-bottom:2.5px solid #C9A84C;padding:12mm 16mm 8px}
+  .hdr-band .logo{width:118px;height:auto;flex-shrink:0}
+  .hdr-band .info{flex:1;text-align:center}
+  .hdr-name{font-weight:bold;color:#8B1A1A;font-size:13.5pt;line-height:1.25}
+  .hdr-addr{font-size:10pt;color:#444}
+  /* Footer lặp mỗi trang — 3 dòng canh giữa. padding-bottom tạo lề dưới mỗi trang */
+  .ftr-band{border-top:2px solid #C9A84C;padding:6px 16mm 12mm;text-align:center;line-height:1.45}
+  .ftr-band .name{color:#8B1A1A;font-weight:bold;font-size:10.5pt}
+  .ftr-band .ln{font-size:9.5pt;color:#555}
+  td.body{border:none;padding:6px 16mm 0}
   h1{text-align:center;font-size:16pt;font-weight:bold;margin:6px 0 4px;color:#8B1A1A;letter-spacing:.5px}
   .sohd{text-align:center;font-size:12pt;margin-bottom:12px;color:#8B1A1A;font-weight:bold}
-  .center{text-align:center}
   p{margin:5px 0;text-align:justify}
   .b{font-weight:bold}.red{color:#c0392b}
-  .cancu{font-style:italic;color:#333}
   h2{font-size:13pt;font-weight:bold;margin:13px 0 4px;color:#8B1A1A;border-left:3px solid #C9A84C;padding-left:8px}
   ul{margin:4px 0 6px 6px;list-style:none}
   li{margin:3px 0;text-align:justify;padding-left:18px;position:relative}
   li:before{content:"–";position:absolute;left:2px;color:#C9A84C;font-weight:bold}
+  li.cancu{font-style:italic;color:#333}
   .feeline{background:#FFF8E1;border:1px solid #F0D98C;border-radius:4px;padding:4px 8px}
   table.fee{width:100%;border-collapse:collapse;margin:8px 0;font-size:10.5pt}
   table.fee th,table.fee td{border:1px solid #b8923a;padding:5px 6px;vertical-align:top}
   table.fee th{background:#8B1A1A;color:#fff;text-align:center;font-weight:bold;font-size:9.5pt}
   table.fee td.c{text-align:center}table.fee td.r{text-align:right}
   table.fee tr.odd td{background:#FCF6E6}
-  table.fee tr:hover td{background:#FBEED0}
   .plx{text-align:center;font-size:14pt;font-weight:bold;color:#8B1A1A;margin:26px 0 8px}
-  .sign{width:100%;border-collapse:collapse;margin-top:22px}
+  .sign{width:100%;border-collapse:collapse;margin-top:22px;page-break-inside:avoid;break-inside:avoid}
   .sign td{border:none;width:50%;text-align:center;vertical-align:top;padding:0 6px}
   .sign .role{font-weight:bold;font-size:12pt;color:#8B1A1A}
-  .sign .note{font-size:9pt;font-style:italic;color:#666;margin-top:2px}
-  .sign .gap{height:64px}
+  .sign .note{font-size:9pt;font-style:italic;color:#666;padding-top:2px}
+  .sign .gap{height:60px}
   .sign .nm{font-weight:bold;font-size:11.5pt;text-transform:uppercase}
   .btn{cursor:pointer;border:none;padding:8px 18px;border-radius:6px;font-size:12pt;font-weight:bold;background:#8B1A1A;color:#fff}
-  @media print{.noprint{display:none!important} body{-webkit-print-color-adjust:exact;print-color-adjust:exact} .wrap{padding:6mm 14mm}}
+  @media print{.noprint{display:none!important} body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head>
 <body>
-  <img class="watermark" src="${logoUrl}" alt="" onerror="this.style.display='none'"/>
+  ${format === 'word' ? '' : `<img class="watermark" src="${logoUrl}" alt="" onerror="this.style.display='none'"/>`}
   <div class="wrap">
   ${printBtn}
   <table class="layout">
     <thead class="hdr"><tr><td>
       <div class="hdr-band">
-        <img src="${logoUrl}" alt="SAVITAX" onerror="this.style.display='none'"/>
-        <div>
+        <img class="logo" src="${hdLogo}" width="118" alt="SAVITAX" onerror="this.onerror=null;this.src='${logoUrl}'"/>
+        <div class="info">
           <div class="hdr-name">CÔNG TY CỔ PHẦN TƯ VẤN THUẾ SAVITAX</div>
-          <div class="hdr-sub">Website: www.savitax.vn &nbsp;·&nbsp; Hotline: 0989 666 253 (Ms. Huyền) – 0916 084 266 (Ms. Trang)</div>
+          <div class="hdr-addr">16 Bình Lợi, Phường Bình Lợi Trung, Thành phố Hồ Chí Minh</div>
         </div>
       </div>
     </td></tr></thead>
     <tfoot class="ftr"><tr><td>
       <div class="ftr-band">
-        <span class="gold">CÔNG TY CỔ PHẦN TƯ VẤN THUẾ SAVITAX</span> · 16 Bình Lợi, P. Bình Lợi Trung, Tp.HCM · MST: 0313 906 307 · ĐT: 0989.666.253
+        <div class="name">CÔNG TY CỔ PHẦN TƯ VẤN THUẾ SAVITAX</div>
+        <div class="ln">Website: www.savitax.vn</div>
+        <div class="ln">Hotline: 0989 666 253 (Ms. Huyền) – 0916 084 266 (Ms. Trang)</div>
       </div>
     </td></tr></tfoot>
     <tbody><tr><td class="body">
 
       <h1>HỢP ĐỒNG DỊCH VỤ</h1>
       <p class="sohd">Số: ${esc(soHD)}</p>
-      <p class="cancu">Căn cứ Luật dân sự số: 91/2015/QH13 có hiệu lực thi hành từ ngày 01/01/2017.</p>
-      <p class="cancu">Căn cứ Luật Quản lý thuế số 106/2016/QH13 có hiệu lực thi hành từ ngày 01/07/2016.</p>
-      <p class="cancu">Căn cứ Luật Quản lý thuế số 38/2019/QH14 có hiệu lực thi hành từ 01/07/2020.</p>
-      <p class="cancu">Căn cứ khả năng và nhu cầu của các bên.</p>
+      <ul>
+        <li class="cancu">Căn cứ Luật dân sự số: 91/2015/QH13 có hiệu lực thi hành từ ngày 01/01/2017.</li>
+        <li class="cancu">Căn cứ Luật Quản lý thuế số 106/2016/QH13 có hiệu lực thi hành từ ngày 01/07/2016.</li>
+        <li class="cancu">Căn cứ Luật Quản lý thuế số 38/2019/QH14 có hiệu lực thi hành từ 01/07/2020.</li>
+        <li class="cancu">Căn cứ khả năng và nhu cầu của các bên.</li>
+      </ul>
       <p>Hợp đồng dịch vụ Tư vấn thuế (gọi là "Hợp đồng") này được lập <span class="b">${esc(ngayLap)}</span> tại trụ sở của Công ty CP Tư Vấn Thuế SAVITAX và thực hiện bởi các Bên tham gia dưới đây:</p>
 
       <p class="b">Bên A: (Bên sử dụng dịch vụ):</p>
