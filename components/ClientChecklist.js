@@ -330,9 +330,11 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   const extraTotal = extraRows.reduce((s, r) => s + (Number(r.amount)||0), 0)
   const b1AmountNum = Number(b1Amount) || 0
   const subTotal   = b1AmountNum + extraTotal
-  const vatAmt     = Math.round(subTotal * 0.08)
-  const totalB     = subTotal + vatAmt
   const prevBal    = Number(client.other_debt) || 0
+  // Nợ tồn (A) là số tiền trước thuế (rollover từ phí chưa thu) nên VAT phải tính trên cả A + kỳ này,
+  // không chỉ riêng B1 — tránh bỏ sót thuế của phần nợ tồn khi đưa vào ĐNTT.
+  const vatAmt     = Math.round((prevBal + subTotal) * 0.08)
+  const totalB     = subTotal + vatAmt
   const totalC     = prevBal + totalB
   const monthPad   = String(clientMonth).padStart(2,'0')
   const clientCode = client.client_code || client.tax_code || ''

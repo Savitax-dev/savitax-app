@@ -37,9 +37,10 @@ export async function GET(request) {
   const b1Label    = b1LabelParam || ('Phí dịch vụ kế toán ' + 'Tháng ' + month + '/' + year + ' (chưa VAT)')
   const extraTotal = extraRows.reduce((s, r) => s + (Number(r.amount) || 0), 0)
   const subTotal   = baseFee + extraTotal        // tổng trước VAT (B1 + B2...B7)
-  const vatAmt     = Math.round(subTotal * 0.08) // VAT trên toàn bộ
-  const totalB     = subTotal + vatAmt
   const prevBal    = Number(client.other_debt) || 0
+  // Nợ tồn (A) là số tiền trước thuế (rollover từ phí chưa thu) nên VAT phải tính trên cả A + kỳ này
+  const vatAmt     = Math.round((prevBal + subTotal) * 0.08)
+  const totalB     = subTotal + vatAmt
   const totalC     = prevBal + totalB
 
   // QR VietQR
@@ -279,9 +280,9 @@ function recalc() {
       if (cells[1]) extra += parseAmt(cells[1].innerText)
     }
   }
-  // VAT = (B1 + B2...B7) * 8%
+  // VAT = (A nợ tồn + B1 + B2...B7) * 8% — nợ tồn là số trước thuế nên phải tính VAT chung
   var subTotal = baseFeeVal + extra
-  var vatAmt   = Math.round(subTotal * 0.08)
+  var vatAmt   = Math.round((prevBalVal + subTotal) * 0.08)
   var totalB   = subTotal + vatAmt
   var totalC   = prevBalVal + totalB
   var f = function(n){ return n.toLocaleString('vi-VN') }
