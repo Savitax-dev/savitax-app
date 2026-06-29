@@ -75,13 +75,24 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   useEffect(() => {
     if (defaultPanel === 'debt') {
       setDebtType('ketoan')
-      setDebtAmount(String(client.monthly_fee || ''))
       loadDebtHistory()
     }
     if (defaultPanel === 'info') loadCreds()
     if (defaultPanel === 'files') loadFiles()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client.id])
+
+  // Tự điền sẵn số tiền ĐÃ ghi nhận cho đúng tháng/loại đang xem (lấy từ lịch sử thu) — giúp
+  // nhân viên thấy ngay số hiện tại để sửa lại khi phát hiện cập nhật nhầm công ty, thay vì
+  // phải tự nhớ/đoán số cũ. Nếu tháng này chưa có ghi nhận gì, gợi ý mặc định = phí tháng (ketoan).
+  useEffect(() => {
+    if (panel !== 'debt' || debtType === 'no_ton' || !debtHistory) return
+    const amt = recordedAmount(debtType)
+    if (amt > 0) setDebtAmount(String(amt))
+    else if (debtType === 'ketoan') setDebtAmount(String(client.monthly_fee || ''))
+    else setDebtAmount('')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debtHistory, debtType, clientMonth, selYear, panel])
 
   const loadTasks = async () => {
     setLoading(true)
@@ -167,7 +178,6 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     setPanel(p)
     if (p === 'debt') {
       setDebtType('ketoan')
-      setDebtAmount(String(client.monthly_fee || ''))
       setDebtNote('')
       loadDebtHistory()
     }
@@ -207,14 +217,35 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     await loadCreds()
   }
 
+  // Số tiền đã ghi nhận cho đúng tháng/loại đang xem (dùng để phát hiện sửa giảm + cảnh báo)
+  const recordedAmount = (type) => {
+    if (!debtHistory) return 0
+    const rec = debtHistory.find(h => h.year === selYear && h.month === clientMonth && (h.type || 'ketoan') === type)
+    return rec ? Number(rec.amount) || 0 : 0
+  }
+
   const saveDebt = async () => {
     if (!debtAmount) return
+    const paid = Number(String(debtAmount).replace(/\D/g, ''))
+    const prevAmt = recordedAmount(debtType)
+    // Sửa GIẢM số tiền đã ghi nhận (vd nhập nhầm công ty) — cảnh báo rõ trước khi lưu
+    if (paid < prevAmt) {
+      const fee = Number(client.monthly_fee) || 0
+      const remainAfter = debtType === 'ketoan' ? Math.max(0, fee - paid) : 0
+      const statusMsg = debtType === 'ketoan'
+        ? '\nTrạng thái công ty sẽ chuyển từ "Đã thu đủ" về "Còn phải thu" (còn thiếu ' + fmt(remainAfter) + 'đ).'
+        : ''
+      const ok = window.confirm(
+        'Bạn đang SỬA GIẢM số tiền đã thu từ ' + fmt(prevAmt) + 'đ xuống ' + fmt(paid) + 'đ cho ' + client.name + ' — tháng ' + clientMonth + '/' + selYear + '.' +
+        statusMsg + '\n\nXác nhận sửa lại?'
+      )
+      if (!ok) return
+    }
     setSavingDebt(true)
     try {
       const supabase = createClient()
       const { data: sd } = await supabase.auth.getSession()
       const userId = sd.session ? sd.session.user.id : null
-      const paid = Number(String(debtAmount).replace(/\D/g, ''))
 
       const res = await fetch('/api/admin/save-debt', {
         method: 'POST',
@@ -674,7 +705,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
               { key: 'khach',  label: '🗂 Dịch vụ khác',    hint: 'Phát sinh khác' },
               { key: 'no_ton', label: '📦 Nợ tồn cũ',       hint: fmt(client.other_debt) + 'đ còn nợ' },
             ].map(t => (
-              <button key={t.key} onClick={() => { setDebtType(t.key); setDebtAmount(''); setDebtNote('') }}
+              <button key={t.key} onClick={() => { setDebtType(t.key); setDebtNote('') }}
                 className={'flex-1 py-2 text-xs font-semibold transition-colors border-b-2 ' +
                   (debtType === t.key
                     ? 'text-green-700 border-green-500 bg-green-50'
@@ -794,20 +825,29 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
             <div className="flex gap-2 items-end">
               <div className="flex-1">
                 <label className="text-xs text-gray-500 mb-0.5 block">
-                  {debtType === 'ketoan' ? 'Cập nhật số tiền đã thu — dịch vụ kế toán (đ)' : 'Cập nhật số tiền đã thu — dịch vụ khác (đ)'}
+                  {recordedAmount(debtType) > 0
+                    ? (debtType === 'ketoan' ? '✏️ Sửa số tiền đã thu — dịch vụ kế toán (đ)' : '✏️ Sửa số tiền đã thu — dịch vụ khác (đ)')
+                    : (debtType === 'ketoan' ? 'Cập nhật số tiền đã thu — dịch vụ kế toán (đ)' : 'Cập nhật số tiền đã thu — dịch vụ khác (đ)')}
                 </label>
                 <input type="text" inputMode="numeric" autoFocus
                   value={debtAmount ? Number(debtAmount.replace(/\D/g,'')||0).toLocaleString('vi-VN') : ''}
                   onChange={e => setDebtAmount(e.target.value.replace(/\D/g,''))}
                   placeholder={debtType === 'ketoan' ? 'Phí tháng: ' + fmt(client.monthly_fee) + 'đ' : 'Nhập số tiền...'}
                   className="w-full px-2.5 py-1.5 border border-green-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
-                {debtType === 'ketoan' && debtAmount && (() => {
-                  const fee = Number(client.monthly_fee) || 0
+                {debtAmount && (() => {
                   const val = Number(debtAmount.replace(/\D/g,''))
-                  const remain = Math.max(0, fee - val)
-                  if (val === 0) return null
-                  if (remain > 0) return <p className="text-xs text-orange-500 mt-0.5">⚠ Sau khi lưu còn phải thu: {fmt(remain)}đ</p>
-                  return <p className="text-xs text-green-600 mt-0.5">✓ Thu đủ phí dịch vụ kế toán tháng này</p>
+                  const prevAmt = recordedAmount(debtType)
+                  if (prevAmt > 0 && val < prevAmt) {
+                    return <p className="text-xs text-red-500 mt-0.5">↩️ Đang sửa GIẢM từ {fmt(prevAmt)}đ — kiểm tra kỹ trước khi lưu</p>
+                  }
+                  if (debtType === 'ketoan') {
+                    const fee = Number(client.monthly_fee) || 0
+                    const remain = Math.max(0, fee - val)
+                    if (val === 0) return null
+                    if (remain > 0) return <p className="text-xs text-orange-500 mt-0.5">⚠ Sau khi lưu còn phải thu: {fmt(remain)}đ</p>
+                    return <p className="text-xs text-green-600 mt-0.5">✓ Thu đủ phí dịch vụ kế toán tháng này</p>
+                  }
+                  return null
                 })()}
               </div>
               <button onClick={saveDebt} disabled={savingDebt || !debtAmount}
