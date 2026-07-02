@@ -16,7 +16,9 @@ export async function GET() {
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
   const data = await Promise.all((files || []).map(async f => {
-    const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(f.name, 600)
+    // download: true -> Supabase gắn header Content-Disposition: attachment, buộc trình duyệt
+    // tải file thay vì hiển thị JSON thô trên tab mới.
+    const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(f.name, 600, { download: true })
     return {
       name: f.name,
       size: f.metadata?.size || 0,
