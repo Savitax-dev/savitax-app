@@ -156,6 +156,20 @@ export default function ClientsPage() {
     return result
   }
 
+  // Danh sách tháng cho "Áp dụng từ tháng" khi thêm công ty mới — từ 1/2026 (app bắt đầu theo
+  // dõi dữ liệu) đến hiện tại + 3 tháng, để nhập được đúng tháng ký hợp đồng của công ty cũ.
+  const getApplyFromMonths = () => {
+    const result = []
+    let y = 2026, m = 1
+    const endIdx = year * 12 + (month - 1) + 3
+    while (y * 12 + (m - 1) <= endIdx) {
+      result.push({ y, m, label: 'T' + m + '/' + y, value: y + '-' + String(m).padStart(2, '0') })
+      m++
+      if (m > 12) { m = 1; y++ }
+    }
+    return result
+  }
+
   // Generate last N billing months for a company (quarterly = only quarter-end months)
   const getBillingMonths = (reportType, count) => {
     const result = []
@@ -627,7 +641,7 @@ export default function ClientsPage() {
                     onChange={e => setForm(f => ({ ...f, fee_start: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">Tháng hiện tại</option>
-                    {getFutureMonths(12).map(mo => (
+                    {getApplyFromMonths().map(mo => (
                       <option key={mo.value} value={mo.value}>{mo.label}</option>
                     ))}
                   </select>
@@ -1133,8 +1147,11 @@ export default function ClientsPage() {
                             <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 space-y-1.5">
                               <label className="text-xs text-amber-700 font-medium block">Chuyển sang "Đang sử dụng" — áp dụng từ tháng:</label>
                               <input type="month" value={activateMonth}
+                                min="2026-01"
+                                max={year + '-' + String(month).padStart(2, '0')}
                                 onChange={e => setActivateMonth(e.target.value)}
                                 className="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white" />
+                              <p className="text-xs text-amber-500">Chỉ chọn từ 1/2026 đến tháng hiện tại — công nợ tồn từ trước ghi vào "Nợ tồn".</p>
                               <button onClick={() => saveStatus(client.id, 'active', activateMonth ? activateMonth + '-01' : (client.contract_start || null))}
                                 disabled={saving}
                                 className="w-full bg-green-600 text-white py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
