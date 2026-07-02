@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { startedByMonth } from '@/lib/contractDates'
+import { feeCountsForMonth } from '@/lib/feeDue'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -26,7 +27,7 @@ export async function GET(request) {
   const [{ data: rooms }, { data: staffList }, { data: clients }, { data: taskDefs }] = await Promise.all([
     supabase.from('rooms').select('id, name, type').order('type').order('name'),
     supabase.from('staff').select('id, full_name, room_id'),
-    supabase.from('clients').select('id, monthly_fee, report_type, assigned_to, contract_start').eq('status', 'active'),
+    supabase.from('clients').select('id, monthly_fee, report_type, fee_period, assigned_to, contract_start').eq('status', 'active'),
     supabase.from('task_definitions').select('id, deadline_day, month, report_type, is_active').eq('is_active', true).eq('month', month),
   ])
 
@@ -89,14 +90,16 @@ export async function GET(request) {
   const staffResults = (staffList || []).map(s => {
     const myClients = clientsByStaff[s.id] || []
     const taskPcts = myClients.map(clientTaskPct)
-    const debtPcts = myClients.map(clientDebtPct)
+    // Công ty quý chưa tới hạn thu (hoặc còn trong hạn khoan) không tính vào công nợ tháng này.
+    const debtCountedClients = myClients.filter(c => feeCountsForMonth(c.fee_period, year, month))
+    const debtPcts = debtCountedClients.map(clientDebtPct)
     return {
       staff_id:     s.id,
       full_name:    s.full_name,
       room_id:      s.room_id,
       client_count: myClients.length,
       task_pct:     myClients.length ? mean(taskPcts) : 100,
-      debt_pct:     myClients.length ? mean(debtPcts) : 0,
+      debt_pct:     myClients.length ? (debtCountedClients.length ? mean(debtPcts) : 100) : 0,
     }
   })
 

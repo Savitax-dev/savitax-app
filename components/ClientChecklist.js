@@ -701,7 +701,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
           </div>
           <div className="flex border-b border-gray-100">
             {[
-              { key: 'ketoan', label: '📋 Dịch vụ kế toán', hint: fmt(client.monthly_fee) + 'đ/tháng' },
+              { key: 'ketoan', label: '📋 Dịch vụ kế toán', hint: fmt(client.monthly_fee) + 'đ' + (client.fee_period === 'quarterly' ? '/quý' : '/tháng') },
               { key: 'khach',  label: '🗂 Dịch vụ khác',    hint: 'Phát sinh khác' },
               { key: 'no_ton', label: '📦 Nợ tồn cũ',       hint: fmt(client.other_debt) + 'đ còn nợ' },
             ].map(t => (
@@ -779,7 +779,11 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                     <>
                       <div className="flex-1 space-y-0.5">
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Phí tháng {clientMonth}/{selYear}:</span>
+                          <span className="text-gray-500">
+                            {client.fee_period === 'quarterly'
+                              ? 'Phí quý ' + Math.ceil(clientMonth / 3) + '/' + selYear + ':'
+                              : 'Phí tháng ' + clientMonth + '/' + selYear + ':'}
+                          </span>
                           <span className="font-semibold text-gray-700">{fmt(fee)}đ</span>
                         </div>
                         <div className="flex justify-between">

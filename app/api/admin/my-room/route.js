@@ -3,6 +3,7 @@ import { ensureRollovers } from '@/lib/debtRollover'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { getPeriodMonths } from '@/lib/period'
 import { startedByMonth } from '@/lib/contractDates'
+import { dueFeeMonthsCount } from '@/lib/feeDue'
 
 function getAdmin() {
   return createClient(
@@ -48,14 +49,14 @@ export async function GET(request) {
     supabase.from('task_definitions').select('*').eq('is_active', true).order('sort_order'),
     supabase.from('client_secondary_staff').select('client_id').eq('staff_id', staffRecord.id),
     supabase.from('clients')
-      .select('id, name, tax_code, monthly_fee, other_debt, report_type, status, client_code')
+      .select('id, name, tax_code, monthly_fee, other_debt, report_type, fee_period, status, client_code, contract_start')
       .eq('assigned_to', staffRecord.id).eq('status', 'active'),
   ])
 
   const secondaryClientIds = (secondaryRows || []).map(r => r.client_id)
   const { data: secondaryClients } = secondaryClientIds.length > 0
     ? await supabase.from('clients')
-        .select('id, name, tax_code, monthly_fee, other_debt, report_type, status, client_code, contract_start')
+        .select('id, name, tax_code, monthly_fee, other_debt, report_type, fee_period, status, client_code, contract_start')
         .in('id', secondaryClientIds).eq('status', 'active')
     : { data: [] }
 
@@ -146,7 +147,9 @@ export async function GET(request) {
       tasks,
       taskTotal:      tasks.length,
       taskDone:       tasks.filter(t => t.status.startsWith('done')).length,
-      periodFee:      (Number(c.monthly_fee) || 0) * monthsActive(c),
+      // Công ty quý: chỉ tính phí vào các kỳ (tháng cuối quý) đã đến hạn VÀ đã qua hạn khoan —
+      // không nhân theo số tháng thô như công ty tháng (tránh nhân sai x3/x12 theo quý/năm).
+      periodFee:      (Number(c.monthly_fee) || 0) * dueFeeMonthsCount(c.fee_period, c.contract_start, year, months),
       collected:      feeMap[c.id] || 0,
       collectedKhach: feeKhachMap[c.id] || 0,
     }
@@ -164,7 +167,7 @@ export async function GET(request) {
     room,
     clients: clientsWithTasks,
     taskPct: isMonthOnly ? (totalTasks === 0 ? 100 : Math.round(doneTasks / totalTasks * 100)) : null,
-    debtPct: totalFee   === 0 ? 0   : Math.round(totalCol  / totalFee  * 100),
+    debtPct: totalFee   === 0 ? (ownedClients.length > 0 ? 100 : 0) : Math.round(totalCol  / totalFee  * 100),
     totalTasks, doneTasks, totalFee, totalCol,
   })
 }

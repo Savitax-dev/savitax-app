@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { ensureRollovers } from '@/lib/debtRollover'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { startedByMonth } from '@/lib/contractDates'
+import { feeCountsForMonth } from '@/lib/feeDue'
 
 function getAdmin() {
   return createClient(
@@ -162,9 +163,12 @@ export async function GET(request) {
       const doneCountable = countable.filter(t => t.status === 'done_ontime' || t.status === 'done_late1')
       totalTasks += built.tasks.length
       doneTasks  += doneCountable.length + built.tasks.filter(t => t.status === 'done_late3').length
-      // Doanh thu chỉ tính công ty mình là nhân viên chính
-      totalFee     += Number(c.monthly_fee) || 0
-      collectedFee += feeMap[c.id] || 0
+      // Doanh thu chỉ tính công ty mình là nhân viên chính — công ty quý chưa tới hạn thu (hoặc
+      // còn trong hạn khoan) không tính vào công nợ tháng này.
+      if (feeCountsForMonth(c.fee_period, year, month)) {
+        totalFee     += Number(c.monthly_fee) || 0
+        collectedFee += feeMap[c.id] || 0
+      }
       return built
     })
 
@@ -189,7 +193,7 @@ export async function GET(request) {
       }
     }
     const taskPct = kpiTotal === 0 ? 100 : Math.round(kpiDone / kpiTotal * 100)
-    const debtPct = totalFee  === 0 ? 0   : Math.round(collectedFee / totalFee * 100)
+    const debtPct = totalFee  === 0 ? (myOwnedClients.length > 0 ? 100 : 0) : Math.round(collectedFee / totalFee * 100)
 
     return { ...s, clientCount: myOwnedClients.length, clients: clientsWithTasks, taskPct, debtPct, totalTasks, doneTasks, totalFee, collectedFee }
   })
@@ -201,7 +205,7 @@ export async function GET(request) {
 
   const totals = {
     taskPct:     sumKpiTotal === 0 ? 100 : Math.round(sumKpiDone / sumKpiTotal * 100),
-    debtPct:     sumFee      === 0 ? 0   : Math.round(sumCollect / sumFee * 100),
+    debtPct:     sumFee      === 0 ? (activeOwnedClients.length > 0 ? 100 : 0) : Math.round(sumCollect / sumFee * 100),
     totalTasks:  sumKpiTotal,
     doneTasks:   sumKpiDone,
     totalFee:    sumFee,
