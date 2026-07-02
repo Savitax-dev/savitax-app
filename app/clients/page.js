@@ -156,16 +156,19 @@ export default function ClientsPage() {
     return result
   }
 
-  // Danh sách tháng cho "Áp dụng từ tháng" khi thêm công ty mới — từ 1/2026 (app bắt đầu theo
-  // dõi dữ liệu) đến hiện tại + 3 tháng, để nhập được đúng tháng ký hợp đồng của công ty cũ.
+  // Danh sách tháng cho "Áp dụng từ tháng" khi thêm công ty mới — kết thúc ở hiện tại + 3 tháng,
+  // bắt đầu từ 1/2026 (app bắt đầu theo dõi dữ liệu). Tối đa 12 tháng: nếu khoảng 1/2026 → hiện
+  // tại+3 vượt quá 12 tháng thì bỏ bớt các tháng cũ nhất (năm/tháng nhỏ nhất) để giữ đúng 12 tháng.
   const getApplyFromMonths = () => {
-    const result = []
-    let y = 2026, m = 1
+    const maxCount = 12
     const endIdx = year * 12 + (month - 1) + 3
-    while (y * 12 + (m - 1) <= endIdx) {
+    const floorIdx = 2026 * 12
+    const startIdx = Math.max(floorIdx, endIdx - (maxCount - 1))
+    const result = []
+    for (let idx = startIdx; idx <= endIdx; idx++) {
+      const y = Math.floor(idx / 12)
+      const m = (idx % 12) + 1
       result.push({ y, m, label: 'T' + m + '/' + y, value: y + '-' + String(m).padStart(2, '0') })
-      m++
-      if (m > 12) { m = 1; y++ }
     }
     return result
   }
