@@ -92,10 +92,18 @@ export default function DebtPage() {
     : period === 'quarter' ? 'Quý ' + selQuarter + '/' + selYear
     : 'Năm ' + selYear
 
+  // Công ty quý chưa tới hạn thu (hoặc còn trong hạn khoan) có periodFee=0 để loại khỏi %
+  // công nợ — nhưng vẫn cần phân biệt với "công ty không có phí gì" khi hiển thị badge.
   const debtStatus = (c) => {
     const fee = Number(c.periodFee) || 0
     const col = c.collected || 0
-    if (fee === 0) return null
+    if (fee === 0) {
+      if (col > 0) return { label: '✅ Đã thu (chưa đến hạn)', cls: 'text-green-600 bg-green-50' }
+      if (c.report_type === 'quarterly' && Number(c.monthly_fee) > 0) {
+        return { label: '⏳ Chưa đến hạn quý', cls: 'text-gray-500 bg-gray-100' }
+      }
+      return null
+    }
     if (col >= fee) return { label: '✅ Đã thu đủ',    cls: 'text-green-600 bg-green-50' }
     if (col > 0)    return { label: '⚠️ Thu một phần', cls: 'text-yellow-700 bg-yellow-50' }
     if (isPeriodPast) return { label: '🔴 Quá hạn',    cls: 'text-red-700 bg-red-50' }
@@ -263,6 +271,8 @@ export default function DebtPage() {
                             {s.clients.map((c, ci) => {
                               const st = debtStatus(c)
                               const fee = Number(c.periodFee) || 0
+                              // Chưa đến hạn quý -> vẫn hiện đúng số tiền thật (không phải 0đ)
+                              const displayFee = fee === 0 && c.report_type === 'quarterly' ? (Number(c.monthly_fee) || 0) : fee
                               const col = c.collected
                               const colPct = fee === 0 ? 100 : Math.min(100, Math.round(col / fee * 100))
                               return (
@@ -282,7 +292,7 @@ export default function DebtPage() {
                                     </div>
                                     <div className="text-right flex-shrink-0">
                                       {st && <span className={'text-xs font-medium px-1.5 py-0.5 rounded-full ' + st.cls}>{st.label}</span>}
-                                      <p className="text-xs text-gray-500 mt-0.5">{col > 0 ? fmt(col) + '/' : ''}{fmt(fee)}đ</p>
+                                      <p className="text-xs text-gray-500 mt-0.5">{col > 0 ? fmt(col) + '/' : ''}{fmt(displayFee)}đ</p>
                                       {Number(c.other_debt) > 0 && (
                                         <p className="text-xs text-orange-500 mt-0.5">📦 Nợ tồn cũ: {fmt(c.other_debt)}đ</p>
                                       )}
@@ -305,6 +315,7 @@ export default function DebtPage() {
                             <div className="divide-y divide-gray-50 bg-amber-50/30">
                               {s.secondaryClients.map(c => {
                                 const fee = Number(c.periodFee) || 0
+                                const displayFee = fee === 0 && c.report_type === 'quarterly' ? (Number(c.monthly_fee) || 0) : fee
                                 const col = c.collected
                                 return (
                                   <div key={'sec-' + c.id} className="px-4 py-2.5 flex items-center justify-between gap-2">
@@ -321,7 +332,7 @@ export default function DebtPage() {
                                       </div>
                                       <p className="text-xs text-gray-400">{c.tax_code}</p>
                                     </div>
-                                    <p className="text-xs text-gray-400 flex-shrink-0">{col > 0 ? fmt(col) + '/' : ''}{fmt(fee)}đ</p>
+                                    <p className="text-xs text-gray-400 flex-shrink-0">{col > 0 ? fmt(col) + '/' : ''}{fmt(displayFee)}đ</p>
                                   </div>
                                 )
                               })}

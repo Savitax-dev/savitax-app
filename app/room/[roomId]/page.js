@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import ClientChecklist from '@/components/ClientChecklist'
 import * as XLSX from 'xlsx'
+import { feeCountsForMonth } from '@/lib/feeDue'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
 const pctClr = (v) => v >= 90 ? 'text-green-600' : v >= 70 ? 'text-yellow-500' : 'text-red-500'
@@ -414,17 +415,25 @@ export default function RoomPage({ params }) {
             {tab === 'debt' && (() => {
               const isMonthPast = now > new Date(selYear, selMonth - 1, new Date(selYear, selMonth, 0).getDate(), 23, 59)
               // c.collected = ketoan, c.collectedKhach = khach (từ room API — service role key)
+              // dueThisMonth: công ty quý chưa tới hạn thu (hoặc còn trong hạn khoan) không tính
+              // vào tổng công nợ tháng này — xem lib/feeDue.js.
               const allClients = staffData.flatMap(s => s.clients.map(c => ({
                 ...c,
                 ketoan: Number(c.collected) || 0,
                 khach:  Number(c.collectedKhach) || 0,
+                dueThisMonth: feeCountsForMonth(c.fee_period, selYear, selMonth),
               })))
-              const totalFee    = allClients.reduce((a, c) => a + (Number(c.monthly_fee) || 0), 0)
-              const totalKetoan = allClients.reduce((a, c) => a + c.ketoan, 0)
+              const totalFee    = allClients.reduce((a, c) => a + (c.dueThisMonth ? Number(c.monthly_fee) || 0 : 0), 0)
+              const totalKetoan = allClients.reduce((a, c) => a + (c.dueThisMonth ? c.ketoan : 0), 0)
               const debtPct     = totalFee === 0 ? 0 : Math.round(totalKetoan / totalFee * 100)
-              const overdue     = allClients.filter(c => isMonthPast && c.ketoan < Number(c.monthly_fee) && Number(c.monthly_fee) > 0)
+              const overdue     = allClients.filter(c => c.dueThisMonth && isMonthPast && c.ketoan < Number(c.monthly_fee) && Number(c.monthly_fee) > 0)
 
-              const debtStatus = (ketoan, fee) => {
+              const debtStatus = (ketoan, fee, notDueYet) => {
+                if (notDueYet) {
+                  return ketoan > 0
+                    ? { label: '✅ Đã thu (chưa đến hạn)', color: 'text-green-700', bg: 'bg-green-50', dot: 'bg-green-500' }
+                    : { label: '⏳ Chưa đến hạn quý',      color: 'text-gray-500',  bg: 'bg-gray-50',  dot: 'bg-gray-300' }
+                }
                 if (fee === 0) return { label: '—', color: 'text-gray-400', bg: '', dot: 'bg-gray-200' }
                 if (ketoan >= fee) return { label: '✅ Đã thu đủ',    color: 'text-green-700', bg: 'bg-green-50',  dot: 'bg-green-500' }
                 if (ketoan > 0)   return { label: '⚠️ Thu một phần', color: 'text-yellow-700', bg: 'bg-yellow-50', dot: 'bg-yellow-400' }
@@ -485,10 +494,13 @@ export default function RoomPage({ params }) {
 
                   {/* Per staff */}
                   {staffData.map(s => {
-                    const myClients = s.clients.map(c => ({ ...c, ketoan: Number(c.collected) || 0, khach: Number(c.collectedKhach) || 0 }))
+                    const myClients = s.clients.map(c => ({
+                      ...c, ketoan: Number(c.collected) || 0, khach: Number(c.collectedKhach) || 0,
+                      dueThisMonth: feeCountsForMonth(c.fee_period, selYear, selMonth),
+                    }))
                     if (myClients.length === 0) return null
-                    const sFee    = myClients.reduce((a, c) => a + (Number(c.monthly_fee) || 0), 0)
-                    const sKetoan = myClients.reduce((a, c) => a + c.ketoan, 0)
+                    const sFee    = myClients.reduce((a, c) => a + (c.dueThisMonth ? Number(c.monthly_fee) || 0 : 0), 0)
+                    const sKetoan = myClients.reduce((a, c) => a + (c.dueThisMonth ? c.ketoan : 0), 0)
                     const sPct    = sFee === 0 ? 0 : Math.round(sKetoan / sFee * 100)
                     return (
                       <div key={s.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
@@ -512,7 +524,8 @@ export default function RoomPage({ params }) {
                         <div className="divide-y divide-gray-50">
                           {myClients.map(c => {
                             const fee = Number(c.monthly_fee) || 0
-                            const st  = debtStatus(c.ketoan, fee)
+                            const notDueYet = c.report_type === 'quarterly' && !c.dueThisMonth && fee > 0
+                            const st  = debtStatus(c.ketoan, fee, notDueYet)
                             const colPct = fee === 0 ? 0 : Math.min(100, Math.round(c.ketoan / fee * 100))
                             return (
                               <div key={c.id} className={'px-4 py-2.5 ' + st.bg}>

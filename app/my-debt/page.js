@@ -95,7 +95,14 @@ export default function MyDebtPage() {
           const ketoan  = Number(c.collected) || 0
           const khach   = Number(c.collectedKhach) || 0
           const remain  = Math.max(0, fee - ketoan)
-          return { ...c, periodFee: fee, collected: ketoan, collectedKhach: khach, remain, isPaid: fee === 0 || remain === 0 }
+          // Công ty quý chưa tới hạn thu (periodFee=0 để loại khỏi % công nợ) vẫn cần hiện đúng
+          // số tiền thật + trạng thái riêng, không phải "0đ"/"Đã thu đủ" gây hiểu nhầm.
+          const notDueYet = fee === 0 && c.report_type === 'quarterly' && Number(c.monthly_fee) > 0
+          return {
+            ...c, periodFee: fee, displayFee: notDueYet ? (Number(c.monthly_fee) || 0) : fee,
+            collected: ketoan, collectedKhach: khach, remain, notDueYet,
+            isPaid: fee === 0 || remain === 0,
+          }
         })
         setMyClients(clients)
       } else {
@@ -267,8 +274,11 @@ export default function MyDebtPage() {
                               {client.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
                             </span>
                             <span className={'text-xs px-2 py-0.5 rounded-full flex-shrink-0 font-medium ' +
-                              (client.isPaid ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600')}>
-                              {client.isPaid ? '✓ Đã thu đủ' : '⚠ Còn ' + fmt(client.remain) + 'đ'}
+                              (client.notDueYet ? (client.collected > 0 ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500')
+                                : client.isPaid ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600')}>
+                              {client.notDueYet
+                                ? (client.collected > 0 ? '✓ Đã thu (chưa đến hạn)' : '⏳ Chưa đến hạn quý')
+                                : client.isPaid ? '✓ Đã thu đủ' : '⚠ Còn ' + fmt(client.remain) + 'đ'}
                             </span>
                             {client.isSecondary && (
                               <span className="text-xs bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Phụ trách phụ</span>
@@ -277,7 +287,7 @@ export default function MyDebtPage() {
                           <div className="flex items-center gap-3 mt-1 flex-wrap">
                             <span className="text-xs text-gray-400">{client.tax_code}</span>
                             <span className="text-xs font-medium" style={{ color: '#8B1A1A' }}>
-                              Phí {periodLabel}: {fmt(client.periodFee)}đ
+                              Phí {periodLabel}: {fmt(client.displayFee)}đ
                             </span>
                             <span className="text-xs text-green-600">Đã thu: {fmt(client.collected)}đ</span>
                             {client.collectedKhach > 0 && (
@@ -289,10 +299,16 @@ export default function MyDebtPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0 ml-3">
-                          <div className="w-20">
-                            <Bar value={pct} />
-                          </div>
-                          <span className={'text-sm font-bold w-12 text-right ' + pctClr(pct)}>{pct}%</span>
+                          {client.notDueYet ? (
+                            <span className="text-xs text-gray-400 w-20 text-right">Chưa đến hạn</span>
+                          ) : (
+                            <>
+                              <div className="w-20">
+                                <Bar value={pct} />
+                              </div>
+                              <span className={'text-sm font-bold w-12 text-right ' + pctClr(pct)}>{pct}%</span>
+                            </>
+                          )}
                           <span className={'text-gray-300 text-sm transition-transform ' + (isOpen ? 'rotate-180' : '')}>▾</span>
                         </div>
                       </button>
