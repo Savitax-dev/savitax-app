@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import { isPastEditDeadline } from '@/lib/feeDue'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : ''
@@ -226,6 +227,10 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
 
   const saveDebt = async () => {
     if (!debtAmount) return
+    if (debtType === 'ketoan' && !isAdmin && isPastEditDeadline(selYear, clientMonth)) {
+      alert('Đã quá hạn cập nhật công nợ của Tháng ' + clientMonth + ', vui lòng cập nhật công nợ Tồn')
+      return
+    }
     const paid = Number(String(debtAmount).replace(/\D/g, ''))
     const prevAmt = recordedAmount(debtType)
     // Sửa GIẢM số tiền đã ghi nhận (vd nhập nhầm công ty) — cảnh báo rõ trước khi lưu
