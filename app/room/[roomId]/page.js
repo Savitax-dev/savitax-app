@@ -443,17 +443,19 @@ export default function RoomPage({ params }) {
               const debtPct     = totalFee === 0 ? 0 : Math.round(totalKetoan / totalFee * 100)
               const overdue     = ownedClients.filter(c => c.dueThisMonth && isMonthPast && c.ketoan < Number(c.monthly_fee) && Number(c.monthly_fee) > 0)
 
+              // pill: badge đặc màu (nền đậm + chữ trắng) — thay cho chữ màu nhạt cũ, dễ quan
+              // sát "đã thu"/"chưa thu" hơn khi lướt nhanh danh sách.
               const debtStatus = (ketoan, fee, notDueYet) => {
                 if (notDueYet) {
                   return ketoan > 0
-                    ? { label: '✅ Đã thu (chưa đến hạn)', color: 'text-green-700', bg: 'bg-green-50', dot: 'bg-green-500' }
-                    : { label: '⏳ Chưa đến hạn quý',      color: 'text-gray-500',  bg: 'bg-gray-50',  dot: 'bg-gray-300' }
+                    ? { label: 'Đã thu (chưa đến hạn)', color: 'text-green-700', bg: 'bg-green-50', dot: 'bg-green-500', pill: 'bg-green-600' }
+                    : { label: 'Chưa đến hạn quý',      color: 'text-gray-500',  bg: 'bg-gray-50',  dot: 'bg-gray-300',  pill: 'bg-gray-400' }
                 }
-                if (fee === 0) return { label: '—', color: 'text-gray-400', bg: '', dot: 'bg-gray-200' }
-                if (ketoan >= fee) return { label: '✅ Đã thu đủ',    color: 'text-green-700', bg: 'bg-green-50',  dot: 'bg-green-500' }
-                if (ketoan > 0)   return { label: '⚠️ Thu một phần', color: 'text-yellow-700', bg: 'bg-yellow-50', dot: 'bg-yellow-400' }
-                if (isMonthPast)  return { label: '🔴 Quá hạn',      color: 'text-red-700',   bg: 'bg-red-50',    dot: 'bg-red-500' }
-                return               { label: '❌ Chưa thu',         color: 'text-red-600',  bg: 'bg-red-50',    dot: 'bg-red-400' }
+                if (fee === 0) return { label: '—', color: 'text-gray-400', bg: '', dot: 'bg-gray-200', pill: 'bg-gray-300' }
+                if (ketoan >= fee) return { label: 'Đã thu đủ',    color: 'text-green-700', bg: 'bg-green-50',  dot: 'bg-green-500', pill: 'bg-green-600' }
+                if (ketoan > 0)   return { label: 'Thu một phần', color: 'text-yellow-700', bg: 'bg-yellow-50', dot: 'bg-yellow-400', pill: 'bg-yellow-500' }
+                if (isMonthPast)  return { label: 'Quá hạn',      color: 'text-red-700',   bg: 'bg-red-50',    dot: 'bg-red-500', pill: 'bg-red-500' }
+                return               { label: 'Chưa thu',         color: 'text-red-600',  bg: 'bg-red-50',    dot: 'bg-red-400', pill: 'bg-red-500' }
               }
 
               return (
@@ -519,22 +521,26 @@ export default function RoomPage({ params }) {
                     const sFee    = sOwnedClients.reduce((a, c) => a + (c.dueThisMonth ? Number(c.monthly_fee) || 0 : 0), 0)
                     const sKetoan = sOwnedClients.reduce((a, c) => a + (c.dueThisMonth ? c.ketoan : 0), 0)
                     const sPct    = sFee === 0 ? 0 : Math.round(sKetoan / sFee * 100)
+                    const borderClr = sPct >= 90 ? '#22C55E' : sPct >= 70 ? '#EAB308' : '#EF4444'
                     return (
                       <div key={s.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-                        {/* Staff header */}
-                        <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                              <span className="text-xs font-bold text-blue-600">
+                        {/* Staff header — viền màu theo %, số tiền hiển thị to/rõ hơn */}
+                        <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between"
+                          style={{ borderLeft: '5px solid ' + borderClr }}>
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                              <span className="text-sm font-bold text-blue-600">
                                 {s.full_name ? s.full_name.trim().split(' ').pop().charAt(0).toUpperCase() : '?'}
                               </span>
                             </div>
-                            <span className="text-sm font-semibold text-gray-800">{s.full_name}</span>
-                            <span className="text-xs text-gray-400">{myClients.length} cty</span>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-800">{s.full_name}</p>
+                              <p className="text-xs text-gray-400">{myClients.length} cty</p>
+                            </div>
                           </div>
                           <div className="text-right">
-                            <p className={'text-xs font-bold ' + pctClr(sPct)}>{sPct}% kế toán</p>
-                            <p className="text-xs text-gray-400">{fmt(sKetoan)}/{fmt(sFee)}đ</p>
+                            <p className={'text-2xl font-bold leading-none ' + pctClr(sPct)}>{sPct}%</p>
+                            <p className="text-sm font-semibold text-gray-600 mt-1">{fmt(sKetoan)} / {fmt(sFee)}đ</p>
                           </div>
                         </div>
                         {/* Company rows */}
@@ -545,11 +551,10 @@ export default function RoomPage({ params }) {
                             const st  = debtStatus(c.ketoan, fee, notDueYet)
                             const colPct = fee === 0 ? 0 : Math.min(100, Math.round(c.ketoan / fee * 100))
                             return (
-                              <div key={c.id} className={'px-4 py-2.5 ' + st.bg}>
-                                <div className="flex items-start justify-between gap-2">
+                              <div key={c.id} className={'px-4 py-3 ' + st.bg}>
+                                <div className="flex items-center justify-between gap-3">
                                   <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      <span className={'w-2 h-2 rounded-full flex-shrink-0 mt-0.5 ' + st.dot} />
+                                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
                                       <p className="text-sm font-medium text-gray-800 break-words">{c.name}</p>
                                       <span className={'text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 border ' +
                                         (c.report_type === 'quarterly'
@@ -561,33 +566,28 @@ export default function RoomPage({ params }) {
                                         <span className="text-xs bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Phụ trách phụ</span>
                                       )}
                                     </div>
-                                    <div className="ml-3.5 mt-0.5 space-y-0.5">
-                                      {/* Kế toán row */}
-                                      <div className="flex items-center gap-2 text-xs">
-                                        <span className="text-gray-400 w-20 flex-shrink-0">📋 Kế toán:</span>
-                                        <span className={'font-medium ' + st.color}>
-                                          {c.ketoan > 0 ? fmt(c.ketoan) + '/' : ''}{fmt(fee)}đ
-                                        </span>
-                                        <span className={'text-xs ' + st.color}>{st.label}</span>
+                                    {/* Progress nếu một phần */}
+                                    {c.ketoan > 0 && c.ketoan < fee && (
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <div className="h-1 bg-gray-200 rounded-full overflow-hidden w-24">
+                                          <div className="h-full bg-yellow-400 rounded-full" style={{ width: colPct + '%' }} />
+                                        </div>
+                                        <span className="text-xs text-orange-500">còn thiếu {fmt(fee - c.ketoan)}đ</span>
                                       </div>
-                                      {/* Progress nếu một phần */}
-                                      {c.ketoan > 0 && c.ketoan < fee && (
-                                        <div className="flex items-center gap-2">
-                                          <div className="h-1 bg-gray-200 rounded-full overflow-hidden w-24">
-                                            <div className="h-full bg-yellow-400 rounded-full" style={{ width: colPct + '%' }} />
-                                          </div>
-                                          <span className="text-xs text-orange-500">còn thiếu {fmt(fee - c.ketoan)}đ</span>
-                                        </div>
-                                      )}
-                                      {/* Dịch vụ khách row — chỉ hiện nếu có */}
-                                      {c.khach > 0 && (
-                                        <div className="flex items-center gap-2 text-xs">
-                                          <span className="text-gray-400 w-20 flex-shrink-0">🗂 DV khác:</span>
-                                          <span className="font-medium text-blue-600">{fmt(c.khach)}đ</span>
-                                          <span className="text-xs text-blue-500">Đã thu</span>
-                                        </div>
-                                      )}
-                                    </div>
+                                    )}
+                                    {/* Dịch vụ khách — chỉ hiện nếu có */}
+                                    {c.khach > 0 && (
+                                      <p className="text-xs text-blue-500 mt-1">🗂 DV khác đã thu: <span className="font-medium">{fmt(c.khach)}đ</span></p>
+                                    )}
+                                  </div>
+                                  {/* Số tiền + trạng thái — làm to, rõ để dễ quan sát nhanh */}
+                                  <div className="text-right flex-shrink-0">
+                                    <p className="text-base font-bold text-gray-800 whitespace-nowrap">
+                                      {c.ketoan > 0 ? fmt(c.ketoan) + ' / ' : ''}{fmt(fee)}đ
+                                    </p>
+                                    <span className={'inline-block mt-1 text-xs font-medium text-white px-2.5 py-1 rounded-full ' + st.pill}>
+                                      {st.label}
+                                    </span>
                                   </div>
                                 </div>
                               </div>
