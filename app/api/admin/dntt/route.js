@@ -63,8 +63,17 @@ export async function GET(request) {
     '&addInfo=' + encodeURIComponent(qrContent) +
     '&accountName=' + encodeURIComponent('CONG TY CP TU VAN THUE SAVITAX')
 
-  const dayStr    = new Date().toLocaleDateString('vi-VN')
-  const monthLabel = 'Tháng ' + month + '/' + year
+  const now       = new Date()
+  const dayStr    = now.toLocaleDateString('vi-VN')
+  const monthLabel = client.fee_period === 'quarterly'
+    ? 'Quý ' + Math.ceil(month / 3) + '/' + year
+    : 'Tháng ' + month + '/' + year
+  // Hạn thanh toán: ngày làm phiếu + 5 ngày, trừ khi vượt sang tháng sau thì chốt về ngày cuối
+  // tháng hiện tại (không cho hạn thanh toán tràn sang tháng kế tiếp).
+  const plus5Date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 5)
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  const deadlineDate = plus5Date.getMonth() === now.getMonth() ? plus5Date : lastDayOfMonth
+  const deadlineStr = deadlineDate.toLocaleDateString('vi-VN')
   const repLine   = client.representative
     ? client.representative + ' - Giám đốc'
     : 'Giám đốc'
@@ -97,7 +106,6 @@ export async function GET(request) {
   .rowA{background:#fff8e1}
   .rowB{background:#f1f8e9}
   .rowC{background:#fce4ec;font-weight:bold}
-  .note{font-style:italic;font-size:8.5pt;color:#555;margin:3px 0}
   .deadline{font-size:10pt;margin:6px 0}
   .foot{display:flex;justify-content:space-between;margin-top:12px;align-items:center}
   .qrbox{text-align:center;flex-shrink:0;margin-left:68px}
@@ -223,9 +231,8 @@ export async function GET(request) {
     </button>
     <span id="addLabel" style="font-size:8pt;color:#1565c0;margin-left:6px"></span>
   </div>
-  <p class="note">(Phí chưa bao gồm VAT 8%. Trường hợp có thay đổi sẽ phụ thu thêm phí nếu có)</p>
   <p class="deadline">
-    Đề nghị quý khách thanh toán <b style="color:#c62828" id="dlAmt">${fmt(totalC)} đồng</b> trước ngày <b>20/${month}/${year}</b>
+    Đề nghị quý khách thanh toán <b style="color:#c62828" id="dlAmt">${fmt(totalC)} đồng</b> trước ngày <b>${deadlineStr}</b>
   </p>
 
   <div class="foot">
