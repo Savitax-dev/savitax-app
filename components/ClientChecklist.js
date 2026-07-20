@@ -185,7 +185,9 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     if (p === 'dntt') {
       setExtraRows([])
       setB1Label('Phí dịch vụ kế toán T' + clientMonth + '/' + selYear + ' (chưa VAT)')
-      setB1Amount(String(client.monthly_fee || ''))
+      // client.monthly_fee đã bao gồm VAT (nhập ở "Thêm công ty") — tách VAT ngay khi mở panel để
+      // B1 hiển thị/tính toán đúng số "chưa VAT" xuyên suốt (khớp label + khớp file ĐNTT in ra)
+      setB1Amount(client.monthly_fee ? String(Math.round(Number(client.monthly_fee) / 1.08)) : '')
     }
     if (p === 'info') { setEditCred(null); setShowHistory(false); loadCreds() }
     if (p === 'files') { setFileError(''); loadFiles() }
@@ -364,12 +366,12 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   const days = Array.from(new Set(tasks.map(t => t.deadline_day))).sort((a,b)=>a-b)
 
   const extraTotal = extraRows.reduce((s, r) => s + (Number(r.amount)||0), 0)
+  // b1Amount đã được tách VAT sẵn khi mở panel (xem openPanel) — đây là số "chưa VAT" thật
   const b1AmountNum = Number(b1Amount) || 0
   const subTotal   = b1AmountNum + extraTotal
   const prevBal    = Number(client.other_debt) || 0
-  // Nợ tồn (A) nhập vào là số TRƯỚC VAT — hiển thị trên ĐNTT đã gồm VAT riêng của A (A×1.08)
-  // để tách biệt rõ với phí kế toán kỳ này (B), khách hàng dễ hiểu từng phần.
-  const prevBalVat = Math.round(prevBal * 1.08)
+  // "Tồn" (A) đã là số gồm VAT sẵn — lấy thẳng, không nhân 1.08 nữa
+  const prevBalVat = prevBal
   const vatAmt     = Math.round(subTotal * 0.08)
   const totalB     = subTotal + vatAmt
   const totalC     = prevBalVat + totalB

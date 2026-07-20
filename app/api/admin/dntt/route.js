@@ -32,15 +32,18 @@ export async function GET(request) {
   const { data: staff } = await supabase
     .from('staff').select('full_name').eq('id', client.assigned_to).single()
 
-  // Phí chưa bao gồm VAT — B1 mặc định = phí dịch vụ kế toán tháng đó, nhưng có thể sửa tay từ panel ĐNTT
-  const baseFee   = b1AmountParam !== null && b1AmountParam !== '' ? Number(b1AmountParam) || 0 : Number(client.monthly_fee) || 0
+  // b1AmountParam (panel ĐNTT gửi lên) đã được tách VAT sẵn — dùng thẳng. Chỉ khi KHÔNG có param
+  // (fallback lấy trực tiếp client.monthly_fee — số đã bao gồm VAT nhập ở "Thêm công ty") mới cần
+  // tách VAT ra lấy B1 (chưa VAT).
+  const baseFee = b1AmountParam !== null && b1AmountParam !== ''
+    ? Number(b1AmountParam) || 0
+    : Math.round((Number(client.monthly_fee) || 0) / 1.08)
   const b1Label    = b1LabelParam || ('Phí dịch vụ kế toán ' + 'Tháng ' + month + '/' + year + ' (chưa VAT)')
   const extraTotal = extraRows.reduce((s, r) => s + (Number(r.amount) || 0), 0)
-  const subTotal   = baseFee + extraTotal        // tổng trước VAT (B1 + B2...B7)
+  const subTotal   = baseFee + extraTotal        // tổng trước VAT (B1 đã tách VAT + B2...B7 vốn đã chưa VAT)
   const prevBal    = Number(client.other_debt) || 0
-  // Nợ tồn (A) nhập vào là số TRƯỚC VAT — hiển thị đã gồm VAT riêng của A (A×1.08), tách biệt
-  // với phí kế toán kỳ này (B) để khách hàng dễ hiểu từng phần.
-  const prevBalVat = Math.round(prevBal * 1.08)
+  // "Tồn" (A) đã là số gồm VAT sẵn (cộng dồn từ phí dịch vụ chưa thu, vốn đã gồm VAT) — lấy thẳng, không nhân 1.08 nữa
+  const prevBalVat = prevBal
   const vatAmt     = Math.round(subTotal * 0.08)
   const totalB     = subTotal + vatAmt
   const totalC     = prevBalVat + totalB

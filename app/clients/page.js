@@ -622,7 +622,10 @@ export default function ClientsPage() {
               {/* Hàng 2: Phí dịch vụ + Áp dụng từ tháng */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Phí dịch vụ (đ)</label>
+                  <label className="text-xs text-gray-500 mb-1 block">
+                    Phí dịch vụ (đ)
+                    <span className="ml-1.5 text-blue-600 font-bold">— Giá đã bao gồm VAT</span>
+                  </label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -654,7 +657,8 @@ export default function ClientsPage() {
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">
                   Thu khác (đ)
-                  <span className="ml-1.5 text-gray-400 font-normal">— Tồn đọng từ phần mềm/Excel cũ</span>
+                  <span className="ml-1.5 text-gray-400 font-normal">— Tồn đọng từ phần mềm/Excel cũ,</span>
+                  <span className="ml-1 text-blue-600 font-bold">giá đã bao gồm VAT</span>
                 </label>
                 <input
                   type="text"
