@@ -99,7 +99,7 @@ export default function DebtPage() {
     const col = c.collected || 0
     if (fee === 0) {
       if (col > 0) return { label: '✅ Đã thu (chưa đến hạn)', cls: 'text-green-600 bg-green-50' }
-      if (c.report_type === 'quarterly' && Number(c.monthly_fee) > 0) {
+      if (c.fee_period === 'quarterly' && Number(c.monthly_fee) > 0) {
         return { label: '⏳ Chưa đến hạn quý', cls: 'text-gray-500 bg-gray-100' }
       }
       return null
@@ -272,7 +272,7 @@ export default function DebtPage() {
                               const st = debtStatus(c)
                               const fee = Number(c.periodFee) || 0
                               // Chưa đến hạn quý -> vẫn hiện đúng số tiền thật (không phải 0đ)
-                              const displayFee = fee === 0 && c.report_type === 'quarterly' ? (Number(c.monthly_fee) || 0) : fee
+                              const displayFee = fee === 0 && c.fee_period === 'quarterly' ? (Number(c.monthly_fee) || 0) : fee
                               const col = c.collected
                               const colPct = fee === 0 ? 100 : Math.min(100, Math.round(col / fee * 100))
                               return (
@@ -315,7 +315,7 @@ export default function DebtPage() {
                             <div className="divide-y divide-gray-50 bg-amber-50/30">
                               {s.secondaryClients.map(c => {
                                 const fee = Number(c.periodFee) || 0
-                                const displayFee = fee === 0 && c.report_type === 'quarterly' ? (Number(c.monthly_fee) || 0) : fee
+                                const displayFee = fee === 0 && c.fee_period === 'quarterly' ? (Number(c.monthly_fee) || 0) : fee
                                 const col = c.collected
                                 return (
                                   <div key={'sec-' + c.id} className="px-4 py-2.5 flex items-center justify-between gap-2">

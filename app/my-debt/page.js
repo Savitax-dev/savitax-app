@@ -97,7 +97,7 @@ export default function MyDebtPage() {
           const remain  = Math.max(0, fee - ketoan)
           // Công ty quý chưa tới hạn thu (periodFee=0 để loại khỏi % công nợ) vẫn cần hiện đúng
           // số tiền thật + trạng thái riêng, không phải "0đ"/"Đã thu đủ" gây hiểu nhầm.
-          const notDueYet = fee === 0 && c.report_type === 'quarterly' && Number(c.monthly_fee) > 0
+          const notDueYet = fee === 0 && c.fee_period === 'quarterly' && Number(c.monthly_fee) > 0
           return {
             ...c, periodFee: fee, displayFee: notDueYet ? (Number(c.monthly_fee) || 0) : fee,
             collected: ketoan, collectedKhach: khach, remain, notDueYet,

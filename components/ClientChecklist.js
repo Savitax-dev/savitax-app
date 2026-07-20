@@ -184,7 +184,10 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     }
     if (p === 'dntt') {
       setExtraRows([])
-      setB1Label('Phí dịch vụ kế toán T' + clientMonth + '/' + selYear + ' (chưa VAT)')
+      const periodLabel = client.fee_period === 'quarterly'
+        ? 'Q' + Math.ceil(clientMonth / 3) + '/' + selYear
+        : 'T' + clientMonth + '/' + selYear
+      setB1Label('Phí dịch vụ kế toán ' + periodLabel + ' (chưa VAT)')
       // client.monthly_fee đã bao gồm VAT (nhập ở "Thêm công ty") — tách VAT ngay khi mở panel để
       // B1 hiển thị/tính toán đúng số "chưa VAT" xuyên suốt (khớp label + khớp file ĐNTT in ra)
       setB1Amount(client.monthly_fee ? String(Math.round(Number(client.monthly_fee) / 1.08)) : '')

@@ -24,7 +24,7 @@ export async function GET(request) {
 
   const { data: client } = await supabase
     .from('clients')
-    .select('id, name, tax_code, monthly_fee, assigned_to, address, tax_status, client_code, representative, other_debt')
+    .select('id, name, tax_code, monthly_fee, assigned_to, address, tax_status, client_code, representative, other_debt, fee_period')
     .eq('id', clientId).single()
 
   if (!client) return new Response('Client not found', { status: 404 })
@@ -38,7 +38,10 @@ export async function GET(request) {
   const baseFee = b1AmountParam !== null && b1AmountParam !== ''
     ? Number(b1AmountParam) || 0
     : Math.round((Number(client.monthly_fee) || 0) / 1.08)
-  const b1Label    = b1LabelParam || ('Phí dịch vụ kế toán ' + 'Tháng ' + month + '/' + year + ' (chưa VAT)')
+  const periodLabel = client.fee_period === 'quarterly'
+    ? 'Q' + Math.ceil(month / 3) + '/' + year
+    : 'Tháng ' + month + '/' + year
+  const b1Label    = b1LabelParam || ('Phí dịch vụ kế toán ' + periodLabel + ' (chưa VAT)')
   const extraTotal = extraRows.reduce((s, r) => s + (Number(r.amount) || 0), 0)
   const subTotal   = baseFee + extraTotal        // tổng trước VAT (B1 đã tách VAT + B2...B7 vốn đã chưa VAT)
   const prevBal    = Number(client.other_debt) || 0

@@ -547,7 +547,7 @@ export default function RoomPage({ params }) {
                         <div className="divide-y divide-gray-50">
                           {myClients.map(c => {
                             const fee = Number(c.monthly_fee) || 0
-                            const notDueYet = c.report_type === 'quarterly' && !c.dueThisMonth && fee > 0
+                            const notDueYet = c.fee_period === 'quarterly' && !c.dueThisMonth && fee > 0
                             const st  = debtStatus(c.ketoan, fee, notDueYet)
                             const colPct = fee === 0 ? 0 : Math.min(100, Math.round(c.ketoan / fee * 100))
                             return (

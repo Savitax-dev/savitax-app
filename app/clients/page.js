@@ -20,7 +20,7 @@ const STATUS_OPTS = [
 
 const fmt = (n) => Number(n || 0).toLocaleString('vi-VN')
 
-function FeeAdjust({ client, isEditing, feeAmount, feeFromMonth, feeNote, saving, futureMonths, onOpen, onSave, onCancel, onAmountChange, onMonthChange, onNoteChange }) {
+function FeeAdjust({ client, isEditing, feeAmount, feeFromMonth, feeNote, feePeriod, saving, futureMonths, onOpen, onSave, onCancel, onAmountChange, onMonthChange, onNoteChange, onPeriodChange }) {
   const selectedVal = feeFromMonth || (futureMonths[0] ? futureMonths[0].value : '')
   const selectedLabel = futureMonths.find(x => x.value === selectedVal)
   const feePeriodLabel = (client.fee_period || client.report_type) === 'quarterly' ? 'quý' : 'tháng'
@@ -52,6 +52,14 @@ function FeeAdjust({ client, isEditing, feeAmount, feeFromMonth, feeNote, saving
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-500">Phí hiện tại</span>
           <span className="text-sm font-bold text-gray-800">{fmt(client.monthly_fee)}đ</span>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Thời hạn thu phí</label>
+          <select value={feePeriod} onChange={e => onPeriodChange(e.target.value)}
+            className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            <option value="monthly">Theo tháng</option>
+            <option value="quarterly">Theo quý</option>
+          </select>
         </div>
         <div>
           <label className="text-xs text-gray-500 mb-1 block">Phí mới (đ)</label>
@@ -121,6 +129,7 @@ export default function ClientsPage() {
   const [feeAmount, setFeeAmount] = useState('')
   const [feeNote, setFeeNote] = useState('')
   const [feeFromMonth, setFeeFromMonth] = useState('')  // "YYYY-MM"
+  const [feePeriod, setFeePeriod] = useState('monthly')
   const [transferEdit, setTransferEdit] = useState(null)
   const [transferTo, setTransferTo] = useState('')
   const [statusEdit, setStatusEdit] = useState(null)
@@ -358,6 +367,7 @@ export default function ClientsPage() {
       body: JSON.stringify({
         id: clientId,
         monthly_fee: Number(feeAmount),
+        fee_period: feePeriod,
         fee_history: {
           year: effectY,
           month: effectM,
@@ -366,7 +376,7 @@ export default function ClientsPage() {
         },
       }),
     })
-    setFeeEdit(null); setFeeAmount(''); setFeeNote(''); setFeeFromMonth('')
+    setFeeEdit(null); setFeeAmount(''); setFeeNote(''); setFeeFromMonth(''); setFeePeriod('monthly')
     await loadClients()
     setFeeHistory(h => ({ ...h, [clientId]: null }))
     await loadFeeHistory(clientId)
@@ -623,7 +633,7 @@ export default function ClientsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">
-                    Phí dịch vụ (đ)
+                    Phí dịch vụ thu theo {form.fee_period === 'quarterly' ? 'quý' : 'tháng'} (đ)
                     <span className="ml-1.5 text-blue-600 font-bold">— Giá đã bao gồm VAT</span>
                   </label>
                   <input
@@ -1263,14 +1273,16 @@ export default function ClientsPage() {
                       feeAmount={feeAmount}
                       feeFromMonth={feeFromMonth}
                       feeNote={feeNote}
+                      feePeriod={feePeriod}
                       saving={saving}
                       futureMonths={getFutureMonths(12)}
-                      onOpen={() => { setFeeEdit(client.id); setFeeAmount(String(client.monthly_fee || '')); setFeeFromMonth('') }}
+                      onOpen={() => { setFeeEdit(client.id); setFeeAmount(String(client.monthly_fee || '')); setFeeFromMonth(''); setFeePeriod(client.fee_period || 'monthly') }}
                       onSave={() => saveFee(client.id)}
-                      onCancel={() => { setFeeEdit(null); setFeeAmount(''); setFeeNote(''); setFeeFromMonth('') }}
+                      onCancel={() => { setFeeEdit(null); setFeeAmount(''); setFeeNote(''); setFeeFromMonth(''); setFeePeriod('monthly') }}
                       onAmountChange={v => setFeeAmount(v)}
                       onMonthChange={v => setFeeFromMonth(v)}
                       onNoteChange={v => setFeeNote(v)}
+                      onPeriodChange={v => setFeePeriod(v)}
                     />
                     {history.length > 0 && (
                       <div className="mt-3 border-t border-gray-50 pt-3">

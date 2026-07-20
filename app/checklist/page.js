@@ -193,7 +193,7 @@ export default function ChecklistPage() {
                           </div>
                           <div className="flex items-center gap-3 mt-1 flex-wrap">
                             <span className="text-xs text-gray-400">{client.tax_code}</span>
-                            <span className="text-xs font-medium" style={{ color: '#8B1A1A' }}>{fmt(client.monthly_fee)}đ/tháng</span>
+                            <span className="text-xs font-medium" style={{ color: '#8B1A1A' }}>{fmt(client.monthly_fee)}đ/{client.fee_period === 'quarterly' ? 'quý' : 'tháng'}</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0 ml-3">
