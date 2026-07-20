@@ -99,8 +99,8 @@ export async function GET(request) {
   .rowC{background:#fce4ec;font-weight:bold}
   .note{font-style:italic;font-size:8.5pt;color:#555;margin:3px 0}
   .deadline{font-size:10pt;margin:6px 0}
-  .foot{display:flex;gap:16px;margin-top:12px;align-items:flex-start}
-  .qrbox{text-align:center;flex-shrink:0}
+  .foot{display:flex;justify-content:space-between;margin-top:12px;align-items:center}
+  .qrbox{text-align:center;flex-shrink:0;margin-left:68px}
   .qrbox img{width:110px;height:110px;display:block;margin:0 auto}
   .qrlbl{font-size:8pt;color:#333;margin-top:4px;line-height:1.5}
   .bankinfo{font-size:8.5pt;margin-top:4px;line-height:1.6;text-align:center}
@@ -228,7 +228,7 @@ export async function GET(request) {
     Đề nghị quý khách thanh toán <b style="color:#c62828" id="dlAmt">${fmt(totalC)} đồng</b> trước ngày <b>20/${month}/${year}</b>
   </p>
 
-  <div class="foot" style="align-items:center">
+  <div class="foot">
     <!-- QR only -->
     <div class="qrbox">
       <img src="${qrUrl}" alt="QR" style="width:120px;height:120px;display:block" onerror="this.style.display='none'"/>
@@ -239,13 +239,11 @@ export async function GET(request) {
       </div>
     </div>
 
-    <!-- Người đề nghị — centered in remaining space -->
-    <div style="flex:1;display:flex;align-items:center;justify-content:center">
-      <div style="text-align:center">
-        <div style="font-size:9pt;font-weight:bold;margin-bottom:4px">Người đề nghị</div>
-        <div style="height:44px;border-bottom:1px solid #ccc;width:140px;margin:0 auto"></div>
-        <div style="font-weight:bold;font-size:10pt;margin-top:6px">${staff ? staff.full_name : ''}</div>
-      </div>
+    <!-- Người đề nghị — cách đều mép phải đối xứng với QR -->
+    <div style="text-align:center;margin-right:68px">
+      <div style="font-size:9pt;font-weight:bold;margin-bottom:4px">Người đề nghị</div>
+      <div style="height:44px;border-bottom:1px solid #ccc;width:140px;margin:0 auto"></div>
+      <div style="font-weight:bold;font-size:10pt;margin-top:6px">${staff ? staff.full_name : ''}</div>
     </div>
   </div>
 </div>
