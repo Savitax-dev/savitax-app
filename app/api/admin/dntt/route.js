@@ -51,10 +51,11 @@ export async function GET(request) {
   const totalB     = subTotal + vatAmt
   const totalC     = prevBalVat + totalB
 
-  // QR VietQR
-  const monthPad  = String(month).padStart(2, '0')
+  // QR VietQR — nội dung CK ghi theo đúng kỳ thu phí: công ty tháng = "T07", công ty quý = "Q3"
+  const monthPad   = String(month).padStart(2, '0')
+  const periodCode = client.fee_period === 'quarterly' ? 'Q' + Math.ceil(month / 3) : 'T' + monthPad
   const clientCode = client.client_code || client.tax_code || ''
-  const qrContent  = clientCode + '_ThanhToanPhiDichvu_T' + monthPad + '_Savitax'
+  const qrContent  = clientCode + '_ThanhToanPhiDichvu_' + periodCode + '_Savitax'
   const bankId     = 'ACB'
   const accountNo  = '3878556868'
   const qrUrl = 'https://img.vietqr.io/image/' + bankId + '-' + accountNo +
