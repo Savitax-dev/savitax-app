@@ -23,7 +23,7 @@ const fmt = (n) => Number(n || 0).toLocaleString('vi-VN')
 function FeeAdjust({ client, isEditing, feeAmount, feeFromMonth, feeNote, feePeriod, saving, futureMonths, onOpen, onSave, onCancel, onAmountChange, onMonthChange, onNoteChange, onPeriodChange }) {
   const selectedVal = feeFromMonth || (futureMonths[0] ? futureMonths[0].value : '')
   const selectedLabel = futureMonths.find(x => x.value === selectedVal)
-  const feePeriodLabel = (client.fee_period || client.report_type) === 'quarterly' ? 'quý' : 'tháng'
+  const feePeriodLabel = (client.fee_period || client.report_type) === 'quarterly' ? 'Quý' : 'Tháng'
 
   if (!isEditing) {
     return (
@@ -820,7 +820,7 @@ export default function ClientsPage() {
                     <p className="text-xs mt-0.5">
                       <span className="font-semibold text-blue-700">{fmt(client.monthly_fee)}đ</span>
                       <span className="text-gray-400">
-                        {' / ' + ((client.fee_period || client.report_type) === 'quarterly' ? 'quý' : 'tháng')}
+                        {' / ' + ((client.fee_period || client.report_type) === 'quarterly' ? 'Quý' : 'Tháng')}
                       </span>
                     </p>
                     {assignedStaff && (
@@ -999,7 +999,7 @@ export default function ClientsPage() {
                         <div className="text-right">
                           <span className="text-xs font-bold text-blue-700">{fmt(client.monthly_fee)}đ</span>
                           <span className="text-xs text-gray-400">
-                            {'/' + ((client.fee_period || client.report_type) === 'quarterly' ? 'quý' : 'tháng')}
+                            {'/' + ((client.fee_period || client.report_type) === 'quarterly' ? 'Quý' : 'Tháng')}
                           </span>
                         </div>
                       </div>

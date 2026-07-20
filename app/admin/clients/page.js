@@ -459,7 +459,7 @@ export default function AdminClientsPage() {
                             onChange={e => setEditForm(f => ({ ...f, monthly_fee: e.target.value }))}
                             className="w-28 px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none" />
                         ) : (
-                          <span className="text-gray-700">{fmt(c.monthly_fee)}đ</span>
+                          <span className="text-gray-700">{fmt(c.monthly_fee)}đ/{c.fee_period === 'quarterly' ? 'Quý' : 'Tháng'}</span>
                         )}
                       </td>
 

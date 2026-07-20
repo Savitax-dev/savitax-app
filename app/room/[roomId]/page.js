@@ -385,7 +385,7 @@ export default function RoomPage({ params }) {
                                 </div>
                                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                   <span className="text-xs text-gray-400">{c.tax_code}</span>
-                                  <span className="text-xs text-blue-600 font-medium">{fmt(c.monthly_fee)}đ</span>
+                                  <span className="text-xs text-blue-600 font-medium">{fmt(c.monthly_fee)}đ/{c.fee_period === 'quarterly' ? 'Quý' : 'Tháng'}</span>
                                   <span className={'text-xs font-semibold ' + pctClr(c.taskTotal > 0 ? Math.round(c.taskDone/c.taskTotal*100) : 100)}>
                                     {c.taskDone}/{c.taskTotal} việc T{selMonth}
                                   </span>

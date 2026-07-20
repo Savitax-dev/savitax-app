@@ -712,7 +712,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
           </div>
           <div className="flex border-b border-gray-100">
             {[
-              { key: 'ketoan', label: '📋 Dịch vụ kế toán', hint: fmt(client.monthly_fee) + 'đ' + (client.fee_period === 'quarterly' ? '/quý' : '/tháng') },
+              { key: 'ketoan', label: '📋 Dịch vụ kế toán', hint: fmt(client.monthly_fee) + 'đ' + (client.fee_period === 'quarterly' ? '/Quý' : '/Tháng') },
               { key: 'khach',  label: '🗂 Dịch vụ khác',    hint: 'Phát sinh khác' },
               { key: 'no_ton', label: '📦 Nợ tồn cũ',       hint: fmt(client.other_debt) + 'đ còn nợ' },
             ].map(t => (
