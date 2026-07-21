@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { callerHasPermission, requireAdmin } from '@/lib/serverAuth'
+import { callerHasPermission, requireAdmin, requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(
@@ -8,8 +8,10 @@ function getAdmin() {
   )
 }
 
+// Mọi nhân viên đều xem/thêm được công ty (chủ động thêm khi được giao phụ trách) — chỉ riêng
+// PATCH mới cần phân biệt: nhân viên thường chỉ sửa được công ty mình phụ trách (xem trong PATCH).
 export async function GET() {
-  const auth = await callerHasPermission('manage_clients')
+  const auth = await requireLogin()
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
   const supabase = getAdmin()
@@ -36,7 +38,7 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const auth = await callerHasPermission('manage_clients')
+  const auth = await requireLogin()
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
   const body = await request.json()
@@ -127,19 +129,21 @@ export async function POST(request) {
 }
 
 export async function PATCH(request) {
-  const auth = await callerHasPermission('manage_clients')
-  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+  const permCheck = await callerHasPermission('manage_clients')
+  if (!permCheck.caller) return Response.json({ error: permCheck.error }, { status: permCheck.status })
 
   const body = await request.json()
   const { id, assigned_to, address, tax_status, fee_period, status, monthly_fee, fee_history, other_debt, client_code, name, tax_code, representative, contract_start, report_type, updatedBy } = body
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })
   const supabase = getAdmin()
 
-  // Lấy giá trị cũ để ghi lịch sử thay đổi phí dịch vụ
-  let prevFee = null
-  if (monthly_fee !== undefined) {
-    const { data: before } = await supabase.from('clients').select('monthly_fee').eq('id', id).single()
-    prevFee = before ? Number(before.monthly_fee) || 0 : null
+  // Lấy giá trị cũ để ghi lịch sử thay đổi phí dịch vụ + kiểm tra quyền sở hữu
+  const { data: before } = await supabase.from('clients').select('monthly_fee, assigned_to').eq('id', id).single()
+  const prevFee = before ? Number(before.monthly_fee) || 0 : null
+
+  // Nhân viên thường (không có manage_clients) chỉ sửa được công ty mình đang phụ trách chính.
+  if (!permCheck.ok && before?.assigned_to !== permCheck.caller.staffId) {
+    return Response.json({ error: 'Không đủ quyền sửa công ty này' }, { status: 403 })
   }
 
   const updateData = {}

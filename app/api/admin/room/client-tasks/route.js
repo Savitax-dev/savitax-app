@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { startedByMonth } from '@/lib/contractDates'
+import { requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -8,6 +9,9 @@ function getAdmin() {
 
 // GET /api/admin/room/client-tasks?clientId=xxx&month=5&year=2026&reportType=monthly
 export async function GET(request) {
+  const auth = await requireLogin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const { searchParams } = new URL(request.url)
   const clientId   = searchParams.get('clientId')
   const month      = Number(searchParams.get('month') || new Date().getMonth() + 1)

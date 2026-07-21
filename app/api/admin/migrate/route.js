@@ -2,6 +2,7 @@ import postgres from 'postgres'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 import { createClient } from '@supabase/supabase-js'
+import { callerHasPermission } from '@/lib/serverAuth'
 
 // Fallback: run simple ALTER TABLE via Supabase REST API (limited)
 async function runViaServiceRole(statements) {
@@ -12,6 +13,9 @@ async function runViaServiceRole(statements) {
 }
 
 export async function POST() {
+  const auth = await callerHasPermission('manage_database')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   // Try direct postgres connection first
   const dbUrl = process.env.SUPABASE_DB_URL
   if (dbUrl && !dbUrl.includes('[DB-PASSWORD]')) {

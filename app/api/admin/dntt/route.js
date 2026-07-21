@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -8,6 +9,9 @@ const fmt = (n) => Number(n || 0).toLocaleString('vi-VN')
 
 // GET /api/admin/dntt?clientId=xxx&month=6&year=2026
 export async function GET(request) {
+  const auth = await requireLogin()
+  if (!auth.ok) return new Response(auth.error, { status: auth.status })
+
   const { searchParams } = new URL(request.url)
   const clientId = searchParams.get('clientId')
   const month    = Number(searchParams.get('month') || new Date().getMonth() + 1)

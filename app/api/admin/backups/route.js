@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { callerHasPermission } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -9,6 +10,9 @@ const BUCKET = 'db-backups'
 // GET /api/admin/backups — liệt kê các bản backup đã lưu trong Supabase Storage
 // (xem app/api/cron/backup/route.js), kèm link tải về (signed URL, hết hạn sau 10 phút).
 export async function GET() {
+  const auth = await callerHasPermission('manage_database')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const supabase = getAdmin()
   const { data: files, error } = await supabase.storage.from(BUCKET).list('', {
     sortBy: { column: 'name', order: 'desc' },

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireLogin } from '@/lib/serverAuth'
 
 const BUCKET = 'client-files'
 
@@ -28,6 +29,9 @@ function decodeOriginalName(storedName) {
 
 // GET /api/admin/client-files?clientId=xxx — list files with signed download URLs
 export async function GET(request) {
+  const auth = await requireLogin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const { searchParams } = new URL(request.url)
   const clientId = searchParams.get('clientId')
   if (!clientId) return Response.json({ error: 'Missing clientId' }, { status: 400 })
@@ -56,6 +60,9 @@ export async function GET(request) {
 
 // POST /api/admin/client-files — upload (multipart/form-data: file, clientId)
 export async function POST(request) {
+  const auth = await requireLogin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const form = await request.formData()
   const file = form.get('file')
   const clientId = form.get('clientId')
@@ -76,6 +83,9 @@ export async function POST(request) {
 
 // DELETE /api/admin/client-files?path=xxx
 export async function DELETE(request) {
+  const auth = await requireLogin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const { searchParams } = new URL(request.url)
   const path = searchParams.get('path')
   if (!path) return Response.json({ error: 'Missing path' }, { status: 400 })

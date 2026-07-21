@@ -4,6 +4,7 @@ import { effectiveDeadlineDate } from '@/lib/deadline'
 import { getPeriodMonths } from '@/lib/period'
 import { startedByMonth } from '@/lib/contractDates'
 import { dueFeeMonthsCount } from '@/lib/feeDue'
+import { requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(
@@ -29,6 +30,14 @@ export async function GET(request) {
   const months  = getPeriodMonths(period, { month, quarter })
 
   if (!userId) return Response.json({ error: 'Missing userId' }, { status: 400 })
+
+  const auth = await requireLogin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+  // userId trong query PHẢI khớp người gọi thật (trừ admin) — tránh 1 nhân viên tự truyền
+  // userId của người khác để xem trộm công việc/công nợ cá nhân của họ.
+  if (auth.caller.role !== 'admin' && userId !== auth.caller.staffId) {
+    return Response.json({ error: 'Không có quyền xem dữ liệu của nhân viên khác' }, { status: 403 })
+  }
 
   const supabase = getAdmin()
 

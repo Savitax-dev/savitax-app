@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { callerHasPermission } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -6,6 +7,9 @@ function getAdmin() {
 
 // GET: all task definitions
 export async function GET() {
+  const auth = await callerHasPermission('manage_checklist_template')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const supabase = getAdmin()
   // Try full select first
   let { data, error } = await supabase
@@ -37,6 +41,9 @@ export async function GET() {
 
 // POST: create new task
 export async function POST(request) {
+  const auth = await callerHasPermission('manage_checklist_template')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const body = await request.json()
   const { name, deadline_day, applies_to, report_type, description, month } = body
   if (!name || !deadline_day) return Response.json({ error: 'Thiếu tên hoặc ngày hạn' }, { status: 400 })
@@ -80,6 +87,9 @@ export async function POST(request) {
 
 // PATCH: update task
 export async function PATCH(request) {
+  const auth = await callerHasPermission('manage_checklist_template')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const body = await request.json()
   const { id, name, deadline_day, applies_to, report_type, description, sort_order, is_active, month } = body
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })
@@ -102,6 +112,9 @@ export async function PATCH(request) {
 
 // DELETE: remove task
 export async function DELETE(request) {
+  const auth = await callerHasPermission('manage_checklist_template')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })

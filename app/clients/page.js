@@ -109,6 +109,7 @@ function FeeAdjust({ client, isEditing, feeAmount, feeFromMonth, feeNote, feePer
 export default function ClientsPage() {
   const router = useRouter()
   const [myStaff, setMyStaff] = useState(null)
+  const [canManageAll, setCanManageAll] = useState(false)
   const [clients, setClients] = useState([])
   const [allStaff, setAllStaff] = useState([])
   const [rooms, setRooms] = useState([])
@@ -254,8 +255,11 @@ export default function ClientsPage() {
       }
       setMyStaff(me)
 
+      // Mọi nhân viên đều xem được trang này (không chỉ admin/leader) — nhân viên thường chỉ có
+      // toàn quyền sửa với công ty mình phụ trách (assigned_to === chính mình), xem chi tiết phần
+      // canManageAll dùng để gate từng nút sửa cụ thể bên dưới.
       const allowed = await hasPermission(me.role, 'manage_clients')
-      if (!allowed) { router.push('/dashboard'); return }
+      setCanManageAll(allowed)
 
       const staffRes = await fetch('/api/admin/staff')
       const staffJson = await staffRes.json()
@@ -797,6 +801,8 @@ export default function ClientsPage() {
             const isOpen = expanded === client.id
             const history = feeHistory[client.id] || []
             const assignedStaff = client.staff
+            // Nhân viên thường chỉ sửa được công ty mình phụ trách; admin/leader (canManageAll) sửa được tất cả.
+            const canEditThis = canManageAll || client.assigned_to === myStaff?.id
 
             return (
               <div key={client.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
@@ -926,11 +932,13 @@ export default function ClientsPage() {
                           )}
                           <span className="text-xs text-gray-500">{client.name}</span>
                         </div>
-                        <button
-                          onClick={() => { setEditClientId(client.id); setEditClientForm({ name: client.name, tax_code: client.tax_code, address: client.address || '', tax_status: client.tax_status || '', client_code: client.client_code || '', representative: client.representative || '', contract_start: client.contract_start ? String(client.contract_start).slice(0,10) : '' }) }}
-                          className="text-xs text-blue-600 hover:underline font-medium bg-blue-50 px-3 py-1.5 rounded-lg flex-shrink-0">
-                          ✏️ Sửa thông tin
-                        </button>
+                        {canEditThis && (
+                          <button
+                            onClick={() => { setEditClientId(client.id); setEditClientForm({ name: client.name, tax_code: client.tax_code, address: client.address || '', tax_status: client.tax_status || '', client_code: client.client_code || '', representative: client.representative || '', contract_start: client.contract_start ? String(client.contract_start).slice(0,10) : '' }) }}
+                            className="text-xs text-blue-600 hover:underline font-medium bg-blue-50 px-3 py-1.5 rounded-lg flex-shrink-0">
+                            ✏️ Sửa thông tin
+                          </button>
+                        )}
                       </div>
                     )}
 
@@ -1160,6 +1168,7 @@ export default function ClientsPage() {
                     </div>
 
                     {/* Status change */}
+                    {canEditThis && (
                     <div>
                       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Trạng thái</p>
                       {statusEdit === client.id ? (
@@ -1196,9 +1205,10 @@ export default function ClientsPage() {
                         </button>
                       )}
                     </div>
+                    )}
 
                     {/* Transfer */}
-                    {transferStaff.length > 0 && (
+                    {canEditThis && transferStaff.length > 0 && (
                       <div>
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Chuyển nhân viên phụ trách</p>
                         {transferEdit === client.id ? (
@@ -1236,10 +1246,12 @@ export default function ClientsPage() {
                           <span key={row.id} className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-1 rounded-full">
                             {row.staff?.full_name || '—'}
                             {row.staff?.rooms?.name && <span className="text-amber-400">· {row.staff.rooms.name}</span>}
-                            <button onClick={() => removeSecondary(row.id)} className="text-amber-400 hover:text-red-500 leading-none ml-0.5">×</button>
+                            {canEditThis && (
+                              <button onClick={() => removeSecondary(row.id)} className="text-amber-400 hover:text-red-500 leading-none ml-0.5">×</button>
+                            )}
                           </span>
                         ))}
-                        {addSecondaryFor === client.id ? (
+                        {!canEditThis ? null : addSecondaryFor === client.id ? (
                           <div className="flex items-center gap-1.5 w-full mt-1">
                             <select value={secondaryPick} onChange={e => setSecondaryPick(e.target.value)} autoFocus
                               className="flex-1 px-2 py-1.5 border border-amber-300 rounded-lg text-sm focus:outline-none">
@@ -1271,6 +1283,7 @@ export default function ClientsPage() {
                     </div>
 
                     {/* Fee adjustment */}
+                    {canEditThis && (
                     <FeeAdjust
                       client={client}
                       isEditing={feeEdit === client.id}
@@ -1288,6 +1301,7 @@ export default function ClientsPage() {
                       onNoteChange={v => setFeeNote(v)}
                       onPeriodChange={v => setFeePeriod(v)}
                     />
+                    )}
                     {history.length > 0 && (
                       <div className="mt-3 border-t border-gray-50 pt-3">
                         <p className="text-xs text-gray-400 mb-1.5">Lịch sử thay đổi phí:</p>

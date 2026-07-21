@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -19,7 +20,6 @@ const DEBT_TYPE_LABEL = {
 // client_change_log), scope theo vai trò người xem. Chỉ đọc, không ghi.
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
-  const userId   = searchParams.get('userId')
   const year     = Number(searchParams.get('year')  || new Date().getFullYear())
   const month    = Number(searchParams.get('month') || new Date().getMonth() + 1)
   const fStaff   = searchParams.get('staffId')  || ''
@@ -27,15 +27,14 @@ export async function GET(request) {
   const fRoom    = searchParams.get('roomId')   || ''
   const fType    = searchParams.get('type')     || ''
 
-  if (!userId) return Response.json({ error: 'Missing userId' }, { status: 400 })
+  // Vai trò + phòng của người xem lấy từ session thật (không tin userId client tự truyền —
+  // trước đây route này tin thẳng ?userId= nên ai cũng giả mạo được UUID người khác để mượn scope).
+  const auth = await requireLogin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+  const viewer = { id: auth.caller.staffId, role: auth.caller.role, room_id: auth.caller.roomId }
+  const role = viewer.role || 'staff'
 
   const supabase = getAdmin()
-
-  // 1. Vai trò + phòng của người xem (tự tra, không tin client)
-  const { data: viewer } = await supabase
-    .from('staff').select('id, role, room_id').eq('id', userId).single()
-  if (!viewer) return Response.json({ error: 'Viewer not found' }, { status: 404 })
-  const role = viewer.role || 'staff'
 
   // 2. Toàn bộ staff (để map tên + tính scope)
   const { data: allStaff } = await supabase.from('staff').select('id, full_name, room_id')

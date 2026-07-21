@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -6,6 +7,9 @@ function getAdmin() {
 
 // POST { clientId, taskDefId, year, month, isDone, userId }
 export async function POST(request) {
+  const auth = await requireLogin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const { clientId, taskDefId, year, month, isDone, userId, recordId } = await request.json()
   if (!clientId || !taskDefId) return Response.json({ error: 'Missing params' }, { status: 400 })
 

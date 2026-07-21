@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { effectiveDeadlineDate } from '@/lib/deadline'
+import { requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -10,6 +11,9 @@ function getAdmin() {
 // thứ 2 nếu hạn gốc rơi Chủ nhật) — dùng cho chuông nhắc nhở ở góc phải, không phụ thuộc
 // công ty cụ thể (đây là nhắc theo checklist mẫu áp dụng chung).
 export async function GET() {
+  const auth = await requireLogin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const supabase = getAdmin()
   const now = new Date()
   const year = now.getFullYear(), month = now.getMonth() + 1, today = now.getDate()

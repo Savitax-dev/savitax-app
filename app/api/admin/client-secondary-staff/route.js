@@ -30,8 +30,8 @@ export async function GET(request) {
 
 // POST /api/admin/client-secondary-staff — gán nhân viên phụ
 export async function POST(request) {
-  const auth = await callerHasPermission('manage_clients')
-  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+  const permCheck = await callerHasPermission('manage_clients')
+  if (!permCheck.caller) return Response.json({ error: permCheck.error }, { status: permCheck.status })
 
   const body = await request.json()
   const { clientId, staffId, addedBy } = body
@@ -43,6 +43,10 @@ export async function POST(request) {
   const { data: client } = await supabase.from('clients').select('assigned_to').eq('id', clientId).single()
   if (client && client.assigned_to === staffId) {
     return Response.json({ error: 'Nhân viên này đã là nhân viên chính của công ty' }, { status: 400 })
+  }
+  // Nhân viên thường chỉ gán nhân viên phụ được cho công ty mình phụ trách chính.
+  if (!permCheck.ok && client?.assigned_to !== permCheck.caller.staffId) {
+    return Response.json({ error: 'Không đủ quyền sửa công ty này' }, { status: 403 })
   }
 
   const { error } = await supabase.from('client_secondary_staff')
@@ -57,14 +61,22 @@ export async function POST(request) {
 
 // DELETE /api/admin/client-secondary-staff?id=xxx
 export async function DELETE(request) {
-  const auth = await callerHasPermission('manage_clients')
-  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+  const permCheck = await callerHasPermission('manage_clients')
+  if (!permCheck.caller) return Response.json({ error: permCheck.error }, { status: permCheck.status })
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })
 
   const supabase = getAdmin()
+  // Nhân viên thường chỉ gỡ được nhân viên phụ ở công ty mình phụ trách chính.
+  if (!permCheck.ok) {
+    const { data: row } = await supabase.from('client_secondary_staff').select('client_id').eq('id', id).single()
+    const { data: client } = row ? await supabase.from('clients').select('assigned_to').eq('id', row.client_id).single() : { data: null }
+    if (client?.assigned_to !== permCheck.caller.staffId) {
+      return Response.json({ error: 'Không đủ quyền sửa công ty này' }, { status: 403 })
+    }
+  }
   const { error } = await supabase.from('client_secondary_staff').delete().eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 400 })
   return Response.json({ ok: true })

@@ -3,6 +3,7 @@ import { ensureRollovers } from '@/lib/debtRollover'
 import { getPeriodMonths } from '@/lib/period'
 import { startedByMonth } from '@/lib/contractDates'
 import { dueFeeMonthsCount } from '@/lib/feeDue'
+import { callerHasPermission } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -15,6 +16,9 @@ function getAdmin() {
 // Công ty có "nhân viên phụ" (client_secondary_staff) vẫn hiện dưới nhân viên phụ để theo dõi,
 // nhưng KHÔNG cộng vào tổng phí/đã thu của họ — doanh thu chỉ tính cho nhân viên chính.
 export async function GET(request) {
+  const auth = await callerHasPermission('view_all_debt')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const { searchParams } = new URL(request.url)
   const year    = Number(searchParams.get('year') || new Date().getFullYear())
   const period  = searchParams.get('period') || 'month'

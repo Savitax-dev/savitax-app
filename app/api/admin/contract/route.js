@@ -3,6 +3,7 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 import { amountInWords } from '@/lib/numberToWords'
 import { contractEndDate, contractNumber, viFullDate, viShortDate } from '@/lib/contractDates'
+import { requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -13,6 +14,9 @@ const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</
 
 // GET /api/admin/contract?clientId=xxx&format=pdf|word
 export async function GET(request) {
+  const auth = await requireLogin()
+  if (!auth.ok) return new Response(auth.error, { status: auth.status })
+
   const { searchParams } = new URL(request.url)
   const clientId = searchParams.get('clientId')
   const isWord   = searchParams.get('format') === 'word'
