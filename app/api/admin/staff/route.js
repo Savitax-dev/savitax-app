@@ -48,7 +48,7 @@ export async function PATCH(request) {
   const auth = await callerHasPermission('manage_staff')
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
-  const { id, full_name, room_id, role } = await request.json()
+  const { id, full_name, room_id, role, is_active } = await request.json()
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })
 
   const supabase = getAdmin()
@@ -59,9 +59,15 @@ export async function PATCH(request) {
     if (target?.role === 'admin') return Response.json({ error: 'Không đủ quyền sửa tài khoản quản trị' }, { status: 403 })
   }
 
+  const updateData = {}
+  if (full_name  !== undefined) updateData.full_name  = full_name
+  if (room_id    !== undefined) updateData.room_id    = room_id
+  if (role       !== undefined) updateData.role       = role
+  if (is_active  !== undefined) updateData.is_active  = is_active
+
   const { error } = await supabase
     .from('staff')
-    .update({ full_name, room_id, role })
+    .update(updateData)
     .eq('id', id)
 
   if (error) return Response.json({ error: error.message }, { status: 400 })

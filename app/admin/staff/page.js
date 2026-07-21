@@ -124,10 +124,14 @@ export default function AdminStaffPage() {
     })
     const json = await res.json()
     if (json.error) { setError(json.error); return }
-    await supabase.from('staff').update({
-      room_id: editForm.room_id || null,
-      role:    editForm.role,
-    }).eq('id', id)
+    // room_id/role đi qua API admin/staff (đã kiểm tra quyền server-side), không ghi thẳng bằng anon key.
+    const res2 = await fetch('/api/admin/staff', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, room_id: editForm.room_id || null, role: editForm.role }),
+    })
+    const json2 = await res2.json()
+    if (json2.error) { setError(json2.error); return }
     setError('')
     setEditId(null)
     await loadData(supabase, myRoomId, myRole)
@@ -135,14 +139,36 @@ export default function AdminStaffPage() {
 
   const toggleActive = async (s) => {
     const supabase = createClient()
-    await supabase.from('staff').update({ is_active: !s.is_active }).eq('id', s.id)
+    await fetch('/api/admin/staff', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: s.id, is_active: !s.is_active }),
+    })
     await loadData(supabase, myRoomId, myRole)
   }
 
   const changeRole = async (id, newRole) => {
-    const supabase = createClient()
-    await supabase.from('staff').update({ role: newRole }).eq('id', id)
+    const res = await fetch('/api/admin/staff', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, role: newRole }),
+    })
+    const json = await res.json()
+    if (json.error) { setError(json.error); return }
     setStaffList(sl => sl.map(s => s.id === id ? { ...s, role: newRole } : s))
+  }
+
+  const deleteStaff = async (s) => {
+    if (!confirm('Xóa nhân viên "' + s.full_name + '"? Hành động này không thể hoàn tác.')) return
+    const res = await fetch('/api/admin/staff', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: s.id }),
+    })
+    const json = await res.json()
+    if (json.error) { setError('Lỗi xóa: ' + json.error); return }
+    const supabase = createClient()
+    await loadData(supabase, myRoomId, myRole)
   }
 
   const submitReset = async (staffId) => {
@@ -419,6 +445,14 @@ export default function AdminStaffPage() {
                                 className="text-xs text-gray-500 hover:text-amber-600 px-2 py-1 rounded hover:bg-amber-50 transition-colors"
                               >
                                 Đặt lại MK
+                              </button>
+                            )}
+                            {isAdmin && (
+                              <button
+                                onClick={() => deleteStaff(s)}
+                                className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                              >
+                                Xóa
                               </button>
                             )}
                           </div>
