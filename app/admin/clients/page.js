@@ -494,10 +494,12 @@ export default function AdminClientsPage() {
                               className="text-xs text-gray-500 hover:text-blue-600 px-2 py-1 rounded hover:bg-blue-50 transition-colors">
                               Sửa
                             </button>
-                            <button onClick={() => deleteClient(c)}
-                              className="text-xs text-gray-400 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors">
-                              Xóa
-                            </button>
+                            {myRole === 'admin' && (
+                              <button onClick={() => deleteClient(c)}
+                                className="text-xs text-gray-400 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors">
+                                Xóa
+                              </button>
+                            )}
                           </div>
                         )}
                       </td>

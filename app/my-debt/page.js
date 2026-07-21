@@ -47,6 +47,7 @@ export default function MyDebtPage() {
   const [clientMonth, setClientMonth] = useState({})
   const [userId, setUserId] = useState(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isTrueAdmin, setIsTrueAdmin] = useState(false)
 
   const monthOpts = []
   let y = now.getFullYear(), m = now.getMonth() + 1
@@ -68,6 +69,7 @@ export default function MyDebtPage() {
       setUserId(sd.session.user.id)
       const { data: me } = await supabase.from('staff').select('role').eq('id', sd.session.user.id).single()
       setIsAdmin(['admin', 'leader', 'manager'].includes(me?.role))
+      setIsTrueAdmin(me?.role === 'admin')
     }
     init()
   }, [router])
@@ -321,6 +323,7 @@ export default function MyDebtPage() {
                           onMonthChange={(newMonth) => setClientMonth(p => ({ ...p, [client.id]: newMonth }))}
                           onDebtSaved={loadMyData}
                           isAdmin={isAdmin}
+                          isTrueAdmin={isTrueAdmin}
                         />
                       )}
                     </div>

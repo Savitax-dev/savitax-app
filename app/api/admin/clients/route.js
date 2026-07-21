@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { callerHasPermission, requireAdmin } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(
@@ -8,6 +9,9 @@ function getAdmin() {
 }
 
 export async function GET() {
+  const auth = await callerHasPermission('manage_clients')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const supabase = getAdmin()
   const [{ data: clients, error }, { data: staffList }] = await Promise.all([
     supabase.from('clients').select('*').order('name'),
@@ -32,6 +36,9 @@ export async function GET() {
 }
 
 export async function POST(request) {
+  const auth = await callerHasPermission('manage_clients')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const body = await request.json()
   const { name, tax_code, report_type, monthly_fee, assigned_to, address, tax_status, fee_period, fee_start, other_debt, client_code, representative, status, contract_start } = body
   if (!name || !tax_code || !assigned_to) {
@@ -120,6 +127,9 @@ export async function POST(request) {
 }
 
 export async function PATCH(request) {
+  const auth = await callerHasPermission('manage_clients')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const body = await request.json()
   const { id, assigned_to, address, tax_status, fee_period, status, monthly_fee, fee_history, other_debt, client_code, name, tax_code, representative, contract_start, report_type, updatedBy } = body
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })
@@ -203,6 +213,9 @@ export async function PATCH(request) {
 }
 
 export async function DELETE(request) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })

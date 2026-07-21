@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
+import { hasPermission } from '@/lib/permissions'
 
 const STATUS_LABEL = { pending: 'Trình ký', active: 'Đang sử dụng', inactive: 'Ngưng dịch vụ', transferred: 'Đã chuyển đi' }
 const STATUS_COLOR = {
@@ -252,6 +253,9 @@ export default function ClientsPage() {
         me = me ? { ...me, role: fallbackRole } : { id: session.user.id, full_name: email.split('@')[0], role: fallbackRole, rooms: null }
       }
       setMyStaff(me)
+
+      const allowed = await hasPermission(me.role, 'manage_clients')
+      if (!allowed) { router.push('/dashboard'); return }
 
       const staffRes = await fetch('/api/admin/staff')
       const staffJson = await staffRes.json()

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { callerHasPermission, requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -6,6 +7,9 @@ function getAdmin() {
 
 // GET /api/admin/client-secondary-staff?clientId=xxx
 export async function GET(request) {
+  const auth = await requireLogin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const { searchParams } = new URL(request.url)
   const clientId = searchParams.get('clientId')
   if (!clientId) return Response.json({ error: 'Missing clientId' }, { status: 400 })
@@ -26,6 +30,9 @@ export async function GET(request) {
 
 // POST /api/admin/client-secondary-staff — gán nhân viên phụ
 export async function POST(request) {
+  const auth = await callerHasPermission('manage_clients')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const body = await request.json()
   const { clientId, staffId, addedBy } = body
   if (!clientId || !staffId) return Response.json({ error: 'Thiếu clientId hoặc staffId' }, { status: 400 })
@@ -50,6 +57,9 @@ export async function POST(request) {
 
 // DELETE /api/admin/client-secondary-staff?id=xxx
 export async function DELETE(request) {
+  const auth = await callerHasPermission('manage_clients')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })

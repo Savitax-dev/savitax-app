@@ -32,7 +32,7 @@ const CRED_CATS = [
   { key: 'khac',         label: 'Thông tin khác' },
 ]
 
-export default function ClientChecklist({ client, clientMonth, onMonthChange, onDebtSaved, defaultPanel = 'work', isAdmin = false }) {
+export default function ClientChecklist({ client, clientMonth, onMonthChange, onDebtSaved, defaultPanel = 'work', isAdmin = false, isTrueAdmin = false }) {
   const now = new Date()
   const [tasks,        setTasks]        = useState([])
   const [loading,      setLoading]      = useState(false)
@@ -1024,7 +1024,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                               ? new Date(t.rec.done_at).toLocaleDateString('vi-VN', {day:'2-digit',month:'2-digit'})
                               : st.label}
                           </span>
-                          {isAdmin && (t.status === 'done_late1' || t.status === 'done_late3') && (
+                          {isTrueAdmin && (t.status === 'done_late1' || t.status === 'done_late3') && (
                             <button type="button" disabled={isBusy} title="Sửa thành đúng hạn"
                               onClick={() => overrideToOnTime(t)}
                               className="text-xs flex-shrink-0 text-blue-500 hover:text-blue-700 underline disabled:opacity-50">

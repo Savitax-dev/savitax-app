@@ -1,11 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
+import { callerHasPermission, requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 }
 
-// GET /api/admin/roles — danh sách vai trò
+// GET /api/admin/roles — danh sách vai trò. Chỉ cần đăng nhập (không cần manage_roles) vì
+// lib/permissions.js gọi route này cho MỌI user để tự kiểm tra quyền của chính họ.
 export async function GET() {
+  const auth = await requireLogin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const supabase = getAdmin()
   const { data, error } = await supabase.from('roles').select('*').order('created_at')
   if (error) {
@@ -27,6 +32,9 @@ function slugify(str) {
 
 // POST /api/admin/roles — tạo vai trò mới (mã vai trò tự sinh từ tên hiển thị)
 export async function POST(request) {
+  const auth = await callerHasPermission('manage_roles')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const body = await request.json()
   const { id, label } = body
   if (!label) return Response.json({ error: 'Thiếu tên hiển thị' }, { status: 400 })
@@ -45,6 +53,9 @@ export async function POST(request) {
 
 // DELETE /api/admin/roles?id=xxx
 export async function DELETE(request) {
+  const auth = await callerHasPermission('manage_roles')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })

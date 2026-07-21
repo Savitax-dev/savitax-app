@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { toE164VN } from '@/lib/phone'
+import { callerHasPermission } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -9,11 +10,18 @@ function getAdmin() {
 // Đổi email trực tiếp ở bảng staff KHÔNG làm thay đổi tài khoản đăng nhập thật,
 // nên phải gọi Admin API để cập nhật user trong Supabase Auth.
 export async function POST(request) {
+  const auth = await callerHasPermission('manage_staff')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const body = await request.json()
   const { staffId, email, full_name, phone } = body
   if (!staffId) return Response.json({ error: 'Thiếu staffId' }, { status: 400 })
 
   const supabase = getAdmin()
+  if (auth.caller.role !== 'admin') {
+    const { data: target } = await supabase.from('staff').select('role').eq('id', staffId).single()
+    if (target?.role === 'admin') return Response.json({ error: 'Không đủ quyền sửa tài khoản quản trị' }, { status: 403 })
+  }
 
   const authUpdate = {}
   if (email !== undefined) { authUpdate.email = email; authUpdate.email_confirm = true }

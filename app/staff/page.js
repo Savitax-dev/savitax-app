@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
+import { hasPermission } from '@/lib/permissions'
 
 const POSITION_OPTS = [
   { v: 'leader',    l: 'Trưởng Phòng' },
@@ -181,6 +182,10 @@ export default function StaffPage() {
       const { data: sessionData } = await supabase.auth.getSession()
       const session = sessionData.session
       if (!session) { router.push('/login'); return }
+
+      const { data: me } = await supabase.from('staff').select('role').eq('id', session.user.id).single()
+      const allowed = await hasPermission(me?.role, 'manage_staff')
+      if (!allowed) { router.push('/dashboard'); return }
 
       const [, resRooms] = await Promise.all([
         loadStaff(),

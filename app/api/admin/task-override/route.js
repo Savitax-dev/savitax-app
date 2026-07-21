@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { effectiveDeadlineDate } from '@/lib/deadline'
+import { requireAdmin } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -11,6 +12,9 @@ function getAdmin() {
 // (chỉnh done_at về đúng ngày hạn — không đổi is_done). Tính deadline ở server (cùng
 // hàm effectiveDeadlineDate dùng để tính status) để tránh lệch timezone với client.
 export async function POST(request) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   try {
     const { recordId, year, month, deadlineDay } = await request.json()
     if (!recordId || !year || !month || !deadlineDay) {

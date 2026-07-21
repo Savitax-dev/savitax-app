@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { startedByMonth } from '@/lib/contractDates'
 import { feeCountsForMonth } from '@/lib/feeDue'
+import { callerHasPermission } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -18,6 +19,9 @@ const mean = (arr) => arr.length === 0 ? 0 : Math.round(arr.reduce((a, v) => a +
 // - KPI phòng = TRUNG BÌNH CỘNG của KPI toàn bộ nhân viên trong phòng.
 // - KPI toàn công ty = TRUNG BÌNH CỘNG của KPI toàn bộ phòng đang có nhân viên.
 export async function GET(request) {
+  const auth = await callerHasPermission('view_kpi_report')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const { searchParams } = new URL(request.url)
   const year  = Number(searchParams.get('year')  || new Date().getFullYear())
   const month = Number(searchParams.get('month') || new Date().getMonth() + 1)
@@ -130,5 +134,9 @@ export async function GET(request) {
     avg_debt_pct: roomsWithStaff.length ? mean(roomsWithStaff.map(r => r.avg_debt_pct)) : 0,
   }
 
+  // Trang "Phòng nghiệp vụ" (/rooms) cũng dùng chung API này để hiện tổng quan TOÀN BỘ phòng cho
+  // mọi role (không phải dữ liệu cần giấu ở mức tổng hợp %) — việc giới hạn trưởng phòng chỉ thấy
+  // đúng phòng mình khi xem "Báo cáo KPI" được lọc riêng ở app/report/page.js (client-side), không
+  // lọc ở đây để tránh phá trang /rooms.
   return Response.json({ rooms: roomResults, staff: staffResults, company })
 }

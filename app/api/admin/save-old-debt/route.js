@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(
@@ -12,6 +13,9 @@ function getAdmin() {
 // Ghi nhận thu hồi "nợ tồn cũ" (clients.other_debt) — tách biệt với phí tháng hiện tại.
 // Số tiền thu không được vượt quá nợ tồn còn lại; nợ tồn được trừ ngay (tự "clear").
 export async function POST(request) {
+  const auth = await requireLogin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   try {
     const { clientId, amount, note, createdBy } = await request.json()
 

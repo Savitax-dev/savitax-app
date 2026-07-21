@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(
@@ -10,6 +11,9 @@ function getAdmin() {
 // POST /api/admin/save-debt
 // Body: { clientId, year, month, type, amount, note, createdBy }
 export async function POST(request) {
+  const auth = await requireLogin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   try {
     const { clientId, year, month, type, amount, note, createdBy } = await request.json()
 

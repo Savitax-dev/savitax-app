@@ -48,13 +48,21 @@ export default function ReportPage() {
         supabase.from('rooms').select('*').order('name'),
         fetch(`/api/admin/kpi-overview?year=${year}&month=${month}&_t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()),
       ])
-      setRoomList(resRl.data ?? [])
+      // Không phải admin (vd trưởng phòng) chỉ thấy phòng mình trong bộ lọc, không thấy phòng khác.
+      const visibleRooms = me?.role === 'admin' ? (resRl.data ?? []) : (resRl.data ?? []).filter(r => r.id === me?.room_id)
+      setRoomList(visibleRooms)
+      if (me?.role !== 'admin' && me?.room_id) setFilterRoom(me.room_id)
 
       const roomMap = {}
       for (const r of (resRl.data ?? [])) roomMap[r.id] = r.name
 
-      setRooms(kpiJson.rooms ?? [])
-      setAllStaff((kpiJson.staff ?? []).map(s => ({ ...s, room_name: roomMap[s.room_id] || '—' })))
+      // Không phải admin (vd trưởng phòng) chỉ xem KPI phòng mình, không thấy các phòng còn lại.
+      const isAdmin = me?.role === 'admin'
+      const scopedRooms = isAdmin ? (kpiJson.rooms ?? []) : (kpiJson.rooms ?? []).filter(r => r.room_id === me?.room_id)
+      const scopedStaff = isAdmin ? (kpiJson.staff ?? []) : (kpiJson.staff ?? []).filter(s => s.room_id === me?.room_id)
+
+      setRooms(scopedRooms)
+      setAllStaff(scopedStaff.map(s => ({ ...s, room_name: roomMap[s.room_id] || '—' })))
       setLoading(false)
     }
     load()

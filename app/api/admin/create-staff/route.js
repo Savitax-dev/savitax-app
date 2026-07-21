@@ -1,11 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
 import { toE164VN } from '@/lib/phone'
+import { callerHasPermission } from '@/lib/serverAuth'
 
 export async function POST(request) {
+  const auth = await callerHasPermission('manage_staff')
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
   const { email, password, full_name, room_id, role, phone } = await request.json()
 
   if (!email || !password || !full_name) {
     return Response.json({ error: 'Vui lòng điền đầy đủ thông tin' }, { status: 400 })
+  }
+  // Chỉ admin mới được tạo tài khoản admin khác — tránh leo thang đặc quyền.
+  if (role === 'admin' && auth.caller.role !== 'admin') {
+    return Response.json({ error: 'Không đủ quyền tạo tài khoản quản trị' }, { status: 403 })
   }
   // Vai trò Quản trị không thuộc 1 phòng cụ thể nên không bắt buộc chọn phòng
   if (role !== 'admin' && !room_id) {

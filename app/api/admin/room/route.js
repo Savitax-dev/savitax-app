@@ -3,6 +3,7 @@ import { ensureRollovers } from '@/lib/debtRollover'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { startedByMonth } from '@/lib/contractDates'
 import { feeCountsForMonth } from '@/lib/feeDue'
+import { requireRoomAccess } from '@/lib/serverAuth'
 
 function getAdmin() {
   return createClient(
@@ -19,6 +20,9 @@ export async function GET(request) {
   const month  = Number(searchParams.get('month') || new Date().getMonth() + 1)
 
   if (!roomId) return Response.json({ error: 'Missing roomId' }, { status: 400 })
+
+  const auth = await requireRoomAccess(roomId)
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
   const supabase = getAdmin()
 
