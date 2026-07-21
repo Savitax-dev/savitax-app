@@ -40,7 +40,14 @@ export async function DELETE(request) {
   }
 
   const { error } = await supabase.auth.admin.deleteUser(id)
-  if (error) return Response.json({ error: error.message }, { status: 400 })
+  if (error) {
+    // Nhân viên đã có task_records/service_fees/client_change_log... tham chiếu tới —
+    // DB chặn xóa cứng để không mất dữ liệu lịch sử (đúng nguyên tắc soft-delete của dự án).
+    if (error.code === '23503' || (error.message && error.message.includes('foreign key'))) {
+      return Response.json({ error: 'Nhân viên này đã có dữ liệu (công việc/công nợ đã ghi nhận), không thể xóa cứng — dùng "Vô hiệu hóa" thay thế để giữ lại lịch sử.' }, { status: 409 })
+    }
+    return Response.json({ error: error.message }, { status: 400 })
+  }
   return Response.json({ success: true })
 }
 
