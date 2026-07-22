@@ -261,9 +261,10 @@ export default function ClientsPage() {
       const allowed = await hasPermission(me.role, 'manage_clients')
       setCanManageAll(allowed)
 
-      const staffRes = await fetch('/api/admin/staff')
+      const staffRes = await fetch('/api/admin/staff', { cache: 'no-store' })
       const staffJson = await staffRes.json()
       setAllStaff(staffJson.data || [])
+      if (staffJson.error) console.error('Lỗi tải danh sách nhân viên:', staffJson.error)
 
       const [, roomsRes] = await Promise.all([
         loadClients(),
