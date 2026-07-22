@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 
 export default function LoginPage() {
@@ -9,6 +10,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
+  const [logoError, setLogoError] = useState(false)
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -32,11 +34,25 @@ export default function LoginPage() {
 
         {/* Logo & Title */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl mb-4">
-            <span className="text-white text-xl font-bold">S</span>
-          </div>
+          {!logoError ? (
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 overflow-hidden bg-white shadow-sm border border-gray-100 p-1.5">
+              <Image
+                src="/logo-savitax.png"
+                alt="Savitax"
+                width={56}
+                height={56}
+                className="object-contain w-full h-full"
+                onError={() => setLogoError(true)}
+              />
+            </div>
+          ) : (
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4"
+              style={{ background: 'linear-gradient(135deg,#8B1A1A,#6B1212)' }}>
+              <span className="text-white text-xl font-bold">S</span>
+            </div>
+          )}
           <h1 className="text-2xl font-semibold text-gray-900">Savitax</h1>
-          <p className="text-gray-500 text-sm mt-1">Hệ thống quản lý nội bộ</p>
+          <p className="text-gray-500 text-sm mt-1">Hệ thống nội bộ</p>
         </div>
 
         {/* Form */}
