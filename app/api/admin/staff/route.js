@@ -59,9 +59,12 @@ export async function PATCH(request) {
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })
 
   const supabase = getAdmin()
-  // Chỉ admin mới được gán role 'admin' hoặc sửa tài khoản admin khác — tránh leo thang đặc quyền.
+  // Chỉ admin thật mới được đổi vai trò của bất kỳ ai — trưởng phòng chỉ được xem, không được
+  // đổi vai trò dù của chính công ty mình (tránh leo thang đặc quyền / đổi nhầm vai trò người khác).
+  if (role !== undefined && auth.caller.role !== 'admin') {
+    return Response.json({ error: 'Chỉ quản trị viên được đổi vai trò' }, { status: 403 })
+  }
   if (auth.caller.role !== 'admin') {
-    if (role === 'admin') return Response.json({ error: 'Không đủ quyền gán quyền quản trị' }, { status: 403 })
     const { data: target } = await supabase.from('staff').select('role').eq('id', id).single()
     if (target?.role === 'admin') return Response.json({ error: 'Không đủ quyền sửa tài khoản quản trị' }, { status: 403 })
   }

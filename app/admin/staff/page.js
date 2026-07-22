@@ -381,14 +381,14 @@ export default function AdminStaffPage() {
                         )}
                       </td>
 
-                      {/* Vai trò — dropdown thay đổi ngay */}
+                      {/* Vai trò — chỉ admin được đổi, trưởng phòng chỉ xem */}
                       <td className="px-4 py-3">
-                        {isEditing ? (
+                        {isEditing && isAdmin ? (
                           <select value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}
                             className="px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none">
                             {roleOpts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
                           </select>
-                        ) : (
+                        ) : isAdmin ? (
                           <select
                             value={s.role}
                             onChange={e => changeRole(s.id, e.target.value)}
@@ -396,6 +396,10 @@ export default function AdminStaffPage() {
                           >
                             {roleOpts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
                           </select>
+                        ) : (
+                          <span className={'text-xs px-2 py-1 rounded-full font-medium ' + roleBadgeColor(s.role, roleOpts)}>
+                            {roleOpts.find(o => o.v === s.role)?.l || s.role}
+                          </span>
                         )}
                       </td>
 

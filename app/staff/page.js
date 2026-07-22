@@ -33,7 +33,7 @@ const POSITION_LABEL = {
   collab:    'Cộng tác viên',
 }
 
-function StaffCard({ s, rooms, isEditing, editForm, onEditStart, onEditChange, onSave, onCancel, onDelete }) {
+function StaffCard({ s, rooms, isEditing, editForm, onEditStart, onEditChange, onSave, onCancel, onDelete, isAdmin }) {
   if (isEditing) {
     return (
       <div className="bg-white border border-blue-200 shadow-sm rounded-2xl p-4 space-y-3">
@@ -75,15 +75,19 @@ function StaffCard({ s, rooms, isEditing, editForm, onEditStart, onEditChange, o
           </div>
           <div>
             <label className="text-xs text-gray-400 mb-1 block">Chức vụ</label>
-            <select
-              value={editForm.role}
-              onChange={e => onEditChange({ ...editForm, role: e.target.value })}
-              className="w-full px-2 py-1.5 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {POSITION_OPTS.map(o => (
-                <option key={o.v} value={o.v}>{o.l}</option>
-              ))}
-            </select>
+            {isAdmin ? (
+              <select
+                value={editForm.role}
+                onChange={e => onEditChange({ ...editForm, role: e.target.value })}
+                className="w-full px-2 py-1.5 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {POSITION_OPTS.map(o => (
+                  <option key={o.v} value={o.v}>{o.l}</option>
+                ))}
+              </select>
+            ) : (
+              <p className="px-2 py-1.5 text-sm text-gray-600">{POSITION_LABEL[s.role] || s.role}</p>
+            )}
           </div>
         </div>
         <div className="flex gap-2 pt-1">
@@ -165,6 +169,7 @@ export default function StaffPage() {
   const [success, setSuccess] = useState('')
   const [editId, setEditId] = useState(null)
   const [editForm, setEditForm] = useState({ full_name: '', phone: '', room_id: '', role: 'staff' })
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const loadStaff = async () => {
     const res = await fetch('/api/admin/staff')
@@ -186,6 +191,7 @@ export default function StaffPage() {
       const { data: me } = await supabase.from('staff').select('role').eq('id', session.user.id).single()
       const allowed = await hasPermission(me?.role, 'manage_staff')
       if (!allowed) { router.push('/dashboard'); return }
+      setIsAdmin(me?.role === 'admin')
 
       const [, resRooms] = await Promise.all([
         loadStaff(),
@@ -424,6 +430,7 @@ export default function StaffPage() {
                       onSave={() => saveEdit(s.id)}
                       onCancel={() => setEditId(null)}
                       onDelete={() => deleteStaff(s)}
+                      isAdmin={isAdmin}
                     />
                   ))}
                 </div>
@@ -448,6 +455,7 @@ export default function StaffPage() {
                       onSave={() => saveEdit(s.id)}
                       onCancel={() => setEditId(null)}
                       onDelete={() => deleteStaff(s)}
+                      isAdmin={isAdmin}
                     />
                   ))}
                 </div>
