@@ -883,11 +883,11 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                       <div key={i} className="flex items-center gap-2 text-xs py-1.5 px-2 bg-gray-50 rounded-lg">
                         <span className="text-gray-500 font-medium w-14 flex-shrink-0">T{h.month}/{h.year}</span>
                         <span className="text-gray-400 w-20 flex-shrink-0">📅 {fmtDate(h.created_at)}</span>
-                        <span className={'font-bold ' + (debtType === 'ketoan' && h.amount >= client.monthly_fee ? 'text-green-600' : 'text-blue-600')}>
+                        <span className={'font-bold ' + (debtType === 'ketoan' && h.amount >= h.feeAtThatTime ? 'text-green-600' : 'text-blue-600')}>
                           {fmt(h.amount)}đ
                         </span>
-                        {debtType === 'ketoan' && h.amount < client.monthly_fee && (
-                          <span className="text-orange-400 text-xs">⚠ thiếu {fmt(client.monthly_fee - h.amount)}đ</span>
+                        {debtType === 'ketoan' && h.amount < h.feeAtThatTime && (
+                          <span className="text-orange-400 text-xs">⚠ thiếu {fmt(h.feeAtThatTime - h.amount)}đ</span>
                         )}
                         {h.note && <span className="text-gray-400 truncate flex-1 italic">{h.note}</span>}
                       </div>

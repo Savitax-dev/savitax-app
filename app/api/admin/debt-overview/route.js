@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { ensureRollovers } from '@/lib/debtRollover'
 import { getPeriodMonths } from '@/lib/period'
 import { startedByMonth } from '@/lib/contractDates'
-import { dueFeeMonthsCount } from '@/lib/feeDue'
+import { dueFeeMonthsCount, resolveFeeForMonth } from '@/lib/feeDue'
 import { callerHasPermission } from '@/lib/serverAuth'
 
 function getAdmin() {
@@ -28,13 +28,16 @@ export async function GET(request) {
 
   const supabase = getAdmin()
 
-  const [{ data: roomList }, { data: staffList }, { data: clientList }, { data: feesKetoan }, { data: feesKhach }, { data: secondaryRows }] = await Promise.all([
+  const [{ data: roomList }, { data: staffList }, { data: clientList }, { data: feesKetoan }, { data: feesKhach }, { data: secondaryRows }, { data: feePlanRows }, { data: changeLogRows }] = await Promise.all([
     supabase.from('rooms').select('id, name, type').order('name'),
     supabase.from('staff').select('id, full_name, room_id').order('full_name'),
     supabase.from('clients').select('id, name, tax_code, monthly_fee, other_debt, report_type, fee_period, assigned_to, status, contract_start').eq('status', 'active'),
     supabase.from('service_fees').select('client_id, amount').eq('year', year).in('month', months).eq('type', 'ketoan'),
     supabase.from('service_fees').select('client_id, amount').eq('year', year).in('month', months).eq('type', 'khach'),
     supabase.from('client_secondary_staff').select('client_id, staff_id'),
+    // Lịch sử đổi phí — tra đúng phí tại kỳ đang xem thay vì monthly_fee sống (xem resolveFeeForMonth).
+    supabase.from('service_fees').select('client_id, year, month, amount').eq('type', 'fee_plan'),
+    supabase.from('client_change_log').select('client_id, old_value, changed_at').eq('entity', 'monthly_fee').eq('action', 'update'),
   ])
 
   // Tự động chuyển nợ thiếu của các tháng trước thành nợ tồn — chỉ khi đang xem đúng tháng hiện tại.
@@ -60,15 +63,19 @@ export async function GET(request) {
   // Số tháng trong kỳ mà công ty đã bắt đầu hợp đồng (gate theo contract_start) — dùng để quyết
   // định công ty có xuất hiện trong danh sách kỳ đang xem hay không.
   const monthsActive = (c) => months.filter(m => startedByMonth(c.contract_start, year, m)).length
+  // Phí ĐÚNG tại kỳ đang xem (tháng cuối trong `months`) — không phải monthly_fee sống, tránh
+  // đổi phí hôm nay làm sai lại công nợ của các kỳ quá khứ đang xem.
+  const feeAtPeriod = (c) => resolveFeeForMonth(feePlanRows || [], c.id, year, months[months.length - 1], c.monthly_fee, changeLogRows || [])
   // Số tiền phí trong kỳ — công ty quý: chỉ tính kỳ (tháng cuối quý) đã đến hạn VÀ đã qua hạn
   // khoan, không nhân theo số tháng thô (tránh nhân sai x3/x12 theo quý/năm).
-  const feeForPeriod = (c) => (Number(c.monthly_fee) || 0) * dueFeeMonthsCount(c.fee_period, c.contract_start, year, months)
+  const feeForPeriod = (c) => feeAtPeriod(c) * dueFeeMonthsCount(c.fee_period, c.contract_start, year, months)
 
   const built = (roomList || []).map(room => {
     const roomStaff = (staffList || []).filter(s => s.room_id === room.id)
     const staffWithClients = roomStaff.map(s => {
       const clients = (clientList || []).filter(c => c.assigned_to === s.id && monthsActive(c) > 0).map(c => ({
         ...c,
+        monthly_fee:    feeAtPeriod(c),
         periodFee:      feeForPeriod(c),
         collected:      feeMap[c.id] || 0,
         collectedKhach: feeKhachMap[c.id] || 0,
@@ -78,7 +85,7 @@ export async function GET(request) {
         .filter(r => r.staff_id === s.id)
         .map(r => clientMap[r.client_id])
         .filter(c => c && monthsActive(c) > 0)
-        .map(c => ({ ...c, periodFee: feeForPeriod(c), collected: feeMap[c.id] || 0, collectedKhach: feeKhachMap[c.id] || 0 }))
+        .map(c => ({ ...c, monthly_fee: feeAtPeriod(c), periodFee: feeForPeriod(c), collected: feeMap[c.id] || 0, collectedKhach: feeKhachMap[c.id] || 0 }))
 
       const fee = clients.reduce((a, c) => a + c.periodFee, 0)
       const col = clients.reduce((a, c) => a + c.collected, 0)

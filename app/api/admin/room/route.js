@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { ensureRollovers } from '@/lib/debtRollover'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { startedByMonth } from '@/lib/contractDates'
-import { feeCountsForMonth } from '@/lib/feeDue'
+import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireRoomAccess } from '@/lib/serverAuth'
 
 function getAdmin() {
@@ -86,10 +86,14 @@ export async function GET(request) {
   }
 
   // task_records + fee_collections for selected month (both types)
-  const [{ data: taskRecords }, { data: feeCollections }, { data: feeKhach }] = await Promise.all([
+  const [{ data: taskRecords }, { data: feeCollections }, { data: feeKhach }, { data: feePlanRows }, { data: changeLogRows }] = await Promise.all([
     supabase.from('task_records').select('id, client_id, task_def_id, is_done, done_at, note').in('client_id', clientIds).eq('year', year).eq('month', month),
     supabase.from('service_fees').select('client_id, amount').in('client_id', clientIds).eq('year', year).eq('month', month).eq('type', 'ketoan'),
     supabase.from('service_fees').select('client_id, amount').in('client_id', clientIds).eq('year', year).eq('month', month).eq('type', 'khach'),
+    // Lịch sử đổi phí — tra đúng phí tại tháng đang xem thay vì monthly_fee sống.
+    supabase.from('service_fees').select('client_id, year, month, amount').in('client_id', clientIds).eq('type', 'fee_plan'),
+    supabase.from('client_change_log').select('client_id, old_value, changed_at')
+      .in('client_id', clientIds).eq('entity', 'monthly_fee').eq('action', 'update'),
   ])
 
   // Build lookup maps
@@ -146,6 +150,9 @@ export async function GET(request) {
     const extra = extraMap[c.id] || {}
     return {
       ...c, isSecondary,
+      // Phí ĐÚNG tại tháng đang xem — không phải monthly_fee sống, tránh đổi phí hôm nay làm
+      // sai lại công nợ của tháng cũ đang xem.
+      monthly_fee: resolveFeeForMonth(feePlanRows || [], c.id, year, month, c.monthly_fee, changeLogRows || []),
       address: extra.address || null, tax_status: extra.tax_status || null, other_debt: Number(extra.other_debt) || 0,
       collected: feeMap[c.id] || 0, collectedKhach: feeKhachMap[c.id] || 0,
       tasks: tasksWithStatus, taskTotal: tasksWithStatus.length,
@@ -170,7 +177,7 @@ export async function GET(request) {
       // Doanh thu chỉ tính công ty mình là nhân viên chính — công ty quý chưa tới hạn thu (hoặc
       // còn trong hạn khoan) không tính vào công nợ tháng này.
       if (feeCountsForMonth(c.fee_period, year, month)) {
-        totalFee     += Number(c.monthly_fee) || 0
+        totalFee     += Number(built.monthly_fee) || 0
         collectedFee += feeMap[c.id] || 0
       }
       return built

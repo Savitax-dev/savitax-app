@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { startedByMonth } from '@/lib/contractDates'
-import { feeCountsForMonth } from '@/lib/feeDue'
+import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
@@ -41,12 +41,15 @@ export async function GET(request) {
   const clientsActive = (clients || []).filter(c => startedByMonth(c.contract_start, year, month))
   const clientIds = clientsActive.map(c => c.id)
 
-  const [{ data: taskRecords }, { data: fees }] = clientIds.length > 0
+  const [{ data: taskRecords }, { data: fees }, { data: feePlanRows }, { data: changeLogRows }] = clientIds.length > 0
     ? await Promise.all([
         supabase.from('task_records').select('client_id, task_def_id, is_done, done_at').in('client_id', clientIds).eq('year', year).eq('month', month),
         supabase.from('service_fees').select('client_id, amount').in('client_id', clientIds).eq('year', year).eq('month', month).eq('type', 'ketoan'),
+        // Lịch sử đổi phí — tra đúng phí tại tháng đang xem thay vì monthly_fee sống.
+        supabase.from('service_fees').select('client_id, year, month, amount').in('client_id', clientIds).eq('type', 'fee_plan'),
+        supabase.from('client_change_log').select('client_id, old_value, changed_at').in('client_id', clientIds).eq('entity', 'monthly_fee').eq('action', 'update'),
       ])
-    : [{ data: [] }, { data: [] }]
+    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }]
 
   const taskRecMap = {}
   for (const r of (taskRecords || [])) taskRecMap[r.client_id + '_' + r.task_def_id] = r
@@ -78,9 +81,10 @@ export async function GET(request) {
     return Math.round(doneOntime / tasks.length * 100)
   }
 
-  // % thu hồi công nợ của 1 công ty
+  // % thu hồi công nợ của 1 công ty — dùng đúng phí tại tháng đang xem, không phải monthly_fee
+  // sống (tránh đổi phí hôm nay làm sai lại công nợ tháng cũ đang xem).
   const clientDebtPct = (client) => {
-    const fee = Number(client.monthly_fee) || 0
+    const fee = resolveFeeForMonth(feePlanRows || [], client.id, year, month, client.monthly_fee, changeLogRows || [])
     if (fee === 0) return 100
     const collected = feeMap[client.id] || 0
     return Math.min(100, Math.round(collected / fee * 100))

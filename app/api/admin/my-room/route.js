@@ -3,7 +3,7 @@ import { ensureRollovers } from '@/lib/debtRollover'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { getPeriodMonths } from '@/lib/period'
 import { startedByMonth } from '@/lib/contractDates'
-import { dueFeeMonthsCount } from '@/lib/feeDue'
+import { dueFeeMonthsCount, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
@@ -98,7 +98,7 @@ export async function GET(request) {
 
   const isMonthOnly = period === 'month'
 
-  const [{ data: taskRecords }, { data: feeKetoan }, { data: feeKhach }] = await Promise.all([
+  const [{ data: taskRecords }, { data: feeKetoan }, { data: feeKhach }, { data: feePlanRows }, { data: changeLogRows }] = await Promise.all([
     isMonthOnly
       ? supabase.from('task_records').select('id, client_id, task_def_id, is_done, done_at, note')
           .in('client_id', clientIds).eq('year', year).eq('month', month)
@@ -107,6 +107,10 @@ export async function GET(request) {
       .in('client_id', clientIds).eq('year', year).in('month', months).eq('type', 'ketoan'),
     supabase.from('service_fees').select('client_id, amount')
       .in('client_id', clientIds).eq('year', year).in('month', months).eq('type', 'khach'),
+    // Lịch sử đổi phí — tra đúng phí tại kỳ đang xem thay vì monthly_fee sống (xem resolveFeeForMonth).
+    supabase.from('service_fees').select('client_id, year, month, amount').in('client_id', clientIds).eq('type', 'fee_plan'),
+    supabase.from('client_change_log').select('client_id, old_value, changed_at')
+      .in('client_id', clientIds).eq('entity', 'monthly_fee').eq('action', 'update'),
   ])
 
   const taskRecMap = {}
@@ -151,14 +155,18 @@ export async function GET(request) {
       const status = taskStatus(rec, t.deadline_day)
       return { ...t, rec, status }
     })
+    // Phí ĐÚNG tại kỳ đang xem (tháng cuối trong `months`) — không phải monthly_fee sống, tránh
+    // đổi phí hôm nay làm sai lại công nợ của các tháng/kỳ quá khứ đang xem.
+    const feeAtPeriod = resolveFeeForMonth(feePlanRows || [], c.id, year, months[months.length - 1], c.monthly_fee, changeLogRows || [])
     return {
       ...c,
+      monthly_fee: feeAtPeriod,
       tasks,
       taskTotal:      tasks.length,
       taskDone:       tasks.filter(t => t.status.startsWith('done')).length,
       // Công ty quý: chỉ tính phí vào các kỳ (tháng cuối quý) đã đến hạn VÀ đã qua hạn khoan —
       // không nhân theo số tháng thô như công ty tháng (tránh nhân sai x3/x12 theo quý/năm).
-      periodFee:      (Number(c.monthly_fee) || 0) * dueFeeMonthsCount(c.fee_period, c.contract_start, year, months),
+      periodFee:      feeAtPeriod * dueFeeMonthsCount(c.fee_period, c.contract_start, year, months),
       collected:      feeMap[c.id] || 0,
       collectedKhach: feeKhachMap[c.id] || 0,
     }
