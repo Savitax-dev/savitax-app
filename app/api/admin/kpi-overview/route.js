@@ -10,6 +10,24 @@ function getAdmin() {
 
 const mean = (arr) => arr.length === 0 ? 0 : Math.round(arr.reduce((a, v) => a + v, 0) / arr.length)
 
+// Supabase/PostgREST giới hạn TỐI ĐA 1000 dòng mỗi query theo mặc định (im lặng cắt bớt, KHÔNG
+// báo lỗi) — route này gộp dữ liệu TOÀN CÔNG TY (không lọc theo phòng như room/route.js) nên rất
+// dễ vượt mốc này khi công ty có nhiều khách hàng × nhiều task/tháng (đã thực tế gặp: 1387 dòng
+// task_records/tháng nhưng chỉ nhận về 1000, làm mất ngẫu nhiên việc đã làm của một số công ty,
+// khiến %-KPI của đúng những công ty đó bị tính sai thành "chưa làm"). Phải phân trang lấy hết.
+async function fetchAllRows(buildQuery, pageSize = 1000) {
+  let all = []
+  let from = 0
+  while (true) {
+    const { data, error } = await buildQuery().range(from, from + pageSize - 1)
+    if (error) throw error
+    all = all.concat(data || [])
+    if (!data || data.length < pageSize) break
+    from += pageSize
+  }
+  return all
+}
+
 // GET /api/admin/kpi-overview?year=2026&month=6
 // Tính KPI trực tiếp từ dữ liệu thật (clients, task_records, service_fees) — KHÔNG dùng
 // bảng room_kpi/staff_kpi tĩnh (không ai cập nhật, gây lệch số liệu giữa các trang).
@@ -42,15 +60,15 @@ export async function GET(request) {
   const clientsActive = (clients || []).filter(c => startedByMonth(c.contract_start, year, month))
   const clientIds = clientsActive.map(c => c.id)
 
-  const [{ data: taskRecords }, { data: fees }, { data: feePlanRows }, { data: changeLogRows }] = clientIds.length > 0
+  const [taskRecords, fees, feePlanRows, changeLogRows] = clientIds.length > 0
     ? await Promise.all([
-        supabase.from('task_records').select('client_id, task_def_id, is_done, done_at').in('client_id', clientIds).eq('year', year).eq('month', month),
-        supabase.from('service_fees').select('client_id, amount').in('client_id', clientIds).eq('year', year).eq('month', month).eq('type', 'ketoan'),
+        fetchAllRows(() => supabase.from('task_records').select('client_id, task_def_id, is_done, done_at').in('client_id', clientIds).eq('year', year).eq('month', month)),
+        fetchAllRows(() => supabase.from('service_fees').select('client_id, amount').in('client_id', clientIds).eq('year', year).eq('month', month).eq('type', 'ketoan')),
         // Lịch sử đổi phí — tra đúng phí tại tháng đang xem thay vì monthly_fee sống.
-        supabase.from('service_fees').select('client_id, year, month, amount').in('client_id', clientIds).eq('type', 'fee_plan'),
-        supabase.from('client_change_log').select('client_id, old_value, changed_at').in('client_id', clientIds).eq('entity', 'monthly_fee').eq('action', 'update'),
+        fetchAllRows(() => supabase.from('service_fees').select('client_id, year, month, amount').in('client_id', clientIds).eq('type', 'fee_plan')),
+        fetchAllRows(() => supabase.from('client_change_log').select('client_id, old_value, changed_at').in('client_id', clientIds).eq('entity', 'monthly_fee').eq('action', 'update')),
       ])
-    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }]
+    : [[], [], [], []]
 
   const taskRecMap = {}
   for (const r of (taskRecords || [])) taskRecMap[r.client_id + '_' + r.task_def_id] = r
@@ -68,26 +86,18 @@ export async function GET(request) {
     return taskType === clientType
   })
 
-  const DEBUG_CLIENT_IDS = ['c74a2406-8bab-400e-b0c6-77ef9c51ee63', 'acc04f60-a06b-4203-988b-b37337f8d81b']
-  const debugDump = {}
   // % hoàn thành công việc của 1 công ty — chỉ tính việc xong ĐÚNG HẠN
   const clientTaskPct = (client) => {
     const tasks = getApplicableTasks(client)
     if (tasks.length === 0) return 100
     let doneOntime = 0
-    const rows = []
     for (const t of tasks) {
       const rec = taskRecMap[client.id + '_' + t.id]
-      let ontime = false
       if (rec && rec.is_done) {
         const late = Math.floor((new Date(rec.done_at) - deadlineDate(t.deadline_day)) / 86400000)
-        if (late <= 0) { doneOntime++; ontime = true }
-        if (DEBUG_CLIENT_IDS.includes(client.id)) rows.push({ taskId: t.id, deadline_day: t.deadline_day, done_at: rec.done_at, late, ontime })
-      } else if (DEBUG_CLIENT_IDS.includes(client.id)) {
-        rows.push({ taskId: t.id, deadline_day: t.deadline_day, rec: rec || null, ontime: false })
+        if (late <= 0) doneOntime++
       }
     }
-    if (DEBUG_CLIENT_IDS.includes(client.id)) debugDump[client.id] = { taskCount: tasks.length, doneOntime, rows }
     return Math.round(doneOntime / tasks.length * 100)
   }
 
@@ -107,7 +117,6 @@ export async function GET(request) {
     clientsByStaff[c.assigned_to].push(c)
   }
 
-  const DEBUG_STAFF_ID = 'f0733580-c0a9-4b30-af31-2fc39360ed61'
   const staffResults = (staffList || []).map(s => {
     const myClients = clientsByStaff[s.id] || []
     const taskPcts = myClients.map(clientTaskPct)
@@ -123,7 +132,6 @@ export async function GET(request) {
       // Nhân viên không phụ trách công ty nào thì % công việc = 0%, không phải 100%.
       task_pct:     myClients.length ? mean(taskPcts) : 0,
       debt_pct:     myClients.length ? (debtCountedClients.length ? mean(debtPcts) : 100) : 0,
-      ...(s.id === DEBUG_STAFF_ID ? { _debug: { clientIds: myClients.map(c => c.id), taskPcts, dump: debugDump } } : {}),
     }
   })
 
