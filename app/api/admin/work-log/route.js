@@ -7,6 +7,23 @@ function getAdmin() {
 
 const fmt = (n) => Number(n || 0).toLocaleString('vi-VN')
 
+// Supabase/PostgREST giới hạn TỐI ĐA 1000 dòng/query theo mặc định (im lặng cắt bớt, KHÔNG báo
+// lỗi) — xem [[project_postgrest_1000row_limit]]. Route này (admin xem cả tháng, toàn công ty)
+// thực tế đã hơn 1000 dòng task_records "đã làm"/tháng, làm Nhật ký làm việc báo tròn "1000" dù
+// thực tế nhiều hơn. Phải phân trang lấy hết.
+async function fetchAllRows(buildQuery, pageSize = 1000) {
+  let all = []
+  let from = 0
+  while (true) {
+    const { data, error } = await buildQuery().range(from, from + pageSize - 1)
+    if (error) throw error
+    all = all.concat(data || [])
+    if (!data || data.length < pageSize) break
+    from += pageSize
+  }
+  return all
+}
+
 // Nhãn loại cập nhật công nợ (service_fees.type)
 const DEBT_TYPE_LABEL = {
   ketoan:   'Thu phí dịch vụ kế toán',
@@ -61,16 +78,16 @@ export async function GET(request) {
   }
 
   // 4. Truy vấn 3 nguồn song song (lọc actor ∈ scope + thời gian trong tháng)
-  const [{ data: tasks }, { data: fees }, { data: changes }, { data: rooms }, { data: clients }, { data: taskDefs }] = await Promise.all([
-    supabase.from('task_records')
+  const [tasks, fees, changes, { data: rooms }, { data: clients }, { data: taskDefs }] = await Promise.all([
+    fetchAllRows(() => supabase.from('task_records')
       .select('id, client_id, task_def_id, done_by, done_at, note')
-      .eq('is_done', true).gte('done_at', start).lt('done_at', end).in('done_by', scopeStaffIds),
-    supabase.from('service_fees')
+      .eq('is_done', true).gte('done_at', start).lt('done_at', end).in('done_by', scopeStaffIds)),
+    fetchAllRows(() => supabase.from('service_fees')
       .select('id, client_id, type, amount, note, created_by, created_at')
-      .gte('created_at', start).lt('created_at', end).in('created_by', scopeStaffIds),
-    supabase.from('client_change_log')
+      .gte('created_at', start).lt('created_at', end).in('created_by', scopeStaffIds)),
+    fetchAllRows(() => supabase.from('client_change_log')
       .select('id, client_id, entity_label, field, old_value, new_value, action, changed_by, changed_at')
-      .gte('changed_at', start).lt('changed_at', end).in('changed_by', scopeStaffIds),
+      .gte('changed_at', start).lt('changed_at', end).in('changed_by', scopeStaffIds)),
     supabase.from('rooms').select('id, name'),
     supabase.from('clients').select('id, name, client_code'),
     supabase.from('task_definitions').select('id, name'),
