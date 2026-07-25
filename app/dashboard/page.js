@@ -87,8 +87,9 @@ export default function DashboardPage() {
     .map(r => ({ ...r, score: score(r.avg_task_pct, r.avg_debt_pct) }))
     .sort((a, b) => b.score - a.score)[0] || null
 
-  // Hạng 1: nhân viên (có phụ trách công ty) điểm tổng hợp cao nhất
-  const rankableStaff = staff.filter(s => s.client_count > 0)
+  // Hạng 1: nhân viên (có phụ trách công ty) điểm tổng hợp cao nhất — chỉ xét vai trò "nhân viên",
+  // không tính trưởng phòng/quản trị vào bảng xếp hạng này.
+  const rankableStaff = staff.filter(s => s.client_count > 0 && s.role === 'staff')
   const bestStaff = rankableStaff
     .map(s => ({ ...s, score: score(s.task_pct, s.debt_pct) }))
     .sort((a, b) => b.score - a.score)[0] || null

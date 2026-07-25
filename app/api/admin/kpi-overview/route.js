@@ -32,7 +32,7 @@ export async function GET(request) {
 
   const [{ data: rooms }, { data: staffList }, { data: clients }, { data: taskDefs }] = await Promise.all([
     supabase.from('rooms').select('id, name, type').order('type').order('name'),
-    supabase.from('staff').select('id, full_name, room_id'),
+    supabase.from('staff').select('id, full_name, room_id, role'),
     supabase.from('clients').select('id, monthly_fee, report_type, fee_period, assigned_to, contract_start').eq('status', 'active'),
     supabase.from('task_definitions').select('id, deadline_day, month, report_type, is_active').eq('is_active', true).eq('month', month),
   ])
@@ -107,6 +107,7 @@ export async function GET(request) {
       staff_id:     s.id,
       full_name:    s.full_name,
       room_id:      s.room_id,
+      role:         s.role,
       client_count: myClients.length,
       // Nhân viên không phụ trách công ty nào thì % công việc = 0%, không phải 100%.
       task_pct:     myClients.length ? mean(taskPcts) : 0,
