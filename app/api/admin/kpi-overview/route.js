@@ -99,6 +99,7 @@ export async function GET(request) {
     clientsByStaff[c.assigned_to].push(c)
   }
 
+  const DEBUG_STAFF_ID = 'f0733580-c0a9-4b30-af31-2fc39360ed61'
   const staffResults = (staffList || []).map(s => {
     const myClients = clientsByStaff[s.id] || []
     const taskPcts = myClients.map(clientTaskPct)
@@ -114,6 +115,7 @@ export async function GET(request) {
       // Nhân viên không phụ trách công ty nào thì % công việc = 0%, không phải 100%.
       task_pct:     myClients.length ? mean(taskPcts) : 0,
       debt_pct:     myClients.length ? (debtCountedClients.length ? mean(debtPcts) : 100) : 0,
+      ...(s.id === DEBUG_STAFF_ID ? { _debug: { clientIds: myClients.map(c => c.id), taskPcts } } : {}),
     }
   })
 
