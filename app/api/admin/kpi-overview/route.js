@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { startedByMonth } from '@/lib/contractDates'
+import { effectiveDeadlineDate } from '@/lib/deadline'
 import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireLogin } from '@/lib/serverAuth'
 
@@ -56,9 +57,10 @@ export async function GET(request) {
   const feeMap = {}
   for (const f of (fees || [])) feeMap[f.client_id] = Number(f.amount) || 0
 
-  // Giới hạn ngày hạn không vượt quá số ngày thực có của tháng
-  const lastDayOfMonth = new Date(year, month, 0).getDate()
-  const deadlineDate = (day) => new Date(year, month - 1, Math.min(day, lastDayOfMonth))
+  // Giới hạn ngày hạn không vượt quá số ngày thực có của tháng + dời sang thứ 2 nếu rơi Chủ nhật
+  // (giống hệt room/route.js, my-room/route.js... — trước đây thiếu dời Chủ nhật, làm việc nộp
+  // đúng ngày thứ 2 kế tiếp bị tính "trễ hạn" sai, %-KPI ở Trang chủ/Báo cáo KPI thấp hơn thực tế).
+  const deadlineDate = (day) => effectiveDeadlineDate(year, month, day)
 
   const getApplicableTasks = (client) => (taskDefs || []).filter(t => {
     const taskType   = t.report_type || 'monthly'
