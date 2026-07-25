@@ -9,6 +9,23 @@ function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 }
 
+// Supabase/PostgREST giới hạn TỐI ĐA 1000 dòng/query mặc định (im lặng cắt bớt, KHÔNG báo lỗi)
+// — xem [[project_postgrest_1000row_limit]]. Route này gộp dữ liệu TOÀN CÔNG TY (giống
+// kpi-overview/work-log đã dính lỗi thật) — period=year nhân số dòng lên x12, sẽ chạm mốc 1000
+// khi công ty có thêm khách hàng, phải phân trang phòng ngừa từ bây giờ.
+async function fetchAllRows(buildQuery, pageSize = 1000) {
+  let all = []
+  let from = 0
+  while (true) {
+    const { data, error } = await buildQuery().range(from, from + pageSize - 1)
+    if (error) throw error
+    all = all.concat(data || [])
+    if (!data || data.length < pageSize) break
+    from += pageSize
+  }
+  return all
+}
+
 // GET /api/admin/debt-overview?year=2026&period=month&month=6
 // GET /api/admin/debt-overview?year=2026&period=quarter&quarter=2
 // GET /api/admin/debt-overview?year=2026&period=year
@@ -28,16 +45,16 @@ export async function GET(request) {
 
   const supabase = getAdmin()
 
-  const [{ data: roomList }, { data: staffList }, { data: clientList }, { data: feesKetoan }, { data: feesKhach }, { data: secondaryRows }, { data: feePlanRows }, { data: changeLogRows }] = await Promise.all([
+  const [{ data: roomList }, { data: staffList }, { data: clientList }, feesKetoan, feesKhach, { data: secondaryRows }, feePlanRows, changeLogRows] = await Promise.all([
     supabase.from('rooms').select('id, name, type').order('name'),
     supabase.from('staff').select('id, full_name, room_id').order('full_name'),
     supabase.from('clients').select('id, name, tax_code, monthly_fee, other_debt, report_type, fee_period, assigned_to, status, contract_start').eq('status', 'active'),
-    supabase.from('service_fees').select('client_id, amount').eq('year', year).in('month', months).eq('type', 'ketoan'),
-    supabase.from('service_fees').select('client_id, amount').eq('year', year).in('month', months).eq('type', 'khach'),
+    fetchAllRows(() => supabase.from('service_fees').select('client_id, amount').eq('year', year).in('month', months).eq('type', 'ketoan')),
+    fetchAllRows(() => supabase.from('service_fees').select('client_id, amount').eq('year', year).in('month', months).eq('type', 'khach')),
     supabase.from('client_secondary_staff').select('client_id, staff_id'),
     // Lịch sử đổi phí — tra đúng phí tại kỳ đang xem thay vì monthly_fee sống (xem resolveFeeForMonth).
-    supabase.from('service_fees').select('client_id, year, month, amount').eq('type', 'fee_plan'),
-    supabase.from('client_change_log').select('client_id, old_value, changed_at').eq('entity', 'monthly_fee').eq('action', 'update'),
+    fetchAllRows(() => supabase.from('service_fees').select('client_id, year, month, amount').eq('type', 'fee_plan')),
+    fetchAllRows(() => supabase.from('client_change_log').select('client_id, old_value, changed_at').eq('entity', 'monthly_fee').eq('action', 'update')),
   ])
 
   // Tự động chuyển nợ thiếu của các tháng trước thành nợ tồn — chỉ khi đang xem đúng tháng hiện tại.
