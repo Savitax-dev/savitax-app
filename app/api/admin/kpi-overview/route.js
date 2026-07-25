@@ -68,18 +68,26 @@ export async function GET(request) {
     return taskType === clientType
   })
 
+  const DEBUG_CLIENT_IDS = ['c74a2406-8bab-400e-b0c6-77ef9c51ee63', 'acc04f60-a06b-4203-988b-b37337f8d81b']
+  const debugDump = {}
   // % hoàn thành công việc của 1 công ty — chỉ tính việc xong ĐÚNG HẠN
   const clientTaskPct = (client) => {
     const tasks = getApplicableTasks(client)
     if (tasks.length === 0) return 100
     let doneOntime = 0
+    const rows = []
     for (const t of tasks) {
       const rec = taskRecMap[client.id + '_' + t.id]
+      let ontime = false
       if (rec && rec.is_done) {
         const late = Math.floor((new Date(rec.done_at) - deadlineDate(t.deadline_day)) / 86400000)
-        if (late <= 0) doneOntime++
+        if (late <= 0) { doneOntime++; ontime = true }
+        if (DEBUG_CLIENT_IDS.includes(client.id)) rows.push({ taskId: t.id, deadline_day: t.deadline_day, done_at: rec.done_at, late, ontime })
+      } else if (DEBUG_CLIENT_IDS.includes(client.id)) {
+        rows.push({ taskId: t.id, deadline_day: t.deadline_day, rec: rec || null, ontime: false })
       }
     }
+    if (DEBUG_CLIENT_IDS.includes(client.id)) debugDump[client.id] = { taskCount: tasks.length, doneOntime, rows }
     return Math.round(doneOntime / tasks.length * 100)
   }
 
@@ -115,7 +123,7 @@ export async function GET(request) {
       // Nhân viên không phụ trách công ty nào thì % công việc = 0%, không phải 100%.
       task_pct:     myClients.length ? mean(taskPcts) : 0,
       debt_pct:     myClients.length ? (debtCountedClients.length ? mean(debtPcts) : 100) : 0,
-      ...(s.id === DEBUG_STAFF_ID ? { _debug: { clientIds: myClients.map(c => c.id), taskPcts } } : {}),
+      ...(s.id === DEBUG_STAFF_ID ? { _debug: { clientIds: myClients.map(c => c.id), taskPcts, dump: debugDump } } : {}),
     }
   })
 
