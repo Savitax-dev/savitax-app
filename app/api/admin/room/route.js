@@ -160,6 +160,14 @@ export async function GET(request) {
     }
   }
 
+  const mean = (arr) => arr.length === 0 ? 0 : Math.round(arr.reduce((a, v) => a + v, 0) / arr.length)
+  // % của 1 công ty (dùng để tính trung bình cộng theo nhân viên) — cùng công thức với
+  // app/api/admin/kpi-overview/route.js (KHÔNG dồn tổng số việc/tổng phí toàn bộ công ty rồi
+  // chia — cách đó làm công ty nhiều việc/phí lấn át công ty ít việc/phí, ra số khác Trang chủ
+  // và Báo cáo KPI dù cùng 1 nhân viên cùng 1 tháng).
+  const clientTaskPct = (built) => built.tasks.length === 0 ? 100 : Math.round(built.tasks.filter(t => t.status === 'done_ontime').length / built.tasks.length * 100)
+  const clientDebtPct = (built) => (Number(built.monthly_fee) || 0) === 0 ? 100 : Math.min(100, Math.round((feeMap[built.id] || 0) / (Number(built.monthly_fee) || 0) * 100))
+
   // Build per-staff data
   const staffData = staffList.map(s => {
     const myOwnedClients = activeOwnedClients.filter(c => c.assigned_to === s.id)
@@ -195,18 +203,15 @@ export async function GET(request) {
 
     const clientsWithTasks = [...ownedWithTasks, ...secondaryWithTasks]
 
-    // KPI: chỉ done_ontime mới được tính % hoàn thành — trễ hạn không tính
-    let kpiDone = 0, kpiTotal = 0
-    for (const c of clientsWithTasks) {
-      for (const t of c.tasks) {
-        kpiTotal++
-        if (t.status === 'done_ontime') kpiDone++
-      }
-    }
-    // Nhân viên không phụ trách công ty nào (kể cả phụ) thì % công việc = 0%, không phải 100% —
-    // 100% chỉ dành cho trường hợp có công ty nhưng tháng này chưa phát sinh việc nào.
-    const taskPct = clientsWithTasks.length === 0 ? 0 : (kpiTotal === 0 ? 100 : Math.round(kpiDone / kpiTotal * 100))
-    const debtPct = totalFee  === 0 ? (myOwnedClients.length > 0 ? 100 : 0) : Math.round(collectedFee / totalFee * 100)
+    // %-KPI: TRUNG BÌNH CỘNG theo từng công ty CHÍNH (owned) — cùng công thức với kpi-overview
+    // (Trang chủ, Báo cáo KPI), KHÔNG dồn tổng số việc/tổng phí rồi chia (cách cũ làm công ty
+    // nhiều việc/phí lấn át công ty ít việc/phí, ra số khác 2 trang kia dù cùng 1 nhân viên/tháng).
+    // Công ty phụ trách phụ vẫn hiện trong danh sách (clientsWithTasks) nhưng không tính vào %.
+    const taskPcts = ownedWithTasks.map(clientTaskPct)
+    const debtCountedClients = ownedWithTasks.filter(c => feeCountsForMonth(c.fee_period, year, month))
+    const debtPcts = debtCountedClients.map(clientDebtPct)
+    const taskPct = myOwnedClients.length === 0 ? 0 : mean(taskPcts)
+    const debtPct = myOwnedClients.length === 0 ? 0 : (debtCountedClients.length ? mean(debtPcts) : 100)
 
     return { ...s, clientCount: myOwnedClients.length, clients: clientsWithTasks, taskPct, debtPct, totalTasks, doneTasks, totalFee, collectedFee }
   })
@@ -217,8 +222,10 @@ export async function GET(request) {
   const sumCollect  = staffData.reduce((a, s) => a + s.collectedFee, 0)
 
   const totals = {
-    taskPct:     sumKpiTotal === 0 ? 100 : Math.round(sumKpiDone / sumKpiTotal * 100),
-    debtPct:     sumFee      === 0 ? (activeOwnedClients.length > 0 ? 100 : 0) : Math.round(sumCollect / sumFee * 100),
+    // Trung bình cộng theo nhân viên trong phòng — khớp avg_task_pct/avg_debt_pct của
+    // kpi-overview (Trang chủ) cho cùng phòng, thay vì dồn tổng việc/phí toàn phòng rồi chia.
+    taskPct:     staffData.length ? mean(staffData.map(s => s.taskPct)) : 0,
+    debtPct:     staffData.length ? mean(staffData.map(s => s.debtPct)) : 0,
     totalTasks:  sumKpiTotal,
     doneTasks:   sumKpiDone,
     totalFee:    sumFee,
