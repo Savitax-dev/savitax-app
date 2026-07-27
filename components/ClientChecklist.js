@@ -232,7 +232,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
 
   const saveDebt = async () => {
     if (!debtAmount) return
-    if (debtType === 'ketoan' && !isAdmin && isPastEditDeadline(selYear, clientMonth)) {
+    if (debtType === 'ketoan' && !isTrueAdmin && isPastEditDeadline(selYear, clientMonth)) {
       alert('Đã quá hạn cập nhật công nợ của Tháng ' + clientMonth + ', vui lòng cập nhật công nợ Tồn')
       return
     }
