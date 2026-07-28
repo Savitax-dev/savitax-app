@@ -55,16 +55,13 @@ export default function AdminRoomsPage() {
   const [editName, setEditName] = useState('')
 
   const load = async () => {
-    const supabase = createClient()
-    const [resRooms, resStaff] = await Promise.all([
-      supabase.from('rooms').select('*').order('type').order('name'),
-      supabase.from('staff').select('room_id'),
+    const [roomsRes, staffRes] = await Promise.all([
+      fetch('/api/admin/rooms', { cache: 'no-store' }).then(r => r.json()),
+      fetch('/api/admin/staff', { cache: 'no-store' }).then(r => r.json()),
     ])
-    const rl = resRooms.data
-    const staffAll = resStaff.data
-    setRooms(rl ?? [])
+    setRooms(roomsRes.data ?? [])
     const counts = {}
-    for (const s of (staffAll ?? [])) counts[s.room_id] = (counts[s.room_id] ?? 0) + 1
+    for (const s of (staffRes.data ?? [])) counts[s.room_id] = (counts[s.room_id] ?? 0) + 1
     setStaffCounts(counts)
   }
 
@@ -88,17 +85,26 @@ export default function AdminRoomsPage() {
     if (!form.name.trim()) return
     setSaving(true)
     setError('')
-    const supabase = createClient()
-    const { error: err } = await supabase.from('rooms').insert({ name: form.name.trim(), type: form.type })
-    if (err) setError(err.message)
+    const res = await fetch('/api/admin/rooms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: form.name.trim(), type: form.type }),
+    })
+    const json = await res.json()
+    if (json.error) setError(json.error)
     else { setForm({ name: '', type: 'main' }); setShowForm(false); await load() }
     setSaving(false)
   }
 
   const saveEdit = async (id) => {
     if (!editName.trim()) return
-    const supabase = createClient()
-    await supabase.from('rooms').update({ name: editName.trim() }).eq('id', id)
+    const res = await fetch('/api/admin/rooms', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, name: editName.trim() }),
+    })
+    const json = await res.json()
+    if (json.error) setError(json.error)
     setEditingId(null)
     await load()
   }
@@ -109,8 +115,13 @@ export default function AdminRoomsPage() {
       return
     }
     if (!confirm(`Xóa phòng "${room.name}"?`)) return
-    const supabase = createClient()
-    await supabase.from('rooms').delete().eq('id', room.id)
+    const res = await fetch('/api/admin/rooms', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: room.id }),
+    })
+    const json = await res.json()
+    if (json.error) setError(json.error)
     await load()
   }
 
