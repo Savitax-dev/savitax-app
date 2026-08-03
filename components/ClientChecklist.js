@@ -316,9 +316,13 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
 
   const toggleTask = async (task) => {
     const isDone = task.status.startsWith('done')
-    // Không ai được bỏ check khi đã check rồi (tránh mất dấu hoàn thành đúng hạn gốc) —
-    // Quản trị sửa trạng thái sai qua nút "Sửa đúng hạn" riêng, không qua checkbox.
-    if (isDone) return
+    // Nhân viên/trưởng phòng không được bỏ check khi đã check rồi (tránh mất dấu hoàn thành
+    // đúng hạn gốc) — chỉ admin thật mới được bỏ tick khi nhân viên tick nhầm (có xác nhận riêng
+    // để tránh bấm nhầm), qua đúng API task-toggle (server cũng tự chặn không phải admin).
+    if (isDone) {
+      if (!isTrueAdmin) return
+      if (!confirm('Bỏ đánh dấu hoàn thành việc này?')) return
+    }
 
     setToggling(task.id)
     const supabase = createClient()
@@ -995,7 +999,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                       <div key={t.id}
                         className={'w-full flex items-start gap-2.5 px-3 py-2 text-left transition-colors hover:bg-gray-50 flex-wrap ' +
                           (isDone ? 'bg-white' : '')}>
-                        <button onClick={() => toggleTask(t)} disabled={isBusy || isDone}
+                        <button onClick={() => toggleTask(t)} disabled={isBusy || (isDone && !isTrueAdmin)}
                           className="flex items-start gap-2.5 flex-1 min-w-[140px] text-left disabled:cursor-default">
                           {isBusy ? (
                             <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
