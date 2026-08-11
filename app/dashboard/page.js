@@ -81,15 +81,20 @@ export default function DashboardPage() {
   const activeRooms = rooms.filter(r => r.staff_count > 0)
   const roomName = (id) => (rooms.find(r => r.room_id === id) || {}).room_name || ''
 
-  // Hạng 1: phòng có điểm tổng hợp cao nhất
+  // Hạng 1: phòng có điểm tổng hợp cao nhất — chỉ xét phòng văn phòng (room_type='main'), loại
+  // phòng "Remote" ra khỏi xếp hạng này (activeRooms vẫn giữ nguyên, dùng cho phần liệt kê %
+  // từng phòng bên trên — kể cả phòng Remote).
   const score = (t, d) => Math.round(((t || 0) + (d || 0)) / 2)
   const bestRoom = activeRooms
+    .filter(r => r.room_type !== 'remote')
     .map(r => ({ ...r, score: score(r.avg_task_pct, r.avg_debt_pct) }))
     .sort((a, b) => b.score - a.score)[0] || null
 
   // Hạng 1: nhân viên (có phụ trách công ty) điểm tổng hợp cao nhất — chỉ xét vai trò "nhân viên",
-  // không tính trưởng phòng/quản trị vào bảng xếp hạng này.
-  const rankableStaff = staff.filter(s => s.client_count > 0 && s.role === 'staff')
+  // không tính trưởng phòng/quản trị vào bảng xếp hạng này. Cũng loại nhân viên thuộc phòng
+  // "Remote" — chỉ xét nhân viên phòng văn phòng (room_type='main').
+  const remoteRoomIds = new Set(rooms.filter(r => r.room_type === 'remote').map(r => r.room_id))
+  const rankableStaff = staff.filter(s => s.client_count > 0 && s.role === 'staff' && !remoteRoomIds.has(s.room_id))
   const bestStaff = rankableStaff
     .map(s => ({ ...s, score: score(s.task_pct, s.debt_pct) }))
     .sort((a, b) => b.score - a.score)[0] || null
