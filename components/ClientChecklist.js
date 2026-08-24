@@ -197,7 +197,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
       // đồng bộ lại nếu đổi tháng/quý trong lúc panel đang mở (giống hệt b1Label/b1Amount).
       const periodCodeQr = client.fee_period === 'quarterly' ? 'Q' + Math.ceil(clientMonth / 3) : 'T' + String(clientMonth).padStart(2, '0')
       const clientCodeQr = client.client_code || client.tax_code || ''
-      setQrContent(clientCodeQr + '_TTPhiDichvu_' + periodCodeQr + '_Savitax')
+      setQrContent(clientCodeQr + '_TTPhiDichVu_' + periodCodeQr + '_Savitax')
     }
     if (p === 'info') { setEditCred(null); setShowHistory(false); loadCreds() }
     if (p === 'files') { setFileError(''); loadFiles() }
@@ -705,10 +705,10 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                 className="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 disabled:opacity-40 transition-colors font-medium">
                 + Thêm dòng B{extraRows.length+2}
               </button>
-              <div className="flex-1 flex items-center gap-1.5 justify-end min-w-[220px]">
+              <div className="flex items-center gap-1.5 justify-end ml-auto">
                 <label className="text-xs text-gray-400 flex-shrink-0">QR:</label>
                 <input value={qrContent} onChange={e => setQrContent(e.target.value)}
-                  className="flex-1 min-w-0 px-1.5 py-0.5 border border-indigo-200 rounded text-xs font-mono text-indigo-600 text-right focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                  className="w-[350px] px-1.5 py-0.5 border border-indigo-200 rounded text-xs font-mono text-indigo-600 text-right focus:outline-none focus:ring-1 focus:ring-indigo-400" />
               </div>
             </div>
           </div>

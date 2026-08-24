@@ -62,7 +62,7 @@ export async function GET(request) {
   const monthPad   = String(month).padStart(2, '0')
   const periodCode = client.fee_period === 'quarterly' ? 'Q' + Math.ceil(month / 3) : 'T' + monthPad
   const clientCode = client.client_code || client.tax_code || ''
-  const qrContent  = qrContentParam || (clientCode + '_TTPhiDichvu_' + periodCode + '_Savitax')
+  const qrContent  = qrContentParam || (clientCode + '_TTPhiDichVu_' + periodCode + '_Savitax')
   const bankId     = 'ACB'
   const accountNo  = '3878556868'
   const qrUrl = 'https://img.vietqr.io/image/' + bankId + '-' + accountNo +
