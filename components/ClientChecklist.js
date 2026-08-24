@@ -41,6 +41,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   const [extraRows,    setExtraRows]    = useState([])
   const [b1Label,      setB1Label]      = useState('')
   const [b1Amount,     setB1Amount]     = useState('')
+  const [qrContent,    setQrContent]    = useState('')
   const [debtType,     setDebtType]     = useState('ketoan')
   const [debtAmount,   setDebtAmount]   = useState('')
   const [debtNote,     setDebtNote]     = useState('')
@@ -191,6 +192,12 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
       // client.monthly_fee đã bao gồm VAT (nhập ở "Thêm công ty") — tách VAT ngay khi mở panel để
       // B1 hiển thị/tính toán đúng số "chưa VAT" xuyên suốt (khớp label + khớp file ĐNTT in ra)
       setB1Amount(client.monthly_fee ? String(Math.round(Number(client.monthly_fee) / 1.08)) : '')
+      // Nội dung QR mặc định — nhân viên sửa được trước khi "Mở PDF" nếu cần (vd đổi cách viết
+      // mã khách hàng, thêm ghi chú riêng...). Chỉ đặt lại mặc định khi MỞ panel, không tự
+      // đồng bộ lại nếu đổi tháng/quý trong lúc panel đang mở (giống hệt b1Label/b1Amount).
+      const periodCodeQr = client.fee_period === 'quarterly' ? 'Q' + Math.ceil(clientMonth / 3) : 'T' + String(clientMonth).padStart(2, '0')
+      const clientCodeQr = client.client_code || client.tax_code || ''
+      setQrContent(clientCodeQr + '_TTPhiDichvu_' + periodCodeQr + '_Savitax')
     }
     if (p === 'info') { setEditCred(null); setShowHistory(false); loadCreds() }
     if (p === 'files') { setFileError(''); loadFiles() }
@@ -382,11 +389,6 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   const vatAmt     = Math.round(subTotal * 0.08)
   const totalB     = subTotal + vatAmt
   const totalC     = prevBalVat + totalB
-  const monthPad   = String(clientMonth).padStart(2,'0')
-  const periodCode = client.fee_period === 'quarterly' ? 'Q' + Math.ceil(clientMonth / 3) : 'T' + monthPad
-  const clientCode = client.client_code || client.tax_code || ''
-  const qrContent  = clientCode + '_ThanhToanPhiDichvu_' + periodCode + '_Savitax'
-
   const credsByCat = {}
   for (const c of creds) {
     if (!credsByCat[c.category]) credsByCat[c.category] = []
@@ -619,6 +621,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                 '&month=' + clientMonth + '&year=' + selYear +
                 '&b1Label=' + encodeURIComponent(b1Label) +
                 '&b1Amount=' + encodeURIComponent(b1AmountNum) +
+                '&qrContent=' + encodeURIComponent(qrContent) +
                 (extraRows.filter(r=>r.desc||r.amount).length > 0
                   ? '&extra=' + encodeURIComponent(JSON.stringify(extraRows.filter(r=>r.desc||r.amount)))
                   : '')
@@ -702,7 +705,11 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                 className="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 disabled:opacity-40 transition-colors font-medium">
                 + Thêm dòng B{extraRows.length+2}
               </button>
-              <div className="flex-1 text-xs text-gray-400 text-right">QR: <span className="font-mono text-indigo-600">{qrContent}</span></div>
+              <div className="flex-1 flex items-center gap-1.5 justify-end min-w-[220px]">
+                <label className="text-xs text-gray-400 flex-shrink-0">QR:</label>
+                <input value={qrContent} onChange={e => setQrContent(e.target.value)}
+                  className="flex-1 min-w-0 px-1.5 py-0.5 border border-indigo-200 rounded text-xs font-mono text-indigo-600 text-right focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+              </div>
             </div>
           </div>
         </div>
