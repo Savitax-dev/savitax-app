@@ -178,12 +178,11 @@ export async function GET(request) {
   }
 
   const mean = (arr) => arr.length === 0 ? 0 : Math.round(arr.reduce((a, v) => a + v, 0) / arr.length)
-  // % của 1 công ty (dùng để tính trung bình cộng theo nhân viên) — cùng công thức với
-  // app/api/admin/kpi-overview/route.js (KHÔNG dồn tổng số việc/tổng phí toàn bộ công ty rồi
-  // chia — cách đó làm công ty nhiều việc/phí lấn át công ty ít việc/phí, ra số khác Trang chủ
-  // và Báo cáo KPI dù cùng 1 nhân viên cùng 1 tháng).
+  // % công việc của 1 công ty (dùng để tính trung bình cộng theo nhân viên) — cùng công thức với
+  // app/api/admin/kpi-overview/route.js (KHÔNG dồn tổng số việc toàn bộ công ty rồi chia — cách
+  // đó làm công ty nhiều việc lấn át công ty ít việc, ra số khác Trang chủ/Báo cáo KPI dù cùng 1
+  // nhân viên cùng 1 tháng). %-công nợ thì NGƯỢC LẠI — xem debtPct bên dưới.
   const clientTaskPct = (built) => built.tasks.length === 0 ? 100 : Math.round(built.tasks.filter(t => t.status === 'done_ontime').length / built.tasks.length * 100)
-  const clientDebtPct = (built) => (Number(built.monthly_fee) || 0) === 0 ? 100 : Math.min(100, Math.round((feeMap[built.id] || 0) / (Number(built.monthly_fee) || 0) * 100))
 
   // Build per-staff data
   const staffData = staffList.map(s => {
@@ -226,9 +225,11 @@ export async function GET(request) {
     // Công ty phụ trách phụ vẫn hiện trong danh sách (clientsWithTasks) nhưng không tính vào %.
     const taskPcts = ownedWithTasks.map(clientTaskPct)
     const debtCountedClients = ownedWithTasks.filter(c => feeCountsForMonth(c.fee_period, year, month))
-    const debtPcts = debtCountedClients.map(clientDebtPct)
     const taskPct = myOwnedClients.length === 0 ? 0 : mean(taskPcts)
-    const debtPct = myOwnedClients.length === 0 ? 0 : (debtCountedClients.length ? mean(debtPcts) : 100)
+    // %-công nợ nhân viên (2026-08-24, đổi theo yêu cầu) = TỔNG tiền đã thu / TỔNG phí phải thu
+    // gộp tất cả công ty đến hạn của người đó — totalFee/collectedFee đã dồn sẵn ở vòng lặp
+    // ownedWithTasks.map bên trên, KHÔNG phải trung bình cộng % từng công ty (khác task ở trên).
+    const debtPct = myOwnedClients.length === 0 ? 0 : (debtCountedClients.length ? (totalFee === 0 ? 100 : Math.round(collectedFee / totalFee * 100)) : 100)
 
     return { ...s, clientCount: myOwnedClients.length, clients: clientsWithTasks, taskPct, debtPct, totalTasks, doneTasks, totalFee, collectedFee }
   })

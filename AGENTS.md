@@ -17,9 +17,13 @@ công việc hàng tháng/quý, công nợ dịch vụ, KPI nhân viên/phòng b
 - Phân quyền: bảng `roles`/`permissions`/`role_permissions`, helper `lib/permissions.js`
   (`hasPermission(role, key)`). Vai trò `admin` có `is_system=true` → luôn full quyền, không cần
   gán permission riêng. Trang admin mới phải gọi `hasPermission` để gate, không hard-code role.
-- KPI (xem `/api/admin/kpi-overview`): % của 1 công ty → trung bình cộng theo nhân viên (không
-  theo phòng) → trung bình cộng theo phòng (không theo công ty toàn cty). Không tính điểm KPI
-  gộp (% công việc + % công nợ) — đã bỏ theo yêu cầu, chỉ hiển thị 2 chỉ số riêng.
+- KPI (xem `/api/admin/kpi-overview`, `/api/admin/room`): **%-công việc** = % của 1 công ty →
+  trung bình cộng theo nhân viên (mỗi công ty tính ngang nhau) → trung bình cộng theo phòng.
+  **%-công nợ** (đổi 2026-08-24, khác công việc) = TỔNG tiền đã thu / TỔNG phí phải thu **gộp
+  tất cả công ty** của 1 nhân viên (không phải trung bình cộng % từng công ty — công ty phí lớn
+  ảnh hưởng đúng theo tỉ trọng tiền) → sau đó mới trung bình cộng theo nhân viên lên mức phòng
+  (bước phòng→cty vẫn trung bình cộng như %-công việc, không đổi). Không tính điểm KPI gộp (%
+  công việc + % công nợ) — đã bỏ theo yêu cầu, chỉ hiển thị 2 chỉ số riêng.
 - Công nợ: `service_fees.type` phân biệt `ketoan` (phí dịch vụ kế toán chính), `khach` (dịch vụ
   khác), `fee_plan` (lịch sử thay đổi mức phí, không phải tiền đã thu).
 - Nhân viên chính/phụ: `clients.assigned_to` = nhân viên chính (toàn quyền, doanh thu tính cho

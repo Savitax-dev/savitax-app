@@ -33,9 +33,15 @@ async function fetchAllRows(buildQuery, pageSize = 1000) {
 // bảng room_kpi/staff_kpi tĩnh (không ai cập nhật, gây lệch số liệu giữa các trang).
 //
 // Quy tắc:
-// - % của 1 công ty = % hoàn thành công việc / % thu hồi công nợ của riêng công ty đó trong tháng.
-// - KPI nhân viên = TRUNG BÌNH CỘNG của % các công ty mình phụ trách CHÍNH (không chia theo số lượng việc).
-// - KPI phòng = TRUNG BÌNH CỘNG của KPI toàn bộ nhân viên trong phòng.
+// - % công việc của 1 công ty = % hoàn thành đúng hạn của riêng công ty đó trong tháng.
+// - %-KPI công việc nhân viên = TRUNG BÌNH CỘNG % công việc của các công ty mình phụ trách CHÍNH
+//   (mỗi công ty tính ngang nhau, không phân biệt quy mô).
+// - %-KPI công nợ nhân viên (2026-08-24, đổi theo yêu cầu) = TỔNG tiền đã thu / TỔNG phí phải thu
+//   GỘP TẤT CẢ công ty đến hạn của người đó — KHÔNG phải trung bình cộng % từng công ty (khác
+//   công việc ở trên) — công ty phí lớn ảnh hưởng đúng theo tỉ trọng tiền thật. Khớp với cách
+//   my-room/debt-overview/route.js và tab "Công nợ phòng" đã tính từ trước.
+// - KPI phòng (cả công việc lẫn công nợ) = TRUNG BÌNH CỘNG của %-KPI toàn bộ nhân viên trong phòng
+//   (mỗi nhân viên tính ngang nhau — bước này KHÔNG đổi, vẫn trung bình cộng như cũ).
 // - KPI toàn công ty = TRUNG BÌNH CỘNG của KPI toàn bộ phòng đang có nhân viên.
 // Trang chủ (Tổng quan) dùng chung API này cho MỌI nhân viên (đã xác nhận: ai cũng xem được số
 // liệu toàn công ty, không riêng leader/admin) — chỉ cần đăng nhập, không cần quyền view_kpi_report.
@@ -101,14 +107,10 @@ export async function GET(request) {
     return Math.round(doneOntime / tasks.length * 100)
   }
 
-  // % thu hồi công nợ của 1 công ty — dùng đúng phí tại tháng đang xem, không phải monthly_fee
-  // sống (tránh đổi phí hôm nay làm sai lại công nợ tháng cũ đang xem).
-  const clientDebtPct = (client) => {
-    const fee = resolveFeeForMonth(feePlanRows || [], client.id, year, month, client.monthly_fee, changeLogRows || [])
-    if (fee === 0) return 100
-    const collected = feeMap[client.id] || 0
-    return Math.min(100, Math.round(collected / fee * 100))
-  }
+  // Phí ĐÚNG của 1 công ty tại tháng đang xem — dùng đúng phí tại tháng đang xem, không phải
+  // monthly_fee sống (tránh đổi phí hôm nay làm sai lại công nợ tháng cũ đang xem).
+  const resolveClientFee = (client) =>
+    resolveFeeForMonth(feePlanRows || [], client.id, year, month, client.monthly_fee, changeLogRows || [])
 
   const clientsByStaff = {}
   for (const c of clientsActive) {
@@ -122,7 +124,8 @@ export async function GET(request) {
     const taskPcts = myClients.map(clientTaskPct)
     // Công ty quý chưa tới hạn thu (hoặc còn trong hạn khoan) không tính vào công nợ tháng này.
     const debtCountedClients = myClients.filter(c => feeCountsForMonth(c.fee_period, year, month))
-    const debtPcts = debtCountedClients.map(clientDebtPct)
+    const totalDebtFee       = debtCountedClients.reduce((a, c) => a + resolveClientFee(c), 0)
+    const totalDebtCollected = debtCountedClients.reduce((a, c) => a + (feeMap[c.id] || 0), 0)
     return {
       staff_id:     s.id,
       full_name:    s.full_name,
@@ -131,7 +134,9 @@ export async function GET(request) {
       client_count: myClients.length,
       // Nhân viên không phụ trách công ty nào thì % công việc = 0%, không phải 100%.
       task_pct:     myClients.length ? mean(taskPcts) : 0,
-      debt_pct:     myClients.length ? (debtCountedClients.length ? mean(debtPcts) : 100) : 0,
+      debt_pct:     myClients.length
+        ? (debtCountedClients.length ? (totalDebtFee === 0 ? 100 : Math.round(totalDebtCollected / totalDebtFee * 100)) : 100)
+        : 0,
     }
   })
 
