@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { callerHasPermission, requireLogin } from '@/lib/serverAuth'
+import { SHARED_ROOM_IDS } from '@/lib/specialRooms'
 
 function getAdmin() {
   return createClient(
@@ -10,8 +11,9 @@ function getAdmin() {
 
 // Chỉ cần đăng nhập (không cần manage_staff) — trang "Thêm công ty" ở Danh sách công ty dùng
 // route này cho MỌI nhân viên để chọn "Nhân viên phụ trách", không chỉ admin/leader. Phạm vi trả
-// về theo role: admin thấy tất cả, trưởng phòng thấy cả phòng mình, nhân viên thường chỉ thấy
-// CHÍNH MÌNH (chỉ tự gán công ty cho bản thân khi thêm mới).
+// về theo role: admin thấy tất cả, trưởng phòng thấy cả phòng mình + phòng "đặc thù" (mọi trưởng
+// phòng đều làm việc chung, xem lib/specialRooms.js), nhân viên thường chỉ thấy CHÍNH MÌNH (chỉ
+// tự gán công ty cho bản thân khi thêm mới).
 export async function GET() {
   const auth = await requireLogin()
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
@@ -24,7 +26,7 @@ export async function GET() {
   if (auth.caller.role === 'admin') {
     // full list
   } else if (auth.caller.role === 'leader') {
-    query = query.eq('room_id', auth.caller.roomId)
+    query = query.in('room_id', [auth.caller.roomId, ...SHARED_ROOM_IDS].filter(Boolean))
   } else {
     query = query.eq('id', auth.caller.staffId)
   }

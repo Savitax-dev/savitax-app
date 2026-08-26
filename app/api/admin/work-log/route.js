@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
+import { isSharedRoom } from '@/lib/specialRooms'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -63,7 +64,10 @@ export async function GET(request) {
   if (role === 'admin') {
     scopeStaffIds = (allStaff || []).map(s => s.id)
   } else if (role === 'leader' || role === 'manager') {
-    scopeStaffIds = (allStaff || []).filter(s => s.room_id === viewer.room_id).map(s => s.id)
+    // Phòng "đặc thù" (lib/specialRooms.js): mọi trưởng phòng đều theo dõi được như phòng mình.
+    scopeStaffIds = (allStaff || [])
+      .filter(s => s.room_id === viewer.room_id || isSharedRoom(s.room_id))
+      .map(s => s.id)
     if (!scopeStaffIds.includes(viewer.id)) scopeStaffIds.push(viewer.id)
   } else {
     scopeStaffIds = [viewer.id]

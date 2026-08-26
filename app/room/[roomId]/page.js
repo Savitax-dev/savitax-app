@@ -6,6 +6,7 @@ import AppShell from '@/components/AppShell'
 import ClientChecklist from '@/components/ClientChecklist'
 import * as XLSX from 'xlsx'
 import { feeCountsForMonth } from '@/lib/feeDue'
+import { isSharedRoom } from '@/lib/specialRooms'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
 const pctClr = (v) => v >= 90 ? 'text-green-600' : v >= 70 ? 'text-yellow-500' : 'text-red-500'
@@ -73,7 +74,11 @@ export default function RoomPage({ params }) {
           || (email === 'admin@savitax.vn' ? 'admin' : 'staff')
       }
       // Chỉ admin thật được xem mọi phòng — trưởng phòng/nhân viên chỉ vào đúng phòng mình thuộc về.
-      if (role !== 'admin' && myRoomId !== roomId) setForbidden(true)
+      // Ngoại lệ: phòng "đặc thù" (lib/specialRooms.js) — MỌI trưởng phòng đều vào được như phòng
+      // mình. Phải khớp đúng điều kiện với requireRoomAccess ở lib/serverAuth.js (server cũng chặn
+      // độc lập) — nếu chỉ sửa 1 trong 2 thì hoặc bị chặn oan ở đây, hoặc lọt qua UI rồi API mới báo lỗi.
+      const canEnter = role === 'admin' || myRoomId === roomId || (role === 'leader' && isSharedRoom(roomId))
+      if (!canEnter) setForbidden(true)
       setIsAdmin(['admin', 'leader', 'manager'].includes(role))
       setIsTrueAdmin(role === 'admin')
       setReady(true)
