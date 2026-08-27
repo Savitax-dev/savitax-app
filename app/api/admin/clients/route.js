@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { callerHasPermission, requireAdmin, requireLogin } from '@/lib/serverAuth'
+import { syncHcnsForClient, getLinkedHcnsMap } from '@/lib/hcnsSync'
 
 function getAdmin() {
   return createClient(
@@ -23,6 +24,11 @@ export async function GET() {
 
   const staffMap = {}
   for (const s of (staffList || [])) staffMap[s.id] = s
+
+  // Phí DV HCNS để hiện kèm trên thẻ công ty. Bản clone chưa cài module HCNS thì trả Map rỗng,
+  // trang vẫn chạy đủ — xem lib/hcnsSync.js.
+  const hcnsMap = await getLinkedHcnsMap(supabase, (clients || []).map(c => c.id))
+
   const data = (clients || []).map(c => ({
     ...c,
     monthly_fee: Number(c.monthly_fee) || 0,
@@ -32,6 +38,8 @@ export async function GET() {
     status: c.status || 'active',
     report_type: c.report_type || 'monthly',
     fee_period: c.fee_period || 'monthly',
+    uses_hcns: c.uses_hcns === true,
+    hcns_fee: Number(hcnsMap.get(c.id)?.hcns_fee) || 0,
     staff: staffMap[c.assigned_to] || null,
   }))
   return Response.json({ data })
@@ -42,7 +50,7 @@ export async function POST(request) {
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
   const body = await request.json()
-  const { name, tax_code, report_type, monthly_fee, assigned_to, address, tax_status, fee_period, fee_start, other_debt, client_code, representative, status, contract_start } = body
+  const { name, tax_code, report_type, monthly_fee, assigned_to, address, tax_status, fee_period, fee_start, other_debt, client_code, representative, status, contract_start, uses_hcns, hcns_fee } = body
   if (!name || !tax_code || !assigned_to) {
     return Response.json({ error: 'Thiếu thông tin bắt buộc' }, { status: 400 })
   }
@@ -125,6 +133,14 @@ export async function POST(request) {
     }, { onConflict: 'client_id,year,month' })
   }
 
+  // Tick "Có sử dụng DV HCNS" ngay khi thêm công ty -> sinh luôn công ty bên Phòng HCNS.
+  if (uses_hcns && data?.id) {
+    await supabase.from('clients').update({ uses_hcns: true }).eq('id', data.id)
+    await syncHcnsForClient(supabase, {
+      clientId: data.id, usesHcns: true, hcnsFee: hcns_fee, createdBy: auth.caller?.staffId || null,
+    })
+  }
+
   return Response.json({ data })
 }
 
@@ -133,7 +149,7 @@ export async function PATCH(request) {
   if (!permCheck.caller) return Response.json({ error: permCheck.error }, { status: permCheck.status })
 
   const body = await request.json()
-  const { id, assigned_to, address, tax_status, fee_period, status, monthly_fee, fee_history, other_debt, client_code, name, tax_code, representative, contract_start, report_type, updatedBy } = body
+  const { id, assigned_to, address, tax_status, fee_period, status, monthly_fee, fee_history, other_debt, client_code, name, tax_code, representative, contract_start, report_type, updatedBy, uses_hcns, hcns_fee } = body
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })
   const supabase = getAdmin()
 
@@ -160,9 +176,21 @@ export async function PATCH(request) {
   if (name         !== undefined) updateData.name         = name
   if (tax_code     !== undefined) updateData.tax_code     = tax_code
   if (report_type  !== undefined) updateData.report_type  = report_type
+  if (uses_hcns    !== undefined) updateData.uses_hcns    = uses_hcns === true
 
   const { error } = await supabase.from('clients').update(updateData).eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 400 })
+
+  // Bật/tắt DV HCNS -> tạo hoặc ẩn công ty tương ứng bên Phòng HCNS. Không chặn luồng kế toán
+  // nếu module HCNS chưa cài (bản clone) — syncHcnsForClient tự bỏ qua trong im lặng.
+  if (uses_hcns !== undefined || hcns_fee !== undefined) {
+    await syncHcnsForClient(supabase, {
+      clientId: id,
+      usesHcns: uses_hcns !== undefined ? uses_hcns === true : true,
+      hcnsFee: hcns_fee,
+      createdBy: updatedBy || null,
+    })
+  }
 
   // Ghi lịch sử khi phí dịch vụ kế toán hàng tháng thay đổi
   if (monthly_fee !== undefined && prevFee !== null && prevFee !== Number(monthly_fee)) {
