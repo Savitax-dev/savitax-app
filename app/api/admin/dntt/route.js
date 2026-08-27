@@ -25,19 +25,38 @@ export async function GET(request) {
   // (vd gọi route trực tiếp) thì tự tính mặc định như cũ bên dưới.
   const qrContentParam = searchParams.get('qrContent')
 
-  if (!clientId) return new Response('Missing clientId', { status: 400 })
+  // Hồ sơ HCNS Thời điểm/Vãng lai in bằng CHÍNH mẫu phiếu này — chỉ đổi nguồn dữ liệu công ty và
+  // các dòng B, còn letterhead/bảng/QR/ô ký giữ nguyên để phiếu đồng nhất với phòng nghiệp vụ.
+  const hcnsClientId = searchParams.get('hcnsClientId')
+  if (!clientId && !hcnsClientId) return new Response('Missing clientId', { status: 400 })
 
   const supabase = getAdmin()
 
-  const { data: client } = await supabase
-    .from('clients')
-    .select('id, name, tax_code, monthly_fee, assigned_to, address, tax_status, client_code, representative, other_debt, fee_period')
-    .eq('id', clientId).single()
-
-  if (!client) return new Response('Client not found', { status: 404 })
-
-  const { data: staff } = await supabase
-    .from('staff').select('full_name').eq('id', client.assigned_to).single()
+  let client = null
+  let staff = null
+  if (hcnsClientId) {
+    const { data: hc } = await supabase.from('hcns_clients').select('*').eq('id', hcnsClientId).single()
+    if (!hc) return new Response('HCNS client not found', { status: 404 })
+    client = {
+      id: hc.id, name: hc.name, tax_code: hc.tax_code, address: hc.address,
+      representative: hc.representative,
+      client_code: hc.case_code || hc.client_code,
+      // Hồ sơ thời điểm/vãng lai không theo dõi nợ tồn -> dòng A của phiếu tự hiện "–".
+      other_debt: 0, monthly_fee: 0, fee_period: 'monthly',
+      assigned_to: hc.assigned_to,
+    }
+    const { data: st } = await supabase.from('staff').select('full_name').eq('id', hc.assigned_to).maybeSingle()
+    staff = st || null
+  } else {
+    const { data: c } = await supabase
+      .from('clients')
+      .select('id, name, tax_code, monthly_fee, assigned_to, address, tax_status, client_code, representative, other_debt, fee_period')
+      .eq('id', clientId).single()
+    if (!c) return new Response('Client not found', { status: 404 })
+    client = c
+    const { data: st } = await supabase.from('staff').select('full_name').eq('id', c.assigned_to).single()
+    staff = st || null
+  }
 
   // b1AmountParam (panel ĐNTT gửi lên) đã được tách VAT sẵn — dùng thẳng. Chỉ khi KHÔNG có param
   // (fallback lấy trực tiếp client.monthly_fee — số đã bao gồm VAT nhập ở "Thêm công ty") mới cần
@@ -56,7 +75,8 @@ export async function GET(request) {
   const hcnsLabelParam  = searchParams.get('hcnsLabel')
   const hcnsAmountParam = searchParams.get('hcnsAmount')
   const hcnsFee   = hcnsAmountParam !== null && hcnsAmountParam !== '' ? Number(hcnsAmountParam) || 0 : 0
-  const hasHcns   = hcnsFee > 0
+  // Với hồ sơ HCNS, mọi dòng B đều là dịch vụ (gửi qua b1/extra) nên KHÔNG có dòng B2 cố định.
+  const hasHcns   = !hcnsClientId && hcnsFee > 0
   const hcnsLabel = hcnsLabelParam || ('Phí dịch vụ HCNS ' + periodLabel + ' (chưa VAT)')
   const extraStartNo = hasHcns ? 3 : 2
 
@@ -73,7 +93,9 @@ export async function GET(request) {
   const monthPad   = String(month).padStart(2, '0')
   const periodCode = client.fee_period === 'quarterly' ? 'Q' + Math.ceil(month / 3) : 'T' + monthPad
   const clientCode = client.client_code || client.tax_code || ''
-  const qrContent  = qrContentParam || (clientCode + '_TTPhiDichVu_' + periodCode + '_Savitax')
+  const qrContent  = qrContentParam || (hcnsClientId
+    ? clientCode + '_Phidichvu_T' + monthPad + '/' + year
+    : clientCode + '_TTPhiDichVu_' + periodCode + '_Savitax')
   const bankId     = 'ACB'
   const accountNo  = '3878556868'
   const qrUrl = 'https://img.vietqr.io/image/' + bankId + '-' + accountNo +
@@ -172,7 +194,7 @@ export async function GET(request) {
   <div class="to">
     <b>Kính gửi:</b> ${repLine}: <b>${client.name}</b>
   </div>
-  <div class="mst">MST: ${client.tax_code || ''}${client.address ? ' &nbsp;|&nbsp; Địa chỉ: ' + client.address : ''}</div>
+  <div class="mst">MST: ${client.tax_code || ''}${client.address ? ' &nbsp;|&nbsp; Địa chỉ: ' + client.address : ''}${hcnsClientId && client.client_code ? ' &nbsp;|&nbsp; Mã hồ sơ: ' + client.client_code : ''}</div>
 
   <table>
     <colgroup>

@@ -454,11 +454,16 @@ function DebtBadge({ stat }) {
 function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
   const [services, setServices] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
+  const [panel, setPanel] = useState(null)   // null | 'debt' | 'dntt'
+  const [debt, setDebt] = useState(null)
 
   const load = async () => {
-    const res = await fetch('/api/admin/hcns/case-services?hcnsClientId=' + hcnsClient.id)
-    const json = await res.json()
-    setServices(json.data || [])
+    const [svcRes, debtRes] = await Promise.all([
+      fetch('/api/admin/hcns/case-services?hcnsClientId=' + hcnsClient.id).then(r => r.json()).catch(() => ({})),
+      fetch('/api/admin/hcns/case-payments?hcnsClientId=' + hcnsClient.id).then(r => r.json()).catch(() => ({})),
+    ])
+    setServices(svcRes.data || [])
+    setDebt(debtRes.totals ? debtRes : null)
   }
   useEffect(() => { load() // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hcnsClient.id])
@@ -482,12 +487,28 @@ function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
 
   return (
     <div className="px-4 py-3 space-y-2">
-      <div className="flex items-center gap-2">
-        <p className="text-xs text-gray-500 flex-1">
+      <div className="flex items-center gap-2 flex-wrap">
+        <p className="text-xs text-gray-500 flex-1 min-w-[160px]">
           {hcnsClient.phone && <span>SĐT: {hcnsClient.phone} · </span>}
           {hcnsClient.representative && <span>Đại diện: {hcnsClient.representative} · </span>}
           {services.length} dịch vụ
+          {debt?.totals && (
+            <span className={'ml-1 font-semibold ' +
+              (debt.totals.remain === 0 ? 'text-[#2E6B3A]' : debt.totals.totalPaid > 0 ? 'text-[#87590B]' : 'text-[#B3261E]')}>
+              · {debt.totals.remain === 0 ? 'Đã thu đủ' : 'Còn phải thu ' + fmt(debt.totals.remain) + 'đ'}
+            </span>
+          )}
         </p>
+        <button onClick={() => setPanel(panel === 'debt' ? null : 'debt')}
+          className={'text-xs px-3 py-1.5 rounded-lg font-medium border ' +
+            (panel === 'debt' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-emerald-50 text-emerald-700 border-emerald-200')}>
+          💰 Công nợ
+        </button>
+        <button onClick={() => setPanel(panel === 'dntt' ? null : 'dntt')}
+          className={'text-xs px-3 py-1.5 rounded-lg font-medium border ' +
+            (panel === 'dntt' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-50 text-indigo-700 border-indigo-200')}>
+          📄 ĐNTT
+        </button>
         {canManage && (
           <button onClick={() => setShowAdd(true)}
             className="text-xs px-3 py-1.5 bg-[#8B1A1A] text-white rounded-lg font-medium hover:bg-[#6B1212]">
@@ -495,6 +516,12 @@ function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
           </button>
         )}
       </div>
+
+      {panel === 'debt' && (
+        <CaseDebtPanel hcnsClient={hcnsClient} debt={debt} canManage={canManage}
+          onChanged={() => { load(); onChanged && onChanged() }} />
+      )}
+      {panel === 'dntt' && <CaseDnttPanel hcnsClient={hcnsClient} services={services} />}
 
       {services.length === 0 && <p className="text-xs text-gray-400 py-2">Hồ sơ chưa có dịch vụ nào.</p>}
 
@@ -552,6 +579,241 @@ function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
           onClose={() => setShowAdd(false)}
           onDone={() => { setShowAdd(false); load(); onChanged && onChanged() }} />
       )}
+    </div>
+  )
+}
+
+/* ──────────────── Công nợ hồ sơ Thời điểm / Vãng lai ──────────────── */
+// Khách trả nhiều lần trong cùng tháng, mỗi lần có thể cho một dịch vụ khác nhau — nên đây là
+// SỔ GHI NỐI TIẾP, không phải một dòng một kỳ như công nợ kế toán.
+function CaseDebtPanel({ hcnsClient, debt, canManage, onChanged }) {
+  const [amount, setAmount] = useState('')
+  const [serviceId, setServiceId] = useState('')
+  const [note, setNote] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
+
+  if (!debt) {
+    return (
+      <div className="bg-white border border-amber-200 rounded-xl p-3">
+        <p className="text-xs text-amber-700">
+          Chưa cài phần công nợ hồ sơ — cần chạy <b>sql/07_hcns_case_payments.sql</b> trong Supabase.
+        </p>
+      </div>
+    )
+  }
+
+  const t = debt.totals
+  const save = async () => {
+    setErr('')
+    const amt = Number(String(amount).replace(/\D/g, ''))
+    if (!amt) { setErr('Nhập số tiền đã thu.'); return }
+    setSaving(true)
+    const res = await fetch('/api/admin/hcns/case-payments', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hcnsClientId: hcnsClient.id, caseServiceId: serviceId || null, amount: amt, note: note || null }),
+    })
+    const j = await res.json()
+    setSaving(false)
+    if (j.error) { setErr(j.error); return }
+    setAmount(''); setNote('')
+    onChanged()
+  }
+
+  const removePayment = async (p) => {
+    if (!window.confirm('Xoá khoản thu ' + fmt(p.amount) + 'đ ngày ' + fmtDate(p.created_at) + '?')) return
+    const res = await fetch('/api/admin/hcns/case-payments?id=' + p.id, { method: 'DELETE' })
+    const j = await res.json()
+    if (j.error) setErr(j.error)
+    else onChanged()
+  }
+
+  return (
+    <div className="bg-white border border-emerald-200 rounded-xl overflow-hidden">
+      <div className="px-3 py-2 bg-emerald-50 border-b border-emerald-100 flex items-center gap-2 flex-wrap">
+        <p className="text-xs font-bold text-emerald-800 flex-1">💰 Công nợ hồ sơ</p>
+        <span className="text-xs text-gray-600">
+          Tổng chi phí <b>{fmt(t.totalCost)}đ</b> · Đã thu <b className="text-[#2E6B3A]">{fmt(t.totalPaid)}đ</b>
+          {' · '}
+          <b className={t.remain === 0 ? 'text-[#2E6B3A]' : 'text-[#B3261E]'}>
+            {t.remain === 0 ? 'Đã thu đủ' : 'Còn ' + fmt(t.remain) + 'đ'}
+          </b>
+        </span>
+      </div>
+
+      <div className="p-3 space-y-3">
+        {debt.perService.length > 0 && (
+          <div className="space-y-1">
+            {debt.perService.map(s => (
+              <div key={s.id} className="flex items-center gap-2 text-xs">
+                <span className="text-gray-600 flex-1 truncate">{s.name}</span>
+                <span className="text-gray-400 tabular-nums">{fmt(s.paid)} / {fmt(s.cost)}đ</span>
+                <span className={'w-24 text-right tabular-nums font-medium ' +
+                  (s.remain === 0 ? 'text-[#2E6B3A]' : 'text-[#B3261E]')}>
+                  {s.remain === 0 ? 'đủ' : 'còn ' + fmt(s.remain) + 'đ'}
+                </span>
+              </div>
+            ))}
+            {t.unassigned > 0 && (
+              <p className="text-xs text-gray-400 pt-1">
+                Trong đó {fmt(t.unassigned)}đ thu chung cho cả hồ sơ, chưa tách theo dịch vụ.
+              </p>
+            )}
+          </div>
+        )}
+
+        {canManage && (
+          <div className="border-t border-gray-100 pt-3 space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Thu cho</label>
+                <select value={serviceId} onChange={e => setServiceId(e.target.value)} className={inputCls}>
+                  <option value="">Thu chung cho cả hồ sơ</option>
+                  {debt.perService.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} (còn {fmt(s.remain)}đ)</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Số tiền đã thu (đ)</label>
+                <input type="text" inputMode="numeric"
+                  value={amount ? Number(String(amount).replace(/\D/g, '') || 0).toLocaleString('vi-VN') : ''}
+                  onChange={e => { setAmount(e.target.value.replace(/\D/g, '')); if (err) setErr('') }}
+                  placeholder={'Còn phải thu ' + fmt(t.remain) + 'đ'} className={inputCls} />
+              </div>
+            </div>
+            <input value={note} onChange={e => setNote(e.target.value)}
+              placeholder="Ghi chú: ngày chuyển khoản, số UNC, thu tiền mặt..." className={inputCls} />
+            {err && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2 py-1.5">{err}</p>}
+            <button onClick={save} disabled={saving}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-60">
+              {saving ? 'Đang lưu...' : '✓ Ghi nhận khoản thu'}
+            </button>
+          </div>
+        )}
+
+        <div className="border-t border-gray-100 pt-2">
+          <p className="text-xs text-gray-500 mb-1">Nhật ký thu ({debt.data.length})</p>
+          {debt.data.length === 0 && <p className="text-xs text-gray-400">Chưa có khoản thu nào.</p>}
+          {debt.data.map(p => (
+            <div key={p.id} className="flex items-start gap-2 text-xs py-1 border-b border-gray-50 last:border-0">
+              <span className="text-[#2E6B3A] font-semibold tabular-nums w-24 flex-shrink-0">{fmt(p.amount)}đ</span>
+              <span className="flex-1 min-w-0">
+                <span className="text-gray-700">{p.serviceName || 'Thu chung cả hồ sơ'}</span>
+                {p.note && <span className="text-gray-400"> — {p.note}</span>}
+                <span className="block text-gray-400">
+                  {p.createdByName || '—'} · {new Date(p.created_at).toLocaleString('vi-VN')}
+                </span>
+              </span>
+              {canManage && (
+                <button onClick={() => removePayment(p)} className="text-red-300 hover:text-red-600 flex-shrink-0">✕</button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ──────────────── ĐNTT hồ sơ Thời điểm / Vãng lai ──────────────── */
+// Dùng CHÍNH mẫu phiếu của phòng nghiệp vụ (app/api/admin/dntt) — mỗi dịch vụ là một dòng B,
+// bỏ bớt dòng được để thu riêng từng loại dịch vụ.
+function CaseDnttPanel({ hcnsClient, services }) {
+  const now = new Date()
+  // Chi phí lưu là số ĐÃ gồm VAT (cùng quy ước phí kế toán) -> tách 1.08 để dòng B là số chưa VAT.
+  const [rows, setRows] = useState(() => services.map(s => ({
+    key: s.id, desc: s.templateName, amount: String(Math.round((Number(s.cost) || 0) / 1.08)), on: true,
+  })))
+  const [qr, setQr] = useState(
+    (hcnsClient.case_code || hcnsClient.client_code || '') +
+    '_Phidichvu_T' + String(now.getMonth() + 1).padStart(2, '0') + '/' + now.getFullYear())
+
+  const active = rows.filter(r => r.on)
+  const subTotal = active.reduce((a, r) => a + (Number(r.amount) || 0), 0)
+  const vat = Math.round(subTotal * 0.08)
+  const total = subTotal + vat
+
+  const setRow = (i, patch) => setRows(rs => rs.map((r, j) => j === i ? { ...r, ...patch } : r))
+
+  const openPdf = () => {
+    if (!active.length) return
+    const [first, ...rest] = active
+    const url = '/api/admin/dntt?hcnsClientId=' + hcnsClient.id +
+      '&month=' + (now.getMonth() + 1) + '&year=' + now.getFullYear() +
+      '&b1Label=' + encodeURIComponent(first.desc) +
+      '&b1Amount=' + encodeURIComponent(Number(first.amount) || 0) +
+      '&qrContent=' + encodeURIComponent(qr) +
+      '&extra=' + encodeURIComponent(JSON.stringify(rest.map(r => ({ desc: r.desc, amount: Number(r.amount) || 0 }))))
+    window.open(url, '_blank')
+  }
+
+  return (
+    <div className="bg-white border border-indigo-200 rounded-xl overflow-hidden">
+      <div className="px-3 py-2 bg-indigo-50 border-b border-indigo-100 flex items-center gap-2">
+        <p className="text-xs font-bold text-indigo-800 flex-1">
+          📄 Phiếu Đề Nghị Thanh Toán — T{now.getMonth() + 1}/{now.getFullYear()}
+        </p>
+        <button onClick={openPdf} disabled={!active.length}
+          className="text-xs px-3 py-1.5 bg-indigo-700 text-white rounded-lg font-medium disabled:opacity-40">
+          Mở PDF
+        </button>
+      </div>
+      <div className="p-3">
+        <p className="text-xs text-gray-400 mb-2">
+          Bỏ tick dòng nào thì dòng đó không lên phiếu — dùng khi muốn thu riêng từng dịch vụ.
+          Số tiền hiển thị là <b>chưa VAT</b> (chi phí đã tách 1,08).
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs min-w-[420px]">
+            <thead>
+              <tr className="bg-indigo-900 text-white">
+                <th className="px-2 py-1 w-10">Mã</th>
+                <th className="px-2 py-1 text-left">Diễn giải</th>
+                <th className="px-2 py-1 w-28 text-right">Số tiền (đ)</th>
+                <th className="px-2 py-1 w-8"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => {
+                const no = r.on ? active.findIndex(a => a.key === r.key) + 1 : null
+                return (
+                  <tr key={r.key} className={r.on ? 'bg-indigo-50/40' : 'opacity-40'}>
+                    <td className="border border-gray-200 px-2 py-1 text-center text-gray-500">{no ? 'B' + no : '—'}</td>
+                    <td className="border border-gray-200 px-1 py-1">
+                      <input value={r.desc} onChange={e => setRow(i, { desc: e.target.value })} disabled={!r.on}
+                        className="w-full px-1.5 py-0.5 border border-indigo-200 rounded text-xs" />
+                    </td>
+                    <td className="border border-gray-200 px-1 py-1">
+                      <input type="text" inputMode="numeric" disabled={!r.on}
+                        value={r.amount ? Number(r.amount).toLocaleString('vi-VN') : ''}
+                        onChange={e => setRow(i, { amount: e.target.value.replace(/\D/g, '') })}
+                        className="w-full px-1.5 py-0.5 border border-indigo-200 rounded text-xs text-right" />
+                    </td>
+                    <td className="border border-gray-200 px-1 py-1 text-center">
+                      <input type="checkbox" checked={r.on} onChange={e => setRow(i, { on: e.target.checked })}
+                        title="Đưa dòng này lên phiếu" className="w-3.5 h-3.5 accent-indigo-600" />
+                    </td>
+                  </tr>
+                )
+              })}
+              <tr><td className="border border-gray-200 px-2 py-1 text-center text-gray-400">VAT</td>
+                <td className="border border-gray-200 px-2 py-1 text-gray-500 italic">Thuế VAT 8%</td>
+                <td className="border border-gray-200 px-2 py-1 text-right text-gray-500">{fmt(vat)}</td>
+                <td className="border border-gray-200"></td></tr>
+              <tr className="bg-red-50"><td className="border border-gray-200 px-2 py-1 text-center font-bold">C</td>
+                <td className="border border-gray-200 px-2 py-1 font-bold">Tổng đề nghị thanh toán</td>
+                <td className="border border-gray-200 px-2 py-1 text-right font-bold text-red-600">{fmt(total)}</td>
+                <td className="border border-gray-200"></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="flex items-center gap-2 mt-2">
+          <label className="text-xs text-gray-400 flex-shrink-0">QR:</label>
+          <input value={qr} onChange={e => setQr(e.target.value)}
+            className="flex-1 px-2 py-1 border border-indigo-200 rounded text-xs text-indigo-800 font-mono" />
+        </div>
+      </div>
     </div>
   )
 }
