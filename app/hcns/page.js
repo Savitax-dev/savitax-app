@@ -499,15 +499,15 @@ function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
             </span>
           )}
         </p>
-        <button onClick={() => setPanel(panel === 'debt' ? null : 'debt')}
-          className={'text-xs px-3 py-1.5 rounded-lg font-medium border ' +
-            (panel === 'debt' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-emerald-50 text-emerald-700 border-emerald-200')}>
-          💰 Công nợ
-        </button>
         <button onClick={() => setPanel(panel === 'dntt' ? null : 'dntt')}
           className={'text-xs px-3 py-1.5 rounded-lg font-medium border ' +
             (panel === 'dntt' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-50 text-indigo-700 border-indigo-200')}>
           📄 ĐNTT
+        </button>
+        <button onClick={() => setPanel(panel === 'debt' ? null : 'debt')}
+          className={'text-xs px-3 py-1.5 rounded-lg font-medium border ' +
+            (panel === 'debt' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-emerald-50 text-emerald-700 border-emerald-200')}>
+          💰 Công nợ
         </button>
         {canManage && (
           <button onClick={() => setShowAdd(true)}
@@ -517,11 +517,11 @@ function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
         )}
       </div>
 
+      {panel === 'dntt' && <CaseDnttPanel hcnsClient={hcnsClient} services={services} />}
       {panel === 'debt' && (
         <CaseDebtPanel hcnsClient={hcnsClient} debt={debt} canManage={canManage}
           onChanged={() => { load(); onChanged && onChanged() }} />
       )}
-      {panel === 'dntt' && <CaseDnttPanel hcnsClient={hcnsClient} services={services} />}
 
       {services.length === 0 && <p className="text-xs text-gray-400 py-2">Hồ sơ chưa có dịch vụ nào.</p>}
 
