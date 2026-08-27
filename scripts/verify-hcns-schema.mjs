@@ -17,7 +17,8 @@ let fail = 0
 
 const TABLES = ['hcns_clients', 'hcns_service_fees', 'hcns_service_templates',
   'hcns_service_template_tasks', 'hcns_recurring_tasks', 'hcns_case_services',
-  'hcns_case_service_status_log', 'hcns_case_service_tasks']
+  'hcns_case_service_status_log', 'hcns_case_service_tasks',
+  'hcns_case_payments']   // sql/07_hcns_case_payments.sql — công nợ hồ sơ Thời điểm/Vãng lai
 
 console.log('BẢNG HCNS:')
 for (const t of TABLES) {
