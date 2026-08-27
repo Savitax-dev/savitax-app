@@ -48,6 +48,9 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   // khách nhìn phiếu là tách bạch được phí kế toán với phí HCNS.
   const [hcnsLabel,    setHcnsLabel]    = useState('')
   const [hcnsAmount,   setHcnsAmount]   = useState('')
+  const [hcnsTasks,        setHcnsTasks]        = useState(null)
+  const [hcnsTasksLoading, setHcnsTasksLoading] = useState(false)
+  const [hcnsToggling,     setHcnsToggling]     = useState(null)
   const [qrContent,    setQrContent]    = useState('')
   // Trang cha có thể truyền sẵn (trang Phòng HCNS); các trang kế toán không truyền thì component
   // tự lấy khi mở panel công nợ/ĐNTT — một chỗ xử lý, khỏi phải sửa cả 3 trang gọi tới.
@@ -83,6 +86,12 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   const selYear = selOpt.y
 
   useEffect(() => { loadTasks() }, [clientMonth, client.id])
+
+  // Đổi tháng khi đang mở tab "Công việc HCNS" thì phải tải lại checklist của đúng tháng đó.
+  useEffect(() => {
+    if (panel === 'hcns_work') loadHcnsTasks()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientMonth, selYear])
 
   useEffect(() => {
     if (defaultPanel === 'debt') {
@@ -217,6 +226,40 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     await loadFiles()
   }
 
+  // Checklist định kỳ HÀNG THÁNG của khách "thời kỳ" — danh sách công việc suy ra từ mẫu
+  // "DV HCNS Thời Kỳ" đang active, nên sửa mẫu là mọi công ty cập nhật theo ngay.
+  const loadHcnsTasks = async () => {
+    setHcnsTasksLoading(true)
+    try {
+      const res = await fetch('/api/admin/hcns/recurring-tasks?clientId=' + client.id +
+        '&year=' + selYear + '&month=' + clientMonth)
+      setHcnsTasks(await res.json())
+    } catch (_) { setHcnsTasks(null) }
+    setHcnsTasksLoading(false)
+  }
+
+  const toggleHcnsTask = async (templateTaskId, done) => {
+    const hc = hcnsClient || await ensureHcnsClient()
+    if (!hc) return
+    setHcnsToggling(templateTaskId)
+    try {
+      const supabase = createClient()
+      const { data: sd } = await supabase.auth.getSession()
+      const res = await fetch('/api/admin/hcns/task-toggle', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'recurring', hcnsClientId: hc.id, templateTaskId,
+          year: selYear, month: clientMonth, done,
+          staffId: sd.session ? sd.session.user.id : null,
+        }),
+      })
+      const json = await res.json()
+      if (json.error) alert('Không lưu được: ' + json.error)
+      else await loadHcnsTasks()
+    } catch (_) { alert('Không lưu được, vui lòng thử lại') }
+    setHcnsToggling(null)
+  }
+
   const openPanel = (p) => {
     if (panel === p) { setPanel(null); return }
     setPanel(p)
@@ -246,6 +289,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
       const clientCodeQr = client.client_code || client.tax_code || ''
       setQrContent(clientCodeQr + '_TTPhiDichVu_' + periodCodeQr + '_Savitax')
     }
+    if (p === 'hcns_work') loadHcnsTasks()
     if (p === 'info') { setEditCred(null); setShowHistory(false); loadCreds() }
     if (p === 'files') { setFileError(''); loadFiles() }
   }
@@ -497,6 +541,9 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
         {btn('work', '✅', 'Công việc',
           'bg-blue-600 text-white border-blue-600',
           'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100')}
+        {hcnsClient && btn('hcns_work', '🏢', 'Công việc HCNS',
+          'bg-sky-600 text-white border-sky-600',
+          'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100')}
         {btn('dntt', '📄', 'ĐNTT',
           'bg-indigo-600 text-white border-indigo-600',
           'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100')}
@@ -810,6 +857,59 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
       )}
 
       {/* ── Panel: Công nợ ── */}
+      {/* ── Panel: Công việc HCNS (checklist định kỳ hàng tháng của khách thời kỳ) ── */}
+      {panel === 'hcns_work' && (
+        <div className="mx-3 my-2 bg-white border border-sky-200 rounded-xl overflow-hidden">
+          <div className="px-3 py-2 bg-sky-50 border-b border-sky-100 flex items-center gap-2">
+            <p className="text-xs font-bold text-sky-800 flex-1">
+              🏢 {hcnsTasks?.templateName || 'Công việc HCNS'} — T{clientMonth}/{selYear}
+            </p>
+            {hcnsTasks && hcnsTasks.totalCount > 0 && (
+              <span className={'text-xs font-bold px-2 py-0.5 rounded-full bg-white ' +
+                (hcnsTasks.percent >= 90 ? 'text-[#2E6B3A]' : hcnsTasks.percent >= 70 ? 'text-[#87590B]' : 'text-[#B3261E]')}>
+                {hcnsTasks.doneCount}/{hcnsTasks.totalCount} việc · {hcnsTasks.percent}%
+              </span>
+            )}
+          </div>
+          <div className="p-3">
+            {hcnsTasksLoading && <p className="text-xs text-gray-400">Đang tải...</p>}
+            {!hcnsTasksLoading && (!hcnsTasks || hcnsTasks.totalCount === 0) && (
+              <p className="text-xs text-gray-400">
+                Mẫu “DV HCNS Thời Kỳ” chưa có công việc nào — vào trang <b>Checklist HCNS</b> để khai báo.
+              </p>
+            )}
+            {!hcnsTasksLoading && hcnsTasks?.tasks?.length > 0 && (
+              <>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                  <div className={'h-full rounded-full transition-all ' +
+                    (hcnsTasks.percent >= 90 ? 'bg-[#2E6B3A]' : hcnsTasks.percent >= 70 ? 'bg-[#D89614]' : 'bg-[#B3261E]')}
+                    style={{ width: hcnsTasks.percent + '%' }} />
+                </div>
+                <div className="space-y-1">
+                  {hcnsTasks.tasks.map(t => (
+                    <label key={t.templateTaskId}
+                      className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer py-0.5">
+                      <input type="checkbox" checked={t.done} disabled={hcnsToggling === t.templateTaskId}
+                        onChange={e => toggleHcnsTask(t.templateTaskId, e.target.checked)}
+                        className="w-4 h-4 accent-[#2E6B3A] flex-shrink-0" />
+                      <span className={t.done ? 'line-through text-gray-400' : ''}>{t.name}</span>
+                      {t.done && (
+                        <span className="text-xs text-gray-400 ml-auto flex-shrink-0">
+                          {t.doneByName || ''}{t.doneAt ? ' · ' + fmtDate(t.doneAt) : ''}
+                        </span>
+                      )}
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-400 mt-2">
+                  Checklist này chưa tính thời hạn — chỉ theo dõi tỉ lệ hoàn thành.
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {panel === 'debt' && (
         <div className="mx-3 my-2 bg-white border border-green-200 rounded-xl overflow-hidden">
           <div className="px-3 py-2 bg-green-50 border-b border-green-100">
