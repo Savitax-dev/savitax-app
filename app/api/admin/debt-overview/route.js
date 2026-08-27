@@ -46,7 +46,8 @@ export async function GET(request) {
   const supabase = getAdmin()
 
   const [{ data: roomList }, { data: staffList }, { data: clientList }, feesKetoan, feesKhach, { data: secondaryRows }, feePlanRows, changeLogRows] = await Promise.all([
-    supabase.from('rooms').select('id, name, type').order('name'),
+    // Công nợ HCNS theo dõi riêng ở trang /hcns, không trộn vào công nợ phòng kế toán.
+    supabase.from('rooms').select('id, name, type').neq('type', 'hcns').order('name'),
     supabase.from('staff').select('id, full_name, room_id').order('full_name'),
     supabase.from('clients').select('id, name, tax_code, monthly_fee, other_debt, report_type, fee_period, assigned_to, status, contract_start').eq('status', 'active'),
     fetchAllRows(() => supabase.from('service_fees').select('client_id, amount').eq('year', year).in('month', months).eq('type', 'ketoan')),
