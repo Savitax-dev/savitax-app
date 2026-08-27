@@ -119,7 +119,7 @@ export default function ClientsPage() {
   const [expanded, setExpanded] = useState(null)
   const [feeHistory, setFeeHistory] = useState({})
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '' })
+  const [form, setForm] = useState({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '', uses_hcns: false, hcns_fee: '' })
   const [editClientId, setEditClientId] = useState(null)
   const [editClientForm, setEditClientForm] = useState({})
   const [formRoom, setFormRoom] = useState('')
@@ -352,7 +352,7 @@ export default function ClientsPage() {
       setSaving(false)
       return
     }
-    setForm({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '' })
+    setForm({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '', uses_hcns: false, hcns_fee: '' })
     setLookupError('')
     setFormRoom('')
     setShowForm(false)
@@ -672,6 +672,43 @@ export default function ClientsPage() {
                   </select>
                 </div>
               </div>
+              {/* Dịch vụ HCNS — tick thì mới cho nhập phí. Bật ô này sẽ tự sinh công ty tương ứng
+                  bên trang Phòng HCNS và thêm mục công nợ "Dịch vụ HCNS" cho công ty này. */}
+              <div className="border border-sky-200 bg-sky-50 rounded-lg p-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={form.uses_hcns}
+                    onChange={e => setForm(f => ({
+                      ...f,
+                      uses_hcns: e.target.checked,
+                      hcns_fee: e.target.checked ? f.hcns_fee : '',
+                    }))}
+                    className="w-4 h-4 accent-sky-600" />
+                  <span className="text-sm font-semibold text-sky-800">Có sử dụng DV HCNS</span>
+                </label>
+                <div className="mt-2">
+                  <label className={'text-xs mb-1 block ' + (form.uses_hcns ? 'text-sky-700' : 'text-gray-400')}>
+                    Phí dịch vụ HCNS (đ)
+                    <span className="ml-1.5 font-bold">— Giá đã bao gồm VAT</span>
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    disabled={!form.uses_hcns}
+                    value={form.hcns_fee !== '' ? fmt(Number(form.hcns_fee)) : ''}
+                    onChange={e => setForm(f => ({ ...f, hcns_fee: e.target.value.replace(/\D/g, '') }))}
+                    placeholder={form.uses_hcns ? 'VD: 2.160.000' : 'Tick ô trên để nhập phí'}
+                    className={'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 ' +
+                      (form.uses_hcns
+                        ? 'border-sky-300 bg-white focus:ring-sky-400'
+                        : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed')}
+                  />
+                  {form.uses_hcns && (
+                    <p className="text-xs text-sky-700 mt-1">
+                      Sẽ tự tạo công ty ở tag “Thời kỳ” của Phòng HCNS và thêm dòng B2 trên phiếu ĐNTT.
+                    </p>
+                  )}
+                </div>
+              </div>
               {/* Thu khác (tồn đọng cũ) */}
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">
@@ -834,6 +871,16 @@ export default function ClientsPage() {
                         {' / ' + ((client.fee_period || client.report_type) === 'quarterly' ? 'Quý' : 'Tháng')}
                       </span>
                     </p>
+                    {client.uses_hcns && (
+                      <p className="text-xs mt-0.5">
+                        <span className="text-sky-700 font-semibold">
+                          {'🏢 Phí DV HCNS: ' + fmt(client.hcns_fee) + 'đ'}
+                        </span>
+                        <span className="text-gray-400">
+                          {' / ' + ((client.fee_period || client.report_type) === 'quarterly' ? 'Quý' : 'Tháng')}
+                        </span>
+                      </p>
+                    )}
                     {assignedStaff && (
                       <p className="text-xs text-blue-500 mt-0.5">
                         {'👤 ' + assignedStaff.full_name + (assignedStaff.rooms ? ' · ' + assignedStaff.rooms.name : '')}
