@@ -49,8 +49,19 @@ export async function GET(request) {
     ? 'Q' + Math.ceil(month / 3) + '/' + year
     : 'Tháng ' + month + '/' + year
   const b1Label    = b1LabelParam || ('Phí dịch vụ kế toán ' + periodLabel + ' (chưa VAT)')
+
+  // B2 cố định = phí dịch vụ HCNS, chỉ có khi công ty đã tick "Có sử dụng DV HCNS". Cùng quy ước
+  // "đã gồm VAT" như B1 nên panel gửi lên số ĐÃ tách VAT. Có dòng này thì các dòng nhập tay dịch
+  // xuống bắt đầu từ B3.
+  const hcnsLabelParam  = searchParams.get('hcnsLabel')
+  const hcnsAmountParam = searchParams.get('hcnsAmount')
+  const hcnsFee   = hcnsAmountParam !== null && hcnsAmountParam !== '' ? Number(hcnsAmountParam) || 0 : 0
+  const hasHcns   = hcnsFee > 0
+  const hcnsLabel = hcnsLabelParam || ('Phí dịch vụ HCNS ' + periodLabel + ' (chưa VAT)')
+  const extraStartNo = hasHcns ? 3 : 2
+
   const extraTotal = extraRows.reduce((s, r) => s + (Number(r.amount) || 0), 0)
-  const subTotal   = baseFee + extraTotal        // tổng trước VAT (B1 đã tách VAT + B2...B7 vốn đã chưa VAT)
+  const subTotal   = baseFee + hcnsFee + extraTotal   // tổng trước VAT (mọi dòng B đều là số chưa VAT)
   const prevBal    = Number(client.other_debt) || 0
   // "Tồn" (A) đã là số gồm VAT sẵn (cộng dồn từ phí dịch vụ chưa thu, vốn đã gồm VAT) — lấy thẳng, không nhân 1.08 nữa
   const prevBalVat = prevBal
@@ -189,15 +200,22 @@ export async function GET(request) {
         <td class="ra" id="b1amt">${fmt(baseFee)} đ</td>
         <td class="ca">${dayStr}</td><td></td>
       </tr>
+      ${hasHcns ? `
+      <tr>
+        <td class="ca">B2</td>
+        <td>${hcnsLabel}</td>
+        <td class="ra">${fmt(hcnsFee)} đ</td>
+        <td class="ca">${dayStr}</td><td></td>
+      </tr>` : ''}
       ${extraRows.map((r, i) => `
       <tr>
-        <td class="ca">B${i+2}</td>
+        <td class="ca">B${i + extraStartNo}</td>
         <td>${r.desc || ''}</td>
         <td class="ra">${r.amount ? fmt(Number(r.amount)) + ' đ' : ''}</td>
         <td class="ca">${dayStr}</td><td></td>
       </tr>`).join('')}
       <!-- Hidden editable rows for adding more in HTML view -->
-      ${[2,3,4,5,6,7].filter(n => n > extraRows.length + 1).map(n => `
+      ${[2,3,4,5,6,7,8].filter(n => n >= extraRows.length + extraStartNo).map(n => `
       <tr id="xrow${n}" style="display:none">
         <td class="ca">B${n}</td>
         <td contenteditable="true" style="color:#1565c0"></td>
@@ -264,10 +282,12 @@ export async function GET(request) {
 
 <script>
 var shown = 0
-var startIdx = ${extraRows.length + 2} // B rows already filled
-var allRows = [2,3,4,5,6,7].filter(function(n){ return n >= startIdx })
+// Số hiệu dòng B trống đầu tiên. Có dòng B2 phí HCNS cố định thì các dòng nhập tay bắt đầu từ B3.
+var startIdx = ${extraRows.length + extraStartNo}
+var allRows = [2,3,4,5,6,7,8].filter(function(n){ return n >= startIdx })
 var rows = allRows.map(function(n){ return 'xrow'+n })
-var baseFeeVal = ${baseFee}
+// baseFeeVal = tổng các dòng B CỐ ĐỊNH (B1 phí kế toán + B2 phí HCNS nếu có), đều là số chưa VAT.
+var baseFeeVal = ${baseFee + hcnsFee}
 var prevBalVal = ${prevBalVat}
 
 function addRow() {
@@ -276,7 +296,7 @@ function addRow() {
     document.getElementById(rowId).style.display = ''
     shown++
     var lbl = document.getElementById('addLabel')
-    if (lbl) lbl.innerText = 'Đã thêm dòng B' + (shown + 1)
+    if (lbl) lbl.innerText = 'Đã thêm dòng B' + (startIdx + shown - 1)
     if (shown >= rows.length) {
       var btn = document.getElementById('btnAdd')
       if (btn) btn.style.display = 'none'
