@@ -35,7 +35,11 @@ const CRED_CATS = [
 // hcnsClient: bản ghi hcns_clients (loại "thời kỳ") gắn với công ty này, hoặc null nếu công ty
 // chưa tick "Có sử dụng DV HCNS" — hoặc bản clone chưa cài module HCNS. Null thì mục "Dịch vụ
 // HCNS" và dòng B2 trên ĐNTT tự ẩn, mọi thứ còn lại giữ nguyên như cũ.
-export default function ClientChecklist({ client, clientMonth, onMonthChange, onDebtSaved, defaultPanel = 'work', isAdmin = false, isTrueAdmin = false, hcnsClient: hcnsClientProp = null }) {
+// context='hcns' — component đang được mở TỪ trang Phòng HCNS. Khi đó ẩn hẳn phần nghiệp vụ kế
+// toán (tab "Công việc" và 3 mục công nợ kế toán) để nhân viên HCNS không tick/ghi nhầm. Server
+// vẫn chặn độc lập ở lib/debtScope.js — đây chỉ là lớp giao diện cho đỡ nhầm.
+export default function ClientChecklist({ client, clientMonth, onMonthChange, onDebtSaved, defaultPanel = 'work', isAdmin = false, isTrueAdmin = false, hcnsClient: hcnsClientProp = null, context = 'ketoan' }) {
+  const hcnsOnly = context === 'hcns'
   const now = new Date()
   const [tasks,        setTasks]        = useState([])
   const [loading,      setLoading]      = useState(false)
@@ -55,7 +59,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   // Trang cha có thể truyền sẵn (trang Phòng HCNS); các trang kế toán không truyền thì component
   // tự lấy khi mở panel công nợ/ĐNTT — một chỗ xử lý, khỏi phải sửa cả 3 trang gọi tới.
   const [hcnsClient,   setHcnsClient]   = useState(hcnsClientProp)
-  const [debtType,     setDebtType]     = useState('ketoan')
+  const [debtType,     setDebtType]     = useState(hcnsOnly ? 'hcns' : 'ketoan')
   const [debtAmount,   setDebtAmount]   = useState('')
   const [debtNote,     setDebtNote]     = useState('')
   const [savingDebt,   setSavingDebt]   = useState(false)
@@ -95,7 +99,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
 
   useEffect(() => {
     if (defaultPanel === 'debt') {
-      setDebtType('ketoan')
+      setDebtType(hcnsOnly ? 'hcns' : 'ketoan')
       loadDebtHistory()
     }
     if (defaultPanel === 'info') loadCreds()
@@ -264,7 +268,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     if (panel === p) { setPanel(null); return }
     setPanel(p)
     if (p === 'debt') {
-      setDebtType('ketoan')
+      setDebtType(hcnsOnly ? 'hcns' : 'ketoan')
       setDebtNote('')
       loadDebtHistory()
     }
@@ -538,7 +542,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
         {btn('info', '🔐', 'Thông tin',
           'bg-purple-600 text-white border-purple-600',
           'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100')}
-        {btn('work', '✅', 'Công việc',
+        {!hcnsOnly && btn('work', '✅', 'Công việc',
           'bg-blue-600 text-white border-blue-600',
           'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100')}
         {hcnsClient && btn('hcns_work', '🏢', 'Công việc HCNS',
@@ -917,12 +921,15 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
           </div>
           <div className="flex border-b border-gray-100">
             {[
-              { key: 'ketoan', label: '📋 Dịch vụ kế toán', hint: fmt(client.monthly_fee) + 'đ' + (client.fee_period === 'quarterly' ? '/Quý' : '/Tháng') },
+              // Mở từ trang Phòng HCNS thì CHỈ có mục HCNS — 3 mục kế toán ẩn hẳn để không ghi nhầm.
+              ...(hcnsOnly ? [] : [{ key: 'ketoan', label: '📋 Dịch vụ kế toán', hint: fmt(client.monthly_fee) + 'đ' + (client.fee_period === 'quarterly' ? '/Quý' : '/Tháng') }]),
               // Mục HCNS chỉ hiện với công ty đã tick "Có sử dụng DV HCNS".
               ...(hcnsClient ? [{ key: 'hcns', label: '🏢 Dịch vụ HCNS',
                 hint: fmt(hcnsClient.hcns_fee) + 'đ' + (hcnsClient.fee_period === 'quarterly' ? '/Quý' : '/Tháng') }] : []),
-              { key: 'khach',  label: '🗂 Dịch vụ khác',    hint: 'Phát sinh khác' },
-              { key: 'no_ton', label: '📦 Nợ tồn cũ',       hint: fmt(client.other_debt) + 'đ còn nợ' },
+              ...(hcnsOnly ? [] : [
+                { key: 'khach',  label: '🗂 Dịch vụ khác', hint: 'Phát sinh khác' },
+                { key: 'no_ton', label: '📦 Nợ tồn cũ',    hint: fmt(client.other_debt) + 'đ còn nợ' },
+              ]),
             ].map(t => (
               <button key={t.key} onClick={() => { setDebtType(t.key); setDebtNote('') }}
                 className={'flex-1 py-2 text-xs font-semibold transition-colors border-b-2 ' +

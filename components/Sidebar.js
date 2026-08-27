@@ -280,7 +280,7 @@ export default function Sidebar({ onClose }) {
             phòng HCNS không dùng giao diện /room/[roomId] của phòng kế toán. */}
         {canViewHcns && (
           <div>
-            <SectionLabel>HCNS</SectionLabel>
+            <SectionLabel>HCNS - BHXH</SectionLabel>
             <NavItem href="/hcns"           icon="💼" label="Công ty phụ trách" pathname={pathname} onClose={onClose} />
             <NavItem href="/hcns/checklist" icon="📝" label="Checklist HCNS"    pathname={pathname} onClose={onClose} />
           </div>

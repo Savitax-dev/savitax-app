@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { resolveFeeForMonthWithSource } from '@/lib/feeDue'
 import { evaluateCap, CAP_OK, CAP_UNVERIFIABLE } from '@/lib/feeCap'
+import { canWriteAccountingDebt } from '@/lib/debtScope'
 
 function getAdmin() {
   return createClient(
@@ -24,6 +25,15 @@ export async function POST(request) {
     }
 
     const supabase = getAdmin()
+
+    // ── Phân quyền theo phạm vi ──────────────────────────────────────────────────
+    // Công nợ kế toán (kế toán / khác / nợ tồn cũ) chỉ người làm kế toán của công ty đó mới được
+    // ghi. Nhân viên phòng HCNS chỉ thao tác ở mục "Dịch vụ HCNS" (route hcns/save-debt riêng) —
+    // nếu để lọt, họ có thể ghi nhầm vào công nợ kế toán khi mở hồ sơ từ trang Phòng HCNS.
+    const canWrite = await canWriteAccountingDebt(supabase, auth.caller, clientId)
+    if (!canWrite) {
+      return Response.json({ error: 'Không đủ quyền cập nhật công nợ dịch vụ kế toán của công ty này' }, { status: 403 })
+    }
 
     // ── Ghi NHIỀU kỳ cùng lúc (khách trả gộp) ────────────────────────────────────
     // Đây là cách DUY NHẤT đúng để ghi khoản trả gộp: mỗi kỳ 1 dòng, đúng phí kỳ đó. Nếu dồn hết
@@ -120,3 +130,4 @@ export async function POST(request) {
     return Response.json({ error: e.message }, { status: 500 })
   }
 }
+

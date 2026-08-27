@@ -60,6 +60,8 @@ export default function HcnsPage() {
   const [loading, setLoading] = useState(true)
   const [allowed, setAllowed] = useState(false)
   const [canManage, setCanManage] = useState(false)
+  // Trưởng phòng mới được phân công nhân viên phụ trách — số liệu KPI/công nợ đi theo người này.
+  const [canAssign, setCanAssign] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
 
   const monthOpts = []
@@ -77,6 +79,7 @@ export default function HcnsPage() {
       if (!can(role, 'view_hcns', perm)) { router.push('/dashboard'); return }
       setAllowed(true)
       setCanManage(can(role, 'manage_hcns', perm))
+      setCanAssign(can(role, 'view_hcns_all_staff', perm))
       await Promise.all([loadClients(), loadReport(), loadStaff(), loadTemplates()])
       setLoading(false)
     }
@@ -97,10 +100,12 @@ export default function HcnsPage() {
     const json = await res.json()
     setReport(json.error ? null : json)
   }
+  // Nhân viên phòng HCNS — dùng endpoint riêng vì /api/admin/staff chỉ mở rộng danh sách cho
+  // role 'admin' và 'leader', còn 'hcns_leader' sẽ chỉ thấy chính mình.
   const loadStaff = async () => {
-    const res = await fetch('/api/admin/staff')
+    const res = await fetch('/api/admin/hcns/staff')
     const json = await res.json()
-    setStaffList(json.data || json.staff || [])
+    setStaffList(json.data || [])
   }
   const loadTemplates = async () => {
     const res = await fetch('/api/admin/hcns/templates')
@@ -194,6 +199,7 @@ export default function HcnsPage() {
                 expanded={expanded === c.id} onToggle={() => setExpanded(expanded === c.id ? null : c.id)}
                 clientMonth={clientMonth} setClientMonth={setClientMonth}
                 selMonth={selMonth} canManage={canManage}
+                canAssign={canAssign} staffList={staffList}
                 templates={templates} onChanged={() => { loadClients(); loadReport() }} />
             ))}
           </div>
@@ -351,9 +357,22 @@ function CaseBlock({ title, data }) {
 }
 
 /* ─────────────────────────── Một dòng công ty ─────────────────────────── */
-function ClientRow({ c, showCat, report, expanded, onToggle, clientMonth, setClientMonth, selMonth, canManage, templates, onChanged }) {
+function ClientRow({ c, showCat, report, expanded, onToggle, clientMonth, setClientMonth, selMonth, canManage, canAssign, staffList, templates, onChanged }) {
   const stat = report?.thoiKy?.perClient?.find(p => p.id === c.id)
   const isThoiKy = c.category === 'thoi_ky'
+  const [assigning, setAssigning] = useState(false)
+
+  const assign = async (staffId) => {
+    setAssigning(true)
+    const res = await fetch('/api/admin/hcns/clients', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: c.id, assigned_to: staffId || null }),
+    })
+    const j = await res.json()
+    setAssigning(false)
+    if (j.error) alert('Không lưu được: ' + j.error)
+    else onChanged()
+  }
 
   return (
     <div className="border-b border-gray-100 last:border-0">
@@ -379,6 +398,21 @@ function ClientRow({ c, showCat, report, expanded, onToggle, clientMonth, setCli
             )}
           </>
         )}
+        {/* Phân công nhân viên phụ trách — KPI và công nợ của công ty này sẽ tính cho người được
+            chọn. Bấm vào select không được mở/đóng dòng nên chặn sự kiện lan lên nút cha. */}
+        {canAssign ? (
+          <span onClick={e => { e.stopPropagation() }} className="flex-shrink-0">
+            <select value={c.assigned_to || ''} disabled={assigning}
+              onChange={e => assign(e.target.value)}
+              className={'text-xs border rounded-lg px-2 py-1 bg-white max-w-[150px] ' +
+                (c.assigned_to ? 'border-gray-200 text-gray-700' : 'border-amber-300 text-amber-700')}>
+              <option value="">⚠ Chưa phân công</option>
+              {staffList.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+            </select>
+          </span>
+        ) : !c.assigned_to && (
+          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 flex-shrink-0">Chưa phân công</span>
+        )}
         <span className="text-gray-300 text-xs">{expanded ? '▲' : '▼'}</span>
       </button>
 
@@ -388,6 +422,7 @@ function ClientRow({ c, showCat, report, expanded, onToggle, clientMonth, setCli
             <ClientChecklist
               client={{ ...c.linkedClient, uses_hcns: true }}
               hcnsClient={c}
+              context="hcns"
               defaultPanel="debt"
               clientMonth={clientMonth[c.id] || selMonth}
               onMonthChange={m => setClientMonth(p => ({ ...p, [c.id]: m }))}

@@ -54,8 +54,10 @@ export default function HcnsChecklistPage() {
     return true
   }
 
+  // Nút luôn bấm được và báo lỗi ngay tại chỗ, KHÔNG làm mờ khi ô trống — nút mờ dễ bị hiểu là
+  // chức năng hỏng, không phải là "chưa nhập gì".
   const addTemplate = async () => {
-    if (!newTpl.trim()) return
+    if (!newTpl.trim()) { setErr('Nhập tên dịch vụ trước khi thêm.'); return }
     setAdding(true)
     if (await call('POST', { name: newTpl.trim(), is_recurring: false })) setNewTpl('')
     setAdding(false)
@@ -63,7 +65,7 @@ export default function HcnsChecklistPage() {
 
   const addTask = async (templateId) => {
     const name = (newTask[templateId] || '').trim()
-    if (!name) return
+    if (!name) { setErr('Nhập tên công việc trước khi thêm.'); return }
     if (await call('POST', { templateId, taskName: name })) {
       setNewTask(p => ({ ...p, [templateId]: '' }))
     }
@@ -110,12 +112,12 @@ export default function HcnsChecklistPage() {
 
         {canEdit && (
           <div className="flex gap-2 mb-4">
-            <input value={newTpl} onChange={e => setNewTpl(e.target.value)}
+            <input value={newTpl} onChange={e => { setNewTpl(e.target.value); if (err) setErr('') }}
               onKeyDown={e => e.key === 'Enter' && addTemplate()}
               placeholder="Tên dịch vụ mới, VD: Giấy phép lao động" className={inputCls} />
-            <button onClick={addTemplate} disabled={adding || !newTpl.trim()}
-              className="px-4 py-2 bg-[#8B1A1A] text-white rounded-lg text-sm font-medium whitespace-nowrap disabled:opacity-40">
-              + Thêm dịch vụ
+            <button onClick={addTemplate} disabled={adding}
+              className="px-4 py-2 bg-[#8B1A1A] text-white rounded-lg text-sm font-medium whitespace-nowrap hover:bg-[#6B1212] disabled:opacity-60">
+              {adding ? 'Đang thêm...' : '+ Thêm dịch vụ'}
             </button>
           </div>
         )}
@@ -159,11 +161,12 @@ export default function HcnsChecklistPage() {
 
               {canEdit && (
                 <div className="flex gap-2 mt-3">
-                  <input value={newTask[t.id] || ''} onChange={e => setNewTask(p => ({ ...p, [t.id]: e.target.value }))}
+                  <input value={newTask[t.id] || ''}
+                    onChange={e => { setNewTask(p => ({ ...p, [t.id]: e.target.value })); if (err) setErr('') }}
                     onKeyDown={e => e.key === 'Enter' && addTask(t.id)}
-                    placeholder="Thêm công việc..." className={inputCls + ' text-xs py-1.5'} />
-                  <button onClick={() => addTask(t.id)} disabled={!(newTask[t.id] || '').trim()}
-                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-600 whitespace-nowrap disabled:opacity-40">
+                    placeholder="Nhập tên công việc rồi bấm Thêm" className={inputCls} />
+                  <button onClick={() => addTask(t.id)}
+                    className="px-4 py-2 bg-gray-800 text-white rounded-lg text-xs font-medium whitespace-nowrap hover:bg-gray-900">
                     Thêm
                   </button>
                 </div>
