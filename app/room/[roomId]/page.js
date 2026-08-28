@@ -474,7 +474,7 @@ export default function RoomPage({ params }) {
               // "Thu khác" = tiền thật đã ghi nhận trong tháng, không phụ thuộc hạn thu quý.
               const khachClients = ownedClients.filter(c => c.khach > 0)
               const totalKhach   = khachClients.reduce((a, c) => a + c.khach, 0)
-              // Thẻ "Tổng tồn nợ chuyển tháng sau" — CHỈ là nợ tồn đang có (clients.other_debt),
+              // Thẻ "Nợ tồn đầu kỳ chuyển tháng sau" — CHỈ là nợ tồn đang có (clients.other_debt),
               // KHÔNG cộng phần tháng này chưa thu. Đây là số dư hiện tại, không tách theo tháng
               // (đổi tên thẻ 2026-08-28 nhưng nguyên tắc tính giữ nguyên như "Nợ tồn cũ chuyển qua").
               const otherDebtClients = ownedClients.filter(c => Number(c.other_debt) > 0)
@@ -566,7 +566,7 @@ export default function RoomPage({ params }) {
                     <button onClick={() => toggleCard('otherDebt')}
                       className={'text-left bg-white border border-t-4 border-t-orange-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
                         (openDebtCard === 'otherDebt' ? 'border-orange-300 ring-1 ring-orange-200' : 'border-gray-100')}>
-                      <p className="text-xs text-gray-400 mb-1">📦 Tổng tồn nợ chuyển tháng sau</p>
+                      <p className="text-xs text-gray-400 mb-1">📦 Nợ tồn đầu kỳ chuyển tháng sau</p>
                       <p className={'text-lg font-bold ' + (totalOtherDebt > 0 ? 'text-orange-500' : 'text-green-600')}>{fmt(totalOtherDebt)}đ</p>
                       <p className="text-xs text-gray-400 mt-1">
                         {otherDebtClients.length} công ty · <span className="text-gray-400 italic">tính đến hiện tại</span>
