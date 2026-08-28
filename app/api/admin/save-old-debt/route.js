@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { canWriteAccountingDebt } from '@/lib/debtScope'
+import { applyOldDebtPayment } from '@/lib/debtRollover'
 
 function getAdmin() {
   return createClient(
@@ -53,6 +54,10 @@ export async function POST(request) {
       return Response.json({ error: updateErr.message }, { status: 500 })
     }
 
+    // Trừ song song vào các dòng "nợ tồn tự động" của tháng gốc, cũ nhất trước. Nếu bỏ bước này,
+    // other_debt và remaining_amount lệch dần sau mỗi lần thu — xem lib/debtRollover.js.
+    const alloc = await applyOldDebtPayment(supabase, clientId, paid)
+
     const year = now.getFullYear(), month = now.getMonth() + 1
     const { data: existingRow } = await supabase.from('service_fees')
       .select('amount').eq('client_id', clientId).eq('year', year).eq('month', month).eq('type', 'no_ton').maybeSingle()
@@ -73,7 +78,7 @@ export async function POST(request) {
       return Response.json({ error: insertErr.message }, { status: 500 })
     }
 
-    return Response.json({ ok: true, paid, remainingOtherDebt: otherDebt - paid })
+    return Response.json({ ok: true, paid, remainingOtherDebt: otherDebt - paid, rolloverApplied: alloc.applied })
   } catch (e) {
     console.error('save-old-debt exception:', e)
     return Response.json({ error: e.message }, { status: 500 })
