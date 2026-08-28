@@ -115,11 +115,13 @@ export default function AdminStaffPage() {
       const allowed = await hasPermission(role, 'manage_staff')
       if (!allowed) { router.push('/dashboard'); return }
 
+      // Giữ nguyên THỨ TỰ 3 phần tử đầu — bên dưới lấy kết quả theo vị trí. Thêm việc mới thì
+      // nối vào CUỐI mảng, chèn vào giữa sẽ làm lệch resRooms/resRoles.
       const [, resRooms, resRoles] = await Promise.all([
         loadData(supabase, roomId, role),
-        loadExtraRoles(),
         supabase.from('rooms').select('*').order('name'),
         fetch('/api/admin/roles').then(r => r.json()),
+        loadExtraRoles(),
       ])
       setRooms(resRooms.data ?? [])
       setRoleOpts((resRoles.data || []).map(r => ({ v: r.id, l: r.label })))
