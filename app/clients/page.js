@@ -28,7 +28,7 @@ function FeeHistory({ history }) {
   const ketoan = history?.ketoan || []
   const hcns = history?.hcns || []
   const log = history?.changeLog || []
-  if (!ketoan.length && !hcns.length && !log.length) return null
+  const isEmpty = !ketoan.length && !hcns.length && !log.length
 
   const Row = ({ items, label, color }) => items.length === 0 ? null : (
     <div className="mb-2">
@@ -48,6 +48,12 @@ function FeeHistory({ history }) {
   return (
     <div className="mt-3 border-t border-gray-100 pt-3">
       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Lịch sử thay đổi phí</p>
+      {/* Luôn hiện khu vực này, kể cả khi rỗng — ẩn đi khiến người dùng tưởng chức năng hỏng. */}
+      {isEmpty && (
+        <p className="text-xs text-gray-400">
+          Công ty này chưa có lần đổi phí nào được ghi nhận.
+        </p>
+      )}
       <Row items={ketoan} label="Phí dịch vụ kế toán" color="text-blue-700" />
       <Row items={hcns} label="Phí dịch vụ HCNS" color="text-sky-700" />
       {log.length > 0 && (
@@ -460,7 +466,10 @@ export default function ClientsPage() {
   // khoản ĐÃ THU (ketoan/khach/no_ton) vào danh sách đổi phí — sai nghĩa. Và nó đọc thẳng bằng
   // anon key ở trình duyệt, trái quy ước "mọi đọc/ghi nghiệp vụ đi qua API route" trong AGENTS.md.
   const loadFeeHistory = async (clientId) => {
-    if (feeHistory[clientId]) return
+    // KHÔNG dùng bộ nhớ đệm kiểu `if (feeHistory[clientId]) return`: mảng/đối tượng RỖNG vẫn là
+    // giá trị "đúng" trong JS nên một lần trả rỗng là khoá luôn, không bao giờ tải lại — đó là
+    // lý do lịch sử đổi phí không hiện dù dữ liệu có thật. Đây là dữ liệu tiền, tải lại mỗi lần
+    // mở thẻ công ty cho chắc chắn tươi mới; một request nhỏ, không đáng tiếc.
     try {
       const res = await fetch('/api/admin/fee-history?clientId=' + clientId)
       const json = await res.json()
