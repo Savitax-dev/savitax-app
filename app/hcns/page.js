@@ -73,13 +73,18 @@ export default function HcnsPage() {
       const supabase = createClient()
       const { data: sd } = await supabase.auth.getSession()
       if (!sd.session) { router.push('/login'); return }
-      const { data: me } = await supabase.from('staff').select('role').eq('id', sd.session.user.id).single()
+      // Lấy ĐỦ vai trò (chính + kiêm nhiệm) — người vừa làm kế toán vừa là trưởng phòng HCNS chỉ
+      // có quyền HCNS ở vai trò kiêm nhiệm, đọc mỗi staff.role sẽ bị đá về trang chủ.
+      const [{ data: me }, myPerm] = await Promise.all([
+        supabase.from('staff').select('role').eq('id', sd.session.user.id).single(),
+        fetch('/api/admin/me').then(r => r.json()).catch(() => ({})),
+      ])
       const perm = await loadPermissionData()
-      const role = me?.role
-      if (!can(role, 'view_hcns', perm)) { router.push('/dashboard'); return }
+      const roles = myPerm?.roles?.length ? myPerm.roles : [me?.role].filter(Boolean)
+      if (!can(roles, 'view_hcns', perm)) { router.push('/dashboard'); return }
       setAllowed(true)
-      setCanManage(can(role, 'manage_hcns', perm))
-      setCanAssign(can(role, 'view_hcns_all_staff', perm))
+      setCanManage(can(roles, 'manage_hcns', perm))
+      setCanAssign(can(roles, 'view_hcns_all_staff', perm))
       await Promise.all([loadClients(), loadReport(), loadStaff(), loadTemplates()])
       setLoading(false)
     }

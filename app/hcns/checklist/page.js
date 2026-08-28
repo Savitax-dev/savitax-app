@@ -23,11 +23,17 @@ export default function HcnsChecklistPage() {
       const supabase = createClient()
       const { data: sd } = await supabase.auth.getSession()
       if (!sd.session) { router.push('/login'); return }
-      const { data: me } = await supabase.from('staff').select('role').eq('id', sd.session.user.id).single()
+      // Lấy ĐỦ vai trò (chính + kiêm nhiệm) — người vừa làm kế toán vừa là trưởng phòng HCNS chỉ
+      // có quyền HCNS ở vai trò kiêm nhiệm, đọc mỗi staff.role sẽ bị đá về trang chủ.
+      const [{ data: me }, myPerm] = await Promise.all([
+        supabase.from('staff').select('role').eq('id', sd.session.user.id).single(),
+        fetch('/api/admin/me').then(r => r.json()).catch(() => ({})),
+      ])
       const perm = await loadPermissionData()
-      if (!can(me?.role, 'view_hcns', perm)) { router.push('/dashboard'); return }
+      const roles = myPerm?.roles?.length ? myPerm.roles : [me?.role].filter(Boolean)
+      if (!can(roles, 'view_hcns', perm)) { router.push('/dashboard'); return }
       setAllowed(true)
-      setCanEdit(can(me?.role, 'manage_hcns_template', perm))
+      setCanEdit(can(roles, 'manage_hcns_template', perm))
       await load()
       setLoading(false)
     }

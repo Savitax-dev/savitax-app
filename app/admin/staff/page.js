@@ -27,6 +27,11 @@ export default function AdminStaffPage() {
   const [search, setSearch]       = useState('')
   const [showForm, setShowForm]   = useState(false)
   const [form, setForm]           = useState({ full_name:'', email:'', password:'', phone:'', room_id:'', role:'staff' })
+  // KIÊM NHIỆM: nhân viên thuộc thêm phòng khác với vai trò khác (VD kế toán phòng Himalaya kiêm
+  // trưởng phòng HCNS). Quyền hiệu lực = hợp của vai trò chính và các vai trò kiêm nhiệm.
+  const [extraRoles, setExtraRoles] = useState([])
+  const [addingFor, setAddingFor]   = useState(null)
+  const [newExtra, setNewExtra]     = useState({ room_id: '', role: '' })
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState('')
   const [success, setSuccess]     = useState('')
@@ -41,6 +46,36 @@ export default function AdminStaffPage() {
   const [roleOpts, setRoleOpts]   = useState([]) // [{v, l}] tải động từ bảng roles
 
   const isAdmin = myRole === 'admin'
+
+  const loadExtraRoles = async () => {
+    try {
+      const res = await fetch('/api/admin/staff-extra-roles')
+      const json = await res.json()
+      setExtraRoles(json.data || [])
+    } catch (_) { setExtraRoles([]) }
+  }
+
+  const addExtraRole = async (staffId) => {
+    if (!newExtra.room_id || !newExtra.role) { alert('Chọn phòng và vai trò kiêm nhiệm'); return }
+    const res = await fetch('/api/admin/staff-extra-roles', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ staffId, roomId: newExtra.room_id, role: newExtra.role }),
+    })
+    const j = await res.json()
+    if (j.error) { alert(j.error); return }
+    setAddingFor(null); setNewExtra({ room_id: '', role: '' })
+    await loadExtraRoles()
+  }
+
+  const removeExtraRole = async (row, staffName, roomName) => {
+    const msg = ['Bỏ kiêm nhiệm "' + roomName + '" của ' + staffName + '?', '',
+      'Nhân viên sẽ mất các quyền đến từ vai trò này.'].join('\n')
+    if (!window.confirm(msg)) return
+    const res = await fetch('/api/admin/staff-extra-roles?id=' + row.id, { method: 'DELETE' })
+    const j = await res.json()
+    if (j.error) { alert(j.error); return }
+    await loadExtraRoles()
+  }
 
   const loadData = async (supabase, roomId, role) => {
     let query = supabase
@@ -82,6 +117,7 @@ export default function AdminStaffPage() {
 
       const [, resRooms, resRoles] = await Promise.all([
         loadData(supabase, roomId, role),
+        loadExtraRoles(),
         supabase.from('rooms').select('*').order('name'),
         fetch('/api/admin/roles').then(r => r.json()),
       ])
@@ -379,6 +415,55 @@ export default function AdminStaffPage() {
                         ) : (
                           <span className="text-gray-600">{s.rooms?.name ?? '—'}</span>
                         )}
+
+                        {/* Phòng kiêm nhiệm — quyền của nhân viên là HỢP của vai trò chính và
+                            các vai trò kiêm nhiệm ở đây. */}
+                        {(() => {
+                          const mine = extraRoles.filter(x => x.staff_id === s.id)
+                          if (!mine.length && !isAdmin) return null
+                          return (
+                            <div className="mt-1 space-y-1">
+                              {mine.map(x => {
+                                const rm = rooms.find(r => r.id === x.room_id)
+                                const rl = roleOpts.find(o => o.v === x.role)
+                                return (
+                                  <div key={x.id} className="flex items-center gap-1">
+                                    <span className="text-xs px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                                      Kiêm: {rm?.name || '—'} · {rl?.l || x.role}
+                                    </span>
+                                    {isAdmin && (
+                                      <button onClick={() => removeExtraRole(x, s.full_name, rm?.name || '')}
+                                        className="text-xs text-red-300 hover:text-red-600">✕</button>
+                                    )}
+                                  </div>
+                                )
+                              })}
+                              {isAdmin && addingFor === s.id ? (
+                                <div className="flex flex-wrap items-center gap-1">
+                                  <select value={newExtra.room_id}
+                                    onChange={e => setNewExtra(v => ({ ...v, room_id: e.target.value }))}
+                                    className="px-1.5 py-0.5 border border-amber-300 rounded text-xs">
+                                    <option value="">Phòng...</option>
+                                    {rooms.filter(r => r.id !== s.room_id).map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                                  </select>
+                                  <select value={newExtra.role}
+                                    onChange={e => setNewExtra(v => ({ ...v, role: e.target.value }))}
+                                    className="px-1.5 py-0.5 border border-amber-300 rounded text-xs">
+                                    <option value="">Vai trò...</option>
+                                    {roleOpts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+                                  </select>
+                                  <button onClick={() => addExtraRole(s.id)}
+                                    className="text-xs px-2 py-0.5 bg-amber-600 text-white rounded">Thêm</button>
+                                  <button onClick={() => { setAddingFor(null); setNewExtra({ room_id: '', role: '' }) }}
+                                    className="text-xs text-gray-400">Hủy</button>
+                                </div>
+                              ) : isAdmin ? (
+                                <button onClick={() => { setAddingFor(s.id); setNewExtra({ room_id: '', role: '' }) }}
+                                  className="text-xs text-amber-700 hover:underline">+ Kiêm nhiệm phòng khác</button>
+                              ) : null}
+                            </div>
+                          )
+                        })()}
                       </td>
 
                       {/* Vai trò — chỉ admin được đổi, trưởng phòng chỉ xem */}
