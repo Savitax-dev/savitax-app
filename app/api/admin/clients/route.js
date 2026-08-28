@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { callerHasPermission, requireAdmin, requireLogin } from '@/lib/serverAuth'
 import { syncHcnsForClient, getLinkedHcnsMap } from '@/lib/hcnsSync'
+import { shouldUpdateLiveFee } from '@/lib/feeDue'
 
 function getAdmin() {
   return createClient(
@@ -178,6 +179,18 @@ export async function PATCH(request) {
   if (report_type  !== undefined) updateData.report_type  = report_type
   if (uses_hcns    !== undefined) updateData.uses_hcns    = uses_hcns === true
 
+  // Áp phí LÙI về tháng cũ: chỉ ghi mốc fee_plan cho tháng đó, KHÔNG được đụng vào
+  // clients.monthly_fee (phí "sống" hiện tại). Nếu đã có mốc phí ở tháng SAU tháng đang áp thì
+  // phí hiện tại vẫn phải là mốc mới nhất đó — ghi đè sẽ làm phí hiện tại tụt về mức cũ và
+  // client_change_log ghi một lần "đổi phí" không có thật.
+  if (fee_history && monthly_fee !== undefined) {
+    const { data: existingPlans } = await supabase.from('service_fees')
+      .select('year, month').eq('client_id', id).eq('type', 'fee_plan')
+    if (!shouldUpdateLiveFee(existingPlans, fee_history.year, fee_history.month)) {
+      delete updateData.monthly_fee
+    }
+  }
+
   const { error } = await supabase.from('clients').update(updateData).eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 400 })
 
@@ -193,7 +206,10 @@ export async function PATCH(request) {
   }
 
   // Ghi lịch sử khi phí dịch vụ kế toán hàng tháng thay đổi
-  if (monthly_fee !== undefined && prevFee !== null && prevFee !== Number(monthly_fee)) {
+  // updateData.monthly_fee bị gỡ ở trên nghĩa là đây là lần áp phí LÙI — phí hiện tại không đổi
+  // nên không được ghi nhật ký "đổi phí", tránh client_change_log có dòng sai (dòng này còn được
+  // resolveFeeForMonth dùng làm lớp fallback, ghi sai sẽ tính sai phí tháng cũ).
+  if (updateData.monthly_fee !== undefined && prevFee !== null && prevFee !== Number(monthly_fee)) {
     await supabase.from('client_change_log').insert({
       client_id: id,
       entity: 'monthly_fee',

@@ -21,6 +21,53 @@ const STATUS_OPTS = [
 
 const fmt = (n) => Number(n || 0).toLocaleString('vi-VN')
 
+// Lịch sử ĐỔI MỨC PHÍ (không phải lịch sử thu tiền). Mỗi dòng fee_plan nghĩa là "từ tháng này
+// trở đi phí = X" — đây chính là nguồn resolveFeeForMonth dùng để tính đúng công nợ tháng cũ,
+// nên nhìn được danh sách này giúp phát hiện ngay khi ai đó áp phí nhầm tháng.
+function FeeHistory({ history }) {
+  const ketoan = history?.ketoan || []
+  const hcns = history?.hcns || []
+  const log = history?.changeLog || []
+  if (!ketoan.length && !hcns.length && !log.length) return null
+
+  const Row = ({ items, label, color }) => items.length === 0 ? null : (
+    <div className="mb-2">
+      <p className={'text-xs font-medium mb-1 ' + color}>{label}</p>
+      <div className="space-y-0.5">
+        {items.map(h => (
+          <div key={h.id} className="flex items-center gap-2 text-xs">
+            <span className="text-gray-500 w-16 flex-shrink-0">{'Từ T' + h.month + '/' + h.year}</span>
+            <span className="font-semibold text-gray-800 tabular-nums">{fmt(h.amount)}đ</span>
+            {h.note && <span className="text-gray-400 truncate">{h.note}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="mt-3 border-t border-gray-100 pt-3">
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Lịch sử thay đổi phí</p>
+      <Row items={ketoan} label="Phí dịch vụ kế toán" color="text-blue-700" />
+      <Row items={hcns} label="Phí dịch vụ HCNS" color="text-sky-700" />
+      {log.length > 0 && (
+        <details className="mt-1">
+          <summary className="text-xs text-gray-400 cursor-pointer">Ai đổi, lúc nào ({log.length})</summary>
+          <div className="mt-1 space-y-0.5">
+            {log.map(l => (
+              <p key={l.id} className="text-xs text-gray-400">
+                {fmt(l.oldValue)}đ → <span className="text-gray-600 font-medium">{fmt(l.newValue)}đ</span>
+                {' · ' + (l.changedByName || '—')}
+                {' · ' + new Date(l.changed_at).toLocaleString('vi-VN')}
+              </p>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  )
+}
+
 // Điều chỉnh phí DV HCNS — khối riêng, KHÔNG gộp vào FeeAdjust của phí kế toán vì hai bên lưu ở
 // hai bảng khác nhau (clients.monthly_fee vs hcns_clients.hcns_fee) và có lịch sử đổi phí riêng.
 // Đổi phí sẽ tự ghi một mốc "từ tháng này trở đi phí = X" để sau tra được phí đúng của tháng cũ.
@@ -169,7 +216,7 @@ function FeeAdjust({ client, isEditing, feeAmount, feeFromMonth, feeNote, feePer
           <select value={selectedVal} onChange={e => onMonthChange(e.target.value)}
             className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
             {futureMonths.map(mo => (
-              <option key={mo.value} value={mo.value}>{mo.label}</option>
+              <option key={mo.value} value={mo.value}>{mo.label}{mo.past ? ' (đã qua)' : ''}</option>
             ))}
           </select>
         </div>
@@ -182,6 +229,17 @@ function FeeAdjust({ client, isEditing, feeAmount, feeFromMonth, feeNote, feePer
             <p className="text-xs text-gray-500">Xác nhận:</p>
             <p className="text-sm font-semibold text-blue-700 mt-0.5">
               {fmt(Number(feeAmount))}đ · áp dụng từ {selectedLabel ? selectedLabel.label : selectedVal}
+            </p>
+          </div>
+        )}
+        {/* Áp dụng lùi về tháng đã qua sẽ TÍNH LẠI công nợ của các tháng đó — %-KPI đổi theo và
+            phần chênh có thể bị tự ghi thành "nợ tồn". Phải nói rõ trước khi lưu. */}
+        {selectedLabel?.past && (
+          <div className="bg-amber-50 border border-amber-300 rounded-lg px-3 py-2">
+            <p className="text-xs text-amber-800 leading-relaxed">
+              <b>Lưu ý:</b> áp dụng từ <b>{selectedLabel.label}</b> là tháng đã qua — công nợ từ tháng
+              đó tới nay sẽ được tính lại theo mức phí mới, %-KPI và nợ tồn của các tháng đó đổi theo.
+              Chỉ chọn tháng cũ khi cần sửa lại mức phí đã ghi sai.
             </p>
           </div>
         )}
@@ -250,13 +308,24 @@ export default function ClientsPage() {
   const nextYear = month === 12 ? year + 1 : year
 
   // Generate next N months for fee-from picker (current month + future)
+  // Danh sách "Áp dụng từ tháng" cho việc điều chỉnh phí: mở từ T1 của NĂM HIỆN TẠI tới 12 tháng
+  // tới, để sửa được cả mức phí lẽ ra đã áp dụng từ đầu năm (trước đây chỉ cho chọn từ tháng này
+  // trở đi nên không truy lại được).
+  //
+  // ⚠ Chọn tháng QUÁ KHỨ sẽ tính lại công nợ từ tháng đó trở đi — resolveFeeForMonth lấy mốc
+  // fee_plan gần nhất <= tháng đang xét, nên %-KPI và "nợ tồn" các tháng đó đổi theo. Giao diện
+  // phải cảnh báo rõ trước khi lưu (xem FeeAdjust).
   const getFutureMonths = (count) => {
     const result = []
-    let y = year, m = month
+    for (let m = 1; m <= 12; m++) {
+      if (year * 12 + m >= year * 12 + month) break
+      result.push({ y: year, m, label: 'T' + m + '/' + year, value: year + '-' + String(m).padStart(2, '0'), past: true })
+    }
+    let y = year, mm = month
     for (let i = 0; i < count; i++) {
-      result.push({ y, m, label: 'T' + m + '/' + y, value: y + '-' + String(m).padStart(2, '0') })
-      m++
-      if (m > 12) { m = 1; y++ }
+      result.push({ y, m: mm, label: 'T' + mm + '/' + y, value: y + '-' + String(mm).padStart(2, '0'), past: false })
+      mm++
+      if (mm > 12) { mm = 1; y++ }
     }
     return result
   }
@@ -387,17 +456,18 @@ export default function ClientsPage() {
     }
   }
 
+  // Lịch sử ĐỔI MỨC PHÍ. Trước đây hàm này select('*') toàn bộ service_fees nên trộn cả các
+  // khoản ĐÃ THU (ketoan/khach/no_ton) vào danh sách đổi phí — sai nghĩa. Và nó đọc thẳng bằng
+  // anon key ở trình duyệt, trái quy ước "mọi đọc/ghi nghiệp vụ đi qua API route" trong AGENTS.md.
   const loadFeeHistory = async (clientId) => {
     if (feeHistory[clientId]) return
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('service_fees')
-      .select('*')
-      .eq('client_id', clientId)
-      .order('year', { ascending: false })
-      .order('month', { ascending: false })
-      .limit(12)
-    setFeeHistory(h => ({ ...h, [clientId]: data || [] }))
+    try {
+      const res = await fetch('/api/admin/fee-history?clientId=' + clientId)
+      const json = await res.json()
+      setFeeHistory(h => ({ ...h, [clientId]: json.error ? { ketoan: [], hcns: [], changeLog: [] } : json }))
+    } catch (_) {
+      setFeeHistory(h => ({ ...h, [clientId]: { ketoan: [], hcns: [], changeLog: [] } }))
+    }
   }
 
   const handleExpand = (id) => {
@@ -931,7 +1001,7 @@ export default function ClientsPage() {
         <div className="space-y-3">
           {filtered.map(client => {
             const isOpen = expanded === client.id
-            const history = feeHistory[client.id] || []
+            const history = feeHistory[client.id] || { ketoan: [], hcns: [], changeLog: [] }
             const assignedStaff = client.staff
             // Nhân viên thường chỉ sửa được công ty mình phụ trách; admin/leader (canManageAll) sửa được tất cả.
             const canEditThis = canManageAll || client.assigned_to === myStaff?.id
@@ -1449,20 +1519,7 @@ export default function ClientsPage() {
                         <HcnsFeeAdjust client={client} onSaved={loadClients} />
                       </div>
                     )}
-                    {history.length > 0 && (
-                      <div className="mt-3 border-t border-gray-50 pt-3">
-                        <p className="text-xs text-gray-400 mb-1.5">Lịch sử thay đổi phí:</p>
-                        <div className="space-y-1">
-                          {history.map(h => (
-                            <div key={h.id} className="flex items-center justify-between text-xs text-gray-500">
-                              <span>{'T' + h.month + '/' + h.year}</span>
-                              <span className="font-medium text-gray-700">{fmt(h.amount)}đ</span>
-                              {h.note && <span className="text-gray-400 truncate max-w-24">{h.note}</span>}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    <FeeHistory history={history} />
 
                   </div>
                 )}
