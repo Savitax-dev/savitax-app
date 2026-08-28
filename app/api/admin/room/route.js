@@ -106,7 +106,9 @@ export async function GET(request) {
   const [taskRecords, feeCollections, feeKhach, feePlanRows, changeLogRows] = await Promise.all([
     fetchAllRows(() => supabase.from('task_records').select('id, client_id, task_def_id, is_done, done_at, note').in('client_id', clientIds).eq('year', year).eq('month', month)),
     fetchAllRows(() => supabase.from('service_fees').select('client_id, amount').in('client_id', clientIds).eq('year', year).eq('month', month).eq('type', 'ketoan')),
-    fetchAllRows(() => supabase.from('service_fees').select('client_id, amount').in('client_id', clientIds).eq('year', year).eq('month', month).eq('type', 'khach')),
+    // Lấy kèm `note` — tab "Công nợ phòng" hiển thị nội dung ghi chú của khoản thu khác
+    // (vd "Phí làm BCTC năm 2025") để biết khoản đó thu về việc gì, không chỉ số tiền.
+    fetchAllRows(() => supabase.from('service_fees').select('client_id, amount, note').in('client_id', clientIds).eq('year', year).eq('month', month).eq('type', 'khach')),
     // Lịch sử đổi phí — tra đúng phí tại tháng đang xem thay vì monthly_fee sống.
     fetchAllRows(() => supabase.from('service_fees').select('client_id, year, month, amount').in('client_id', clientIds).eq('type', 'fee_plan')),
     fetchAllRows(() => supabase.from('client_change_log').select('client_id, old_value, changed_at')
@@ -120,7 +122,11 @@ export async function GET(request) {
   const feeMap = {}
   for (const f of (feeCollections || [])) feeMap[f.client_id] = Number(f.amount) || 0
   const feeKhachMap = {}
-  for (const f of (feeKhach || [])) feeKhachMap[f.client_id] = Number(f.amount) || 0
+  const feeKhachNoteMap = {}
+  for (const f of (feeKhach || [])) {
+    feeKhachMap[f.client_id] = Number(f.amount) || 0
+    feeKhachNoteMap[f.client_id] = f.note || null
+  }
 
   // Deadline date helper: deadline_day of selected month/year — clamp về số ngày thực có
   // của tháng + dời sang thứ 2 nếu rơi Chủ nhật.
@@ -172,6 +178,7 @@ export async function GET(request) {
       monthly_fee: resolveFeeForMonth(feePlanRows || [], c.id, year, month, c.monthly_fee, changeLogRows || []),
       address: extra.address || null, tax_status: extra.tax_status || null, other_debt: Number(extra.other_debt) || 0,
       collected: feeMap[c.id] || 0, collectedKhach: feeKhachMap[c.id] || 0,
+      collectedKhachNote: feeKhachNoteMap[c.id] || null,
       tasks: tasksWithStatus, taskTotal: tasksWithStatus.length,
       taskDone: tasksWithStatus.filter(t => t.status.startsWith('done')).length,
     }
