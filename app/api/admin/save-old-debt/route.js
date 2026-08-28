@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
+import { canWriteAccountingDebt } from '@/lib/debtScope'
 
 function getAdmin() {
   return createClient(
@@ -24,6 +25,11 @@ export async function POST(request) {
     }
 
     const supabase = getAdmin()
+
+    // Nợ tồn cũ cũng là công nợ kế toán — nhân viên phòng HCNS không được ghi (xem lib/debtScope.js).
+    if (!await canWriteAccountingDebt(supabase, auth.caller, clientId)) {
+      return Response.json({ error: 'Không đủ quyền cập nhật nợ tồn cũ của công ty này' }, { status: 403 })
+    }
     const requested = Number(amount)
     if (!requested || requested <= 0) {
       return Response.json({ error: 'Số tiền không hợp lệ' }, { status: 400 })

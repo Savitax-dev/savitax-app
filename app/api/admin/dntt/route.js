@@ -25,19 +25,38 @@ export async function GET(request) {
   // (vd gọi route trực tiếp) thì tự tính mặc định như cũ bên dưới.
   const qrContentParam = searchParams.get('qrContent')
 
-  if (!clientId) return new Response('Missing clientId', { status: 400 })
+  // Hồ sơ HCNS Thời điểm/Vãng lai in bằng CHÍNH mẫu phiếu này — chỉ đổi nguồn dữ liệu công ty và
+  // các dòng B, còn letterhead/bảng/QR/ô ký giữ nguyên để phiếu đồng nhất với phòng nghiệp vụ.
+  const hcnsClientId = searchParams.get('hcnsClientId')
+  if (!clientId && !hcnsClientId) return new Response('Missing clientId', { status: 400 })
 
   const supabase = getAdmin()
 
-  const { data: client } = await supabase
-    .from('clients')
-    .select('id, name, tax_code, monthly_fee, assigned_to, address, tax_status, client_code, representative, other_debt, fee_period')
-    .eq('id', clientId).single()
-
-  if (!client) return new Response('Client not found', { status: 404 })
-
-  const { data: staff } = await supabase
-    .from('staff').select('full_name').eq('id', client.assigned_to).single()
+  let client = null
+  let staff = null
+  if (hcnsClientId) {
+    const { data: hc } = await supabase.from('hcns_clients').select('*').eq('id', hcnsClientId).single()
+    if (!hc) return new Response('HCNS client not found', { status: 404 })
+    client = {
+      id: hc.id, name: hc.name, tax_code: hc.tax_code, address: hc.address,
+      representative: hc.representative,
+      client_code: hc.case_code || hc.client_code,
+      // Hồ sơ thời điểm/vãng lai không theo dõi nợ tồn -> dòng A của phiếu tự hiện "–".
+      other_debt: 0, monthly_fee: 0, fee_period: 'monthly',
+      assigned_to: hc.assigned_to,
+    }
+    const { data: st } = await supabase.from('staff').select('full_name').eq('id', hc.assigned_to).maybeSingle()
+    staff = st || null
+  } else {
+    const { data: c } = await supabase
+      .from('clients')
+      .select('id, name, tax_code, monthly_fee, assigned_to, address, tax_status, client_code, representative, other_debt, fee_period')
+      .eq('id', clientId).single()
+    if (!c) return new Response('Client not found', { status: 404 })
+    client = c
+    const { data: st } = await supabase.from('staff').select('full_name').eq('id', c.assigned_to).single()
+    staff = st || null
+  }
 
   // b1AmountParam (panel ĐNTT gửi lên) đã được tách VAT sẵn — dùng thẳng. Chỉ khi KHÔNG có param
   // (fallback lấy trực tiếp client.monthly_fee — số đã bao gồm VAT nhập ở "Thêm công ty") mới cần
@@ -49,8 +68,20 @@ export async function GET(request) {
     ? 'Q' + Math.ceil(month / 3) + '/' + year
     : 'Tháng ' + month + '/' + year
   const b1Label    = b1LabelParam || ('Phí dịch vụ kế toán ' + periodLabel + ' (chưa VAT)')
+
+  // B2 cố định = phí dịch vụ HCNS, chỉ có khi công ty đã tick "Có sử dụng DV HCNS". Cùng quy ước
+  // "đã gồm VAT" như B1 nên panel gửi lên số ĐÃ tách VAT. Có dòng này thì các dòng nhập tay dịch
+  // xuống bắt đầu từ B3.
+  const hcnsLabelParam  = searchParams.get('hcnsLabel')
+  const hcnsAmountParam = searchParams.get('hcnsAmount')
+  const hcnsFee   = hcnsAmountParam !== null && hcnsAmountParam !== '' ? Number(hcnsAmountParam) || 0 : 0
+  // Với hồ sơ HCNS, mọi dòng B đều là dịch vụ (gửi qua b1/extra) nên KHÔNG có dòng B2 cố định.
+  const hasHcns   = !hcnsClientId && hcnsFee > 0
+  const hcnsLabel = hcnsLabelParam || ('Phí dịch vụ HCNS ' + periodLabel + ' (chưa VAT)')
+  const extraStartNo = hasHcns ? 3 : 2
+
   const extraTotal = extraRows.reduce((s, r) => s + (Number(r.amount) || 0), 0)
-  const subTotal   = baseFee + extraTotal        // tổng trước VAT (B1 đã tách VAT + B2...B7 vốn đã chưa VAT)
+  const subTotal   = baseFee + hcnsFee + extraTotal   // tổng trước VAT (mọi dòng B đều là số chưa VAT)
   const prevBal    = Number(client.other_debt) || 0
   // "Tồn" (A) đã là số gồm VAT sẵn (cộng dồn từ phí dịch vụ chưa thu, vốn đã gồm VAT) — lấy thẳng, không nhân 1.08 nữa
   const prevBalVat = prevBal
@@ -62,7 +93,9 @@ export async function GET(request) {
   const monthPad   = String(month).padStart(2, '0')
   const periodCode = client.fee_period === 'quarterly' ? 'Q' + Math.ceil(month / 3) : 'T' + monthPad
   const clientCode = client.client_code || client.tax_code || ''
-  const qrContent  = qrContentParam || (clientCode + '_TTPhiDichVu_' + periodCode + '_Savitax')
+  const qrContent  = qrContentParam || (hcnsClientId
+    ? clientCode + '_Phidichvu_T' + monthPad + '/' + year
+    : clientCode + '_TTPhiDichVu_' + periodCode + '_Savitax')
   const bankId     = 'ACB'
   const accountNo  = '3878556868'
   const qrUrl = 'https://img.vietqr.io/image/' + bankId + '-' + accountNo +
@@ -161,7 +194,7 @@ export async function GET(request) {
   <div class="to">
     <b>Kính gửi:</b> ${repLine}: <b>${client.name}</b>
   </div>
-  <div class="mst">MST: ${client.tax_code || ''}${client.address ? ' &nbsp;|&nbsp; Địa chỉ: ' + client.address : ''}</div>
+  <div class="mst">MST: ${client.tax_code || ''}${client.address ? ' &nbsp;|&nbsp; Địa chỉ: ' + client.address : ''}${hcnsClientId && client.client_code ? ' &nbsp;|&nbsp; Mã hồ sơ: ' + client.client_code : ''}</div>
 
   <table>
     <colgroup>
@@ -189,15 +222,22 @@ export async function GET(request) {
         <td class="ra" id="b1amt">${fmt(baseFee)} đ</td>
         <td class="ca">${dayStr}</td><td></td>
       </tr>
+      ${hasHcns ? `
+      <tr>
+        <td class="ca">B2</td>
+        <td>${hcnsLabel}</td>
+        <td class="ra">${fmt(hcnsFee)} đ</td>
+        <td class="ca">${dayStr}</td><td></td>
+      </tr>` : ''}
       ${extraRows.map((r, i) => `
       <tr>
-        <td class="ca">B${i+2}</td>
+        <td class="ca">B${i + extraStartNo}</td>
         <td>${r.desc || ''}</td>
         <td class="ra">${r.amount ? fmt(Number(r.amount)) + ' đ' : ''}</td>
         <td class="ca">${dayStr}</td><td></td>
       </tr>`).join('')}
       <!-- Hidden editable rows for adding more in HTML view -->
-      ${[2,3,4,5,6,7].filter(n => n > extraRows.length + 1).map(n => `
+      ${[2,3,4,5,6,7,8].filter(n => n >= extraRows.length + extraStartNo).map(n => `
       <tr id="xrow${n}" style="display:none">
         <td class="ca">B${n}</td>
         <td contenteditable="true" style="color:#1565c0"></td>
@@ -264,10 +304,12 @@ export async function GET(request) {
 
 <script>
 var shown = 0
-var startIdx = ${extraRows.length + 2} // B rows already filled
-var allRows = [2,3,4,5,6,7].filter(function(n){ return n >= startIdx })
+// Số hiệu dòng B trống đầu tiên. Có dòng B2 phí HCNS cố định thì các dòng nhập tay bắt đầu từ B3.
+var startIdx = ${extraRows.length + extraStartNo}
+var allRows = [2,3,4,5,6,7,8].filter(function(n){ return n >= startIdx })
 var rows = allRows.map(function(n){ return 'xrow'+n })
-var baseFeeVal = ${baseFee}
+// baseFeeVal = tổng các dòng B CỐ ĐỊNH (B1 phí kế toán + B2 phí HCNS nếu có), đều là số chưa VAT.
+var baseFeeVal = ${baseFee + hcnsFee}
 var prevBalVal = ${prevBalVat}
 
 function addRow() {
@@ -276,7 +318,7 @@ function addRow() {
     document.getElementById(rowId).style.display = ''
     shown++
     var lbl = document.getElementById('addLabel')
-    if (lbl) lbl.innerText = 'Đã thêm dòng B' + (shown + 1)
+    if (lbl) lbl.innerText = 'Đã thêm dòng B' + (startIdx + shown - 1)
     if (shown >= rows.length) {
       var btn = document.getElementById('btnAdd')
       if (btn) btn.style.display = 'none'

@@ -45,6 +45,19 @@ function NavItem({ href, icon, label, pathname, onClose }) {
   )
 }
 
+/* ─── Tiêu đề phân khu ───────────────────────────────────────
+   Tách từ khối "Quản trị" vốn đã có sẵn để dùng lại cho cả 3 khu (Kế toán / HCNS / Quản trị),
+   giữ nguyên kiểu gạch gradient vàng — không thêm style mới. */
+function SectionLabel({ children }) {
+  return (
+    <div className="flex items-center gap-2 px-3 pb-2 pt-3">
+      <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, #C9A84C60, transparent)' }} />
+      <p className="text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: '#C9A84C' }}>{children}</p>
+      <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, #C9A84C60, transparent)' }} />
+    </div>
+  )
+}
+
 /* ─── Main Sidebar ───────────────────────────────────────────── */
 // Cache cấp module: user + rooms chỉ tải 1 lần cho cả phiên, dùng lại khi chuyển
 // trang (AppShell mount lại mỗi trang nên không có cache sẽ fetch lặp mỗi lần điều
@@ -80,7 +93,9 @@ export default function Sidebar({ onClose }) {
       if (!session) return
       const [resMe, resRooms] = await Promise.all([
         supabase.from('staff').select('*, rooms(name)').eq('id', session.user.id).single(),
-        supabase.from('rooms').select('*').order('type').order('name'),
+        // Danh sách con của "Phòng nghiệp vụ" — phòng HCNS KHÔNG nằm ở đây vì nó có phân khu
+        // riêng bên dưới và không dùng giao diện /room/[roomId].
+        supabase.from('rooms').select('*').neq('type', 'hcns').order('type').order('name'),
       ])
       let staffData = resMe.data
 
@@ -131,6 +146,9 @@ export default function Sidebar({ onClose }) {
   const canManageDatabase  = can(role, 'manage_database', permData)
   const canManageRoles     = can(role, 'manage_roles', permData)
   const showAdminSection = canManageRooms || canManageStaff || canManageClients || canManageChecklist || canViewAllDebt || canManageDatabase || canManageRoles
+  // Khu HCNS tự ẩn với người không có quyền — bản clone không cài module thì quyền này không tồn
+  // tại nên can() trả false, khu biến mất mà không phải sửa code.
+  const canViewHcns = can(role, 'view_hcns', permData)
   const onRoomPage = pathname && pathname.startsWith('/room/')
 
   // Greeting by time — dùng full_name trực tiếp
@@ -197,6 +215,8 @@ export default function Sidebar({ onClose }) {
 
         <NavItem href="/dashboard"  icon="🏠" label="Trang chủ"           pathname={pathname} onClose={onClose} />
         <NavItem href="/clients"    icon="🏢" label="Danh sách công ty"   pathname={pathname} onClose={onClose} />
+
+        <SectionLabel>Kế toán</SectionLabel>
         <NavItem href="/checklist"  icon="📋" label="Checklist công việc" pathname={pathname} onClose={onClose} />
         <NavItem href="/my-debt"    icon="💰" label="Quản lý công nợ"     pathname={pathname} onClose={onClose} />
         {/* Nhật ký làm việc: để ở menu chính cho người KHÔNG có mục Quản trị (nhân viên/trưởng phòng);
@@ -256,14 +276,20 @@ export default function Sidebar({ onClose }) {
           </div>
         )}
 
+        {/* Phân khu HCNS — 2 trang riêng, KHÔNG chèn vào danh sách phòng nghiệp vụ ở trên vì
+            phòng HCNS không dùng giao diện /room/[roomId] của phòng kế toán. */}
+        {canViewHcns && (
+          <div>
+            <SectionLabel>HCNS - BHXH</SectionLabel>
+            <NavItem href="/hcns"           icon="💼" label="Công ty phụ trách" pathname={pathname} onClose={onClose} />
+            <NavItem href="/hcns/checklist" icon="📝" label="Checklist HCNS"    pathname={pathname} onClose={onClose} />
+          </div>
+        )}
+
         {/* Admin section */}
         {showAdminSection && (
-          <div className="pt-3">
-            <div className="flex items-center gap-2 px-3 pb-2">
-              <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, #C9A84C60, transparent)' }} />
-              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#C9A84C' }}>Quản trị</p>
-              <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, #C9A84C60, transparent)' }} />
-            </div>
+          <div>
+            <SectionLabel>Quản trị</SectionLabel>
             {canManageRooms && (
               <NavItem href="/admin/rooms"     icon="🏛️" label="Quản lý phòng ban"     pathname={pathname} onClose={onClose} />
             )}

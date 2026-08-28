@@ -21,6 +21,153 @@ const STATUS_OPTS = [
 
 const fmt = (n) => Number(n || 0).toLocaleString('vi-VN')
 
+// Lịch sử ĐỔI MỨC PHÍ (không phải lịch sử thu tiền). Mỗi dòng fee_plan nghĩa là "từ tháng này
+// trở đi phí = X" — đây chính là nguồn resolveFeeForMonth dùng để tính đúng công nợ tháng cũ,
+// nên nhìn được danh sách này giúp phát hiện ngay khi ai đó áp phí nhầm tháng.
+function FeeHistory({ history }) {
+  const ketoan = history?.ketoan || []
+  const hcns = history?.hcns || []
+  const log = history?.changeLog || []
+  const isEmpty = !ketoan.length && !hcns.length && !log.length
+
+  const Row = ({ items, label, color }) => items.length === 0 ? null : (
+    <div className="mb-2">
+      <p className={'text-xs font-medium mb-1 ' + color}>{label}</p>
+      <div className="space-y-0.5">
+        {items.map(h => (
+          <div key={h.id} className="flex items-center gap-2 text-xs">
+            <span className="text-gray-500 w-16 flex-shrink-0">{'Từ T' + h.month + '/' + h.year}</span>
+            <span className="font-semibold text-gray-800 tabular-nums">{fmt(h.amount)}đ</span>
+            {h.note && <span className="text-gray-400 truncate">{h.note}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="mt-3 border-t border-gray-100 pt-3">
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Lịch sử thay đổi phí</p>
+      {/* Luôn hiện khu vực này, kể cả khi rỗng — ẩn đi khiến người dùng tưởng chức năng hỏng. */}
+      {isEmpty && (
+        <p className="text-xs text-gray-400">
+          Công ty này chưa có lần đổi phí nào được ghi nhận.
+        </p>
+      )}
+      <Row items={ketoan} label="Phí dịch vụ kế toán" color="text-blue-700" />
+      <Row items={hcns} label="Phí dịch vụ HCNS" color="text-sky-700" />
+      {log.length > 0 && (
+        <details className="mt-1">
+          <summary className="text-xs text-gray-400 cursor-pointer">Ai đổi, lúc nào ({log.length})</summary>
+          <div className="mt-1 space-y-0.5">
+            {log.map(l => (
+              <p key={l.id} className="text-xs text-gray-400">
+                {fmt(l.oldValue)}đ → <span className="text-gray-600 font-medium">{fmt(l.newValue)}đ</span>
+                {' · ' + (l.changedByName || '—')}
+                {' · ' + new Date(l.changed_at).toLocaleString('vi-VN')}
+              </p>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  )
+}
+
+// Điều chỉnh phí DV HCNS — khối riêng, KHÔNG gộp vào FeeAdjust của phí kế toán vì hai bên lưu ở
+// hai bảng khác nhau (clients.monthly_fee vs hcns_clients.hcns_fee) và có lịch sử đổi phí riêng.
+// Đổi phí sẽ tự ghi một mốc "từ tháng này trở đi phí = X" để sau tra được phí đúng của tháng cũ.
+function HcnsFeeAdjust({ client, onSaved }) {
+  const [editing, setEditing] = useState(false)
+  const [amount, setAmount] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
+  const [hcnsId, setHcnsId] = useState(null)
+
+  const open = async () => {
+    setErr('')
+    // Lấy id bản ghi HCNS đang gắn với công ty này (route trả kèm khi hỏi lịch sử thu).
+    const res = await fetch('/api/admin/hcns/debt-history?clientId=' + client.id)
+    const j = await res.json()
+    if (!j.hcnsClient) { setErr('Chưa tìm thấy hồ sơ HCNS của công ty này.'); return }
+    setHcnsId(j.hcnsClient.id)
+    setAmount(String(j.hcnsClient.hcns_fee || ''))
+    setEditing(true)
+  }
+
+  const save = async () => {
+    const val = Number(String(amount).replace(/\D/g, ''))
+    if (!val) { setErr('Nhập mức phí HCNS mới.'); return }
+    setSaving(true)
+    const res = await fetch('/api/admin/hcns/clients', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: hcnsId, hcns_fee: val }),
+    })
+    const j = await res.json()
+    setSaving(false)
+    if (j.error) { setErr(j.error); return }
+    setEditing(false)
+    onSaved && onSaved()
+  }
+
+  if (!editing) {
+    return (
+      <div>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Cập nhật phí DV HCNS</p>
+        <div className="flex items-center justify-between bg-sky-50 rounded-xl px-3 py-2.5">
+          <div>
+            <p className="text-xs text-sky-600 mb-0.5">Phí HCNS hiện tại</p>
+            <p className="text-base font-bold text-sky-900">
+              {fmt(client.hcns_fee)}đ
+              <span className="text-xs font-normal text-sky-500 ml-1">
+                {'/' + ((client.fee_period || client.report_type) === 'quarterly' ? 'Quý' : 'Tháng')}
+              </span>
+            </p>
+          </div>
+          <button onClick={open} className="text-xs text-sky-700 hover:underline font-medium bg-white px-3 py-1.5 rounded-lg border border-sky-200">
+            Điều chỉnh
+          </button>
+        </div>
+        {err && <p className="text-xs text-red-600 mt-1">{err}</p>}
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Cập nhật phí DV HCNS</p>
+      <div className="space-y-2.5 bg-sky-50 border border-sky-200 rounded-xl p-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-gray-500">Phí HCNS hiện tại</span>
+          <span className="text-sm font-bold text-gray-800">{fmt(client.hcns_fee)}đ</span>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">
+            Mức phí HCNS mới (đ)
+            <span className="ml-1.5 text-sky-700 font-bold">— Giá đã bao gồm VAT</span>
+          </label>
+          <input type="text" inputMode="numeric"
+            value={amount ? Number(String(amount).replace(/\D/g, '') || 0).toLocaleString('vi-VN') : ''}
+            onChange={e => { setAmount(e.target.value.replace(/\D/g, '')); if (err) setErr('') }}
+            className="w-full px-3 py-2 border border-sky-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white" />
+        </div>
+        <p className="text-xs text-gray-400">
+          Áp dụng từ tháng hiện tại. Công nợ các tháng trước vẫn tính theo mức phí cũ.
+        </p>
+        {err && <p className="text-xs text-red-600">{err}</p>}
+        <div className="flex gap-2">
+          <button onClick={save} disabled={saving}
+            className="flex-1 bg-sky-700 text-white text-sm py-2 rounded-lg font-medium disabled:opacity-50">
+            {saving ? 'Đang lưu...' : 'Lưu phí HCNS'}
+          </button>
+          <button onClick={() => { setEditing(false); setErr('') }}
+            className="px-4 border border-gray-200 rounded-lg text-sm text-gray-600">Hủy</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function FeeAdjust({ client, isEditing, feeAmount, feeFromMonth, feeNote, feePeriod, saving, futureMonths, onOpen, onSave, onCancel, onAmountChange, onMonthChange, onNoteChange, onPeriodChange }) {
   const selectedVal = feeFromMonth || (futureMonths[0] ? futureMonths[0].value : '')
   const selectedLabel = futureMonths.find(x => x.value === selectedVal)
@@ -75,7 +222,7 @@ function FeeAdjust({ client, isEditing, feeAmount, feeFromMonth, feeNote, feePer
           <select value={selectedVal} onChange={e => onMonthChange(e.target.value)}
             className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
             {futureMonths.map(mo => (
-              <option key={mo.value} value={mo.value}>{mo.label}</option>
+              <option key={mo.value} value={mo.value}>{mo.label}{mo.past ? ' (đã qua)' : ''}</option>
             ))}
           </select>
         </div>
@@ -88,6 +235,17 @@ function FeeAdjust({ client, isEditing, feeAmount, feeFromMonth, feeNote, feePer
             <p className="text-xs text-gray-500">Xác nhận:</p>
             <p className="text-sm font-semibold text-blue-700 mt-0.5">
               {fmt(Number(feeAmount))}đ · áp dụng từ {selectedLabel ? selectedLabel.label : selectedVal}
+            </p>
+          </div>
+        )}
+        {/* Áp dụng lùi về tháng đã qua sẽ TÍNH LẠI công nợ của các tháng đó — %-KPI đổi theo và
+            phần chênh có thể bị tự ghi thành "nợ tồn". Phải nói rõ trước khi lưu. */}
+        {selectedLabel?.past && (
+          <div className="bg-amber-50 border border-amber-300 rounded-lg px-3 py-2">
+            <p className="text-xs text-amber-800 leading-relaxed">
+              <b>Lưu ý:</b> áp dụng từ <b>{selectedLabel.label}</b> là tháng đã qua — công nợ từ tháng
+              đó tới nay sẽ được tính lại theo mức phí mới, %-KPI và nợ tồn của các tháng đó đổi theo.
+              Chỉ chọn tháng cũ khi cần sửa lại mức phí đã ghi sai.
             </p>
           </div>
         )}
@@ -119,7 +277,7 @@ export default function ClientsPage() {
   const [expanded, setExpanded] = useState(null)
   const [feeHistory, setFeeHistory] = useState({})
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '' })
+  const [form, setForm] = useState({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '', uses_hcns: false, hcns_fee: '' })
   const [editClientId, setEditClientId] = useState(null)
   const [editClientForm, setEditClientForm] = useState({})
   const [formRoom, setFormRoom] = useState('')
@@ -156,13 +314,24 @@ export default function ClientsPage() {
   const nextYear = month === 12 ? year + 1 : year
 
   // Generate next N months for fee-from picker (current month + future)
+  // Danh sách "Áp dụng từ tháng" cho việc điều chỉnh phí: mở từ T1 của NĂM HIỆN TẠI tới 12 tháng
+  // tới, để sửa được cả mức phí lẽ ra đã áp dụng từ đầu năm (trước đây chỉ cho chọn từ tháng này
+  // trở đi nên không truy lại được).
+  //
+  // ⚠ Chọn tháng QUÁ KHỨ sẽ tính lại công nợ từ tháng đó trở đi — resolveFeeForMonth lấy mốc
+  // fee_plan gần nhất <= tháng đang xét, nên %-KPI và "nợ tồn" các tháng đó đổi theo. Giao diện
+  // phải cảnh báo rõ trước khi lưu (xem FeeAdjust).
   const getFutureMonths = (count) => {
     const result = []
-    let y = year, m = month
+    for (let m = 1; m <= 12; m++) {
+      if (year * 12 + m >= year * 12 + month) break
+      result.push({ y: year, m, label: 'T' + m + '/' + year, value: year + '-' + String(m).padStart(2, '0'), past: true })
+    }
+    let y = year, mm = month
     for (let i = 0; i < count; i++) {
-      result.push({ y, m, label: 'T' + m + '/' + y, value: y + '-' + String(m).padStart(2, '0') })
-      m++
-      if (m > 12) { m = 1; y++ }
+      result.push({ y, m: mm, label: 'T' + mm + '/' + y, value: y + '-' + String(mm).padStart(2, '0'), past: false })
+      mm++
+      if (mm > 12) { mm = 1; y++ }
     }
     return result
   }
@@ -293,17 +462,21 @@ export default function ClientsPage() {
     }
   }
 
+  // Lịch sử ĐỔI MỨC PHÍ. Trước đây hàm này select('*') toàn bộ service_fees nên trộn cả các
+  // khoản ĐÃ THU (ketoan/khach/no_ton) vào danh sách đổi phí — sai nghĩa. Và nó đọc thẳng bằng
+  // anon key ở trình duyệt, trái quy ước "mọi đọc/ghi nghiệp vụ đi qua API route" trong AGENTS.md.
   const loadFeeHistory = async (clientId) => {
-    if (feeHistory[clientId]) return
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('service_fees')
-      .select('*')
-      .eq('client_id', clientId)
-      .order('year', { ascending: false })
-      .order('month', { ascending: false })
-      .limit(12)
-    setFeeHistory(h => ({ ...h, [clientId]: data || [] }))
+    // KHÔNG dùng bộ nhớ đệm kiểu `if (feeHistory[clientId]) return`: mảng/đối tượng RỖNG vẫn là
+    // giá trị "đúng" trong JS nên một lần trả rỗng là khoá luôn, không bao giờ tải lại — đó là
+    // lý do lịch sử đổi phí không hiện dù dữ liệu có thật. Đây là dữ liệu tiền, tải lại mỗi lần
+    // mở thẻ công ty cho chắc chắn tươi mới; một request nhỏ, không đáng tiếc.
+    try {
+      const res = await fetch('/api/admin/fee-history?clientId=' + clientId)
+      const json = await res.json()
+      setFeeHistory(h => ({ ...h, [clientId]: json.error ? { ketoan: [], hcns: [], changeLog: [] } : json }))
+    } catch (_) {
+      setFeeHistory(h => ({ ...h, [clientId]: { ketoan: [], hcns: [], changeLog: [] } }))
+    }
   }
 
   const handleExpand = (id) => {
@@ -352,7 +525,7 @@ export default function ClientsPage() {
       setSaving(false)
       return
     }
-    setForm({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '' })
+    setForm({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '', uses_hcns: false, hcns_fee: '' })
     setLookupError('')
     setFormRoom('')
     setShowForm(false)
@@ -370,7 +543,7 @@ export default function ClientsPage() {
       effectY = Number(parts[0])
       effectM = Number(parts[1])
     }
-    await fetch('/api/admin/clients', {
+    const res = await fetch('/api/admin/clients', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -385,6 +558,14 @@ export default function ClientsPage() {
         },
       }),
     })
+    // Đổi phí lùi có thể làm nợ tồn của các tháng đó được tính lại — báo rõ chứ không lặng lẽ,
+    // vì đây là thay đổi SỐ TIỀN khách đang nợ.
+    const j = await res.json().catch(() => ({}))
+    if (j.rolloverChanges?.length) {
+      const lines = j.rolloverChanges.map(c =>
+        '  T' + c.month + '/' + c.year + ': ' + fmt(c.from) + 'đ → ' + fmt(c.to) + 'đ')
+      alert(['Đã tính lại nợ tồn theo mức phí mới:', ...lines].join('\n'))
+    }
     setFeeEdit(null); setFeeAmount(''); setFeeNote(''); setFeeFromMonth(''); setFeePeriod('monthly')
     await loadClients()
     setFeeHistory(h => ({ ...h, [clientId]: null }))
@@ -672,6 +853,43 @@ export default function ClientsPage() {
                   </select>
                 </div>
               </div>
+              {/* Dịch vụ HCNS — tick thì mới cho nhập phí. Bật ô này sẽ tự sinh công ty tương ứng
+                  bên trang Phòng HCNS và thêm mục công nợ "Dịch vụ HCNS" cho công ty này. */}
+              <div className="border border-sky-200 bg-sky-50 rounded-lg p-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={form.uses_hcns}
+                    onChange={e => setForm(f => ({
+                      ...f,
+                      uses_hcns: e.target.checked,
+                      hcns_fee: e.target.checked ? f.hcns_fee : '',
+                    }))}
+                    className="w-4 h-4 accent-sky-600" />
+                  <span className="text-sm font-semibold text-sky-800">Có sử dụng DV HCNS</span>
+                </label>
+                <div className="mt-2">
+                  <label className={'text-xs mb-1 block ' + (form.uses_hcns ? 'text-sky-700' : 'text-gray-400')}>
+                    Phí dịch vụ HCNS (đ)
+                    <span className="ml-1.5 font-bold">— Giá đã bao gồm VAT</span>
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    disabled={!form.uses_hcns}
+                    value={form.hcns_fee !== '' ? fmt(Number(form.hcns_fee)) : ''}
+                    onChange={e => setForm(f => ({ ...f, hcns_fee: e.target.value.replace(/\D/g, '') }))}
+                    placeholder={form.uses_hcns ? 'VD: 2.160.000' : 'Tick ô trên để nhập phí'}
+                    className={'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 ' +
+                      (form.uses_hcns
+                        ? 'border-sky-300 bg-white focus:ring-sky-400'
+                        : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed')}
+                  />
+                  {form.uses_hcns && (
+                    <p className="text-xs text-sky-700 mt-1">
+                      Sẽ tự tạo công ty ở tag “Thời kỳ” của Phòng HCNS và thêm dòng B2 trên phiếu ĐNTT.
+                    </p>
+                  )}
+                </div>
+              </div>
               {/* Thu khác (tồn đọng cũ) */}
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">
@@ -800,7 +1018,7 @@ export default function ClientsPage() {
         <div className="space-y-3">
           {filtered.map(client => {
             const isOpen = expanded === client.id
-            const history = feeHistory[client.id] || []
+            const history = feeHistory[client.id] || { ketoan: [], hcns: [], changeLog: [] }
             const assignedStaff = client.staff
             // Nhân viên thường chỉ sửa được công ty mình phụ trách; admin/leader (canManageAll) sửa được tất cả.
             const canEditThis = canManageAll || client.assigned_to === myStaff?.id
@@ -834,6 +1052,16 @@ export default function ClientsPage() {
                         {' / ' + ((client.fee_period || client.report_type) === 'quarterly' ? 'Quý' : 'Tháng')}
                       </span>
                     </p>
+                    {client.uses_hcns && (
+                      <p className="text-xs mt-0.5">
+                        <span className="text-sky-700 font-semibold">
+                          {'🏢 Phí DV HCNS: ' + fmt(client.hcns_fee) + 'đ'}
+                        </span>
+                        <span className="text-gray-400">
+                          {' / ' + ((client.fee_period || client.report_type) === 'quarterly' ? 'Quý' : 'Tháng')}
+                        </span>
+                      </p>
+                    )}
                     {assignedStaff && (
                       <p className="text-xs text-blue-500 mt-0.5">
                         {'👤 ' + assignedStaff.full_name + (assignedStaff.rooms ? ' · ' + assignedStaff.rooms.name : '')}
@@ -1303,20 +1531,12 @@ export default function ClientsPage() {
                       onPeriodChange={v => setFeePeriod(v)}
                     />
                     )}
-                    {history.length > 0 && (
-                      <div className="mt-3 border-t border-gray-50 pt-3">
-                        <p className="text-xs text-gray-400 mb-1.5">Lịch sử thay đổi phí:</p>
-                        <div className="space-y-1">
-                          {history.map(h => (
-                            <div key={h.id} className="flex items-center justify-between text-xs text-gray-500">
-                              <span>{'T' + h.month + '/' + h.year}</span>
-                              <span className="font-medium text-gray-700">{fmt(h.amount)}đ</span>
-                              {h.note && <span className="text-gray-400 truncate max-w-24">{h.note}</span>}
-                            </div>
-                          ))}
-                        </div>
+                    {client.uses_hcns && (
+                      <div className="mt-3">
+                        <HcnsFeeAdjust client={client} onSaved={loadClients} />
                       </div>
                     )}
+                    <FeeHistory history={history} />
 
                   </div>
                 )}
