@@ -71,6 +71,8 @@ export default function Sidebar({ onClose }) {
   const [user,       setUser]       = useState(_sidebarCache ? _sidebarCache.user : null)
   const [rooms,      setRooms]      = useState(_sidebarCache ? _sidebarCache.rooms : [])
   const [roles,      setRoles]      = useState(_sidebarCache ? _sidebarCache.roles : [])
+  // Nhân viên CHỈ thuộc phòng HCNS thì ẩn hẳn phân khu Kế toán — họ không làm nghiệp vụ đó.
+  const [hcnsOnly,   setHcnsOnly]   = useState(_sidebarCache ? !!_sidebarCache.hcnsOnly : false)
   const [roomsOpen,  setRoomsOpen]  = useState(false)
   const [logoError,  setLogoError]  = useState(false)
   const [permData,   setPermData]   = useState(null)
@@ -88,6 +90,8 @@ export default function Sidebar({ onClose }) {
       const freshRoles = async (fallbackRole) => {
         try {
           const me = await fetch('/api/admin/me').then(r => r.json())
+          if (!cancelled) setHcnsOnly(!!me?.hcnsOnly)
+          if (_sidebarCache) _sidebarCache.hcnsOnly = !!me?.hcnsOnly
           if (me?.roles?.length) return me.roles
         } catch (_) {}
         return [fallbackRole].filter(Boolean)
@@ -135,8 +139,10 @@ export default function Sidebar({ onClose }) {
       }
       const roomsData = resRooms.data || []
       const myRoles = resMyRoles?.roles?.length ? resMyRoles.roles : [staffData.role].filter(Boolean)
+      const myHcnsOnly = !!resMyRoles?.hcnsOnly
+      if (!cancelled) setHcnsOnly(myHcnsOnly)
       // (resMyRoles lấy ở Promise.all bên trên — lần tải đầu tiên đã là dữ liệu mới)
-      _sidebarCache = { user: staffData, rooms: roomsData, roles: myRoles }
+      _sidebarCache = { user: staffData, rooms: roomsData, roles: myRoles, hcnsOnly: myHcnsOnly }
       if (!cancelled) { setUser(staffData); setRooms(roomsData); setRoles(myRoles) }
     }
     load()
@@ -239,24 +245,24 @@ export default function Sidebar({ onClose }) {
         <NavItem href="/dashboard"  icon="🏠" label="Trang chủ"           pathname={pathname} onClose={onClose} />
         <NavItem href="/clients"    icon="🏢" label="Danh sách công ty"   pathname={pathname} onClose={onClose} />
 
-        <SectionLabel>Kế toán</SectionLabel>
-        <NavItem href="/checklist"  icon="📋" label="Checklist công việc" pathname={pathname} onClose={onClose} />
-        <NavItem href="/my-debt"    icon="💰" label="Quản lý công nợ"     pathname={pathname} onClose={onClose} />
+        {!hcnsOnly && <SectionLabel>Kế toán</SectionLabel>}
+        {!hcnsOnly && <NavItem href="/checklist"  icon="📋" label="Checklist công việc" pathname={pathname} onClose={onClose} />}
+        {!hcnsOnly && <NavItem href="/my-debt"    icon="💰" label="Quản lý công nợ"     pathname={pathname} onClose={onClose} />}
         {/* Nhật ký làm việc: để ở menu chính cho người KHÔNG có mục Quản trị (nhân viên/trưởng phòng);
             với tài khoản quản trị thì hiện trong mục Quản trị bên dưới cho đồng bộ */}
-        {!showAdminSection && (
+        {!showAdminSection && !hcnsOnly && (
           <NavItem href="/work-log" icon="📔" label="Nhật ký làm việc"    pathname={pathname} onClose={onClose} />
         )}
 
-        {canViewKpi && (
+        {canViewKpi && !hcnsOnly && (
           <NavItem href="/report" icon="📊" label="Báo cáo KPI" pathname={pathname} onClose={onClose} />
         )}
-        {isManager && (
+        {isManager && !hcnsOnly && (
           <NavItem href="/staff" icon="👥" label="Nhân viên Savitax" pathname={pathname} onClose={onClose} />
         )}
 
         {/* Phòng nghiệp vụ */}
-        {canViewRooms && (
+        {canViewRooms && !hcnsOnly && (
           <div>
             <div className={'flex items-center rounded-xl overflow-hidden ' +
               (onRoomPage || pathname === '/rooms' ? 'bg-[#8B1A1A]' : '')}>
@@ -306,6 +312,7 @@ export default function Sidebar({ onClose }) {
             <SectionLabel>HCNS - BHXH</SectionLabel>
             <NavItem href="/hcns"           icon="💼" label="Công ty phụ trách" pathname={pathname} onClose={onClose} />
             <NavItem href="/hcns/checklist" icon="📝" label="Checklist HCNS"    pathname={pathname} onClose={onClose} />
+            <NavItem href="/hcns/work-log"  icon="📔" label="Nhật ký làm việc HCNS" pathname={pathname} onClose={onClose} />
           </div>
         )}
 

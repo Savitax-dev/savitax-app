@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 
 // GET /api/admin/me — thông tin phân quyền của chính người đang đăng nhập.
@@ -9,7 +10,19 @@ export async function GET() {
   const auth = await requireLogin()
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
   const c = auth.caller
+
+  // hcnsOnly = MỌI phòng của người này đều là phòng HCNS -> họ không làm kế toán, ẩn phân khu
+  // Kế toán trên menu cho đỡ rối. Người kiêm nhiệm (vừa kế toán vừa HCNS) KHÔNG rơi vào đây.
+  let hcnsOnly = false
+  const roomIds = c.roomIds || [c.roomId].filter(Boolean)
+  if (roomIds.length) {
+    const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+    const { data: rooms } = await admin.from('rooms').select('id, type').in('id', roomIds)
+    hcnsOnly = (rooms || []).length > 0 && (rooms || []).every(r => r.type === 'hcns')
+  }
+
   return Response.json({
+    hcnsOnly,
     staffId: c.staffId,
     role: c.role,          // vai trò chính
     roomId: c.roomId,      // phòng chính
