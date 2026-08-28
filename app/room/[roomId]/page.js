@@ -51,6 +51,9 @@ export default function RoomPage({ params }) {
   const [openClient,  setOpenClient]  = useState({})  // clientId → bool
   const [clientMonth, setClientMonth] = useState({})  // clientId → month number
   const [debtTabLoading, setDebtTabLoading] = useState(false)
+  // Thẻ tổng quan nào ở tab "Công nợ phòng" đang mở bảng chi tiết ('unpaid' | 'khach' |
+  // 'otherDebt' | null) — mỗi lúc chỉ mở 1 bảng cho gọn, bấm lại thẻ đó để đóng.
+  const [openDebtCard, setOpenDebtCard] = useState(null)
 
   const monthOpts = []
   let y = now.getFullYear(), m = now.getMonth() + 1
@@ -452,19 +455,49 @@ export default function RoomPage({ params }) {
               const debtPct     = totalFee === 0 ? 0 : Math.round(totalKetoan / totalFee * 100)
               const overdue     = ownedClients.filter(c => c.dueThisMonth && isMonthPast && c.ketoan < Number(c.monthly_fee) && Number(c.monthly_fee) > 0)
 
+              // ── Dữ liệu cho 3 thẻ bấm mở được ────────────────────────────────────────────
+              // Đều CHỈ tính công ty phụ trách CHÍNH (bỏ phụ trách phụ) cho khớp nguyên tắc
+              // doanh thu — trước đây dòng "N công ty chưa đủ" đếm cả công ty phụ trách phụ và
+              // công ty quý chưa tới hạn nên lệch với số tiền ngay bên trên.
+              const staffNameOf = (id) => (staffData.find(s => s.id === id) || {}).full_name || '—'
+              const unpaidClients = ownedClients
+                .filter(c => c.dueThisMonth && Number(c.monthly_fee) > 0 && c.ketoan < Number(c.monthly_fee))
+              const unpaidByStaff = []
+              for (const s of staffData) {
+                const items = unpaidClients.filter(c => c.assigned_to === s.id)
+                if (items.length === 0) continue
+                unpaidByStaff.push({
+                  id: s.id, name: s.full_name, items,
+                  total: items.reduce((a, c) => a + ((Number(c.monthly_fee) || 0) - c.ketoan), 0),
+                })
+              }
+              // "Thu khác" = tiền thật đã ghi nhận trong tháng, không phụ thuộc hạn thu quý.
+              const khachClients = ownedClients.filter(c => c.khach > 0)
+              const totalKhach   = khachClients.reduce((a, c) => a + c.khach, 0)
+              // Nợ tồn là SỐ DƯ HIỆN TẠI (không tách theo tháng) — xem ghi chú trên thẻ.
+              const otherDebtClients = ownedClients.filter(c => Number(c.other_debt) > 0)
+              const totalOtherDebt   = otherDebtClients.reduce((a, c) => a + (Number(c.other_debt) || 0), 0)
+
+              const toggleCard = (k) => setOpenDebtCard(prev => prev === k ? null : k)
+              // Nền xen kẽ đậm/nhạt giữa các công ty cho dễ dò mắt theo hàng.
+              const zebra = (i) => i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+
               // pill: badge đặc màu (nền đậm + chữ trắng) — thay cho chữ màu nhạt cũ, dễ quan
               // sát "đã thu"/"chưa thu" hơn khi lướt nhanh danh sách.
+              // `bg`/`bgAlt` = 2 sắc độ của CÙNG màu trạng thái, dùng xen kẽ theo thứ tự dòng
+              // (bgAlt cho dòng lẻ) — giữ nguyên ý nghĩa màu "đã thu / chưa thu" nhưng 2 công ty
+              // liền nhau cùng trạng thái vẫn phân biệt được, đỡ mỏi mắt khi dò danh sách dài.
               const debtStatus = (ketoan, fee, notDueYet) => {
                 if (notDueYet) {
                   return ketoan > 0
-                    ? { label: 'Đã thu (chưa đến hạn)', color: 'text-green-700', bg: 'bg-green-50', dot: 'bg-green-500', pill: 'bg-green-600' }
-                    : { label: 'Chưa đến hạn quý',      color: 'text-gray-500',  bg: 'bg-gray-50',  dot: 'bg-gray-300',  pill: 'bg-gray-400' }
+                    ? { label: 'Đã thu (chưa đến hạn)', color: 'text-green-700', bg: 'bg-green-50', bgAlt: 'bg-green-100/70', dot: 'bg-green-500', pill: 'bg-green-600' }
+                    : { label: 'Chưa đến hạn quý',      color: 'text-gray-500',  bg: 'bg-gray-50',  bgAlt: 'bg-gray-100',     dot: 'bg-gray-300',  pill: 'bg-gray-400' }
                 }
-                if (fee === 0) return { label: '—', color: 'text-gray-400', bg: '', dot: 'bg-gray-200', pill: 'bg-gray-300' }
-                if (ketoan >= fee) return { label: 'Đã thu đủ',    color: 'text-green-700', bg: 'bg-green-50',  dot: 'bg-green-500', pill: 'bg-green-600' }
-                if (ketoan > 0)   return { label: 'Thu một phần', color: 'text-yellow-700', bg: 'bg-yellow-50', dot: 'bg-yellow-400', pill: 'bg-yellow-500' }
-                if (isMonthPast)  return { label: 'Quá hạn',      color: 'text-red-700',   bg: 'bg-red-50',    dot: 'bg-red-500', pill: 'bg-red-500' }
-                return               { label: 'Chưa thu',         color: 'text-red-600',  bg: 'bg-red-50',    dot: 'bg-red-400', pill: 'bg-red-500' }
+                if (fee === 0) return { label: '—', color: 'text-gray-400', bg: 'bg-white', bgAlt: 'bg-gray-50', dot: 'bg-gray-200', pill: 'bg-gray-300' }
+                if (ketoan >= fee) return { label: 'Đã thu đủ',    color: 'text-green-700', bg: 'bg-green-50',  bgAlt: 'bg-green-100/70',  dot: 'bg-green-500', pill: 'bg-green-600' }
+                if (ketoan > 0)   return { label: 'Thu một phần', color: 'text-yellow-700', bg: 'bg-yellow-50', bgAlt: 'bg-yellow-100/70', dot: 'bg-yellow-400', pill: 'bg-yellow-500' }
+                if (isMonthPast)  return { label: 'Quá hạn',      color: 'text-red-700',   bg: 'bg-red-50',    bgAlt: 'bg-red-100/70',    dot: 'bg-red-500', pill: 'bg-red-500' }
+                return               { label: 'Chưa thu',         color: 'text-red-600',  bg: 'bg-red-50',    bgAlt: 'bg-red-100/70',    dot: 'bg-red-400', pill: 'bg-red-500' }
               }
 
               return (
@@ -486,9 +519,13 @@ export default function RoomPage({ params }) {
                   </div>
                   </div>
 
-                  {/* Summary cards */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3">
+                  {/* Summary cards — 4 thẻ, 3 thẻ sau bấm mở bảng chi tiết bên dưới.
+                      Mỗi thẻ 1 màu riêng ở vạch trên + số liệu (xanh lá = phí kế toán tháng này,
+                      đỏ = chưa đòi được, xanh dương = thu khác, cam = nợ để lâu). Cố tình để nền TRẮNG,
+                      không tô màu cả thẻ — ngay bên dưới là danh sách công ty vốn đã có nền
+                      xanh/đỏ theo trạng thái, tô đậm thêm ở đây sẽ rối mắt. */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="bg-white border border-gray-100 border-t-4 border-t-green-500 rounded-2xl px-4 py-3">
                       <p className="text-xs text-gray-400 mb-1">📋 Phí kế toán tháng này</p>
                       <p className="text-lg font-bold text-gray-900">{fmt(totalFee)}đ</p>
                       <div className="flex justify-between text-xs mt-1">
@@ -499,16 +536,116 @@ export default function RoomPage({ params }) {
                         <div className={'h-full rounded-full ' + barClr(debtPct)} style={{ width: debtPct + '%' }} />
                       </div>
                     </div>
-                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3">
+
+                    <button onClick={() => toggleCard('unpaid')}
+                      className={'text-left bg-white border border-t-4 border-t-red-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
+                        (openDebtCard === 'unpaid' ? 'border-red-300 ring-1 ring-red-200' : 'border-gray-100')}>
                       <p className="text-xs text-gray-400 mb-1">💰 Còn phải thu</p>
                       <p className={'text-lg font-bold ' + (totalFee - totalKetoan > 0 ? 'text-red-500' : 'text-green-600')}>
                         {fmt(totalFee - totalKetoan)}đ
                       </p>
+                      <p className="text-xs text-gray-400 mt-1">{unpaidClients.length} công ty</p>
+                      <p className="text-xs text-blue-600 mt-1">{openDebtCard === 'unpaid' ? '▴ Đang mở' : '▾ Xem danh sách'}</p>
+                    </button>
+
+                    <button onClick={() => toggleCard('khach')}
+                      className={'text-left bg-white border border-t-4 border-t-blue-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
+                        (openDebtCard === 'khach' ? 'border-blue-300 ring-1 ring-blue-200' : 'border-gray-100')}>
+                      <p className="text-xs text-gray-400 mb-1">🗂 Thu khác</p>
+                      <p className={'text-lg font-bold ' + (totalKhach > 0 ? 'text-blue-600' : 'text-gray-300')}>{fmt(totalKhach)}đ</p>
                       <p className="text-xs text-gray-400 mt-1">
-                        {allClients.filter(c => c.ketoan < Number(c.monthly_fee) && Number(c.monthly_fee) > 0).length} công ty chưa đủ
+                        {khachClients.length > 0 ? khachClients.length + ' công ty phát sinh' : 'Không phát sinh'}
                       </p>
-                    </div>
+                      <p className="text-xs text-blue-600 mt-1">
+                        {khachClients.length === 0 ? '—' : (openDebtCard === 'khach' ? '▴ Đang mở' : '▾ Xem danh sách')}
+                      </p>
+                    </button>
+
+                    <button onClick={() => toggleCard('otherDebt')}
+                      className={'text-left bg-white border border-t-4 border-t-orange-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
+                        (openDebtCard === 'otherDebt' ? 'border-orange-300 ring-1 ring-orange-200' : 'border-gray-100')}>
+                      <p className="text-xs text-gray-400 mb-1">📦 Nợ tồn cũ chuyển qua</p>
+                      <p className={'text-lg font-bold ' + (totalOtherDebt > 0 ? 'text-orange-500' : 'text-green-600')}>{fmt(totalOtherDebt)}đ</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {otherDebtClients.length} công ty · <span className="text-gray-400 italic">tính đến hiện tại</span>
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        {otherDebtClients.length === 0 ? '—' : (openDebtCard === 'otherDebt' ? '▴ Đang mở' : '▾ Xem danh sách')}
+                      </p>
+                    </button>
                   </div>
+
+                  {/* Bảng chi tiết của thẻ đang mở */}
+                  {openDebtCard === 'unpaid' && (
+                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                      <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                        <p className="text-xs font-semibold text-gray-700">📋 Công ty còn phải thu — theo từng nhân viên</p>
+                        <button onClick={() => setOpenDebtCard(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
+                      </div>
+                      {unpaidByStaff.length === 0 ? (
+                        <p className="px-4 py-4 text-xs text-gray-400">Tất cả công ty đã thu đủ 🎉</p>
+                      ) : unpaidByStaff.map(g => (
+                        <div key={g.id}>
+                          <div className="px-4 py-2 bg-gray-100/70 flex items-center justify-between">
+                            <p className="text-xs font-semibold text-gray-700">{g.name}</p>
+                            <p className="text-xs font-semibold text-red-600">{g.items.length} cty · {fmt(g.total)}đ</p>
+                          </div>
+                          {g.items.map((c, i) => (
+                            <div key={c.id} className={'px-4 py-2 pl-7 flex items-center justify-between gap-3 border-b border-gray-50 ' + zebra(i)}>
+                              <p className="text-xs text-gray-700 truncate">{c.name}</p>
+                              <p className="text-xs whitespace-nowrap flex-shrink-0">
+                                <span className="text-gray-400">{fmt(c.ketoan)} / </span>
+                                <span className="font-semibold text-gray-800">{fmt(c.monthly_fee)}đ</span>
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {openDebtCard === 'khach' && (
+                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                      <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                        <p className="text-xs font-semibold text-gray-700">🗂 Các khoản thu khác trong T{selMonth}/{selYear}</p>
+                        <button onClick={() => setOpenDebtCard(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
+                      </div>
+                      {khachClients.length === 0 ? (
+                        <p className="px-4 py-4 text-xs text-gray-400">Tháng này không có khoản thu khác nào.</p>
+                      ) : khachClients.map((c, i) => (
+                        <div key={c.id} className={'px-4 py-2.5 flex items-start justify-between gap-3 border-b border-gray-50 ' + zebra(i)}>
+                          <div className="min-w-0">
+                            <p className="text-xs text-gray-800 truncate">{c.name}</p>
+                            <p className="text-xs text-gray-400 mt-0.5 break-words">
+                              {staffNameOf(c.assigned_to)}
+                              {c.collectedKhachNote ? ' · ' + c.collectedKhachNote : ' · (không có ghi chú)'}
+                            </p>
+                          </div>
+                          <p className="text-xs font-semibold text-blue-600 whitespace-nowrap flex-shrink-0">{fmt(c.khach)}đ</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {openDebtCard === 'otherDebt' && (
+                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                      <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                        <p className="text-xs font-semibold text-gray-700">📦 Công ty còn nợ tồn cũ <span className="font-normal text-gray-400 italic">(tính đến hiện tại)</span></p>
+                        <button onClick={() => setOpenDebtCard(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
+                      </div>
+                      {otherDebtClients.length === 0 ? (
+                        <p className="px-4 py-4 text-xs text-gray-400">Không có công ty nào còn nợ tồn 🎉</p>
+                      ) : [...otherDebtClients].sort((a, b) => Number(b.other_debt) - Number(a.other_debt)).map((c, i) => (
+                        <div key={c.id} className={'px-4 py-2.5 flex items-start justify-between gap-3 border-b border-gray-50 ' + zebra(i)}>
+                          <div className="min-w-0">
+                            <p className="text-xs text-gray-800 truncate">{c.name}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{staffNameOf(c.assigned_to)}</p>
+                          </div>
+                          <p className="text-xs font-semibold text-orange-500 whitespace-nowrap flex-shrink-0">{fmt(c.other_debt)}đ</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Warning */}
                   {overdue.length > 0 && (
@@ -554,13 +691,13 @@ export default function RoomPage({ params }) {
                         </div>
                         {/* Company rows */}
                         <div className="divide-y divide-gray-50">
-                          {myClients.map(c => {
+                          {myClients.map((c, ci) => {
                             const fee = Number(c.monthly_fee) || 0
                             const notDueYet = c.fee_period === 'quarterly' && !c.dueThisMonth && fee > 0
                             const st  = debtStatus(c.ketoan, fee, notDueYet)
                             const colPct = fee === 0 ? 0 : Math.min(100, Math.round(c.ketoan / fee * 100))
                             return (
-                              <div key={c.id} className={'px-4 py-3 ' + st.bg}>
+                              <div key={c.id} className={'px-4 py-3 ' + (ci % 2 === 0 ? st.bg : st.bgAlt)}>
                                 <div className="flex items-center justify-between gap-3">
                                   <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-1.5 flex-wrap mb-1">
