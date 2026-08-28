@@ -21,6 +21,100 @@ const STATUS_OPTS = [
 
 const fmt = (n) => Number(n || 0).toLocaleString('vi-VN')
 
+// Điều chỉnh phí DV HCNS — khối riêng, KHÔNG gộp vào FeeAdjust của phí kế toán vì hai bên lưu ở
+// hai bảng khác nhau (clients.monthly_fee vs hcns_clients.hcns_fee) và có lịch sử đổi phí riêng.
+// Đổi phí sẽ tự ghi một mốc "từ tháng này trở đi phí = X" để sau tra được phí đúng của tháng cũ.
+function HcnsFeeAdjust({ client, onSaved }) {
+  const [editing, setEditing] = useState(false)
+  const [amount, setAmount] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
+  const [hcnsId, setHcnsId] = useState(null)
+
+  const open = async () => {
+    setErr('')
+    // Lấy id bản ghi HCNS đang gắn với công ty này (route trả kèm khi hỏi lịch sử thu).
+    const res = await fetch('/api/admin/hcns/debt-history?clientId=' + client.id)
+    const j = await res.json()
+    if (!j.hcnsClient) { setErr('Chưa tìm thấy hồ sơ HCNS của công ty này.'); return }
+    setHcnsId(j.hcnsClient.id)
+    setAmount(String(j.hcnsClient.hcns_fee || ''))
+    setEditing(true)
+  }
+
+  const save = async () => {
+    const val = Number(String(amount).replace(/\D/g, ''))
+    if (!val) { setErr('Nhập mức phí HCNS mới.'); return }
+    setSaving(true)
+    const res = await fetch('/api/admin/hcns/clients', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: hcnsId, hcns_fee: val }),
+    })
+    const j = await res.json()
+    setSaving(false)
+    if (j.error) { setErr(j.error); return }
+    setEditing(false)
+    onSaved && onSaved()
+  }
+
+  if (!editing) {
+    return (
+      <div>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Cập nhật phí DV HCNS</p>
+        <div className="flex items-center justify-between bg-sky-50 rounded-xl px-3 py-2.5">
+          <div>
+            <p className="text-xs text-sky-600 mb-0.5">Phí HCNS hiện tại</p>
+            <p className="text-base font-bold text-sky-900">
+              {fmt(client.hcns_fee)}đ
+              <span className="text-xs font-normal text-sky-500 ml-1">
+                {'/' + ((client.fee_period || client.report_type) === 'quarterly' ? 'Quý' : 'Tháng')}
+              </span>
+            </p>
+          </div>
+          <button onClick={open} className="text-xs text-sky-700 hover:underline font-medium bg-white px-3 py-1.5 rounded-lg border border-sky-200">
+            Điều chỉnh
+          </button>
+        </div>
+        {err && <p className="text-xs text-red-600 mt-1">{err}</p>}
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Cập nhật phí DV HCNS</p>
+      <div className="space-y-2.5 bg-sky-50 border border-sky-200 rounded-xl p-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-gray-500">Phí HCNS hiện tại</span>
+          <span className="text-sm font-bold text-gray-800">{fmt(client.hcns_fee)}đ</span>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">
+            Mức phí HCNS mới (đ)
+            <span className="ml-1.5 text-sky-700 font-bold">— Giá đã bao gồm VAT</span>
+          </label>
+          <input type="text" inputMode="numeric"
+            value={amount ? Number(String(amount).replace(/\D/g, '') || 0).toLocaleString('vi-VN') : ''}
+            onChange={e => { setAmount(e.target.value.replace(/\D/g, '')); if (err) setErr('') }}
+            className="w-full px-3 py-2 border border-sky-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white" />
+        </div>
+        <p className="text-xs text-gray-400">
+          Áp dụng từ tháng hiện tại. Công nợ các tháng trước vẫn tính theo mức phí cũ.
+        </p>
+        {err && <p className="text-xs text-red-600">{err}</p>}
+        <div className="flex gap-2">
+          <button onClick={save} disabled={saving}
+            className="flex-1 bg-sky-700 text-white text-sm py-2 rounded-lg font-medium disabled:opacity-50">
+            {saving ? 'Đang lưu...' : 'Lưu phí HCNS'}
+          </button>
+          <button onClick={() => { setEditing(false); setErr('') }}
+            className="px-4 border border-gray-200 rounded-lg text-sm text-gray-600">Hủy</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function FeeAdjust({ client, isEditing, feeAmount, feeFromMonth, feeNote, feePeriod, saving, futureMonths, onOpen, onSave, onCancel, onAmountChange, onMonthChange, onNoteChange, onPeriodChange }) {
   const selectedVal = feeFromMonth || (futureMonths[0] ? futureMonths[0].value : '')
   const selectedLabel = futureMonths.find(x => x.value === selectedVal)
@@ -1349,6 +1443,11 @@ export default function ClientsPage() {
                       onNoteChange={v => setFeeNote(v)}
                       onPeriodChange={v => setFeePeriod(v)}
                     />
+                    )}
+                    {client.uses_hcns && (
+                      <div className="mt-3">
+                        <HcnsFeeAdjust client={client} onSaved={loadClients} />
+                      </div>
                     )}
                     {history.length > 0 && (
                       <div className="mt-3 border-t border-gray-50 pt-3">

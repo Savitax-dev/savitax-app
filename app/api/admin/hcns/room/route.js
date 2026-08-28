@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { callerHasPermission } from '@/lib/serverAuth'
 import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
 import { HCNS_STATUSES as STATUSES, HCNS_STATUS_LABEL as STATUS_LABEL } from '@/lib/hcnsStatus'
+import { getHcnsTeam } from '@/lib/hcnsTeam'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -34,20 +35,19 @@ export async function GET(request) {
 
   const supabase = getAdmin()
 
-  // Chỉ tính nhân viên thuộc phòng HCNS; ai có view_hcns_all_staff thì thấy hết, còn lại chỉ
-  // thấy phần mình phụ trách.
-  const { data: hcnsRoom } = await supabase.from('rooms').select('id, name').eq('type', 'hcns').maybeSingle()
+  // Người của phòng HCNS xác định theo QUYỀN, không theo staff.room_id — xem lib/hcnsTeam.js
+  // (có người vừa là nhân viên kế toán vừa là trưởng phòng HCNS, room_id không diễn tả được).
+  // Ai có view_hcns_all_staff thì thấy hết, còn lại chỉ thấy phần mình phụ trách.
   const seeAll = await hasPerm(supabase, auth.caller, 'view_hcns_all_staff')
 
-  const [{ data: allClients }, { data: staffRows }] = await Promise.all([
+  const [{ data: allClients }, team] = await Promise.all([
     supabase.from('hcns_clients').select('*').eq('is_active', true),
-    hcnsRoom
-      ? supabase.from('staff').select('id, full_name, room_id').eq('room_id', hcnsRoom.id).eq('is_active', true)
-      : Promise.resolve({ data: [] }),
+    getHcnsTeam(supabase),
   ])
+  const hcnsRoom = team.room
 
   let clients = allClients || []
-  let staff = staffRows || []
+  let staff = team.staff
   if (!seeAll && auth.caller?.role !== 'admin') {
     clients = clients.filter(c => c.assigned_to === auth.caller.staffId)
     staff = staff.filter(s => s.id === auth.caller.staffId)
