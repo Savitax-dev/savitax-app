@@ -474,7 +474,9 @@ export default function RoomPage({ params }) {
               // "Thu khác" = tiền thật đã ghi nhận trong tháng, không phụ thuộc hạn thu quý.
               const khachClients = ownedClients.filter(c => c.khach > 0)
               const totalKhach   = khachClients.reduce((a, c) => a + c.khach, 0)
-              // Nợ tồn là SỐ DƯ HIỆN TẠI (không tách theo tháng) — xem ghi chú trên thẻ.
+              // Thẻ "Tổng tồn nợ chuyển tháng sau" — CHỈ là nợ tồn đang có (clients.other_debt),
+              // KHÔNG cộng phần tháng này chưa thu. Đây là số dư hiện tại, không tách theo tháng
+              // (đổi tên thẻ 2026-08-28 nhưng nguyên tắc tính giữ nguyên như "Nợ tồn cũ chuyển qua").
               const otherDebtClients = ownedClients.filter(c => Number(c.other_debt) > 0)
               const totalOtherDebt   = otherDebtClients.reduce((a, c) => a + (Number(c.other_debt) || 0), 0)
 
@@ -537,21 +539,10 @@ export default function RoomPage({ params }) {
                       </div>
                     </div>
 
-                    <button onClick={() => toggleCard('unpaid')}
-                      className={'text-left bg-white border border-t-4 border-t-red-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
-                        (openDebtCard === 'unpaid' ? 'border-red-300 ring-1 ring-red-200' : 'border-gray-100')}>
-                      <p className="text-xs text-gray-400 mb-1">💰 Còn phải thu</p>
-                      <p className={'text-lg font-bold ' + (totalFee - totalKetoan > 0 ? 'text-red-500' : 'text-green-600')}>
-                        {fmt(totalFee - totalKetoan)}đ
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">{unpaidClients.length} công ty</p>
-                      <p className="text-xs text-blue-600 mt-1">{openDebtCard === 'unpaid' ? '▴ Đang mở' : '▾ Xem danh sách'}</p>
-                    </button>
-
                     <button onClick={() => toggleCard('khach')}
                       className={'text-left bg-white border border-t-4 border-t-blue-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
                         (openDebtCard === 'khach' ? 'border-blue-300 ring-1 ring-blue-200' : 'border-gray-100')}>
-                      <p className="text-xs text-gray-400 mb-1">🗂 Thu khác</p>
+                      <p className="text-xs text-gray-400 mb-1">🗂 Phí Thu khác tháng này</p>
                       <p className={'text-lg font-bold ' + (totalKhach > 0 ? 'text-blue-600' : 'text-gray-300')}>{fmt(totalKhach)}đ</p>
                       <p className="text-xs text-gray-400 mt-1">
                         {khachClients.length > 0 ? khachClients.length + ' công ty phát sinh' : 'Không phát sinh'}
@@ -561,10 +552,21 @@ export default function RoomPage({ params }) {
                       </p>
                     </button>
 
+                    <button onClick={() => toggleCard('unpaid')}
+                      className={'text-left bg-white border border-t-4 border-t-red-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
+                        (openDebtCard === 'unpaid' ? 'border-red-300 ring-1 ring-red-200' : 'border-gray-100')}>
+                      <p className="text-xs text-gray-400 mb-1">💰 Còn phải thu tháng này</p>
+                      <p className={'text-lg font-bold ' + (totalFee - totalKetoan > 0 ? 'text-red-500' : 'text-green-600')}>
+                        {fmt(totalFee - totalKetoan)}đ
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">{unpaidClients.length} công ty</p>
+                      <p className="text-xs text-blue-600 mt-1">{openDebtCard === 'unpaid' ? '▴ Đang mở' : '▾ Xem danh sách'}</p>
+                    </button>
+
                     <button onClick={() => toggleCard('otherDebt')}
                       className={'text-left bg-white border border-t-4 border-t-orange-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
                         (openDebtCard === 'otherDebt' ? 'border-orange-300 ring-1 ring-orange-200' : 'border-gray-100')}>
-                      <p className="text-xs text-gray-400 mb-1">📦 Nợ tồn cũ chuyển qua</p>
+                      <p className="text-xs text-gray-400 mb-1">📦 Tổng tồn nợ chuyển tháng sau</p>
                       <p className={'text-lg font-bold ' + (totalOtherDebt > 0 ? 'text-orange-500' : 'text-green-600')}>{fmt(totalOtherDebt)}đ</p>
                       <p className="text-xs text-gray-400 mt-1">
                         {otherDebtClients.length} công ty · <span className="text-gray-400 italic">tính đến hiện tại</span>
@@ -630,7 +632,7 @@ export default function RoomPage({ params }) {
                   {openDebtCard === 'otherDebt' && (
                     <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
                       <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                        <p className="text-xs font-semibold text-gray-700">📦 Công ty còn nợ tồn cũ <span className="font-normal text-gray-400 italic">(tính đến hiện tại)</span></p>
+                        <p className="text-xs font-semibold text-gray-700">📦 Công ty còn nợ tồn <span className="font-normal text-gray-400 italic">(tính đến hiện tại)</span></p>
                         <button onClick={() => setOpenDebtCard(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
                       </div>
                       {otherDebtClients.length === 0 ? (
