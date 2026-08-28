@@ -70,6 +70,7 @@ export default function Sidebar({ onClose }) {
   const pathname = usePathname()
   const [user,       setUser]       = useState(_sidebarCache ? _sidebarCache.user : null)
   const [rooms,      setRooms]      = useState(_sidebarCache ? _sidebarCache.rooms : [])
+  const [roles,      setRoles]      = useState(_sidebarCache ? _sidebarCache.roles : [])
   const [roomsOpen,  setRoomsOpen]  = useState(false)
   const [logoError,  setLogoError]  = useState(false)
   const [permData,   setPermData]   = useState(null)
@@ -81,9 +82,24 @@ export default function Sidebar({ onClose }) {
       const pd = await loadPermissionData()
       if (!cancelled) setPermData(pd)
 
-      // Dùng lại user + rooms từ cache nếu đã tải trong phiên
+      // Vai trò KHÔNG được lấy từ cache: quản trị gán/bỏ kiêm nhiệm trong lúc nhân viên đang mở
+      // app thì menu phải đổi theo ở lần chuyển trang kế tiếp, không bắt họ tải lại cả trang.
+      // Đây là một request rất nhẹ, đổi lại quyền luôn đúng.
+      const freshRoles = async (fallbackRole) => {
+        try {
+          const me = await fetch('/api/admin/me').then(r => r.json())
+          if (me?.roles?.length) return me.roles
+        } catch (_) {}
+        return [fallbackRole].filter(Boolean)
+      }
+
+      // user + rooms thì dùng lại cache cho nhẹ (ít khi đổi, và đổi thì cũng không ảnh hưởng quyền)
       if (_sidebarCache) {
-        if (!cancelled) { setUser(_sidebarCache.user); setRooms(_sidebarCache.rooms) }
+        const r = await freshRoles(_sidebarCache.user?.role)
+        if (!cancelled) {
+          setUser(_sidebarCache.user); setRooms(_sidebarCache.rooms); setRoles(r)
+          _sidebarCache.roles = r
+        }
         return
       }
 
@@ -91,11 +107,14 @@ export default function Sidebar({ onClose }) {
       const { data: sessionData } = await supabase.auth.getSession()
       const session = sessionData.session
       if (!session) return
-      const [resMe, resRooms] = await Promise.all([
+      // Lấy kèm vai trò KIÊM NHIỆM — nhân viên có thể vừa là kế toán phòng nghiệp vụ vừa là
+      // trưởng phòng HCNS; nếu chỉ đọc staff.role thì menu HCNS sẽ không hiện cho họ.
+      const [resMe, resRooms, resMyRoles] = await Promise.all([
         supabase.from('staff').select('*, rooms(name)').eq('id', session.user.id).single(),
         // Danh sách con của "Phòng nghiệp vụ" — phòng HCNS KHÔNG nằm ở đây vì nó có phân khu
         // riêng bên dưới và không dùng giao diện /room/[roomId].
         supabase.from('rooms').select('*').neq('type', 'hcns').order('type').order('name'),
+        fetch('/api/admin/me').then(r => r.json()).catch(() => ({})),
       ])
       let staffData = resMe.data
 
@@ -115,8 +134,10 @@ export default function Sidebar({ onClose }) {
           : { id: session.user.id, full_name: email.split('@')[0], role: fallbackRole, rooms: null }
       }
       const roomsData = resRooms.data || []
-      _sidebarCache = { user: staffData, rooms: roomsData }
-      if (!cancelled) { setUser(staffData); setRooms(roomsData) }
+      const myRoles = resMyRoles?.roles?.length ? resMyRoles.roles : [staffData.role].filter(Boolean)
+      // (resMyRoles lấy ở Promise.all bên trên — lần tải đầu tiên đã là dữ liệu mới)
+      _sidebarCache = { user: staffData, rooms: roomsData, roles: myRoles }
+      if (!cancelled) { setUser(staffData); setRooms(roomsData); setRoles(myRoles) }
     }
     load()
     return () => { cancelled = true }
@@ -134,7 +155,9 @@ export default function Sidebar({ onClose }) {
     router.push('/login')
   }
 
-  const role      = user ? user.role : null
+  // Mọi kiểm tra quyền dùng TẤT CẢ vai trò (chính + kiêm nhiệm); `user.role` chỉ còn dùng để
+  // hiển thị chức danh ở thanh chào.
+  const role      = roles.length ? roles : (user ? user.role : null)
   const isManager = can(role, 'manage_staff', permData) || can(role, 'manage_clients', permData) || can(role, 'view_all_rooms', permData)
   const canViewRooms   = can(role, 'view_all_rooms', permData)
   const canViewKpi      = can(role, 'view_kpi_report', permData)
@@ -199,7 +222,7 @@ export default function Sidebar({ onClose }) {
                 {greeting}, <span style={{ color: '#8B1A1A' }}>{firstName}</span> 👋
               </p>
               <div className="flex items-center gap-1.5">
-                <p className="text-xs text-gray-400 truncate">{ROLE_LABEL[role] || 'Nhân viên'}{user.rooms ? ' · ' + user.rooms.name : ''}</p>
+                <p className="text-xs text-gray-400 truncate">{ROLE_LABEL[user.role] || 'Nhân viên'}{user.rooms ? ' · ' + user.rooms.name : ''}</p>
                 <span className="text-gray-300">·</span>
                 <Link href="/change-password" onClick={onClose} className="text-xs hover:underline flex-shrink-0" style={{ color: '#8B1A1A' }}>
                   Đổi mật khẩu
