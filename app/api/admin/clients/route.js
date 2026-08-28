@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { callerHasPermission, requireAdmin, requireLogin } from '@/lib/serverAuth'
 import { syncHcnsForClient, getLinkedHcnsMap } from '@/lib/hcnsSync'
 import { shouldUpdateLiveFee } from '@/lib/feeDue'
+import { recomputeRolloversFrom } from '@/lib/debtRollover'
 
 function getAdmin() {
   return createClient(
@@ -224,6 +225,7 @@ export async function PATCH(request) {
 
   // If fee changed, also log to service_fees history (type 'fee_plan' — mức phí áp dụng,
   // tách riêng khỏi 'ketoan'/'khach' là số tiền đã thu thực tế)
+  let rolloverChanges = []
   if (fee_history) {
     const { year, month, amount, note } = fee_history
     await supabase.from('service_fees').upsert({
@@ -234,6 +236,11 @@ export async function PATCH(request) {
       amount: Number(amount),
       note: note || null,
     }, { onConflict: 'client_id,year,month,type' })
+
+    // Đổi phí LÙI phải tính lại các dòng "nợ tồn tự động" đã ghi cho những tháng đó — nếu không,
+    // nợ tồn vẫn treo theo mức phí CŨ (ca thật: KING DƯỢC treo 5.640.000đ trong khi thực tế chỉ
+    // còn thiếu 240.000đ sau khi giảm giá áp lùi từ T7). Xem lib/debtRollover.js.
+    rolloverChanges = await recomputeRolloversFrom(supabase, id, Number(year), Number(month))
   }
 
   // Khi chuyển sang "Đang sử dụng" kèm ngày bắt đầu hợp đồng: ghi mốc phí ban đầu
@@ -257,7 +264,9 @@ export async function PATCH(request) {
     }
   }
 
-  return Response.json({ success: true })
+  // Trả về để giao diện báo cho nhân viên biết nợ tồn đã được tính lại — đây là thay đổi
+  // số tiền, không được lặng lẽ.
+  return Response.json({ success: true, rolloverChanges })
 }
 
 export async function DELETE(request) {

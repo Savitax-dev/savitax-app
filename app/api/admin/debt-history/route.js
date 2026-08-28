@@ -45,5 +45,16 @@ export async function GET(request) {
     feeAtThatTime: resolveFeeForMonth(feePlanForClient, clientId, r.year, r.month, fallbackFee, changeLogForClient),
   }))
 
-  return Response.json({ data: enriched })
+  // Phí ĐÚNG của từng tháng trong 24 tháng gần nhất, để giao diện hiện đúng "phí tháng X" khi
+  // nhân viên đổi tháng trên thẻ công ty — trước đây panel công nợ luôn dùng monthly_fee SỐNG nên
+  // xem lại tháng cũ của công ty đã đổi phí sẽ ra số sai.
+  const feeByPeriod = {}
+  const now = new Date()
+  let fy = now.getFullYear(), fm = now.getMonth() + 1
+  for (let i = 0; i < 24; i++) {
+    feeByPeriod[fy + '-' + fm] = resolveFeeForMonth(feePlanForClient, clientId, fy, fm, fallbackFee, changeLogForClient)
+    fm--; if (fm === 0) { fm = 12; fy-- }
+  }
+
+  return Response.json({ data: enriched, feeByPeriod })
 }

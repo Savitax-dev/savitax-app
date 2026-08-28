@@ -543,7 +543,7 @@ export default function ClientsPage() {
       effectY = Number(parts[0])
       effectM = Number(parts[1])
     }
-    await fetch('/api/admin/clients', {
+    const res = await fetch('/api/admin/clients', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -558,6 +558,14 @@ export default function ClientsPage() {
         },
       }),
     })
+    // Đổi phí lùi có thể làm nợ tồn của các tháng đó được tính lại — báo rõ chứ không lặng lẽ,
+    // vì đây là thay đổi SỐ TIỀN khách đang nợ.
+    const j = await res.json().catch(() => ({}))
+    if (j.rolloverChanges?.length) {
+      const lines = j.rolloverChanges.map(c =>
+        '  T' + c.month + '/' + c.year + ': ' + fmt(c.from) + 'đ → ' + fmt(c.to) + 'đ')
+      alert(['Đã tính lại nợ tồn theo mức phí mới:', ...lines].join('\n'))
+    }
     setFeeEdit(null); setFeeAmount(''); setFeeNote(''); setFeeFromMonth(''); setFeePeriod('monthly')
     await loadClients()
     setFeeHistory(h => ({ ...h, [clientId]: null }))

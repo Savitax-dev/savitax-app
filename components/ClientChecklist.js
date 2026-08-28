@@ -64,6 +64,10 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   const [debtNote,     setDebtNote]     = useState('')
   const [savingDebt,   setSavingDebt]   = useState(false)
   const [debtHistory,  setDebtHistory]  = useState(null)
+  // Phí ĐÚNG của từng tháng (từ /api/admin/debt-history) — panel công nợ phải theo tháng đang
+  // chọn trên thẻ công ty, không được dùng monthly_fee sống.
+  const [feeByPeriod,  setFeeByPeriod]  = useState({})
+  const [hcnsFeeByPeriod, setHcnsFeeByPeriod] = useState({})
   const [oldDebtAmount, setOldDebtAmount] = useState('')
   const [oldDebtNote,   setOldDebtNote]   = useState('')
   const [savingOldDebt, setSavingOldDebt] = useState(false)
@@ -114,7 +118,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     if (panel !== 'debt' || debtType === 'no_ton' || !debtHistory) return
     const amt = recordedAmount(debtType)
     if (amt > 0) setDebtAmount(String(amt))
-    else if (debtType === 'ketoan') setDebtAmount(String(client.monthly_fee || ''))
+    else if (debtType === 'ketoan') setDebtAmount(String(feeForSelected('ketoan') || ''))
     else if (debtType === 'hcns') setDebtAmount(String(hcnsClient?.hcns_fee || ''))
     else setDebtAmount('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -169,6 +173,8 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
       ])
       // Lịch sử thu HCNS nằm ở bảng riêng — gộp vào cùng danh sách, phân biệt bằng type='hcns'.
       setDebtHistory([...(main.data || []), ...(hcns.data || [])])
+      setFeeByPeriod(main.feeByPeriod || {})
+      setHcnsFeeByPeriod(hcns.feeByPeriod || {})
       if (hcns.hcnsClient) setHcnsClient(hcns.hcnsClient)
     } catch (_) {
       setDebtHistory([])
@@ -326,6 +332,13 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   }
 
   // Số tiền đã ghi nhận cho đúng tháng/loại đang xem (dùng để phát hiện sửa giảm + cảnh báo)
+  // Phí ĐÚNG của tháng đang chọn trên thẻ công ty, theo từng mục công nợ. Mọi chỗ cần "phí của
+  // kỳ này" phải đi qua đây — dùng thẳng client.monthly_fee sẽ ra phí SỐNG hiện tại và hiển thị
+  // sai khi xem lại tháng cũ của công ty đã đổi phí.
+  const feeForSelected = (type) => type === 'hcns'
+    ? (hcnsFeeByPeriod[selYear + '-' + clientMonth] ?? (Number(hcnsClient?.hcns_fee) || 0))
+    : (feeByPeriod[selYear + '-' + clientMonth] ?? (Number(client.monthly_fee) || 0))
+
   const recordedAmount = (type) => {
     if (!debtHistory) return 0
     const rec = debtHistory.find(h => h.year === selYear && h.month === clientMonth && (h.type || 'ketoan') === type)
@@ -342,7 +355,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     const prevAmt = recordedAmount(debtType)
     // Sửa GIẢM số tiền đã ghi nhận (vd nhập nhầm công ty) — cảnh báo rõ trước khi lưu
     if (paid < prevAmt) {
-      const fee = Number(client.monthly_fee) || 0
+      const fee = feeForSelected(debtType)
       const remainAfter = debtType === 'ketoan' ? Math.max(0, fee - paid) : 0
       const statusMsg = debtType === 'ketoan'
         ? '\nTrạng thái công ty sẽ chuyển từ "Đã thu đủ" về "Còn phải thu" (còn thiếu ' + fmt(remainAfter) + 'đ).'
@@ -995,12 +1008,15 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
               // 'ketoan' và 'hcns' đều là mục CÓ mức phí cố định theo kỳ nên hiện tiến độ thu;
               // 'khach' không có mức phí nên chỉ hiện số đã thu.
               const isFeeType = debtType === 'ketoan' || debtType === 'hcns'
+              // Phí và số đã thu đều lấy theo THÁNG ĐANG CHỌN trên thẻ công ty, không lấy số
+              // của tháng mà trang cha đang xem — trước đây đổi tháng chỉ có tab Công việc đổi
+              // theo, còn Công nợ vẫn hiện số của tháng cũ.
               const fee = debtType === 'hcns'
                 ? Number(hcnsClient?.hcns_fee) || 0
-                : Number(client.monthly_fee) || 0
-              const already = debtType === 'ketoan' ? (Number(client.collected) || 0)
-                : debtType === 'hcns' ? recordedAmount('hcns')
-                : (Number(client.collectedKhach) || 0)
+                : feeForSelected(debtType)
+              const already = debtType === 'khach'
+                ? recordedAmount('khach')
+                : recordedAmount(debtType)
               const remain  = isFeeType ? Math.max(0, fee - already) : 0
               if (isFeeType && fee === 0) return null
               const feePeriodQuarterly = debtType === 'hcns'
@@ -1071,7 +1087,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                 <input type="text" inputMode="numeric" autoFocus
                   value={debtAmount ? Number(debtAmount.replace(/\D/g,'')||0).toLocaleString('vi-VN') : ''}
                   onChange={e => setDebtAmount(e.target.value.replace(/\D/g,''))}
-                  placeholder={debtType === 'ketoan' ? 'Phí tháng: ' + fmt(client.monthly_fee) + 'đ'
+                  placeholder={debtType === 'ketoan' ? 'Phí tháng: ' + fmt(feeForSelected('ketoan')) + 'đ'
                     : debtType === 'hcns' ? 'Phí HCNS: ' + fmt(hcnsClient?.hcns_fee) + 'đ'
                     : 'Nhập số tiền...'}
                   className="w-full px-2.5 py-1.5 border border-green-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
@@ -1082,7 +1098,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                     return <p className="text-xs text-red-500 mt-0.5">↩️ Đang sửa GIẢM từ {fmt(prevAmt)}đ — kiểm tra kỹ trước khi lưu</p>
                   }
                   if (debtType === 'ketoan') {
-                    const fee = Number(client.monthly_fee) || 0
+                    const fee = feeForSelected('ketoan')
                     const remain = Math.max(0, fee - val)
                     if (val === 0) return null
                     if (remain > 0) return <p className="text-xs text-orange-500 mt-0.5">⚠ Sau khi lưu còn phải thu: {fmt(remain)}đ</p>

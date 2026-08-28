@@ -53,5 +53,15 @@ export async function GET(request) {
     }
   })
 
-  return Response.json({ data, hcnsClient: hc || null })
+  // Phí HCNS ĐÚNG của từng tháng trong 24 tháng gần nhất — để panel công nợ hiện đúng khi nhân
+  // viên đổi tháng trên thẻ công ty (cùng lý do với /api/admin/debt-history).
+  const feeByPeriod = {}
+  const now = new Date()
+  let fy = now.getFullYear(), fm = now.getMonth() + 1
+  for (let i = 0; i < 24; i++) {
+    feeByPeriod[fy + '-' + fm] = resolveFeeForMonthWithSource(planRows, hcnsId, fy, fm, hc?.hcns_fee, []).fee
+    fm--; if (fm === 0) { fm = 12; fy-- }
+  }
+
+  return Response.json({ data, hcnsClient: hc || null, feeByPeriod })
 }
