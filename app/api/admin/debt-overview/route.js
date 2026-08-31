@@ -51,7 +51,9 @@ export async function GET(request) {
     supabase.from('staff').select('id, full_name, room_id').order('full_name'),
     supabase.from('clients').select('id, name, tax_code, monthly_fee, other_debt, report_type, fee_period, assigned_to, status, contract_start').eq('status', 'active'),
     fetchAllRows(() => supabase.from('service_fees').select('client_id, amount').eq('year', year).in('month', months).eq('type', 'ketoan')),
-    fetchAllRows(() => supabase.from('service_fees').select('client_id, amount').eq('year', year).in('month', months).eq('type', 'khach')),
+    // Lấy kèm `note` + `month` — thẻ "Phí thu khác" ở /debt hiển thị nội dung ghi chú của từng
+    // khoản (vd "phí thay đổi GPKD"), và kỳ quý/năm gồm nhiều tháng nên cần biết khoản đó của tháng nào.
+    fetchAllRows(() => supabase.from('service_fees').select('client_id, amount, note, month').eq('year', year).in('month', months).eq('type', 'khach')),
     supabase.from('client_secondary_staff').select('client_id, staff_id'),
     // Lịch sử đổi phí — tra đúng phí tại kỳ đang xem thay vì monthly_fee sống (xem resolveFeeForMonth).
     fetchAllRows(() => supabase.from('service_fees').select('client_id, year, month, amount').eq('type', 'fee_plan')),
@@ -73,7 +75,15 @@ export async function GET(request) {
   const feeMap = {}
   for (const f of (feesKetoan || [])) feeMap[f.client_id] = (feeMap[f.client_id] || 0) + (Number(f.amount) || 0)
   const feeKhachMap = {}
-  for (const f of (feesKhach || [])) feeKhachMap[f.client_id] = (feeKhachMap[f.client_id] || 0) + (Number(f.amount) || 0)
+  const feeKhachDetailMap = {}   // clientId → [{ month, amount, note }] để hiện chi tiết từng khoản
+  for (const f of (feesKhach || [])) {
+    const amt = Number(f.amount) || 0
+    feeKhachMap[f.client_id] = (feeKhachMap[f.client_id] || 0) + amt
+    if (amt > 0) {
+      if (!feeKhachDetailMap[f.client_id]) feeKhachDetailMap[f.client_id] = []
+      feeKhachDetailMap[f.client_id].push({ month: f.month, amount: amt, note: f.note || null })
+    }
+  }
 
   const clientMap = {}
   for (const c of (clientList || [])) clientMap[c.id] = c
@@ -97,6 +107,7 @@ export async function GET(request) {
         periodFee:      feeForPeriod(c),
         collected:      feeMap[c.id] || 0,
         collectedKhach: feeKhachMap[c.id] || 0,
+        khachDetails:   feeKhachDetailMap[c.id] || [],
       }))
       // Công ty mình là nhân viên phụ — chỉ để theo dõi, không cộng vào totalFee/totalCollected
       const secondaryClients = (secondaryRows || [])
