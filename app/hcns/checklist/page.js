@@ -128,8 +128,26 @@ export default function HcnsChecklistPage() {
           </div>
         )}
 
-        <div className="space-y-3">
-          {templates.map(t => (
+        {/* Tách theo nhóm nghiệp vụ — 24 dịch vụ để chung một danh sách phẳng thì rất khó tìm. */}
+        {[
+          { key: null,   label: null },
+          { key: 'BHXH', label: 'Bảo hiểm xã hội' },
+          { key: 'HCNS', label: 'Hành chính nhân sự trọn bộ' },
+        ].map(g => {
+          const list = templates.filter(t => (t.group_name || null) === g.key)
+          if (!list.length) return null
+          return (
+        <div key={g.key || 'khac'} className="space-y-3 mb-5">
+          {g.label && (
+            <div className="flex items-center gap-2 pt-1">
+              <div className="h-px flex-1 bg-gray-200" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">
+                {g.label} ({list.length})
+              </p>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
+          )}
+          {list.map(t => (
             <div key={t.id}
               className={'bg-white rounded-2xl p-4 border ' + (t.is_recurring ? 'border-sky-300' : 'border-gray-100')}>
               <div className="flex items-center gap-2 flex-wrap">
@@ -148,6 +166,11 @@ export default function HcnsChecklistPage() {
                   ? 'Tự áp cho mọi công ty đã tick “Có sử dụng DV HCNS” · đang áp ' + t.usageCount + ' công ty'
                   : 'Chọn được khi thêm dịch vụ vào hồ sơ Thời điểm / Vãng lai · đang dùng ở ' + t.usageCount + ' dịch vụ'}
               </p>
+              {t.note && (
+                <p className="text-xs text-gray-500 mt-1 bg-gray-50 rounded-lg px-2 py-1.5 leading-relaxed">
+                  ⏱ {t.note}
+                </p>
+              )}
 
               <div className="mt-2 space-y-1">
                 {t.tasks.length === 0 && <p className="text-xs text-gray-400">Chưa có công việc nào.</p>}
@@ -186,6 +209,8 @@ export default function HcnsChecklistPage() {
             </div>
           ))}
         </div>
+          )
+        })}
       </div>
     </AppShell>
   )

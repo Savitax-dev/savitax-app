@@ -971,9 +971,18 @@ function AddServiceModal({ hcnsClient, templates, onClose, onDone }) {
       <div className="p-4 space-y-3">
         <div>
           <label className={labelCls}>Loại dịch vụ triển khai <span className="text-red-500">*</span></label>
+          {/* Gom theo nhóm nghiệp vụ — 24 dịch vụ trong một danh sách phẳng rất khó tìm. */}
           <select value={f.templateId} onChange={e => setF(p => ({ ...p, templateId: e.target.value }))} className={inputCls}>
             <option value="">-- Chọn dịch vụ --</option>
-            {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            {[['BHXH', 'Bảo hiểm xã hội'], ['HCNS', 'Hành chính nhân sự'], [null, 'Khác']].map(([k, lbl]) => {
+              const list = templates.filter(t => (t.group_name || null) === k)
+              if (!list.length) return null
+              return (
+                <optgroup key={lbl} label={lbl}>
+                  {list.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </optgroup>
+              )
+            })}
           </select>
           {templates.length === 0 && (
             <p className="text-xs text-amber-600 mt-1">Chưa khai báo dịch vụ nào — vào trang Checklist HCNS để thêm trước.</p>
@@ -1007,6 +1016,9 @@ function AddServiceModal({ hcnsClient, templates, onClose, onDone }) {
           <label className={labelCls}>Ghi chú</label>
           <input value={f.note} onChange={e => setF(p => ({ ...p, note: e.target.value }))} className={inputCls} />
         </div>
+        {tpl?.note && (
+          <p className="text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2 leading-relaxed">⏱ {tpl.note}</p>
+        )}
         {tpl && (
           <div className="bg-sky-50 rounded-lg p-3">
             <p className="text-xs font-semibold text-sky-800 mb-1">Checklist tự gắn theo mẫu ({tpl.tasks.length} việc)</p>
