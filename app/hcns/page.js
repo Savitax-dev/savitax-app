@@ -14,21 +14,15 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : '—'
 // cặp vàng↔xanh gần như không phân biệt được với người mù màu. Bộ dưới đây đã kiểm đạt cả 6 tiêu
 // chí, vẫn giữ ngôn ngữ xanh–vàng–đỏ. LUÔN hiện số % bằng chữ cạnh thanh — không để màu là thông
 // tin duy nhất.
-const pctText = (v) => v >= 90 ? 'text-[#2E6B3A]' : v >= 70 ? 'text-[#87590B]' : 'text-[#B3261E]'
+const pctText = (v) => v === null || v === undefined ? 'text-slate-400'
+  : v >= 90 ? 'text-[#2E6B3A]' : v >= 70 ? 'text-[#87590B]' : 'text-[#B3261E]'
 const pctBar  = (v) => v >= 90 ? 'bg-[#2E6B3A]'   : v >= 70 ? 'bg-[#D89614]'   : 'bg-[#B3261E]'
 
 const CAT_LABEL = { thoi_ky: 'Thời kỳ', thoi_diem: 'Thời điểm', vang_lai: 'Vãng lai' }
 const CAT_STYLE = {
-  thoi_ky:   'bg-emerald-50 text-emerald-700',
-  thoi_diem: 'bg-indigo-50 text-indigo-700',
-  vang_lai:  'bg-orange-50 text-orange-700',
-}
-const STATUS_STYLE = {
-  thu_thap:    'bg-gray-100 text-gray-600',
-  trinh_ky:    'bg-amber-50 text-amber-700',
-  nop_ho_so:   'bg-blue-50 text-blue-700',
-  tra_ket_qua: 'bg-violet-50 text-violet-700',
-  hoan_thanh:  'bg-emerald-50 text-emerald-700',
+  thoi_ky:   'bg-emerald-50 text-emerald-800 border border-emerald-300',
+  thoi_diem: 'bg-indigo-50 text-indigo-800 border border-indigo-300',
+  vang_lai:  'bg-orange-50 text-orange-900 border border-orange-300',
 }
 
 // Bỏ dấu để tìm kiếm gõ không dấu vẫn ra.
@@ -36,7 +30,7 @@ const noAccent = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '
 
 function Meter({ value }) {
   return (
-    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+    <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
       <div className={'h-full rounded-full transition-all ' + pctBar(value || 0)}
         style={{ width: Math.min(100, value || 0) + '%' }} />
     </div>
@@ -118,7 +112,7 @@ export default function HcnsPage() {
     setTemplates((json.data || []).filter(t => !t.is_recurring))
   }
 
-  if (loading) return <AppShell><div className="flex items-center justify-center min-h-64"><p className="text-gray-400 text-sm">Đang tải...</p></div></AppShell>
+  if (loading) return <AppShell><div className="flex items-center justify-center min-h-64"><p className="text-slate-500 text-sm">Đang tải...</p></div></AppShell>
   if (!allowed) return null
 
   const byCat = (c) => c === 'all' ? clients : clients.filter(x => x.category === c)
@@ -145,18 +139,20 @@ export default function HcnsPage() {
     <AppShell>
       <div className="px-4 md:px-8 py-5">
         <div className="mb-4">
-          <h1 className="text-xl font-bold text-gray-900">Công ty phụ trách</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-xl font-bold text-slate-900">Công ty phụ trách</h1>
+          <p className="text-sm text-slate-600 mt-0.5">
             Phòng HCNS · {clients.length} công ty
             {report?.scope === 'own' && <span className="ml-1.5 text-amber-600">· chỉ hiện phần bạn phụ trách</span>}
           </p>
         </div>
 
-        <div className="flex gap-1 flex-wrap border-b border-gray-200 mb-3">
+        <div className="flex gap-2 flex-wrap mb-4">
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
-              className={'px-3 py-2 text-sm rounded-t-lg transition-colors ' +
-                (tab === t.key ? 'bg-[#8B1A1A] text-white font-medium' : 'text-gray-500 hover:text-gray-800')}>
+              className={'px-4 py-2 text-sm rounded-lg border transition-colors ' +
+                (tab === t.key
+                  ? 'bg-[#8B1A1A] text-white border-[#8B1A1A] font-semibold shadow-sm'
+                  : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100 hover:text-slate-900')}>
               {t.label}{t.count !== undefined ? ' (' + t.count + ')' : ''}
             </button>
           ))}
@@ -164,20 +160,20 @@ export default function HcnsPage() {
 
         {/* Thanh công cụ — dùng chung cho mọi tag danh sách */}
         {tab !== 'report' && (
-          <div className="flex gap-2 flex-wrap items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 mb-3">
+          <div className="flex gap-2 flex-wrap items-center bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 mb-3">
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Tìm tên công ty hoặc MST"
-              className="flex-1 min-w-[180px] px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8B1A1A]/30" />
-            <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-white text-sm">
+              className="flex-1 min-w-[180px] px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8B1A1A]/30" />
+            <div className="flex border border-slate-300 rounded-lg overflow-hidden bg-white text-sm">
               {[['month','Tháng'],['quarter','Quý'],['year','Năm']].map(([k,l]) => (
                 <button key={k} onClick={() => setMode(k)}
-                  className={'px-3 py-1.5 border-l first:border-l-0 border-gray-200 ' +
-                    (mode === k ? 'bg-[#8B1A1A] text-white' : 'text-gray-600 hover:bg-gray-50')}>{l}</button>
+                  className={'px-3 py-1.5 border-l first:border-l-0 border-slate-300 ' +
+                    (mode === k ? 'bg-[#8B1A1A] text-white' : 'text-slate-700 hover:bg-slate-50')}>{l}</button>
               ))}
             </div>
             <select value={selYear + '-' + selMonth}
               onChange={e => { const [y, m] = e.target.value.split('-'); setSelYear(Number(y)); setSelMonth(Number(m)) }}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white">
+              className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
               {monthOpts.map(o => <option key={o.label} value={o.y + '-' + o.m}>{o.label}</option>)}
             </select>
             {canManage && (tab === 'thoi_diem' || tab === 'vang_lai') && (
@@ -193,14 +189,14 @@ export default function HcnsPage() {
           selYear={selYear} selMonth={selMonth} setSelYear={setSelYear} setSelMonth={setSelMonth} monthOpts={monthOpts} />}
 
         {tab !== 'report' && (
-          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
             {filtered(byCat(tab)).length === 0 && (
-              <p className="text-sm text-gray-400 px-4 py-8 text-center">
+              <p className="text-sm text-slate-500 px-4 py-8 text-center">
                 {search ? 'Không tìm thấy công ty nào khớp.' : 'Chưa có công ty nào ở mục này.'}
               </p>
             )}
-            {filtered(byCat(tab)).map(c => (
-              <ClientRow key={c.id} c={c} showCat={tab === 'all'} report={report}
+            {filtered(byCat(tab)).map((c, ri) => (
+              <ClientRow key={c.id} c={c} ri={ri} showCat={tab === 'all'} report={report}
                 expanded={expanded === c.id} onToggle={() => setExpanded(expanded === c.id ? null : c.id)}
                 clientMonth={clientMonth} setClientMonth={setClientMonth}
                 selMonth={selMonth} canManage={canManage}
@@ -222,77 +218,77 @@ export default function HcnsPage() {
 
 /* ─────────────────────────────── Báo cáo phòng ─────────────────────────────── */
 function ReportBlock({ report, mode, setMode, selYear, selMonth, setSelYear, setSelMonth, monthOpts }) {
-  if (!report) return <p className="text-sm text-gray-400 px-4 py-8 text-center">Chưa có số liệu.</p>
+  if (!report) return <p className="text-sm text-slate-500 px-4 py-8 text-center">Chưa có số liệu.</p>
   const tk = report.thoiKy
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-2 flex-wrap items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
-        <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-white text-sm">
+      <div className="flex gap-2 flex-wrap items-center bg-slate-50 border border-slate-300 rounded-xl px-3 py-2">
+        <div className="flex border border-slate-300 rounded-lg overflow-hidden bg-white text-sm">
           {[['month','Tháng'],['quarter','Quý'],['year','Năm']].map(([k,l]) => (
             <button key={k} onClick={() => setMode(k)}
-              className={'px-3 py-1.5 border-l first:border-l-0 border-gray-200 ' +
-                (mode === k ? 'bg-[#8B1A1A] text-white' : 'text-gray-600 hover:bg-gray-50')}>{l}</button>
+              className={'px-3 py-1.5 border-l first:border-l-0 border-slate-300 ' +
+                (mode === k ? 'bg-[#8B1A1A] text-white' : 'text-slate-700 hover:bg-slate-50')}>{l}</button>
           ))}
         </div>
         <select value={selYear + '-' + selMonth}
           onChange={e => { const [y, m] = e.target.value.split('-'); setSelYear(Number(y)); setSelMonth(Number(m)) }}
-          className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white">
+          className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
           {monthOpts.map(o => <option key={o.label} value={o.y + '-' + o.m}>{o.label}</option>)}
         </select>
       </div>
 
       {/* Khối Thời kỳ — chiếm hết chiều ngang */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
         <div className="flex items-baseline gap-2 mb-3">
-          <h2 className="text-sm font-bold text-gray-900">Thời kỳ</h2>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{tk.clientCount} công ty</span>
+          <h2 className="text-sm font-bold text-slate-900">Thời kỳ</h2>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{tk.clientCount} công ty</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-          <div className="bg-gray-50 rounded-xl p-3">
-            <p className="text-xs text-gray-500">KPI Công nợ — trung bình theo nhân viên</p>
-            <p className={'text-2xl font-bold mt-0.5 ' + pctText(tk.debtPercent ?? 0)}>
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+            <p className="text-xs text-slate-600">KPI Công nợ — trung bình theo nhân viên</p>
+            <p className={'text-2xl font-bold mt-0.5 ' + pctText(tk.debtPercent)}>
               {tk.debtPercent === null ? '—' : tk.debtPercent + '%'}
             </p>
             <div className="mt-1.5"><Meter value={tk.debtPercent ?? 0} /></div>
-            <p className="text-xs text-gray-400 mt-1.5">Đã thu {fmt(tk.totalCollected)}đ / {fmt(tk.totalFee)}đ</p>
+            <p className="text-xs text-slate-500 mt-1.5">Đã thu {fmt(tk.totalCollected)}đ / {fmt(tk.totalFee)}đ</p>
           </div>
-          <div className="bg-gray-50 rounded-xl p-3">
-            <p className="text-xs text-gray-500">KPI % Công việc — trung bình theo nhân viên</p>
-            <p className={'text-2xl font-bold mt-0.5 ' + pctText(tk.taskPercent ?? 0)}>
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+            <p className="text-xs text-slate-600">KPI % Công việc — trung bình theo nhân viên</p>
+            <p className={'text-2xl font-bold mt-0.5 ' + pctText(tk.taskPercent)}>
               {tk.taskPercent === null ? '—' : tk.taskPercent + '%'}
             </p>
             <div className="mt-1.5"><Meter value={tk.taskPercent ?? 0} /></div>
-            <p className="text-xs text-gray-400 mt-1.5">Checklist DV HCNS Thời Kỳ</p>
+            <p className="text-xs text-slate-500 mt-1.5">Checklist DV HCNS Thời Kỳ</p>
           </div>
         </div>
-        <p className="text-xs text-gray-400 mb-2">
+        <p className="text-xs text-slate-500 mb-2">
           KPI phòng là <b>trung bình cộng % của từng nhân viên</b>, không phải tổng thu chia tổng phí — hai số này khác nhau.
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-xs min-w-[520px]">
             <thead>
-              <tr className="text-gray-400 border-b border-gray-100">
-                <th className="text-left font-medium py-2 px-2">Nhân viên</th>
-                <th className="text-right font-medium py-2 px-2">Cty</th>
-                <th className="text-right font-medium py-2 px-2">Đã thu / Phải thu</th>
-                <th className="text-left font-medium py-2 px-2 w-32">Công nợ</th>
-                <th className="text-left font-medium py-2 px-2 w-32">Công việc</th>
+              <tr className="bg-slate-100 text-slate-500 text-[11px] uppercase tracking-wide">
+                <th className="text-left font-semibold py-2 px-2 rounded-l-lg">Nhân viên</th>
+                <th className="text-right font-semibold py-2 px-2">Cty</th>
+                <th className="text-right font-semibold py-2 px-2">Đã thu / Phải thu</th>
+                <th className="text-left font-semibold py-2 px-2 w-32">Công nợ</th>
+                <th className="text-left font-semibold py-2 px-2 w-32 rounded-r-lg">Công việc</th>
               </tr>
             </thead>
             <tbody>
               {tk.perStaff.length === 0 && (
-                <tr><td colSpan={5} className="py-4 text-center text-gray-400">Chưa có nhân viên nào thuộc phòng HCNS.</td></tr>
+                <tr><td colSpan={5} className="py-4 text-center text-slate-500">Chưa có nhân viên nào thuộc phòng HCNS.</td></tr>
               )}
-              {tk.perStaff.map(s => (
-                <tr key={s.staffId} className="border-b border-gray-50 last:border-0">
-                  <td className="py-2 px-2 text-gray-800">{s.staffName}</td>
-                  <td className="py-2 px-2 text-right tabular-nums text-gray-500">{s.clientCount}</td>
-                  <td className="py-2 px-2 text-right tabular-nums text-gray-500">{fmt(s.totalCollected)} / {fmt(s.totalFee)}</td>
+              {tk.perStaff.map((s, ri) => (
+                <tr key={s.staffId} className={'border-b border-slate-200 last:border-0 ' + (ri % 2 ? 'bg-slate-50' : '')}>
+                  <td className="py-2 px-2 text-slate-800">{s.staffName}</td>
+                  <td className="py-2 px-2 text-right tabular-nums text-slate-600">{s.clientCount}</td>
+                  <td className="py-2 px-2 text-right tabular-nums text-slate-600">{fmt(s.totalCollected)} / {fmt(s.totalFee)}</td>
                   <td className="py-2 px-2">
                     <div className="flex items-center gap-2">
                       <Meter value={s.debtPercent ?? 0} />
-                      <span className={'tabular-nums font-medium w-9 text-right ' + pctText(s.debtPercent ?? 0)}>
+                      <span className={'tabular-nums font-medium w-9 text-right ' + pctText(s.debtPercent)}>
                         {s.debtPercent === null ? '—' : s.debtPercent + '%'}
                       </span>
                     </div>
@@ -300,7 +296,7 @@ function ReportBlock({ report, mode, setMode, selYear, selMonth, setSelYear, set
                   <td className="py-2 px-2">
                     <div className="flex items-center gap-2">
                       <Meter value={s.taskPercent ?? 0} />
-                      <span className={'tabular-nums font-medium w-9 text-right ' + pctText(s.taskPercent ?? 0)}>
+                      <span className={'tabular-nums font-medium w-9 text-right ' + pctText(s.taskPercent)}>
                         {s.taskPercent === null ? '—' : s.taskPercent + '%'}
                       </span>
                     </div>
@@ -324,33 +320,33 @@ function ReportBlock({ report, mode, setMode, selYear, selMonth, setSelYear, set
 function CaseBlock({ title, data }) {
   const max = Math.max(1, ...data.byStatus.map(s => s.count))
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-4">
+    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
       <div className="flex items-baseline gap-2 mb-3">
-        <h2 className="text-sm font-bold text-gray-900">{title}</h2>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{data.caseCount} hồ sơ</span>
+        <h2 className="text-sm font-bold text-slate-900">{title}</h2>
+        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{data.caseCount} hồ sơ</span>
       </div>
       <div className="grid grid-cols-3 gap-2 mb-3">
         {[['Hồ sơ', data.caseCount], ['Dịch vụ', data.serviceCount], ['Chi phí', fmt(data.totalCost) + 'đ']].map(([k, v]) => (
-          <div key={k} className="bg-gray-50 rounded-lg px-2 py-1.5">
-            <p className="text-xs text-gray-400">{k}</p>
-            <p className="text-sm font-bold text-gray-800 tabular-nums">{v}</p>
+          <div key={k} className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5">
+            <p className="text-xs text-slate-500">{k}</p>
+            <p className="text-sm font-bold text-slate-800 tabular-nums">{v}</p>
           </div>
         ))}
       </div>
-      <p className="text-xs text-gray-500 mb-1.5">Dịch vụ theo bước xử lý</p>
+      <p className="text-xs text-slate-600 mb-1.5">Dịch vụ theo bước xử lý</p>
       {data.byStatus.map(s => (
         <div key={s.status} className="flex items-center gap-2 mb-1">
-          <span className="text-xs text-gray-600 w-28 flex-shrink-0">{s.label}</span>
-          <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+          <span className="text-xs text-slate-700 w-28 flex-shrink-0">{s.label}</span>
+          <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
             <div className="h-full bg-[#1E4E8C] rounded-full" style={{ width: (s.count / max * 100) + '%' }} />
           </div>
-          <span className="text-xs tabular-nums w-4 text-right text-gray-800">{s.count}</span>
+          <span className="text-xs tabular-nums w-4 text-right text-slate-800">{s.count}</span>
         </div>
       ))}
       {data.byStaff.length > 0 && (
-        <div className="mt-3 pt-2 border-t border-gray-100">
+        <div className="mt-3 pt-2 border-t border-slate-200">
           {data.byStaff.map(s => (
-            <div key={s.staffId} className="flex justify-between text-xs text-gray-500 py-1">
+            <div key={s.staffId} className="flex justify-between text-xs text-slate-600 py-1">
               <span>{s.staffName || '(chưa gán)'}</span>
               <span className="tabular-nums">{s.cases} hồ sơ · {s.services} dịch vụ</span>
             </div>
@@ -362,7 +358,7 @@ function CaseBlock({ title, data }) {
 }
 
 /* ─────────────────────────── Một dòng công ty ─────────────────────────── */
-function ClientRow({ c, showCat, report, expanded, onToggle, clientMonth, setClientMonth, selMonth, canManage, canAssign, staffList, templates, onChanged }) {
+function ClientRow({ c, ri, showCat, report, expanded, onToggle, clientMonth, setClientMonth, selMonth, canManage, canAssign, staffList, templates, onChanged }) {
   const stat = report?.thoiKy?.perClient?.find(p => p.id === c.id)
   const isThoiKy = c.category === 'thoi_ky'
   const [assigning, setAssigning] = useState(false)
@@ -380,14 +376,17 @@ function ClientRow({ c, showCat, report, expanded, onToggle, clientMonth, setCli
   }
 
   return (
-    <div className="border-b border-gray-100 last:border-0">
-      <button onClick={onToggle} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left">
+    <div className="border-b border-slate-200 last:border-0">
+      {/* Kẻ sọc chẵn/lẻ để mắt lần đúng hàng khi bảng trải hết bề ngang. */}
+      <button onClick={onToggle}
+        className={'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ' +
+          (expanded ? 'bg-[#8B1A1A]/[0.06]' : (ri % 2 ? 'bg-slate-50' : 'bg-white') + ' hover:bg-[#8B1A1A]/[0.04]')}>
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-gray-900 flex items-center gap-2 flex-wrap">
+          <p className="text-[15px] font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
             {c.name}
-            {showCat && <span className={'text-xs px-2 py-0.5 rounded-full ' + CAT_STYLE[c.category]}>{CAT_LABEL[c.category]}</span>}
+            {showCat && <span className={'text-[11px] font-medium px-2 py-0.5 rounded-full ' + CAT_STYLE[c.category]}>{CAT_LABEL[c.category]}</span>}
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             {[c.case_code || c.client_code, c.tax_code,
               isThoiKy ? fmt(c.hcns_fee) + 'đ/' + (c.fee_period === 'quarterly' ? 'Quý' : 'Tháng') : null,
               c.staff?.full_name].filter(Boolean).join(' · ')}
@@ -397,7 +396,7 @@ function ClientRow({ c, showCat, report, expanded, onToggle, clientMonth, setCli
           <>
             <DebtBadge stat={stat} />
             {stat.taskPercent !== null && (
-              <span className={'text-xs px-2 py-0.5 rounded-full bg-gray-50 ' + pctText(stat.taskPercent)}>
+              <span className={'text-xs font-semibold px-2 py-1 rounded-md border border-slate-300 bg-white flex-shrink-0 ' + pctText(stat.taskPercent)}>
                 {stat.taskDone}/{stat.taskTotal} việc · {stat.taskPercent}%
               </span>
             )}
@@ -410,19 +409,19 @@ function ClientRow({ c, showCat, report, expanded, onToggle, clientMonth, setCli
             <select value={c.assigned_to || ''} disabled={assigning}
               onChange={e => assign(e.target.value)}
               className={'text-xs border rounded-lg px-2 py-1 bg-white max-w-[150px] ' +
-                (c.assigned_to ? 'border-gray-200 text-gray-700' : 'border-amber-300 text-amber-700')}>
+                (c.assigned_to ? 'border-slate-300 text-slate-800' : 'border-amber-400 bg-amber-50 text-amber-900')}>
               <option value="">⚠ Chưa phân công</option>
               {staffList.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
             </select>
           </span>
         ) : !c.assigned_to && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 flex-shrink-0">Chưa phân công</span>
+          <span className="text-xs font-medium px-2 py-1 rounded-md bg-amber-100 text-amber-900 border border-amber-400 flex-shrink-0">Chưa phân công</span>
         )}
-        <span className="text-gray-300 text-xs">{expanded ? '▲' : '▼'}</span>
+        <span className="text-slate-500 text-xs">{expanded ? '▲' : '▼'}</span>
       </button>
 
       {expanded && (
-        <div className="bg-gray-50/60 border-t border-gray-100">
+        <div className="bg-slate-50 border-t border-slate-200">
           {isThoiKy && c.linkedClient ? (
             <ClientChecklist
               client={{ ...c.linkedClient, uses_hcns: true }}
@@ -434,7 +433,7 @@ function ClientRow({ c, showCat, report, expanded, onToggle, clientMonth, setCli
               onDebtSaved={onChanged}
             />
           ) : isThoiKy ? (
-            <p className="text-xs text-gray-400 px-4 py-4">
+            <p className="text-xs text-slate-500 px-4 py-4">
               Chưa tìm thấy công ty kế toán gốc — có thể công ty đã bị xoá bên Danh sách công ty.
             </p>
           ) : (
@@ -449,10 +448,12 @@ function ClientRow({ c, showCat, report, expanded, onToggle, clientMonth, setCli
 // Đỏ "Chưa thu" / vàng "Thu thiếu ..." / xanh "Đã thu" — kế toán cập nhật xong là phòng HCNS
 // thấy đổi màu ngay, không cần báo tay.
 function DebtBadge({ stat }) {
-  if (!stat.dueFee) return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-50 text-gray-400">Chưa tới kỳ</span>
-  if (stat.remain === 0) return <span className="text-xs px-2 py-0.5 rounded-full bg-[#EBF3EB] text-[#2E6B3A]">Đã thu</span>
-  if (stat.collected > 0) return <span className="text-xs px-2 py-0.5 rounded-full bg-[#FAF1DC] text-[#87590B]">Thu thiếu {fmt(stat.remain)}đ</span>
-  return <span className="text-xs px-2 py-0.5 rounded-full bg-[#FAEBEA] text-[#B3261E]">Chưa thu</span>
+  // Viền cùng tông chữ — badge nền nhạt trơn bị chìm khi dòng có nền sọc xám.
+  const cls = 'text-xs font-semibold px-2 py-1 rounded-md border flex-shrink-0 '
+  if (!stat.dueFee) return <span className={cls + 'bg-slate-100 text-slate-600 border-slate-300'}>Chưa tới kỳ</span>
+  if (stat.remain === 0) return <span className={cls + 'bg-[#EBF3EB] text-[#2E6B3A] border-[#2E6B3A]/40'}>Đã thu</span>
+  if (stat.collected > 0) return <span className={cls + 'bg-[#FAF1DC] text-[#87590B] border-[#D89614]'}>Thu thiếu {fmt(stat.remain)}đ</span>
+  return <span className={cls + 'bg-[#FAEBEA] text-[#B3261E] border-[#B3261E]/40'}>Chưa thu</span>
 }
 
 /* ──────────────── Dịch vụ trong hồ sơ Thời điểm / Vãng lai ──────────────── */
@@ -461,14 +462,29 @@ function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
   const [showAdd, setShowAdd] = useState(false)
   const [panel, setPanel] = useState(null)   // null | 'debt' | 'dntt'
   const [debt, setDebt] = useState(null)
+  // Ghi chú nội bộ: gom theo case_service_id. notesOk=false nghĩa là chưa chạy
+  // sql/10_hcns_case_notes.sql (hoặc bản clone) — cột 3 báo rõ thay vì im lặng hỏng.
+  const [notes, setNotes] = useState({})
+  const [notesOk, setNotesOk] = useState(true)
+
+  const loadNotes = async (svcs) => {
+    const ids = (svcs || services || []).map(s => s.id)
+    if (!ids.length) { setNotes({}); return }
+    const r = await fetch('/api/admin/hcns/case-notes?caseServiceIds=' + ids.join(','))
+      .then(r => r.json()).catch(() => ({}))
+    setNotes(r.data || {})
+    setNotesOk(!r.notInstalled)
+  }
 
   const load = async () => {
     const [svcRes, debtRes] = await Promise.all([
       fetch('/api/admin/hcns/case-services?hcnsClientId=' + hcnsClient.id).then(r => r.json()).catch(() => ({})),
       fetch('/api/admin/hcns/case-payments?hcnsClientId=' + hcnsClient.id).then(r => r.json()).catch(() => ({})),
     ])
-    setServices(svcRes.data || [])
+    const svcs = svcRes.data || []
+    setServices(svcs)
     setDebt(debtRes.totals ? debtRes : null)
+    loadNotes(svcs)
   }
   useEffect(() => { load() // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hcnsClient.id])
@@ -488,12 +504,12 @@ function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
     load(); onChanged && onChanged()
   }
 
-  if (services === null) return <p className="text-xs text-gray-400 px-4 py-4">Đang tải dịch vụ...</p>
+  if (services === null) return <p className="text-xs text-slate-500 px-4 py-4">Đang tải dịch vụ...</p>
 
   return (
     <div className="px-4 py-3 space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
-        <p className="text-xs text-gray-500 flex-1 min-w-[160px]">
+        <p className="text-xs text-slate-600 flex-1 min-w-[160px]">
           {hcnsClient.phone && <span>SĐT: {hcnsClient.phone} · </span>}
           {hcnsClient.representative && <span>Đại diện: {hcnsClient.representative} · </span>}
           {services.length} dịch vụ
@@ -528,54 +544,84 @@ function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
           onChanged={() => { load(); onChanged && onChanged() }} />
       )}
 
-      {services.length === 0 && <p className="text-xs text-gray-400 py-2">Hồ sơ chưa có dịch vụ nào.</p>}
+      {services.length === 0 && <p className="text-xs text-slate-500 py-2">Hồ sơ chưa có dịch vụ nào.</p>}
 
+      {/* Mỗi dịch vụ chia 3 cột: Công việc | Tiến độ hồ sơ | Ghi chú nội bộ.
+          Trước đây checklist chiếm hết bề ngang còn 2/3 bên phải bỏ trống. */}
       {services.map(s => (
-        <div key={s.id} className="bg-white border border-gray-200 rounded-xl p-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm text-gray-900 flex-1">{s.templateName}</p>
-            <span className={'text-xs px-2 py-0.5 rounded-full ' + (STATUS_STYLE[s.status] || 'bg-gray-100')}>{s.statusLabel}</span>
-            {canManage && (
-              <select value={s.status} onChange={e => changeStatus(s.id, e.target.value)}
-                className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white">
-                {HCNS_STATUSES.map(st => <option key={st} value={st}>{HCNS_STATUS_LABEL[st]}</option>)}
-              </select>
+        <div key={s.id} className="bg-white border border-slate-300 rounded-xl overflow-hidden">
+          <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-semibold text-slate-900 flex-1 min-w-[160px]">{s.templateName}</p>
+            <p className="text-xs text-slate-600">
+              Nhận {fmtDate(s.received_at)} · Dự kiến trả {fmtDate(s.expected_at)} · Chi phí {fmt(s.cost)}đ
+            </p>
+            {s.totalCount > 0 && (
+              <span className={'text-xs font-semibold px-2 py-1 rounded-md border border-slate-300 bg-white ' + pctText(s.percent)}>
+                {s.doneCount}/{s.totalCount} việc · {s.percent}%
+              </span>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-1">
-            Nhận {fmtDate(s.received_at)} · Dự kiến trả {fmtDate(s.expected_at)} · Chi phí {fmt(s.cost)}đ
-            {s.totalCount > 0 && <span className={'ml-2 ' + pctText(s.percent)}>{s.doneCount}/{s.totalCount} việc · {s.percent}%</span>}
-          </p>
 
-          {s.tasks.length > 0 && (
-            <div className="mt-2 space-y-1">
-              {s.tasks.map(t => (
-                <label key={t.id} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
-                  <input type="checkbox" checked={t.done} disabled={!canManage}
-                    onChange={e => toggleTask(t.id, e.target.checked)}
-                    className="w-3.5 h-3.5 accent-[#2E6B3A]" />
-                  <span className={t.done ? 'line-through text-gray-400' : ''}>{t.name}</span>
-                  {t.done && t.doneByName && (
-                    <span className="text-gray-400">— {t.doneByName}{t.done_at ? ' · ' + fmtDate(t.done_at) : ''}</span>
-                  )}
-                  {!t.stillActive && <span className="text-amber-500">(đã bỏ khỏi mẫu)</span>}
-                </label>
-              ))}
-            </div>
-          )}
-
-          {s.statusLog.length > 0 && (
-            <details className="mt-2">
-              <summary className="text-xs text-gray-400 cursor-pointer">Nhật ký trạng thái ({s.statusLog.length})</summary>
-              <div className="mt-1 space-y-0.5">
-                {s.statusLog.map(l => (
-                  <p key={l.id} className="text-xs text-gray-400">
-                    {l.statusLabel} · {l.changedByName || '—'} · {new Date(l.changed_at).toLocaleString('vi-VN')}
-                  </p>
+          <div className="grid grid-cols-1 lg:grid-cols-6 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
+            {/* Phần 1 — Công việc */}
+            <div className="p-3 lg:col-span-3">
+              <p className={colHeadCls}>Công việc</p>
+              {s.tasks.length === 0 && <p className="text-xs text-slate-500">Mẫu dịch vụ này chưa khai báo công việc nào.</p>}
+              {/* Ô tick bọc trong khối cao đúng bằng 1 dòng chữ (leading-5) nên luôn nằm giữa
+                  dòng ĐẦU TIÊN, kể cả khi tên công việc dài phải xuống 2-3 dòng. */}
+              <div className="space-y-1">
+                {s.tasks.map(t => (
+                  <label key={t.id} className="flex gap-2 text-xs leading-5 text-slate-800 cursor-pointer">
+                    <span className="flex h-5 items-center flex-shrink-0">
+                      <input type="checkbox" checked={t.done} disabled={!canManage}
+                        onChange={e => toggleTask(t.id, e.target.checked)}
+                        className="w-3.5 h-3.5 accent-[#2E6B3A]" />
+                    </span>
+                    <span className="flex-1">
+                      <span className={t.done ? 'line-through text-slate-500' : ''}>{t.name}</span>
+                      {t.done && t.doneByName && (
+                        <span className="text-slate-500"> — {t.doneByName}{t.done_at ? ' · ' + fmtDate(t.done_at) : ''}</span>
+                      )}
+                      {!t.stillActive && <span className="text-amber-700"> (đã bỏ khỏi mẫu)</span>}
+                    </span>
+                  </label>
                 ))}
               </div>
-            </details>
-          )}
+            </div>
+
+            {/* Phần 2 — Tiến độ hồ sơ */}
+            <div className="p-3 lg:col-span-1">
+              <p className={colHeadCls}>Tiến độ hồ sơ</p>
+              <StatusSteps status={s.status} />
+              {canManage && (
+                <>
+                  <p className="text-[11px] text-slate-500 mt-2 mb-1">Chuyển sang bước</p>
+                  <select value={s.status} onChange={e => changeStatus(s.id, e.target.value)}
+                    className="w-full text-xs border border-slate-300 rounded-lg px-2 py-1.5 bg-white text-slate-800">
+                    {HCNS_STATUSES.map(st => <option key={st} value={st}>{HCNS_STATUS_LABEL[st]}</option>)}
+                  </select>
+                </>
+              )}
+              {s.statusLog.length > 0 && (
+                <details className="mt-2">
+                  <summary className="text-xs text-slate-600 cursor-pointer">Nhật ký trạng thái ({s.statusLog.length})</summary>
+                  <div className="mt-1 space-y-0.5">
+                    {s.statusLog.map(l => (
+                      <p key={l.id} className="text-xs text-slate-500">
+                        {l.statusLabel} · {l.changedByName || '—'} · {new Date(l.changed_at).toLocaleString('vi-VN')}
+                      </p>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </div>
+
+            {/* Phần 3 — Ghi chú nội bộ + xác nhận đã đọc */}
+            <div className="p-3 lg:col-span-2 bg-slate-50/70">
+              <CaseNotes notes={notes[s.id] || []} installed={notesOk}
+                caseServiceId={s.id} onChanged={loadNotes} />
+            </div>
+          </div>
         </div>
       ))}
 
@@ -585,6 +631,152 @@ function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
           onDone={() => { setShowAdd(false); load(); onChanged && onChanged() }} />
       )}
     </div>
+  )
+}
+
+const colHeadCls = 'text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2'
+
+/* ──────────────── Tiến độ hồ sơ — 5 bước xử lý ──────────────── */
+// Thay cho badge trạng thái cũ (vốn lặp lại đúng nội dung ô chọn ngay bên cạnh): hiện cả 5 bước
+// để nhân viên thấy hồ sơ đang ở đâu và còn mấy bước nữa, không phải bung ô chọn ra mới biết.
+function StatusSteps({ status }) {
+  const cur = HCNS_STATUSES.indexOf(status)
+  return (
+    <ol className="space-y-1">
+      {HCNS_STATUSES.map((st, i) => {
+        const done = i < cur, now = i === cur
+        return (
+          <li key={st} className="flex items-start gap-2 text-xs">
+            <span className={'w-5 h-5 flex-shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold border ' +
+              (done ? 'bg-[#2E6B3A] text-white border-[#2E6B3A]'
+                : now ? 'bg-[#8B1A1A] text-white border-[#8B1A1A]'
+                : 'bg-white text-slate-400 border-slate-300')}>
+              {done ? '✓' : i + 1}
+            </span>
+            {/* flex + truncate: nhãn "đang ở đây" luôn nằm cùng dòng với tên bước, tên bước dài
+                thì bị cắt bớt chứ không đẩy nhãn xuống dòng. */}
+            <span className="flex-1 min-w-0 leading-5 flex items-center gap-1.5">
+              <span className={'truncate ' + (now ? 'font-semibold text-slate-900' : done ? 'text-slate-600' : 'text-slate-400')}>
+                {HCNS_STATUS_LABEL[st]}
+              </span>
+              {now && <span className="text-[10px] font-semibold text-[#8B1A1A] whitespace-nowrap">← đang ở đây</span>}
+            </span>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
+/* ──────────────── Ghi chú nội bộ trên hồ sơ + xác nhận đã đọc ──────────────── */
+// Dặn dò giữa nhân viên, trưởng phòng và quản lý trước đây nằm ngoài hệ thống (Zalo, nói miệng)
+// nên người tiếp nhận sau dễ làm sót. Ở đây mỗi lời nhắn có dấu "đã đọc" theo từng người, biết
+// ngay ai đã nắm và ai chưa.
+function CaseNotes({ notes, installed, caseServiceId, onChanged }) {
+  const [text, setText] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+
+  const post = async (body) => {
+    setErr('')
+    setBusy(true)
+    const j = await fetch('/api/admin/hcns/case-notes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(r => r.json()).catch(() => ({ error: 'Không gửi được, thử lại.' }))
+    setBusy(false)
+    if (j.error) { setErr(j.error); return false }
+    await onChanged()
+    return true
+  }
+
+  const add = async () => {
+    if (!text.trim()) { setErr('Nhập nội dung ghi chú trước khi lưu.'); return }
+    if (await post({ caseServiceId, content: text.trim() })) setText('')
+  }
+
+  const remove = async (id) => {
+    if (!window.confirm('Xoá ghi chú này?')) return
+    setErr('')
+    const j = await fetch('/api/admin/hcns/case-notes?id=' + id, { method: 'DELETE' })
+      .then(r => r.json()).catch(() => ({ error: 'Không xoá được.' }))
+    if (j.error) setErr(j.error)
+    else onChanged()
+  }
+
+  const unread = notes.filter(n => !n.readByMe).length
+
+  if (!installed) {
+    return (
+      <>
+        <p className={colHeadCls}>Ghi chú nội bộ</p>
+        <p className="text-xs text-amber-900 bg-amber-50 border border-amber-300 rounded-lg px-2 py-1.5">
+          Chưa bật tính năng này — cần chạy <b>sql/10_hcns_case_notes.sql</b> trong Supabase.
+        </p>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <p className={colHeadCls + ' flex items-center gap-2'}>
+        <span>Ghi chú nội bộ</span>
+        {unread > 0 && (
+          <span className="normal-case tracking-normal text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#B3261E] text-white">
+            {unread} chưa đọc
+          </span>
+        )}
+      </p>
+
+      {notes.length === 0 && (
+        <p className="text-xs text-slate-500 mb-2">
+          Chưa có ghi chú nào. Dặn dò gì cho người làm hồ sơ này thì ghi vào đây.
+        </p>
+      )}
+
+      <div className="space-y-2 mb-2 max-h-64 overflow-y-auto">
+        {notes.map(n => (
+          <div key={n.id}
+            className={'rounded-lg border px-2 py-1.5 ' +
+              (n.readByMe ? 'bg-white border-slate-200' : 'bg-amber-50 border-amber-400')}>
+            <p className="text-xs text-slate-800 whitespace-pre-wrap leading-relaxed">{n.content}</p>
+            <p className="text-[11px] text-slate-500 mt-1">
+              {n.createdByName || '—'} · {new Date(n.created_at).toLocaleString('vi-VN')}
+            </p>
+            <div className="flex items-center gap-2 flex-wrap mt-1">
+              {n.readByMe ? (
+                <span className="text-[11px] font-medium text-[#2E6B3A]">✓ Bạn đã đọc</span>
+              ) : (
+                <button onClick={() => post({ noteId: n.id, read: true })} disabled={busy}
+                  className="text-[11px] font-semibold px-2 py-1 rounded-md bg-[#8B1A1A] text-white hover:bg-[#6B1212] disabled:opacity-60">
+                  Xác nhận đã đọc
+                </button>
+              )}
+              {n.readers.length > 0 && (
+                <span className="text-[11px] text-slate-500" title={n.readers.map(r => r.name).join(', ')}>
+                  · {n.readers.length} người đã đọc: {n.readers.map(r => r.name || '—').join(', ')}
+                </span>
+              )}
+              {n.isMine && (
+                <button onClick={() => remove(n.id)} className="text-[11px] text-red-700 hover:text-red-900 ml-auto">
+                  Xoá
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {err && <p className="text-[11px] text-red-800 bg-red-100 border border-red-300 rounded-lg px-2 py-1 mb-1">{err}</p>}
+
+      <textarea value={text} onChange={e => { setText(e.target.value); if (err) setErr('') }}
+        rows={2} placeholder="Ghi chú cho hồ sơ này (nhân viên, trưởng phòng, quản lý cùng đọc)..."
+        className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#8B1A1A]/30" />
+      <button onClick={add} disabled={busy}
+        className="mt-1 w-full px-3 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-semibold hover:bg-slate-900 disabled:opacity-60">
+        {busy ? 'Đang lưu...' : 'Lưu ghi chú'}
+      </button>
+    </>
   )
 }
 
@@ -637,7 +829,7 @@ function CaseDebtPanel({ hcnsClient, debt, canManage, onChanged }) {
     <div className="bg-white border border-emerald-200 rounded-xl overflow-hidden">
       <div className="px-3 py-2 bg-emerald-50 border-b border-emerald-100 flex items-center gap-2 flex-wrap">
         <p className="text-xs font-bold text-emerald-800 flex-1">💰 Công nợ hồ sơ</p>
-        <span className="text-xs text-gray-600">
+        <span className="text-xs text-slate-700">
           Tổng chi phí <b>{fmt(t.totalCost)}đ</b> · Đã thu <b className="text-[#2E6B3A]">{fmt(t.totalPaid)}đ</b>
           {' · '}
           <b className={t.remain === 0 ? 'text-[#2E6B3A]' : 'text-[#B3261E]'}>
@@ -651,8 +843,8 @@ function CaseDebtPanel({ hcnsClient, debt, canManage, onChanged }) {
           <div className="space-y-1">
             {debt.perService.map(s => (
               <div key={s.id} className="flex items-center gap-2 text-xs">
-                <span className="text-gray-600 flex-1 truncate">{s.name}</span>
-                <span className="text-gray-400 tabular-nums">{fmt(s.paid)} / {fmt(s.cost)}đ</span>
+                <span className="text-slate-700 flex-1 truncate">{s.name}</span>
+                <span className="text-slate-500 tabular-nums">{fmt(s.paid)} / {fmt(s.cost)}đ</span>
                 <span className={'w-24 text-right tabular-nums font-medium ' +
                   (s.remain === 0 ? 'text-[#2E6B3A]' : 'text-[#B3261E]')}>
                   {s.remain === 0 ? 'đủ' : 'còn ' + fmt(s.remain) + 'đ'}
@@ -660,7 +852,7 @@ function CaseDebtPanel({ hcnsClient, debt, canManage, onChanged }) {
               </div>
             ))}
             {t.unassigned > 0 && (
-              <p className="text-xs text-gray-400 pt-1">
+              <p className="text-xs text-slate-500 pt-1">
                 Trong đó {fmt(t.unassigned)}đ thu chung cho cả hồ sơ, chưa tách theo dịch vụ.
               </p>
             )}
@@ -668,10 +860,10 @@ function CaseDebtPanel({ hcnsClient, debt, canManage, onChanged }) {
         )}
 
         {canManage && (
-          <div className="border-t border-gray-100 pt-3 space-y-2">
+          <div className="border-t border-slate-200 pt-3 space-y-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Thu cho</label>
+                <label className="text-xs text-slate-600 mb-1 block">Thu cho</label>
                 <select value={serviceId} onChange={e => setServiceId(e.target.value)} className={inputCls}>
                   <option value="">Thu chung cho cả hồ sơ</option>
                   {debt.perService.map(s => (
@@ -680,7 +872,7 @@ function CaseDebtPanel({ hcnsClient, debt, canManage, onChanged }) {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Số tiền đã thu (đ)</label>
+                <label className="text-xs text-slate-600 mb-1 block">Số tiền đã thu (đ)</label>
                 <input type="text" inputMode="numeric"
                   value={amount ? Number(String(amount).replace(/\D/g, '') || 0).toLocaleString('vi-VN') : ''}
                   onChange={e => { setAmount(e.target.value.replace(/\D/g, '')); if (err) setErr('') }}
@@ -697,16 +889,16 @@ function CaseDebtPanel({ hcnsClient, debt, canManage, onChanged }) {
           </div>
         )}
 
-        <div className="border-t border-gray-100 pt-2">
-          <p className="text-xs text-gray-500 mb-1">Nhật ký thu ({debt.data.length})</p>
-          {debt.data.length === 0 && <p className="text-xs text-gray-400">Chưa có khoản thu nào.</p>}
+        <div className="border-t border-slate-200 pt-2">
+          <p className="text-xs text-slate-600 mb-1">Nhật ký thu ({debt.data.length})</p>
+          {debt.data.length === 0 && <p className="text-xs text-slate-500">Chưa có khoản thu nào.</p>}
           {debt.data.map(p => (
-            <div key={p.id} className="flex items-start gap-2 text-xs py-1 border-b border-gray-50 last:border-0">
+            <div key={p.id} className="flex items-start gap-2 text-xs py-1 border-b border-slate-200 last:border-0">
               <span className="text-[#2E6B3A] font-semibold tabular-nums w-24 flex-shrink-0">{fmt(p.amount)}đ</span>
               <span className="flex-1 min-w-0">
-                <span className="text-gray-700">{p.serviceName || 'Thu chung cả hồ sơ'}</span>
-                {p.note && <span className="text-gray-400"> — {p.note}</span>}
-                <span className="block text-gray-400">
+                <span className="text-slate-800">{p.serviceName || 'Thu chung cả hồ sơ'}</span>
+                {p.note && <span className="text-slate-500"> — {p.note}</span>}
+                <span className="block text-slate-500">
                   {p.createdByName || '—'} · {new Date(p.created_at).toLocaleString('vi-VN')}
                 </span>
               </span>
@@ -765,7 +957,7 @@ function CaseDnttPanel({ hcnsClient, services }) {
         </button>
       </div>
       <div className="p-3">
-        <p className="text-xs text-gray-400 mb-2">
+        <p className="text-xs text-slate-500 mb-2">
           Bỏ tick dòng nào thì dòng đó không lên phiếu — dùng khi muốn thu riêng từng dịch vụ.
           Số tiền hiển thị là <b>chưa VAT</b> (chi phí đã tách 1,08).
         </p>
@@ -784,37 +976,37 @@ function CaseDnttPanel({ hcnsClient, services }) {
                 const no = r.on ? active.findIndex(a => a.key === r.key) + 1 : null
                 return (
                   <tr key={r.key} className={r.on ? 'bg-indigo-50/40' : 'opacity-40'}>
-                    <td className="border border-gray-200 px-2 py-1 text-center text-gray-500">{no ? 'B' + no : '—'}</td>
-                    <td className="border border-gray-200 px-1 py-1">
+                    <td className="border border-slate-300 px-2 py-1 text-center text-slate-600">{no ? 'B' + no : '—'}</td>
+                    <td className="border border-slate-300 px-1 py-1">
                       <input value={r.desc} onChange={e => setRow(i, { desc: e.target.value })} disabled={!r.on}
                         className="w-full px-1.5 py-0.5 border border-indigo-200 rounded text-xs" />
                     </td>
-                    <td className="border border-gray-200 px-1 py-1">
+                    <td className="border border-slate-300 px-1 py-1">
                       <input type="text" inputMode="numeric" disabled={!r.on}
                         value={r.amount ? Number(r.amount).toLocaleString('vi-VN') : ''}
                         onChange={e => setRow(i, { amount: e.target.value.replace(/\D/g, '') })}
                         className="w-full px-1.5 py-0.5 border border-indigo-200 rounded text-xs text-right" />
                     </td>
-                    <td className="border border-gray-200 px-1 py-1 text-center">
+                    <td className="border border-slate-300 px-1 py-1 text-center">
                       <input type="checkbox" checked={r.on} onChange={e => setRow(i, { on: e.target.checked })}
                         title="Đưa dòng này lên phiếu" className="w-3.5 h-3.5 accent-indigo-600" />
                     </td>
                   </tr>
                 )
               })}
-              <tr><td className="border border-gray-200 px-2 py-1 text-center text-gray-400">VAT</td>
-                <td className="border border-gray-200 px-2 py-1 text-gray-500 italic">Thuế VAT 8%</td>
-                <td className="border border-gray-200 px-2 py-1 text-right text-gray-500">{fmt(vat)}</td>
-                <td className="border border-gray-200"></td></tr>
-              <tr className="bg-red-50"><td className="border border-gray-200 px-2 py-1 text-center font-bold">C</td>
-                <td className="border border-gray-200 px-2 py-1 font-bold">Tổng đề nghị thanh toán</td>
-                <td className="border border-gray-200 px-2 py-1 text-right font-bold text-red-600">{fmt(total)}</td>
-                <td className="border border-gray-200"></td></tr>
+              <tr><td className="border border-slate-300 px-2 py-1 text-center text-slate-500">VAT</td>
+                <td className="border border-slate-300 px-2 py-1 text-slate-600 italic">Thuế VAT 8%</td>
+                <td className="border border-slate-300 px-2 py-1 text-right text-slate-600">{fmt(vat)}</td>
+                <td className="border border-slate-300"></td></tr>
+              <tr className="bg-red-50"><td className="border border-slate-300 px-2 py-1 text-center font-bold">C</td>
+                <td className="border border-slate-300 px-2 py-1 font-bold">Tổng đề nghị thanh toán</td>
+                <td className="border border-slate-300 px-2 py-1 text-right font-bold text-red-600">{fmt(total)}</td>
+                <td className="border border-slate-300"></td></tr>
             </tbody>
           </table>
         </div>
         <div className="flex items-center gap-2 mt-2">
-          <label className="text-xs text-gray-400 flex-shrink-0">QR:</label>
+          <label className="text-xs text-slate-500 flex-shrink-0">QR:</label>
           <input value={qr} onChange={e => setQr(e.target.value)}
             className="flex-1 px-2 py-1 border border-indigo-200 rounded text-xs text-indigo-800 font-mono" />
         </div>
@@ -828,9 +1020,9 @@ function Modal({ title, subtitle, children, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="px-4 py-3 border-b border-gray-100">
-          <h3 className="text-sm font-bold text-gray-900">{title}</h3>
-          {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+        <div className="px-4 py-3 border-b border-slate-200">
+          <h3 className="text-sm font-bold text-slate-900">{title}</h3>
+          {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
         </div>
         {children}
       </div>
@@ -838,8 +1030,8 @@ function Modal({ title, subtitle, children, onClose }) {
   )
 }
 
-const inputCls = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8B1A1A]/30'
-const labelCls = 'text-xs text-gray-500 mb-1 block'
+const inputCls = 'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8B1A1A]/30'
+const labelCls = 'text-xs text-slate-600 mb-1 block'
 
 function AddCaseModal({ category, staffList, onClose, onDone }) {
   const [f, setF] = useState({ category, case_code: '', name: '', tax_code: '', address: '', representative: '', phone: '', assigned_to: '', note: '' })
@@ -887,7 +1079,7 @@ function AddCaseModal({ category, staffList, onClose, onDone }) {
               {lookup ? '...' : 'Tra cứu'}
             </button>
           </div>
-          <p className="text-xs text-gray-400 mt-1">Tra cứu tự điền tên, địa chỉ, người đại diện. Khách cá nhân không có MST thì nhập tay.</p>
+          <p className="text-xs text-slate-500 mt-1">Tra cứu tự điền tên, địa chỉ, người đại diện. Khách cá nhân không có MST thì nhập tay.</p>
         </div>
         <div>
           <label className={labelCls}>Mã hồ sơ <span className="text-red-500">*</span></label>
@@ -932,8 +1124,8 @@ function AddCaseModal({ category, staffList, onClose, onDone }) {
         </div>
         {err && <p className="text-xs text-red-500">{err}</p>}
       </div>
-      <div className="px-4 py-3 border-t border-gray-100 flex gap-2 justify-end">
-        <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600">Hủy</button>
+      <div className="px-4 py-3 border-t border-slate-200 flex gap-2 justify-end">
+        <button onClick={onClose} className="px-4 py-2 text-sm border border-slate-300 rounded-lg text-slate-700">Hủy</button>
         <button onClick={submit} disabled={saving}
           className="px-4 py-2 text-sm bg-[#8B1A1A] text-white rounded-lg font-medium disabled:opacity-50">
           {saving ? 'Đang lưu...' : 'Thêm công ty'}
@@ -1010,14 +1202,14 @@ function AddServiceModal({ hcnsClient, templates, onClose, onDone }) {
           <select value={f.status} onChange={e => setF(p => ({ ...p, status: e.target.value }))} className={inputCls}>
             {HCNS_STATUSES.map(st => <option key={st} value={st}>{HCNS_STATUS_LABEL[st]}</option>)}
           </select>
-          <p className="text-xs text-gray-400 mt-1">{HCNS_STATUSES.map(st => HCNS_STATUS_LABEL[st]).join(' → ')}</p>
+          <p className="text-xs text-slate-500 mt-1">{HCNS_STATUSES.map(st => HCNS_STATUS_LABEL[st]).join(' → ')}</p>
         </div>
         <div>
           <label className={labelCls}>Ghi chú</label>
           <input value={f.note} onChange={e => setF(p => ({ ...p, note: e.target.value }))} className={inputCls} />
         </div>
         {tpl?.note && (
-          <p className="text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2 leading-relaxed">⏱ {tpl.note}</p>
+          <p className="text-xs text-slate-700 bg-slate-50 rounded-lg px-3 py-2 leading-relaxed">⏱ {tpl.note}</p>
         )}
         {tpl && (
           <div className="bg-sky-50 rounded-lg p-3">
@@ -1029,8 +1221,8 @@ function AddServiceModal({ hcnsClient, templates, onClose, onDone }) {
         )}
         {err && <p className="text-xs text-red-500">{err}</p>}
       </div>
-      <div className="px-4 py-3 border-t border-gray-100 flex gap-2 justify-end">
-        <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600">Hủy</button>
+      <div className="px-4 py-3 border-t border-slate-200 flex gap-2 justify-end">
+        <button onClick={onClose} className="px-4 py-2 text-sm border border-slate-300 rounded-lg text-slate-700">Hủy</button>
         <button onClick={submit} disabled={saving}
           className="px-4 py-2 text-sm bg-[#8B1A1A] text-white rounded-lg font-medium disabled:opacity-50">
           {saving ? 'Đang lưu...' : 'Thêm dịch vụ'}

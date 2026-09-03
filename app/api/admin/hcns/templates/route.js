@@ -52,7 +52,7 @@ export async function POST(request) {
   const auth = await callerHasPermission('manage_hcns_template')
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
-  const { name, is_recurring, templateId, taskName } = await request.json()
+  const { name, is_recurring, templateId, taskName, group_name } = await request.json()
   const supabase = getAdmin()
 
   if (templateId && taskName) {
@@ -78,7 +78,8 @@ export async function POST(request) {
   }
 
   const { data, error } = await supabase.from('hcns_service_templates')
-    .insert({ name, is_recurring: is_recurring === true, is_active: true }).select().single()
+    .insert({ name, is_recurring: is_recurring === true, is_active: true, group_name: group_name || null })
+    .select().single()
   if (error) return Response.json({ error: error.message }, { status: 400 })
   return Response.json({ data })
 }
@@ -88,7 +89,7 @@ export async function PATCH(request) {
   const auth = await callerHasPermission('manage_hcns_template')
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
-  const { templateId, taskId, name, sort_order } = await request.json()
+  const { templateId, taskId, name, sort_order, group_name } = await request.json()
   const supabase = getAdmin()
 
   if (taskId) {
@@ -104,6 +105,9 @@ export async function PATCH(request) {
   const patch = {}
   if (name !== undefined) patch.name = name
   if (sort_order !== undefined) patch.sort_order = Number(sort_order)
+  // Chuyển dịch vụ giữa 2 nhóm BHXH / HCNS — dịch vụ tự tạo tay ban đầu chưa có nhóm nên phải
+  // gán được, nếu không nó nằm ngoài cả 2 tag và dễ bị bỏ quên.
+  if (group_name !== undefined) patch.group_name = group_name || null
   const { error } = await supabase.from('hcns_service_templates').update(patch).eq('id', templateId)
   if (error) return Response.json({ error: error.message }, { status: 400 })
   return Response.json({ ok: true })
