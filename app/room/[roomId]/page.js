@@ -42,6 +42,7 @@ export default function RoomPage({ params }) {
   const [room,      setRoom]      = useState(null)
   const [staffData, setStaffData] = useState([])
   const [totals,    setTotals]    = useState(null)
+  const [hcnsOn,    setHcnsOn]    = useState(false)
   const [ready,     setReady]     = useState(false)
   const [loading,   setLoading]   = useState(false)
   const [forbidden, setForbidden] = useState(false)
@@ -101,7 +102,7 @@ export default function RoomPage({ params }) {
     try {
       const res = await fetch('/api/admin/room?roomId=' + roomId + '&year=' + selYear + '&month=' + selMonth + '&_t=' + Date.now(), { cache: 'no-store' })
       const json = await res.json()
-      if (!json.error) { setRoom(json.room); setStaffData(json.staff || []); setTotals(json.totals || null) }
+      if (!json.error) { setRoom(json.room); setStaffData(json.staff || []); setTotals(json.totals || null); setHcnsOn(!!json.hcnsInstalled) }
     } catch (_) {}
     setLoading(false)
   }
@@ -180,11 +181,12 @@ export default function RoomPage({ params }) {
     const rows = [
       ['CÔNG NỢ PHÒNG ' + roomName.toUpperCase() + ' — T' + selMonth + '/' + selYear],
       [],
-      ['Nhân viên', 'Công ty', 'MST', 'Phí kế toán (đ)', 'Đã thu KT (đ)', 'Còn phải thu (đ)', 'Dịch vụ khác (đ)', 'Trạng thái', 'Ghi chú'],
+      ['Nhân viên', 'Công ty', 'MST', 'Phí kế toán (đ)', 'Đã thu KT (đ)', 'Còn phải thu (đ)',
+       'Phí HCNS (đ)', 'Đã thu HCNS (đ)', 'Dịch vụ khác (đ)', 'Trạng thái', 'Ghi chú'],
     ]
-    let totFee = 0, totKetoan = 0, totKhach = 0
+    let totFee = 0, totKetoan = 0, totKhach = 0, totHcnsFee = 0, totHcnsPaid = 0
     for (const s of staffData) {
-      let sFee = 0, sKetoan = 0
+      let sFee = 0, sKetoan = 0, sHcnsFee = 0, sHcnsPaid = 0
       const staffRows = []
       for (const c of s.clients) {
         const dueThisMonth = feeCountsForMonth(c.fee_period, selYear, selMonth)
@@ -193,24 +195,33 @@ export default function RoomPage({ params }) {
         const khach   = Number(c.collectedKhach) || 0
         const remain  = Math.max(0, fee - ketoan)
         const status  = !dueThisMonth ? 'Chưa đến hạn' : fee === 0 ? '—' : ketoan >= fee ? 'Đã thu đủ' : ketoan > 0 ? 'Thu một phần' : 'Chưa thu'
+        // Phí HCNS xuất riêng 2 cột — cột "Còn phải thu" giữ nguyên chỉ phí kế toán để khớp với
+        // dòng tổng %-thu hồi ngay bên dưới (vốn không tính HCNS).
+        const hcnsFee  = Number(c.hcnsFee) || 0
+        const hcnsPaid = Number(c.hcnsCollected) || 0
         const note    = c.isSecondary ? 'Phụ trách phụ (không tính vào tổng)' : ''
-        if (!c.isSecondary) { sFee += fee; sKetoan += ketoan }
-        staffRows.push([s.full_name, c.name, c.tax_code, fee, ketoan, remain, khach, status, note])
+        if (!c.isSecondary) { sFee += fee; sKetoan += ketoan; sHcnsFee += hcnsFee; sHcnsPaid += hcnsPaid }
+        staffRows.push([s.full_name, c.name, c.tax_code, fee, ketoan, remain, hcnsFee, hcnsPaid, khach, status, note])
       }
       if (staffRows.length === 0) continue
       const sPct = sFee === 0 ? 0 : Math.round(sKetoan / sFee * 100)
       rows.push(...staffRows)
-      rows.push(['', 'Tổng ' + s.full_name + ' (' + sPct + '% thu hồi)', '', sFee, sKetoan, Math.max(0, sFee - sKetoan), '', '', ''])
+      rows.push(['', 'Tổng ' + s.full_name + ' (' + sPct + '% thu hồi)', '', sFee, sKetoan,
+        Math.max(0, sFee - sKetoan), sHcnsFee, sHcnsPaid, '', '', ''])
       rows.push([])
-      totFee += sFee; totKetoan += sKetoan
+      totFee += sFee; totKetoan += sKetoan; totHcnsFee += sHcnsFee; totHcnsPaid += sHcnsPaid
       totKhach += s.clients.reduce((a, c) => a + (Number(c.collectedKhach) || 0), 0)
     }
     const totPct = totFee === 0 ? 0 : Math.round(totKetoan / totFee * 100)
-    rows.push(['TỔNG PHÒNG (' + totPct + '% thu hồi)', '', '', totFee, totKetoan, Math.max(0, totFee - totKetoan), totKhach, '', ''])
+    rows.push(['TỔNG PHÒNG (' + totPct + '% thu hồi)', '', '', totFee, totKetoan,
+      Math.max(0, totFee - totKetoan), totHcnsFee, totHcnsPaid, totKhach, '', ''])
+    rows.push([])
+    rows.push(['Ghi chú: % thu hồi chỉ tính phí kế toán. Phí HCNS thu riêng, không vào KPI.'])
 
     const ws = XLSX.utils.aoa_to_sheet(rows)
-    ws['!cols'] = [{ wch: 22 }, { wch: 35 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 30 }]
-    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }]
+    ws['!cols'] = [{ wch: 22 }, { wch: 35 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 16 },
+      { wch: 15 }, { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 30 }]
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }]
     XLSX.utils.book_append_sheet(wb, ws, 'Công nợ')
 
     XLSX.writeFile(wb, `CongNoPhong_${roomName}_T${selMonth}_${selYear}.xlsx`)
@@ -445,6 +456,11 @@ export default function RoomPage({ params }) {
                 ...c,
                 ketoan: Number(c.collected) || 0,
                 khach:  Number(c.collectedKhach) || 0,
+                // Phí HCNS đi kèm nhưng KHÔNG cộng vào ketoan — %-KPI thu hồi công nợ chỉ tính
+                // phí kế toán, đây là yêu cầu chốt chứ không phải thiếu sót.
+                hcnsFee: Number(c.hcnsFee) || 0,
+                hcnsPaid: Number(c.hcnsCollected) || 0,
+                hcnsRemain: Math.max(0, (Number(c.hcnsFee) || 0) - (Number(c.hcnsCollected) || 0)),
                 dueThisMonth: feeCountsForMonth(c.fee_period, selYear, selMonth),
               })))
               // Công ty "phụ trách phụ" chỉ để theo dõi, KHÔNG cộng vào doanh thu/công nợ của
@@ -460,15 +476,21 @@ export default function RoomPage({ params }) {
               // doanh thu — trước đây dòng "N công ty chưa đủ" đếm cả công ty phụ trách phụ và
               // công ty quý chưa tới hạn nên lệch với số tiền ngay bên trên.
               const staffNameOf = (id) => (staffData.find(s => s.id === id) || {}).full_name || '—'
-              const unpaidClients = ownedClients
-                .filter(c => c.dueThisMonth && Number(c.monthly_fee) > 0 && c.ketoan < Number(c.monthly_fee))
+              // Công ty chỉ còn nợ phí HCNS cũng phải có mặt ở đây, nếu không con số trên thẻ
+              // (đã gồm HCNS) sẽ không khớp với danh sách bấm mở ra.
+              const unpaidClients = ownedClients.filter(c =>
+                (c.dueThisMonth && Number(c.monthly_fee) > 0 && c.ketoan < Number(c.monthly_fee))
+                || (Number(c.hcnsFee) || 0) - (Number(c.hcnsPaid) || 0) > 0)
               const unpaidByStaff = []
               for (const s of staffData) {
                 const items = unpaidClients.filter(c => c.assigned_to === s.id)
                 if (items.length === 0) continue
                 unpaidByStaff.push({
                   id: s.id, name: s.full_name, items,
-                  total: items.reduce((a, c) => a + ((Number(c.monthly_fee) || 0) - c.ketoan), 0),
+                  total: items.reduce((a, c) => {
+                    const kt = c.dueThisMonth ? Math.max(0, (Number(c.monthly_fee) || 0) - c.ketoan) : 0
+                    return a + kt + Math.max(0, (Number(c.hcnsFee) || 0) - (Number(c.hcnsPaid) || 0))
+                  }, 0),
                 })
               }
               // "Thu khác" = tiền thật đã ghi nhận trong tháng, không phụ thuộc hạn thu quý.
@@ -479,6 +501,28 @@ export default function RoomPage({ params }) {
               // (đổi tên thẻ 2026-08-28 nhưng nguyên tắc tính giữ nguyên như "Nợ tồn cũ chuyển qua").
               const otherDebtClients = ownedClients.filter(c => Number(c.other_debt) > 0)
               const totalOtherDebt   = otherDebtClients.reduce((a, c) => a + (Number(c.other_debt) || 0), 0)
+
+              // ── Phí HCNS ──────────────────────────────────────────────────────────────
+              // Nhân viên kế toán là người thu cả phí HCNS, nên khoản này nằm trong "Còn phải
+              // thu tháng này" và cũng chuyển thành nợ tồn khi không thu kịp. Nhưng nó KHÔNG
+              // vào %-KPI thu hồi công nợ — xem chú thích ở ô % của từng nhân viên.
+              const hcnsClientsList = ownedClients.filter(c => c.usesHcns && c.hcnsFee > 0)
+              const totalHcnsFee    = hcnsClientsList.reduce((a, c) => a + c.hcnsFee, 0)
+              const totalHcnsPaid   = hcnsClientsList.reduce((a, c) => a + c.hcnsPaid, 0)
+              const totalHcnsRemain = Math.max(0, totalHcnsFee - totalHcnsPaid)
+              const hcnsPct         = totalHcnsFee === 0 ? 0 : Math.round(totalHcnsPaid / totalHcnsFee * 100)
+              const hcnsByStaff = []
+              for (const st of staffData) {
+                const items = hcnsClientsList.filter(c => c.assigned_to === st.id)
+                if (items.length === 0) continue
+                hcnsByStaff.push({
+                  id: st.id, name: st.full_name, items,
+                  fee: items.reduce((a, c) => a + c.hcnsFee, 0),
+                  paid: items.reduce((a, c) => a + c.hcnsPaid, 0),
+                })
+              }
+              // Tổng còn phải thu = phí kế toán còn thiếu + phí HCNS còn thiếu.
+              const totalRemainAll = (totalFee - totalKetoan) + totalHcnsRemain
 
               const toggleCard = (k) => setOpenDebtCard(prev => prev === k ? null : k)
               // Nền xen kẽ đậm/nhạt giữa các công ty cho dễ dò mắt theo hàng.
@@ -526,7 +570,7 @@ export default function RoomPage({ params }) {
                       đỏ = chưa đòi được, xanh dương = thu khác, cam = nợ để lâu). Cố tình để nền TRẮNG,
                       không tô màu cả thẻ — ngay bên dưới là danh sách công ty vốn đã có nền
                       xanh/đỏ theo trạng thái, tô đậm thêm ở đây sẽ rối mắt. */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                     <div className="bg-white border border-gray-100 border-t-4 border-t-green-500 rounded-2xl px-4 py-3">
                       <p className="text-xs text-gray-400 mb-1">📋 Phí kế toán tháng này</p>
                       <p className="text-lg font-bold text-gray-900">{fmt(totalFee)}đ</p>
@@ -538,6 +582,33 @@ export default function RoomPage({ params }) {
                         <div className={'h-full rounded-full ' + barClr(debtPct)} style={{ width: debtPct + '%' }} />
                       </div>
                     </div>
+
+                    {/* Tím cho HCNS — 4 màu kia đã có nghĩa riêng, thêm màu mới thì không phải
+                        học lại cái nào. Thẻ tự ẩn ở bản clone (không công ty nào có DV HCNS). */}
+                    {hcnsOn && (
+                      <button onClick={() => toggleCard('hcns')}
+                        className={'text-left bg-white border border-t-4 border-t-violet-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
+                          (openDebtCard === 'hcns' ? 'border-violet-300 ring-1 ring-violet-200' : 'border-gray-100')}>
+                        <p className="text-xs text-gray-400 mb-1">🏢 Phí HCNS tháng này</p>
+                        <p className={'text-lg font-bold ' + (totalHcnsFee > 0 ? 'text-violet-600' : 'text-gray-300')}>{fmt(totalHcnsFee)}đ</p>
+                        {totalHcnsFee > 0 ? (
+                          <>
+                            <div className="flex justify-between text-xs mt-1">
+                              <span className="text-violet-600 font-medium">Đã thu: {fmt(totalHcnsPaid)}đ</span>
+                              <span className="text-violet-600 font-bold">{hcnsPct}%</span>
+                            </div>
+                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1.5">
+                              <div className="h-full rounded-full bg-violet-500" style={{ width: hcnsPct + '%' }} />
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-xs text-gray-400 mt-1">Chưa công ty nào dùng DV HCNS</p>
+                        )}
+                        <p className={'text-xs mt-1 ' + (totalHcnsFee > 0 ? 'text-blue-600' : 'text-gray-400')}>
+                          {totalHcnsFee === 0 ? '—' : (openDebtCard === 'hcns' ? '▴ Đang mở' : '▾ Xem danh sách')}
+                        </p>
+                      </button>
+                    )}
 
                     <button onClick={() => toggleCard('khach')}
                       className={'text-left bg-white border border-t-4 border-t-blue-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
@@ -556,10 +627,13 @@ export default function RoomPage({ params }) {
                       className={'text-left bg-white border border-t-4 border-t-red-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
                         (openDebtCard === 'unpaid' ? 'border-red-300 ring-1 ring-red-200' : 'border-gray-100')}>
                       <p className="text-xs text-gray-400 mb-1">💰 Còn phải thu tháng này</p>
-                      <p className={'text-lg font-bold ' + (totalFee - totalKetoan > 0 ? 'text-red-500' : 'text-green-600')}>
-                        {fmt(totalFee - totalKetoan)}đ
+                      <p className={'text-lg font-bold ' + (totalRemainAll > 0 ? 'text-red-500' : 'text-green-600')}>
+                        {fmt(totalRemainAll)}đ
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">{unpaidClients.length} công ty</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {unpaidClients.length} công ty
+                        {totalHcnsRemain > 0 && <span className="text-violet-500"> · gồm {fmt(totalHcnsRemain)}đ HCNS</span>}
+                      </p>
                       <p className="text-xs text-blue-600 mt-1">{openDebtCard === 'unpaid' ? '▴ Đang mở' : '▾ Xem danh sách'}</p>
                     </button>
 
@@ -578,6 +652,42 @@ export default function RoomPage({ params }) {
                   </div>
 
                   {/* Bảng chi tiết của thẻ đang mở */}
+                  {openDebtCard === 'hcns' && hcnsByStaff.length > 0 && (
+                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                      <div className="px-4 py-2.5 border-b border-gray-100 bg-violet-50 flex items-center justify-between">
+                        <p className="text-xs font-semibold text-violet-800">🏢 Công ty có dùng DV HCNS — theo từng nhân viên</p>
+                        <button onClick={() => setOpenDebtCard(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
+                      </div>
+                      {hcnsByStaff.map(g => (
+                        <div key={g.id}>
+                          <div className="px-4 py-2 bg-gray-100/70 flex items-center justify-between">
+                            <p className="text-xs font-semibold text-gray-700">{g.name}</p>
+                            <p className="text-xs font-semibold text-violet-700">
+                              {g.items.length} cty · {fmt(g.paid)} / {fmt(g.fee)}đ
+                            </p>
+                          </div>
+                          {g.items.map((c, i) => (
+                            <div key={c.id} className={'px-4 py-2 pl-7 flex items-center justify-between gap-3 border-b border-gray-50 ' + zebra(i)}>
+                              <p className="text-xs text-gray-700 truncate">{c.name}</p>
+                              <p className="text-xs whitespace-nowrap flex-shrink-0">
+                                <span className="text-gray-400">{fmt(c.hcnsPaid)} / </span>
+                                <span className="font-semibold text-gray-800">{fmt(c.hcnsFee)}đ</span>
+                                <span className={'ml-2 text-white px-2 py-0.5 rounded-full ' +
+                                  (c.hcnsRemain === 0 ? 'bg-green-600' : c.hcnsPaid > 0 ? 'bg-yellow-500' : 'bg-red-500')}>
+                                  {c.hcnsRemain === 0 ? 'Đã thu đủ' : c.hcnsPaid > 0 ? 'Thu một phần' : 'Chưa thu'}
+                                </span>
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                      <p className="px-4 py-2 text-xs text-gray-400 bg-gray-50 border-t border-gray-100">
+                        Phí HCNS nằm trong "Còn phải thu tháng này" và cũng chuyển thành nợ tồn nếu không thu kịp,
+                        nhưng KHÔNG tính vào %-KPI thu hồi công nợ.
+                      </p>
+                    </div>
+                  )}
+
                   {openDebtCard === 'unpaid' && (
                     <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
                       <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
@@ -593,12 +703,22 @@ export default function RoomPage({ params }) {
                             <p className="text-xs font-semibold text-red-600">{g.items.length} cty · {fmt(g.total)}đ</p>
                           </div>
                           {g.items.map((c, i) => (
-                            <div key={c.id} className={'px-4 py-2 pl-7 flex items-center justify-between gap-3 border-b border-gray-50 ' + zebra(i)}>
-                              <p className="text-xs text-gray-700 truncate">{c.name}</p>
-                              <p className="text-xs whitespace-nowrap flex-shrink-0">
-                                <span className="text-gray-400">{fmt(c.ketoan)} / </span>
-                                <span className="font-semibold text-gray-800">{fmt(c.monthly_fee)}đ</span>
-                              </p>
+                            <div key={c.id} className={'px-4 py-2 pl-7 border-b border-gray-50 ' + zebra(i)}>
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="text-xs text-gray-700 truncate">{c.name}</p>
+                                <p className="text-xs whitespace-nowrap flex-shrink-0">
+                                  <span className="text-gray-400">{fmt(c.ketoan)} / </span>
+                                  <span className="font-semibold text-gray-800">{fmt(c.monthly_fee)}đ</span>
+                                </p>
+                              </div>
+                              {c.hcnsRemain > 0 && (
+                                <div className="flex items-center justify-between gap-3 mt-0.5">
+                                  <p className="text-xs text-violet-600">🏢 Phí HCNS còn thiếu</p>
+                                  <p className="text-xs whitespace-nowrap flex-shrink-0 text-violet-700 font-semibold">
+                                    {fmt(c.hcnsPaid)} / {fmt(c.hcnsFee)}đ
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -661,6 +781,8 @@ export default function RoomPage({ params }) {
                   {staffData.map(s => {
                     const myClients = s.clients.map(c => ({
                       ...c, ketoan: Number(c.collected) || 0, khach: Number(c.collectedKhach) || 0,
+                      hcnsFee: Number(c.hcnsFee) || 0, hcnsPaid: Number(c.hcnsCollected) || 0,
+                      hcnsRemain: Math.max(0, (Number(c.hcnsFee) || 0) - (Number(c.hcnsCollected) || 0)),
                       dueThisMonth: feeCountsForMonth(c.fee_period, selYear, selMonth),
                     }))
                     if (myClients.length === 0) return null
@@ -689,6 +811,9 @@ export default function RoomPage({ params }) {
                           <div className="text-right">
                             <p className={'text-2xl font-bold leading-none ' + pctClr(sPct)}>{sPct}%</p>
                             <p className="text-sm font-semibold text-gray-600 mt-1">{fmt(sKetoan)} / {fmt(sFee)}đ</p>
+                            {/* Nói rõ ô % chỉ tính phí kế toán — nếu không, thu xong phí HCNS mà
+                                % đứng im sẽ bị hiểu là hệ thống lỗi. */}
+                            <p className="text-xs text-gray-400">chỉ phí kế toán</p>
                           </div>
                         </div>
                         {/* Company rows */}
@@ -713,6 +838,9 @@ export default function RoomPage({ params }) {
                                       {c.isSecondary && (
                                         <span className="text-xs bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Phụ trách phụ</span>
                                       )}
+                                      {c.usesHcns && c.hcnsFee > 0 && (
+                                        <span className="text-xs font-bold bg-violet-100 text-violet-700 border border-violet-300 px-1.5 py-0.5 rounded-full flex-shrink-0">Có DV HCNS</span>
+                                      )}
                                     </div>
                                     {/* Progress nếu một phần */}
                                     {c.ketoan > 0 && c.ketoan < fee && (
@@ -730,12 +858,38 @@ export default function RoomPage({ params }) {
                                   </div>
                                   {/* Số tiền + trạng thái — làm to, rõ để dễ quan sát nhanh */}
                                   <div className="text-right flex-shrink-0">
-                                    <p className="text-base font-bold text-gray-800 whitespace-nowrap">
-                                      {c.ketoan > 0 ? fmt(c.ketoan) + ' / ' : ''}{fmt(fee)}đ
-                                    </p>
-                                    <span className={'inline-block mt-1 text-xs font-medium text-white px-2.5 py-1 rounded-full ' + st.pill}>
-                                      {st.label}
-                                    </span>
+                                    {c.usesHcns && c.hcnsFee > 0 ? (
+                                      <>
+                                        {/* Hai khoản thu độc lập — một khoản xong không nói gì về
+                                            khoản kia, nên mỗi khoản có badge trạng thái riêng. */}
+                                        <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                                          <span className="text-xs text-gray-500">📋 Phí kế toán</span>
+                                          <span className="text-sm font-bold text-gray-800">
+                                            {c.ketoan > 0 ? fmt(c.ketoan) + ' / ' : ''}{fmt(fee)}đ
+                                          </span>
+                                          <span className={'text-xs font-medium text-white px-2 py-0.5 rounded-full ' + st.pill}>{st.label}</span>
+                                        </div>
+                                        <div className="flex items-center justify-end gap-2 whitespace-nowrap mt-1 pt-1 border-t border-dashed border-gray-300">
+                                          <span className="text-xs text-violet-600">🏢 Phí HCNS</span>
+                                          <span className="text-sm font-bold text-gray-800">
+                                            {c.hcnsPaid > 0 ? fmt(c.hcnsPaid) + ' / ' : ''}{fmt(c.hcnsFee)}đ
+                                          </span>
+                                          <span className={'text-xs font-medium text-white px-2 py-0.5 rounded-full ' +
+                                            (c.hcnsRemain === 0 ? 'bg-green-600' : c.hcnsPaid > 0 ? 'bg-yellow-500' : 'bg-red-500')}>
+                                            {c.hcnsRemain === 0 ? 'Đã thu đủ' : c.hcnsPaid > 0 ? 'Thu một phần' : 'Chưa thu'}
+                                          </span>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <p className="text-base font-bold text-gray-800 whitespace-nowrap">
+                                          {c.ketoan > 0 ? fmt(c.ketoan) + ' / ' : ''}{fmt(fee)}đ
+                                        </p>
+                                        <span className={'inline-block mt-1 text-xs font-medium text-white px-2.5 py-1 rounded-full ' + st.pill}>
+                                          {st.label}
+                                        </span>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
                               </div>

@@ -102,6 +102,12 @@ export async function GET(request) {
     }
   }
 
+  // Phí HCNS của các công ty có tick "Có sử dụng DV HCNS". Đọc riêng, KHÔNG trộn vào
+  // feeCollections — %-KPI thu hồi công nợ chỉ tính phí kế toán (yêu cầu chốt 2026-09-03).
+  // Thiếu bảng hcns_* (bản clone) -> map rỗng, phần kế toán chạy nguyên vẹn.
+  const hcns = await loadHcnsFees(supabase, clientIds, year, month)
+  const hcnsByClient = hcns.byClient
+
   // task_records + fee_collections for selected month (both types)
   const [taskRecords, feeCollections, feeKhach, feePlanRows, changeLogRows] = await Promise.all([
     fetchAllRows(() => supabase.from('task_records').select('id, client_id, task_def_id, is_done, done_at, note').in('client_id', clientIds).eq('year', year).eq('month', month)),
@@ -179,6 +185,11 @@ export async function GET(request) {
       address: extra.address || null, tax_status: extra.tax_status || null, other_debt: Number(extra.other_debt) || 0,
       collected: feeMap[c.id] || 0, collectedKhach: feeKhachMap[c.id] || 0,
       collectedKhachNote: feeKhachNoteMap[c.id] || null,
+      // Phí HCNS — chỉ để hiển thị/gộp vào "Còn phải thu", KHÔNG cộng vào collected.
+      usesHcns: !!hcnsByClient[c.id],
+      hcnsFee: hcnsByClient[c.id]?.fee || 0,
+      hcnsCollected: hcnsByClient[c.id]?.collected || 0,
+      hcnsDue: hcnsByClient[c.id]?.due || false,
       tasks: tasksWithStatus, taskTotal: tasksWithStatus.length,
       taskDone: tasksWithStatus.filter(t => t.status.startsWith('done')).length,
     }
@@ -258,5 +269,46 @@ export async function GET(request) {
     clientCount: activeOwnedClients.length,
   }
 
-  return Response.json({ room, staff: staffData, totals, taskDefs: taskDefs || [] })
+  // hcnsInstalled: bản clone không chạy sql/06_hcns_module.sql -> false -> thẻ HCNS không
+  // render. Savitax thì luôn true, thẻ hiện kể cả khi chưa công ty nào dùng dịch vụ.
+  return Response.json({ room, staff: staffData, totals, hcnsInstalled: hcns.installed, taskDefs: taskDefs || [] })
+}
+
+// Phí HCNS + tiền đã thu của tháng đang xem, khoá theo id công ty KẾ TOÁN.
+//
+// ⚠ RÀNG BUỘC CLONE-APP: bản clone không có bảng hcns_*. Thiếu bảng -> trả {} và trang Công nợ
+// phòng chạy y như trước, không thẻ HCNS, không lỗi.
+async function loadHcnsFees(supabase, clientIds, year, month) {
+  const out = {}
+  if (!clientIds?.length) return { installed: false, byClient: out }
+
+  const { data: links, error } = await supabase.from('hcns_clients')
+    .select('id, linked_client_id, hcns_fee, fee_period')
+    .in('linked_client_id', clientIds).eq('category', 'thoi_ky').eq('is_active', true)
+  // Lỗi = thiếu bảng (bản clone). Không lỗi mà rỗng = có module, chỉ là chưa ai bật DV HCNS.
+  if (error) return { installed: false, byClient: out }
+  if (!links?.length) return { installed: true, byClient: out }
+
+  const { data: fees } = await supabase.from('hcns_service_fees')
+    .select('hcns_client_id, year, month, amount, type').in('hcns_client_id', links.map(l => l.id))
+
+  const paid = new Map()
+  const plans = []
+  for (const f of fees || []) {
+    if (f.type === 'hcns') paid.set(f.hcns_client_id + '_' + f.year + '_' + f.month, Number(f.amount) || 0)
+    // resolveFeeForMonth lọc theo trường client_id — đổi tên khoá cho khớp.
+    else if (f.type === 'fee_plan') plans.push({ ...f, client_id: f.hcns_client_id })
+  }
+
+  for (const l of links) {
+    // Công ty HCNS thu theo quý: tháng không phải cuối quý chưa tới hạn, phí tính 0 cho tháng đó
+    // — cùng luật với phí kế toán, tránh nhân sai x3.
+    const due = feeCountsForMonth(l.fee_period, year, month)
+    out[l.linked_client_id] = {
+      due,
+      fee: due ? resolveFeeForMonth(plans, l.id, year, month, Number(l.hcns_fee) || 0, []) : 0,
+      collected: paid.get(l.id + '_' + year + '_' + month) || 0,
+    }
+  }
+  return { installed: true, byClient: out }
 }

@@ -196,6 +196,9 @@ create table if not exists debt_rollovers (
   month integer not null,
   rolled_amount numeric not null default 0,
   remaining_amount numeric not null default 0,
+  -- 'ketoan' | 'hcns' — phí kế toán và phí HCNS của cùng công ty cùng tháng là 2 dòng riêng.
+  -- Bản clone không có module HCNS thì mọi dòng đều là 'ketoan', cột này vô hại.
+  source text not null default 'ketoan',
   created_at timestamptz default now()
   , primary key (id)
   , foreign key (client_id) references clients(id)
