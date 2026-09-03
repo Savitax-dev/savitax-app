@@ -223,7 +223,9 @@ function ReportBlock({ report, mode, setMode, selYear, selMonth, setSelYear, set
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-2 flex-wrap items-center bg-slate-50 border border-slate-300 rounded-xl px-3 py-2">
+      {/* Tag này không có ô tìm kiếm nên khung lọc chỉ ôm vừa 2 điều khiển (w-fit) và dạt phải
+          (ml-auto) — cho khớp vị trí bộ lọc kỳ ở 4 tag danh sách. */}
+      <div className="w-fit ml-auto flex gap-2 flex-wrap items-center bg-slate-50 border border-slate-300 rounded-xl px-3 py-2">
         <div className="flex border border-slate-300 rounded-lg overflow-hidden bg-white text-sm">
           {[['month','Tháng'],['quarter','Quý'],['year','Năm']].map(([k,l]) => (
             <button key={k} onClick={() => setMode(k)}
