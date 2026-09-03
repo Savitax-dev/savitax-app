@@ -128,6 +128,33 @@ export async function GET(request) {
     svcByClient.get(s.hcns_client_id).push(s)
   }
 
+  // Checklist của hồ sơ Thời điểm/Vãng lai. Thiếu phần này thì nhân viên tích việc trên hồ sơ mà
+  // báo cáo phòng không nhúc nhích — đúng lỗi đã gặp: chỉ %-công việc của Thời kỳ được tính.
+  const svcIds = svcInPeriod.map(s => s.id)
+  const caseTasks = svcIds.length
+    ? await fetchAllRows(() => supabase.from('hcns_case_service_tasks')
+        .select('case_service_id, done').in('case_service_id', svcIds).order('id'))
+    : []
+  const taskBySvc = new Map()
+  for (const t of caseTasks) {
+    const a = taskBySvc.get(t.case_service_id) || { done: 0, total: 0 }
+    a.total += 1
+    if (t.done) a.done += 1
+    taskBySvc.set(t.case_service_id, a)
+  }
+  // % của 1 hồ sơ = gộp công việc của MỌI dịch vụ trong hồ sơ đó.
+  const casePct = (c) => {
+    let done = 0, total = 0
+    for (const s of svcByClient.get(c.id) || []) {
+      const a = taskBySvc.get(s.id)
+      if (!a) continue
+      done += a.done; total += a.total
+    }
+    return { done, total, percent: total > 0 ? Math.round(done / total * 100) : null }
+  }
+
+  const avg = (arr) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null
+
   const caseBlock = (cat) => {
     const list = cases.filter(c => c.category === cat)
     const svcs = list.flatMap(c => svcByClient.get(c.id) || [])
@@ -138,17 +165,31 @@ export async function GET(request) {
     const byStaff = {}
     for (const c of list) {
       const n = (svcByClient.get(c.id) || []).length
-      if (!byStaff[c.assigned_to]) byStaff[c.assigned_to] = { staffId: c.assigned_to, cases: 0, services: 0, cost: 0 }
+      if (!byStaff[c.assigned_to]) {
+        byStaff[c.assigned_to] = { staffId: c.assigned_to, cases: 0, services: 0, cost: 0, pcts: [] }
+      }
       byStaff[c.assigned_to].cases += 1
       byStaff[c.assigned_to].services += n
       byStaff[c.assigned_to].cost += (svcByClient.get(c.id) || []).reduce((a, s) => a + (Number(s.cost) || 0), 0)
+      const p = casePct(c).percent
+      if (p !== null) byStaff[c.assigned_to].pcts.push(p)
     }
+    // Đúng quy ước AGENTS.md: %-công việc = TB cộng % từng hồ sơ -> theo nhân viên -> theo phòng.
+    const perStaffRows = Object.values(byStaff).map(({ pcts, ...x }) => ({
+      ...x, staffName: staffName(staff, x.staffId), taskPercent: avg(pcts),
+    }))
+    const totals = list.reduce((a, c) => {
+      const p = casePct(c)
+      return { done: a.done + p.done, total: a.total + p.total }
+    }, { done: 0, total: 0 })
     return {
       caseCount: list.filter(c => (svcByClient.get(c.id) || []).length > 0 || !svcInPeriod.length).length || list.length,
       serviceCount: svcs.length,
       totalCost: svcs.reduce((a, s) => a + (Number(s.cost) || 0), 0),
+      taskDone: totals.done, taskTotal: totals.total,
+      taskPercent: avg(perStaffRows.map(r => r.taskPercent).filter(p => p !== null)),
       byStatus,
-      byStaff: Object.values(byStaff).map(x => ({ ...x, staffName: staffName(staff, x.staffId) })),
+      byStaff: perStaffRows,
     }
   }
 
@@ -171,7 +212,6 @@ export async function GET(request) {
     }
   })
 
-  const avg = (arr) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null
   const roomDebtPercent = avg(perStaff.map(s => s.debtPercent).filter(p => p !== null))
   const roomTaskPercent = avg(perStaff.map(s => s.taskPercent).filter(p => p !== null))
 
@@ -191,6 +231,21 @@ export async function GET(request) {
     thoiDiem: caseBlock('thoi_diem'),
     vangLai: caseBlock('vang_lai'),
   })
+}
+
+// PostgREST cắt im lặng ở 1000 dòng — checklist hồ sơ sẽ vượt mốc này khi phòng chạy nhiều hồ sơ.
+// Xem project_postgrest_1000row_limit: đúng lỗi đã làm hỏng số liệu KPI toàn công ty trước đây.
+async function fetchAllRows(buildQuery, pageSize = 1000) {
+  let all = []
+  let from = 0
+  while (true) {
+    const { data, error } = await buildQuery().range(from, from + pageSize - 1)
+    if (error) throw error
+    all = all.concat(data || [])
+    if (!data || data.length < pageSize) break
+    from += pageSize
+  }
+  return all
 }
 
 function staffName(staff, id) {

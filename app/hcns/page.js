@@ -327,13 +327,24 @@ function CaseBlock({ title, data }) {
         <h2 className="text-sm font-bold text-slate-900">{title}</h2>
         <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{data.caseCount} hồ sơ</span>
       </div>
-      <div className="grid grid-cols-3 gap-2 mb-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
         {[['Hồ sơ', data.caseCount], ['Dịch vụ', data.serviceCount], ['Chi phí', fmt(data.totalCost) + 'đ']].map(([k, v]) => (
           <div key={k} className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5">
             <p className="text-xs text-slate-500">{k}</p>
             <p className="text-sm font-bold text-slate-800 tabular-nums">{v}</p>
           </div>
         ))}
+        {/* Nhân viên tích việc trên hồ sơ thì con số này phải nhúc nhích — trước đây báo cáo chỉ
+            tính checklist định kỳ của Thời kỳ nên tích xong không thấy gì đổi. */}
+        <div className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5">
+          <p className="text-xs text-slate-500">% Công việc</p>
+          <p className={'text-sm font-bold tabular-nums ' + pctText(data.taskPercent)}>
+            {data.taskPercent === null ? '—' : data.taskPercent + '%'}
+          </p>
+          {data.taskTotal > 0 && (
+            <p className="text-[11px] text-slate-500 tabular-nums">{data.taskDone}/{data.taskTotal} việc</p>
+          )}
+        </div>
       </div>
       <p className="text-xs text-slate-600 mb-1.5">Dịch vụ theo bước xử lý</p>
       {data.byStatus.map(s => (
@@ -348,9 +359,14 @@ function CaseBlock({ title, data }) {
       {data.byStaff.length > 0 && (
         <div className="mt-3 pt-2 border-t border-slate-200">
           {data.byStaff.map(s => (
-            <div key={s.staffId} className="flex justify-between text-xs text-slate-600 py-1">
-              <span>{s.staffName || '(chưa gán)'}</span>
-              <span className="tabular-nums">{s.cases} hồ sơ · {s.services} dịch vụ</span>
+            <div key={s.staffId} className="flex justify-between gap-2 text-xs text-slate-600 py-1">
+              <span className="truncate">{s.staffName || '(chưa gán)'}</span>
+              <span className="tabular-nums flex-shrink-0">
+                {s.cases} hồ sơ · {s.services} dịch vụ
+                {s.taskPercent !== null && (
+                  <span className={'ml-1.5 font-semibold ' + pctText(s.taskPercent)}>{s.taskPercent}%</span>
+                )}
+              </span>
             </div>
           ))}
         </div>
