@@ -169,7 +169,13 @@ function HcnsFeeAdjust({ client, onSaved }) {
 }
 
 function FeeAdjust({ client, isEditing, feeAmount, feeFromMonth, feeNote, feePeriod, saving, futureMonths, onOpen, onSave, onCancel, onAmountChange, onMonthChange, onNoteChange, onPeriodChange }) {
-  const selectedVal = feeFromMonth || (futureMonths[0] ? futureMonths[0].value : '')
+  // Mặc định phải là THÁNG HIỆN TẠI (mục !past đầu tiên) — đúng bằng tháng mà saveFee dùng khi
+  // nhân viên không đụng vào ô này. Trước đây lấy futureMonths[0] = T1/2026 (tháng cũ nhất trong
+  // danh sách) nên màn hình hiện "T1/2026" mà lưu lại vào tháng hiện tại — hai đằng lệch nhau,
+  // ai tin theo màn hình mà chọn tháng cũ thì phí hiện tại không đổi (xem liveFeeKept ở API).
+  const selectedVal = feeFromMonth ||
+    (futureMonths.find(x => !x.past)?.value) ||
+    (futureMonths[0] ? futureMonths[0].value : '')
   const selectedLabel = futureMonths.find(x => x.value === selectedVal)
   const feePeriodLabel = (client.fee_period || client.report_type) === 'quarterly' ? 'Quý' : 'Tháng'
 
@@ -565,6 +571,18 @@ export default function ClientsPage() {
       const lines = j.rolloverChanges.map(c =>
         '  T' + c.month + '/' + c.year + ': ' + fmt(c.from) + 'đ → ' + fmt(c.to) + 'đ')
       alert(['Đã tính lại nợ tồn theo mức phí mới:', ...lines].join('\n'))
+    }
+    // Áp phí LÙI: server cố ý giữ nguyên phí hiện tại vì đã có mốc phí mới hơn. Phải báo rõ,
+    // không thì nhân viên tưởng lưu hỏng (ca thật: HKD KIM HẰNG có mốc T9/2026 = 0đ, áp phí từ
+    // tháng trước đó nên thẻ vẫn hiện 0đ mà không có thông báo nào).
+    if (j.liveFeeKept) {
+      const k = j.liveFeeKept
+      const moc = k.newerMonth ? ('T' + k.newerMonth + '/' + k.newerYear) : 'tháng sau đó'
+      alert(
+        'Đã ghi mốc phí ' + fmt(Number(feeAmount)) + 'đ áp dụng từ T' + effectM + '/' + effectY + '.\n\n' +
+        'PHÍ HIỆN TẠI vẫn giữ ' + fmt(k.currentFee) + 'đ vì công ty đã có mốc phí mới hơn ở ' + moc + '.\n\n' +
+        'Muốn đổi phí hiện tại: chọn "Áp dụng từ tháng" là ' + moc + ' trở về sau.'
+      )
     }
     setFeeEdit(null); setFeeAmount(''); setFeeNote(''); setFeeFromMonth(''); setFeePeriod('monthly')
     await loadClients()

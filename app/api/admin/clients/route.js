@@ -184,11 +184,24 @@ export async function PATCH(request) {
   // clients.monthly_fee (phí "sống" hiện tại). Nếu đã có mốc phí ở tháng SAU tháng đang áp thì
   // phí hiện tại vẫn phải là mốc mới nhất đó — ghi đè sẽ làm phí hiện tại tụt về mức cũ và
   // client_change_log ghi một lần "đổi phí" không có thật.
+  // liveFeeKept: mốc phí mới nhất đang giữ phí hiện tại (nếu lần này là áp phí LÙI). Trả về cho
+  // giao diện báo rõ — trước đây server lặng lẽ bỏ qua monthly_fee nên nhân viên tưởng lưu hỏng
+  // (ca thật: HKD KIM HẰNG đã có mốc T9/2026 = 0đ, áp phí từ tháng trước đó nên phí vẫn là 0đ).
+  let liveFeeKept = null
   if (fee_history && monthly_fee !== undefined) {
     const { data: existingPlans } = await supabase.from('service_fees')
       .select('year, month').eq('client_id', id).eq('type', 'fee_plan')
     if (!shouldUpdateLiveFee(existingPlans, fee_history.year, fee_history.month)) {
       delete updateData.monthly_fee
+      const target = Number(fee_history.year) * 12 + Number(fee_history.month)
+      const newer = (existingPlans || [])
+        .filter(p => Number(p.year) * 12 + Number(p.month) > target)
+        .sort((a, b) => (b.year * 12 + b.month) - (a.year * 12 + a.month))[0]
+      liveFeeKept = {
+        currentFee: prevFee,
+        newerYear:  newer ? Number(newer.year)  : null,
+        newerMonth: newer ? Number(newer.month) : null,
+      }
     }
   }
 
@@ -219,7 +232,10 @@ export async function PATCH(request) {
       old_value: String(prevFee),
       new_value: String(Number(monthly_fee)),
       action: 'update',
-      changed_by: updatedBy || null,
+      // Lấy từ PHIÊN ĐĂNG NHẬP trước, không chờ client gửi `updatedBy` — giao diện sửa phí
+      // trước đây quên gửi trường này nên 109/109 lần đổi phí đều không có tên người sửa
+      // (mục "Ai đổi, lúc nào" luôn hiện "—"), trong khi cùng bảng thì credential ghi đủ.
+      changed_by: permCheck.caller?.staffId || updatedBy || null,
     })
   }
 
@@ -266,7 +282,7 @@ export async function PATCH(request) {
 
   // Trả về để giao diện báo cho nhân viên biết nợ tồn đã được tính lại — đây là thay đổi
   // số tiền, không được lặng lẽ.
-  return Response.json({ success: true, rolloverChanges })
+  return Response.json({ success: true, rolloverChanges, liveFeeKept })
 }
 
 export async function DELETE(request) {
