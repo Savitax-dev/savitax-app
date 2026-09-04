@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { startedByMonth } from '@/lib/contractDates'
+import { countsForMonth } from '@/lib/contractDates'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireLogin } from '@/lib/serverAuth'
@@ -60,12 +60,12 @@ export async function GET(request) {
     // giống cách phòng Remote bị loại khỏi "Phòng xuất sắc nhất".
     supabase.from('rooms').select('id, name, type').neq('type', 'hcns').order('type').order('name'),
     supabase.from('staff').select('id, full_name, room_id, role'),
-    supabase.from('clients').select('id, monthly_fee, report_type, fee_period, assigned_to, contract_start').eq('status', 'active'),
+    supabase.from('clients').select('id, monthly_fee, report_type, fee_period, assigned_to, contract_start, created_at').eq('status', 'active'),
     supabase.from('task_definitions').select('id, deadline_day, month, report_type, is_active').eq('is_active', true).eq('month', month),
   ])
 
   // Công ty chỉ được tính từ tháng bắt đầu hợp đồng trở đi (Trình ký đã bị loại bởi status filter)
-  const clientsActive = (clients || []).filter(c => startedByMonth(c.contract_start, year, month))
+  const clientsActive = (clients || []).filter(c => countsForMonth(c, year, month))
   const clientIds = clientsActive.map(c => c.id)
 
   const [taskRecords, fees, feePlanRows, changeLogRows] = clientIds.length > 0

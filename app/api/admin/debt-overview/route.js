@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { ensureRollovers } from '@/lib/debtRollover'
 import { getPeriodMonths } from '@/lib/period'
-import { startedByMonth } from '@/lib/contractDates'
+import { countsForMonth } from '@/lib/contractDates'
 import { dueFeeMonthsCount, resolveFeeForMonth } from '@/lib/feeDue'
 import { callerHasPermission } from '@/lib/serverAuth'
 
@@ -49,7 +49,7 @@ export async function GET(request) {
     // Công nợ HCNS theo dõi riêng ở trang /hcns, không trộn vào công nợ phòng kế toán.
     supabase.from('rooms').select('id, name, type').neq('type', 'hcns').order('name'),
     supabase.from('staff').select('id, full_name, room_id').order('full_name'),
-    supabase.from('clients').select('id, name, tax_code, monthly_fee, other_debt, report_type, fee_period, assigned_to, status, contract_start').eq('status', 'active'),
+    supabase.from('clients').select('id, name, tax_code, monthly_fee, other_debt, report_type, fee_period, assigned_to, status, contract_start, created_at').eq('status', 'active'),
     fetchAllRows(() => supabase.from('service_fees').select('client_id, amount').eq('year', year).in('month', months).eq('type', 'ketoan')),
     // Lấy kèm `note` + `month` — thẻ "Phí thu khác" ở /debt hiển thị nội dung ghi chú của từng
     // khoản (vd "phí thay đổi GPKD"), và kỳ quý/năm gồm nhiều tháng nên cần biết khoản đó của tháng nào.
@@ -90,13 +90,13 @@ export async function GET(request) {
 
   // Số tháng trong kỳ mà công ty đã bắt đầu hợp đồng (gate theo contract_start) — dùng để quyết
   // định công ty có xuất hiện trong danh sách kỳ đang xem hay không.
-  const monthsActive = (c) => months.filter(m => startedByMonth(c.contract_start, year, m)).length
+  const monthsActive = (c) => months.filter(m => countsForMonth(c, year, m)).length
   // Phí ĐÚNG tại kỳ đang xem (tháng cuối trong `months`) — không phải monthly_fee sống, tránh
   // đổi phí hôm nay làm sai lại công nợ của các kỳ quá khứ đang xem.
   const feeAtPeriod = (c) => resolveFeeForMonth(feePlanRows || [], c.id, year, months[months.length - 1], c.monthly_fee, changeLogRows || [])
   // Số tiền phí trong kỳ — công ty quý: chỉ tính kỳ (tháng cuối quý) đã đến hạn VÀ đã qua hạn
   // khoan, không nhân theo số tháng thô (tránh nhân sai x3/x12 theo quý/năm).
-  const feeForPeriod = (c) => feeAtPeriod(c) * dueFeeMonthsCount(c.fee_period, c.contract_start, year, months)
+  const feeForPeriod = (c) => feeAtPeriod(c) * dueFeeMonthsCount(c, year, months)
 
   const built = (roomList || []).map(room => {
     const roomStaff = (staffList || []).filter(s => s.room_id === room.id)

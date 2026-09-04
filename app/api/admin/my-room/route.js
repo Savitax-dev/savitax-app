@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { ensureRollovers } from '@/lib/debtRollover'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { getPeriodMonths } from '@/lib/period'
-import { startedByMonth } from '@/lib/contractDates'
+import { countsForMonth } from '@/lib/contractDates'
 import { dueFeeMonthsCount, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireLogin } from '@/lib/serverAuth'
 
@@ -58,14 +58,14 @@ export async function GET(request) {
     supabase.from('task_definitions').select('*').eq('is_active', true).order('sort_order'),
     supabase.from('client_secondary_staff').select('client_id').eq('staff_id', staffRecord.id),
     supabase.from('clients')
-      .select('id, name, tax_code, monthly_fee, other_debt, report_type, fee_period, status, client_code, contract_start')
+      .select('id, name, tax_code, monthly_fee, other_debt, report_type, fee_period, status, client_code, contract_start, created_at')
       .eq('assigned_to', staffRecord.id).eq('status', 'active'),
   ])
 
   const secondaryClientIds = (secondaryRows || []).map(r => r.client_id)
   const { data: secondaryClients } = secondaryClientIds.length > 0
     ? await supabase.from('clients')
-        .select('id, name, tax_code, monthly_fee, other_debt, report_type, fee_period, status, client_code, contract_start')
+        .select('id, name, tax_code, monthly_fee, other_debt, report_type, fee_period, status, client_code, contract_start, created_at')
         .in('id', secondaryClientIds).eq('status', 'active')
     : { data: [] }
 
@@ -146,7 +146,7 @@ export async function GET(request) {
 
   // Số tháng trong kỳ mà công ty đã bắt đầu hợp đồng (gate theo contract_start).
   // Công ty chưa tới mốc bắt đầu trong kỳ đang xem sẽ bị loại khỏi danh sách (không tính).
-  const monthsActive = (c) => months.filter(m => startedByMonth(c.contract_start, year, m)).length
+  const monthsActive = (c) => months.filter(m => countsForMonth(c, year, m)).length
 
   const clientsWithTasks = clients.filter(c => monthsActive(c) > 0).map(c => {
     const appTasks = isMonthOnly ? getApplicableTasks(c) : []
@@ -166,7 +166,7 @@ export async function GET(request) {
       taskDone:       tasks.filter(t => t.status.startsWith('done')).length,
       // Công ty quý: chỉ tính phí vào các kỳ (tháng cuối quý) đã đến hạn VÀ đã qua hạn khoan —
       // không nhân theo số tháng thô như công ty tháng (tránh nhân sai x3/x12 theo quý/năm).
-      periodFee:      feeAtPeriod * dueFeeMonthsCount(c.fee_period, c.contract_start, year, months),
+      periodFee:      feeAtPeriod * dueFeeMonthsCount(c, year, months),
       collected:      feeMap[c.id] || 0,
       collectedKhach: feeKhachMap[c.id] || 0,
     }

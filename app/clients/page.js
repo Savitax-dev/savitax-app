@@ -842,7 +842,7 @@ export default function ClientsPage() {
                   )}
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Áp dụng từ tháng</label>
+                  <label className="text-xs text-gray-500 mb-1 block">Áp dụng từ tháng nhập lên app</label>
                   <select value={form.fee_start}
                     onChange={e => setForm(f => ({ ...f, fee_start: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -923,12 +923,22 @@ export default function ClientsPage() {
                   placeholder="VD: KH001, AORAKI-01..."
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
-              {/* Trạng thái + Ngày bắt đầu hợp đồng */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Trạng thái + Ngày bắt đầu hợp đồng.
+                  "Đang sử dụng" = công ty đã dùng dịch vụ từ trước, nay đưa lên app -> KHÔNG hỏi
+                  ngày bắt đầu hợp đồng nữa (trước đây nhân viên hay điền ngày HĐ để lùi vài năm,
+                  app hiểu nhầm là nợ phí suốt từ đó). Mốc tính phí/công việc lấy theo tháng công
+                  ty được nhập lên app; nợ cũ nhập tay ở ô "Thu khác (tồn đọng cũ)" phía trên.
+                  Chỉ "Trình ký" mới cần ngày HĐ vì đó là hợp đồng ký mới thật sự. */}
+              <div className={'grid gap-3 ' + (form.status === 'pending' ? 'grid-cols-2' : 'grid-cols-1')}>
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">Trạng thái</label>
                   <select value={form.status}
-                    onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+                    onChange={e => setForm(f => ({
+                      ...f,
+                      status: e.target.value,
+                      // Chuyển sang "Đang sử dụng" thì bỏ ngày HĐ đã lỡ nhập, tránh gửi lên server.
+                      contract_start: e.target.value === 'pending' ? f.contract_start : '',
+                    }))}
                     className={'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ' + (form.status === 'pending' ? 'border-amber-300 bg-amber-50' : 'border-gray-200')}>
                     <option value="pending">Trình ký (đang lên hợp đồng)</option>
                     <option value="active">Đang sử dụng</option>
@@ -937,13 +947,15 @@ export default function ClientsPage() {
                     <p className="text-xs text-amber-600 mt-1">Chưa tính tỉ lệ công việc/công nợ cho đến khi chuyển "Đang sử dụng".</p>
                   )}
                 </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Ngày bắt đầu hợp đồng</label>
-                  <input type="date" value={form.contract_start}
-                    onChange={e => setForm(f => ({ ...f, contract_start: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  <p className="text-xs text-gray-400 mt-1">Dùng cho hợp đồng + mốc bắt đầu tính tỉ lệ.</p>
-                </div>
+                {form.status === 'pending' && (
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Ngày bắt đầu hợp đồng</label>
+                    <input type="date" value={form.contract_start}
+                      onChange={e => setForm(f => ({ ...f, contract_start: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <p className="text-xs text-gray-400 mt-1">Dùng cho hợp đồng + mốc bắt đầu tính tỉ lệ.</p>
+                  </div>
+                )}
               </div>
               {/* 6. Phòng ban phụ trách */}
               <div>
@@ -1133,13 +1145,17 @@ export default function ClientsPage() {
                             </a>
                           )}
                         </div>
-                        <div>
-                          <label className="text-xs text-gray-500 mb-0.5 block">Ngày bắt đầu hợp đồng</label>
-                          <input type="date" value={editClientForm.contract_start || ''}
-                            onChange={e => setEditClientForm(f => ({ ...f, contract_start: e.target.value }))}
-                            className="w-full px-2.5 py-1.5 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white" />
-                          <p className="text-xs text-gray-400 mt-0.5">Dùng cho hợp đồng + mốc bắt đầu tính tỉ lệ.</p>
-                        </div>
+                        {/* Chỉ công ty "Trình ký" mới hỏi ngày HĐ — công ty "Đang sử dụng" lấy
+                            mốc theo tháng được nhập lên app (xem lib/contractDates.js). */}
+                        {client.status === 'pending' && (
+                          <div>
+                            <label className="text-xs text-gray-500 mb-0.5 block">Ngày bắt đầu hợp đồng</label>
+                            <input type="date" value={editClientForm.contract_start || ''}
+                              onChange={e => setEditClientForm(f => ({ ...f, contract_start: e.target.value }))}
+                              className="w-full px-2.5 py-1.5 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white" />
+                            <p className="text-xs text-gray-400 mt-0.5">Dùng cho hợp đồng + mốc bắt đầu tính tỉ lệ.</p>
+                          </div>
+                        )}
                         <div className="flex gap-2 pt-1">
                           <button onClick={saveEditClient} disabled={saving}
                             className="flex-1 bg-blue-600 text-white py-2 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
