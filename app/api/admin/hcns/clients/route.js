@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin, callerHasPermission } from '@/lib/serverAuth'
-import { writeHcnsFeePlan } from '@/lib/hcnsSync'
+import { writeHcnsFeePlan, applyScheduledHcnsStops } from '@/lib/hcnsSync'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -16,7 +16,15 @@ export async function GET(request) {
   const category = searchParams.get('category')
 
   const supabase = getAdmin()
-  let q = supabase.from('hcns_clients').select('*').eq('is_active', true).order('name')
+  // Công ty đã HẸN ngừng mà nay đã tới tháng ngừng thì gỡ khỏi tag Thời kỳ ngay tại đây —
+  // chạy lười mỗi lần tải danh sách, cùng kiểu ensureRollovers, khỏi cần cron.
+  await applyScheduledHcnsStops(supabase)
+
+  // Mặc định chỉ lấy công ty đang hoạt động. Trang Công ty phụ trách gọi kèm includeStopped=1
+  // để dựng thẻ "Ngưng DV HCNS" — dữ liệu công ty đã ngừng KHÔNG bị xoá, chỉ đánh dấu ngừng.
+  const includeStopped = searchParams.get('includeStopped') === '1'
+  let q = supabase.from('hcns_clients').select('*').order('name')
+  if (!includeStopped) q = q.eq('is_active', true)
   if (category) q = q.eq('category', category)
   const { data: rows, error } = await q
   if (error) return Response.json({ error: error.message }, { status: 400 })
@@ -33,10 +41,30 @@ export async function GET(request) {
   const staffMap = new Map((staffList || []).map(s => [s.id, s]))
   const clientMap = new Map((linkedClients || []).map(c => [c.id, c]))
 
+  // Tiến độ dịch vụ của hồ sơ Thời điểm/Vãng lai — để danh sách biết hồ sơ nào đã xong hết mà
+  // chuyển sang thẻ "Hoàn thành". Không có phần này thì trạng thái chỉ biết được sau khi bấm mở
+  // từng hồ sơ, không dựng được thẻ.
+  const caseIds = (rows || []).filter(r => r.category !== 'thoi_ky').map(r => r.id)
+  const { data: svcs } = caseIds.length
+    ? await supabase.from('hcns_case_services').select('hcns_client_id, status').in('hcns_client_id', caseIds)
+    : { data: [] }
+  const svcStat = new Map()
+  for (const sv of svcs || []) {
+    const a = svcStat.get(sv.hcns_client_id) || { total: 0, done: 0 }
+    a.total += 1
+    if (sv.status === 'hoan_thanh') a.done += 1
+    svcStat.set(sv.hcns_client_id, a)
+  }
+
   const data = (rows || []).map(r => ({
     ...r,
     hcns_fee: Number(r.hcns_fee) || 0,
     other_debt: Number(r.other_debt) || 0,
+    serviceCount: svcStat.get(r.id)?.total || 0,
+    doneServiceCount: svcStat.get(r.id)?.done || 0,
+    // Hồ sơ CHƯA khai dịch vụ nào thì chưa gọi là xong — vẫn còn việc phải làm.
+    allDone: (svcStat.get(r.id)?.total || 0) > 0
+      && svcStat.get(r.id).done === svcStat.get(r.id).total,
     staff: staffMap.get(r.assigned_to) || null,
     linkedClient: clientMap.get(r.linked_client_id) || null,
   }))

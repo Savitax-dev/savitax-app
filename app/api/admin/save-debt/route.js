@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { resolveFeeForMonthWithSource } from '@/lib/feeDue'
+import { checkPrevMonthUnpaid, prevMonthOf } from '@/lib/prevMonthDebt'
 import { evaluateCap, CAP_OK, CAP_UNVERIFIABLE } from '@/lib/feeCap'
 import { canWriteAccountingDebt } from '@/lib/debtScope'
 
@@ -18,7 +19,7 @@ export async function POST(request) {
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
   try {
-    const { clientId, year, month, type, amount, note, createdBy, periods, force } = await request.json()
+    const { clientId, year, month, type, amount, note, createdBy, periods, force, monthConfirmed } = await request.json()
 
     if (!clientId || !type) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 })
@@ -60,15 +61,35 @@ export async function POST(request) {
     }
     const numYear = Number(year), numMonth = Number(month), numAmount = Number(amount)
 
-    // ── Chặn thu vượt phí kỳ (chỉ áp cho phí kế toán — "Dịch vụ khác" không có mức cố định) ──
+    // ── Hai lớp kiểm cho phí kế toán, dùng chung một lần đọc dữ liệu ───────────────────────
     if (type === 'ketoan' && !force) {
       const [{ data: cli }, { data: plans }, { data: chg }, { data: paidRows }] = await Promise.all([
-        supabase.from('clients').select('monthly_fee').eq('id', clientId).maybeSingle(),
+        supabase.from('clients').select('name, monthly_fee, fee_period').eq('id', clientId).maybeSingle(),
         supabase.from('service_fees').select('client_id, year, month, amount').eq('client_id', clientId).eq('type', 'fee_plan'),
         supabase.from('client_change_log').select('client_id, old_value, changed_at')
           .eq('client_id', clientId).eq('entity', 'monthly_fee').eq('action', 'update'),
-        supabase.from('service_fees').select('year, month').eq('client_id', clientId).eq('type', 'ketoan'),
+        supabase.from('service_fees').select('year, month, amount').eq('client_id', clientId).eq('type', 'ketoan'),
       ])
+
+      // Lớp 1 — tháng trước chưa thu mà vẫn còn hạn ghi nhận. Kiểm TRƯỚC lớp chặn thu vượt: nếu
+      // người dùng chọn dời sang tháng trước, trần phải tính theo phí THÁNG ĐÓ chứ không phải
+      // tháng đang mở. Xem lib/prevMonthDebt.js.
+      if (!monthConfirmed) {
+        const prev = prevMonthOf(numYear, numMonth)
+        const prevPaid = (paidRows || [])
+          .filter(r => r.year === prev.year && r.month === prev.month)
+          .reduce((a, r) => a + (Number(r.amount) || 0), 0)
+        const warn = checkPrevMonthUnpaid({
+          year: numYear, month: numMonth, amount: numAmount,
+          feePeriod: cli?.fee_period,
+          prevFee: resolveFeeForMonthWithSource(plans || [], clientId, prev.year, prev.month, cli?.monthly_fee, chg || []).fee,
+          prevPaid,
+          clientName: cli?.name,
+        })
+        if (warn) return Response.json({ error: warn.message, prevUnpaid: warn }, { status: 409 })
+      }
+
+      // Lớp 2 — chặn thu vượt phí kỳ ("Dịch vụ khác" không có mức cố định nên không áp).
       const { fee, reliable } = resolveFeeForMonthWithSource(
         plans || [], clientId, numYear, numMonth, cli?.monthly_fee, chg || [])
       const verdict = evaluateCap({

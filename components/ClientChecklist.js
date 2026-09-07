@@ -391,6 +391,38 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
 
       let { status, json } = await post({})
 
+      // 409 + prevUnpaid = tháng trước chưa thu mà vẫn còn hạn ghi nhận. Khách hay trả tiền tháng
+      // trước vào đầu tháng sau, ghi nhầm vào tháng đang mở thì tháng trước vĩnh viễn là "chưa
+      // thu" -> KPI tụt oan và qua ngày 10 hệ thống ghi nó thành nợ tồn ảo.
+      // CỐ Ý vẫn cho ghi vào tháng hiện tại: có khách thật sự bỏ tháng trước rồi trả tháng này,
+      // ép cứng sẽ đẻ ra lỗi ngược chiều mà lúc đó tháng cũ sắp đóng sổ, không sửa được nữa.
+      if (status === 409 && json.prevUnpaid) {
+        const p = json.prevUnpaid
+        const toPrev = window.confirm(
+          p.message + '\n\n' +
+          'Bấm OK để ghi vào ' + p.targetLabel + ' (thường là đúng).\n' +
+          'Bấm Hủy nếu khoản này thật sự là tiền của ' + p.currentLabel + '.'
+        )
+        if (toPrev) {
+          // Sửa thẳng vào basePayload chứ không chỉ truyền thêm cho lần gọi này: nếu số tiền còn
+          // vượt trần thì các lần gọi tiếp theo (rải kỳ / ghi đúng phí kỳ) phải nhắm ĐÚNG tháng
+          // vừa dời sang, không phải tháng đang mở trên màn hình.
+          basePayload.year = p.year
+          basePayload.month = p.month
+          basePayload.monthConfirmed = true
+          ;({ status, json } = await post({}))
+        } else {
+          const keep = window.confirm(
+            'Ghi ' + fmt(paid) + 'đ vào ' + p.currentLabel + ' dù ' + p.targetLabel +
+            ' còn thiếu ' + fmt(p.remain) + 'đ?\n\n' +
+            p.targetLabel + ' sẽ bị tính là chưa thu và chuyển thành nợ tồn sau ngày 10.'
+          )
+          if (!keep) { setSavingDebt(false); return }
+          basePayload.monthConfirmed = true
+          ;({ status, json } = await post({}))
+        }
+      }
+
       // 409 = số tiền vượt phí kỳ. Hỏi lại người dùng theo đúng tình huống thay vì chặn cứng —
       // xem lib/feeCap.js để hiểu vì sao không được ghi dồn nhiều kỳ vào một tháng.
       if (status === 409 && json.cap) {

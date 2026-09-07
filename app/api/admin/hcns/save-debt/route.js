@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { resolveFeeForMonthWithSource } from '@/lib/feeDue'
 import { evaluateCap, CAP_OK, CAP_UNVERIFIABLE } from '@/lib/feeCap'
+import { checkPrevMonthUnpaid, prevMonthOf } from '@/lib/prevMonthDebt'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -21,7 +22,7 @@ export async function POST(request) {
 
   try {
     const body = await request.json()
-    const { clientId, hcnsClientId, year, month, amount, note, createdBy, periods, force } = body
+    const { clientId, hcnsClientId, year, month, amount, note, createdBy, periods, force, monthConfirmed } = body
     const supabase = getAdmin()
 
     // Resolve về đúng bản ghi HCNS, dù giao diện gọi bằng id công ty kế toán hay id HCNS.
@@ -74,8 +75,26 @@ export async function POST(request) {
     const { fee, reliable } = feeAt(numYear, numMonth)
 
     const { data: paidRows } = await supabase.from('hcns_service_fees')
-      .select('year, month').eq('hcns_client_id', hcnsId).eq('type', 'hcns')
+      .select('year, month, amount').eq('hcns_client_id', hcnsId).eq('type', 'hcns')
     const paidPeriods = new Set((paidRows || []).map(r => r.year * 12 + r.month))
+
+    // Tháng trước chưa thu mà vẫn còn hạn ghi nhận — cùng luật với phí kế toán. Nhân viên kế toán
+    // giờ thu cả hai khoản nên càng dễ ghi nhầm tháng. Xem lib/prevMonthDebt.js.
+    if (!monthConfirmed && !force) {
+      const prev = prevMonthOf(numYear, numMonth)
+      const prevPaid = (paidRows || [])
+        .filter(r => r.year === prev.year && r.month === prev.month)
+        .reduce((a, r) => a + (Number(r.amount) || 0), 0)
+      const warn = checkPrevMonthUnpaid({
+        year: numYear, month: numMonth, amount: numAmount,
+        feePeriod: hc.fee_period,
+        prevFee: feeAt(prev.year, prev.month).fee,
+        prevPaid,
+        clientName: hc.name,
+        label: 'phí HCNS',
+      })
+      if (warn) return Response.json({ error: warn.message, prevUnpaid: warn }, { status: 409 })
+    }
 
     const verdict = evaluateCap({
       amount: numAmount, fee, reliable, year: numYear, month: numMonth,

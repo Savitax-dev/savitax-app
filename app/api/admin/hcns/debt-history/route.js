@@ -63,5 +63,9 @@ export async function GET(request) {
     fm--; if (fm === 0) { fm = 12; fy-- }
   }
 
-  return Response.json({ data, hcnsClient: hc || null, feeByPeriod })
+  const plans = planRows
+    .map(r => ({ year: r.year, month: r.month, amount: Number(r.amount) || 0, note: r.note }))
+    .sort((a, b) => (b.year * 12 + b.month) - (a.year * 12 + a.month))
+
+  return Response.json({ data, plans, hcnsClient: hc || null, feeByPeriod })
 }

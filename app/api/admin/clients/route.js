@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { callerHasPermission, requireAdmin, requireLogin } from '@/lib/serverAuth'
-import { syncHcnsForClient, getLinkedHcnsMap } from '@/lib/hcnsSync'
+import { syncHcnsForClient, getLinkedHcnsMap, stopHcnsForClient } from '@/lib/hcnsSync'
 import { shouldUpdateLiveFee } from '@/lib/feeDue'
 import { recomputeRolloversFrom } from '@/lib/debtRollover'
 
@@ -41,7 +41,10 @@ export async function GET() {
     report_type: c.report_type || 'monthly',
     fee_period: c.fee_period || 'monthly',
     uses_hcns: c.uses_hcns === true,
-    hcns_fee: Number(hcnsMap.get(c.id)?.hcns_fee) || 0,
+    hcns_fee: c.uses_hcns === true ? Number(hcnsMap.get(c.id)?.hcns_fee) || 0 : 0,
+    // Đã từng dùng HCNS rồi ngừng: lần bật lại chỉ nhập phí mới, KHÔNG trừ vào phí kế toán lần
+    // nữa — lần tách đầu tiên đã trừ rồi, trừ tiếp là cắt oan tiền của công ty.
+    had_hcns: hcnsMap.has(c.id),
     staff: staffMap[c.assigned_to] || null,
   }))
   return Response.json({ data })
@@ -151,7 +154,7 @@ export async function PATCH(request) {
   if (!permCheck.caller) return Response.json({ error: permCheck.error }, { status: permCheck.status })
 
   const body = await request.json()
-  const { id, assigned_to, address, tax_status, fee_period, status, monthly_fee, fee_history, other_debt, client_code, name, tax_code, representative, contract_start, report_type, updatedBy, uses_hcns, hcns_fee } = body
+  const { id, assigned_to, address, tax_status, fee_period, status, monthly_fee, fee_history, other_debt, client_code, name, tax_code, representative, contract_start, report_type, updatedBy, uses_hcns, hcns_fee, hcns_from, hcns_stop_from } = body
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })
   const supabase = getAdmin()
 
@@ -208,14 +211,25 @@ export async function PATCH(request) {
   const { error } = await supabase.from('clients').update(updateData).eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 400 })
 
+  // Ngừng dùng DV HCNS kể từ một tháng: ghi mốc phí 0 tại tháng đó + gỡ khỏi tag Thời kỳ.
+  // Đi đường riêng vì cần THÁNG ngừng, khác hẳn việc chỉ bật/tắt cờ uses_hcns.
+  let hcnsStop = null
+  if (hcns_stop_from && hcns_stop_from.year && hcns_stop_from.month) {
+    hcnsStop = await stopHcnsForClient(supabase, {
+      clientId: id, stopAt: hcns_stop_from, createdBy: permCheck.caller?.staffId || updatedBy || null,
+    })
+  }
+
   // Bật/tắt DV HCNS -> tạo hoặc ẩn công ty tương ứng bên Phòng HCNS. Không chặn luồng kế toán
   // nếu module HCNS chưa cài (bản clone) — syncHcnsForClient tự bỏ qua trong im lặng.
-  if (uses_hcns !== undefined || hcns_fee !== undefined) {
+  else if (uses_hcns !== undefined || hcns_fee !== undefined) {
     await syncHcnsForClient(supabase, {
       clientId: id,
       usesHcns: uses_hcns !== undefined ? uses_hcns === true : true,
       hcnsFee: hcns_fee,
-      createdBy: updatedBy || null,
+      createdBy: permCheck.caller?.staffId || updatedBy || null,
+      // Tháng bắt đầu áp mức phí HCNS. Mặc định (bỏ trống) là tháng hiện tại như trước.
+      feeAt: hcns_from && hcns_from.year && hcns_from.month ? hcns_from : undefined,
     })
   }
 
@@ -282,7 +296,7 @@ export async function PATCH(request) {
 
   // Trả về để giao diện báo cho nhân viên biết nợ tồn đã được tính lại — đây là thay đổi
   // số tiền, không được lặng lẽ.
-  return Response.json({ success: true, rolloverChanges, liveFeeKept })
+  return Response.json({ success: true, rolloverChanges, liveFeeKept, hcnsStop })
 }
 
 export async function DELETE(request) {

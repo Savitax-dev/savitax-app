@@ -77,12 +77,34 @@ function FeeHistory({ history }) {
 // Điều chỉnh phí DV HCNS — khối riêng, KHÔNG gộp vào FeeAdjust của phí kế toán vì hai bên lưu ở
 // hai bảng khác nhau (clients.monthly_fee vs hcns_clients.hcns_fee) và có lịch sử đổi phí riêng.
 // Đổi phí sẽ tự ghi một mốc "từ tháng này trở đi phí = X" để sau tra được phí đúng của tháng cũ.
-function HcnsFeeAdjust({ client, onSaved }) {
+function HcnsFeeAdjust({ client, monthOptions, onSaved }) {
   const [editing, setEditing] = useState(false)
   const [amount, setAmount] = useState('')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
   const [hcnsId, setHcnsId] = useState(null)
+  // Ngừng dùng dịch vụ: chọn tháng ngừng rồi xác nhận. Tách riêng khỏi ô sửa phí để không ai
+  // bấm nhầm — đây là thao tác gỡ công ty khỏi Phòng HCNS, không phải đổi một con số.
+  const [stopping, setStopping] = useState(false)
+  const [stopMonth, setStopMonth] = useState('')
+  const futureOnly = (monthOptions || []).filter(o => !o.past)
+  const stopVal = stopMonth || futureOnly[0]?.value || ''
+  const stopLabel = futureOnly.find(o => o.value === stopVal)?.label || ''
+
+  const doStop = async () => {
+    const [y, m] = stopVal.split('-').map(Number)
+    if (!y || !m) { setErr('Chọn tháng ngừng.'); return }
+    setSaving(true)
+    const res = await fetch('/api/admin/clients', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: client.id, hcns_stop_from: { year: y, month: m } }),
+    })
+    const j = await res.json()
+    setSaving(false)
+    if (j.error) { setErr(j.error); return }
+    setStopping(false)
+    onSaved && onSaved()
+  }
 
   const open = async () => {
     setErr('')
@@ -128,7 +150,39 @@ function HcnsFeeAdjust({ client, onSaved }) {
             Điều chỉnh
           </button>
         </div>
-        {err && <p className="text-xs text-red-600 mt-1">{err}</p>}
+
+        {stopping ? (
+          <div className="mt-2 border border-red-200 bg-red-50 rounded-xl p-3 space-y-2">
+            <p className="text-xs font-semibold text-red-800">Ngừng sử dụng DV HCNS</p>
+            <div>
+              <label className="text-xs text-gray-600 mb-1 block">Ngừng kể từ tháng</label>
+              <select value={stopVal} onChange={e => setStopMonth(e.target.value)}
+                className="w-full px-2 py-2 border border-red-200 rounded-lg text-sm bg-white">
+                {futureOnly.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Từ <b>{stopLabel}</b> công ty không còn phí HCNS, biến khỏi tag “Thời kỳ” của Phòng HCNS
+              và phiếu ĐNTT bỏ dòng B2. Các tháng trước giữ nguyên mức phí cũ, lịch sử thu không đổi.
+              Cần dùng lại thì tick lại “Có sử dụng DV HCNS” và nhập mức phí mới.
+            </p>
+            {err && <p className="text-xs text-red-600">{err}</p>}
+            <div className="flex gap-2">
+              <button onClick={doStop} disabled={saving}
+                className="flex-1 bg-red-600 text-white text-sm py-2 rounded-lg font-medium disabled:opacity-50">
+                {saving ? 'Đang lưu...' : 'Xác nhận ngừng từ ' + stopLabel}
+              </button>
+              <button onClick={() => { setStopping(false); setErr('') }}
+                className="px-4 border border-gray-200 rounded-lg text-sm text-gray-600 bg-white">Hủy</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => { setStopping(true); setErr('') }}
+            className="mt-2 w-full text-xs text-red-700 hover:bg-red-50 border border-red-200 rounded-lg py-2">
+            Ngừng sử dụng DV HCNS
+          </button>
+        )}
+        {err && !stopping && <p className="text-xs text-red-600 mt-1">{err}</p>}
       </div>
     )
   }
@@ -161,6 +215,170 @@ function HcnsFeeAdjust({ client, onSaved }) {
             {saving ? 'Đang lưu...' : 'Lưu phí HCNS'}
           </button>
           <button onClick={() => { setEditing(false); setErr('') }}
+            className="px-4 border border-gray-200 rounded-lg text-sm text-gray-600">Hủy</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Tách phí HCNS ra khỏi phí kế toán — MỘT thao tác, ghi hai mốc phí cùng lúc.
+//
+// Vì sao phải gộp làm một: phí kế toán của các công ty ký trước đây ĐÃ BAO GỒM phần HCNS. Nếu chỉ
+// tick "Có sử dụng DV HCNS" rồi nhập phí HCNS thì hệ thống CỘNG THÊM — ĐNTT in B1 phí kế toán
+// (vẫn nguyên) + B2 phí HCNS, tức THU TRÙNG của khách đúng bằng phần HCNS. Bắt nhân viên nhớ tự
+// vào sửa phí kế toán xuống là chắc chắn có người quên.
+function HcnsSplitFee({ client, monthOptions, onSaved }) {
+  const [editing, setEditing] = useState(false)
+  const [amount, setAmount] = useState('')
+  // Công ty ĐÃ TỪNG dùng HCNS rồi ngừng: lần này là DÙNG LẠI, chỉ nhập phí mới. Lần tách đầu
+  // tiên đã trừ khỏi phí kế toán rồi — trừ tiếp là cắt oan tiền của công ty.
+  const resume = client.had_hcns === true
+  const [mode, setMode] = useState(resume ? 'add' : 'split')   // 'split' = trừ ra | 'add' = cộng thêm
+  const [fromMonth, setFromMonth] = useState('')
+  const [note, setNote] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
+
+  const curFee = Number(client.monthly_fee) || 0
+  const hcns   = Number(String(amount).replace(/\D/g, '')) || 0
+  const newFee = mode === 'split' ? curFee - hcns : curFee
+  const total  = newFee + hcns
+  const overCharge = total - curFee
+  const defaultMonth = monthOptions.find(x => !x.past)?.value || monthOptions[0]?.value || ''
+  const selMonth = fromMonth || defaultMonth
+
+  const save = async () => {
+    if (!hcns) { setErr('Nhập mức phí HCNS cần tách.'); return }
+    if (mode === 'split' && hcns >= curFee) {
+      setErr('Phí HCNS phải nhỏ hơn phí kế toán hiện tại (' + fmt(curFee) + 'đ). Nếu phí cũ chưa gồm HCNS thì chọn "cộng thêm".')
+      return
+    }
+    const [y, m] = selMonth.split('-').map(Number)
+    setSaving(true)
+    const res = await fetch('/api/admin/clients', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: client.id,
+        uses_hcns: true,
+        hcns_fee: hcns,
+        // Hai mốc phí cùng một tháng hiệu lực — tra phí tháng cũ vẫn ra đúng số cũ.
+        hcns_from: { year: y, month: m },
+        ...(mode === 'split' ? {
+          monthly_fee: newFee,
+          fee_history: { year: y, month: m, amount: newFee, note: note || 'Tách phí HCNS khỏi phí kế toán' },
+        } : {}),
+      }),
+    })
+    const j = await res.json()
+    setSaving(false)
+    if (j.error) { setErr(j.error); return }
+    setEditing(false); setAmount(''); setNote(''); setFromMonth('')
+    onSaved && onSaved()
+  }
+
+  if (!editing) {
+    return (
+      <div>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+          {resume ? 'Dùng lại DV HCNS' : 'Tách phí HCNS khỏi phí kế toán'}
+        </p>
+        <div className="flex items-center justify-between bg-sky-50 rounded-xl px-3 py-2.5">
+          <div>
+            <p className="text-xs text-sky-600 mb-0.5">
+              {resume ? 'Đã ngừng dùng DV HCNS · phí kế toán hiện tại' : 'Phí kế toán hiện tại'}
+            </p>
+            <p className="text-base font-bold text-sky-900">{fmt(curFee)}đ</p>
+          </div>
+          <button onClick={() => setEditing(true)}
+            className="text-xs text-sky-700 hover:underline font-medium bg-white px-3 py-1.5 rounded-lg border border-sky-200">
+            {resume ? 'Dùng lại DV HCNS' : 'Tách phí HCNS'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  const opt = (val, title, sub) => (
+    <label onClick={() => setMode(val)}
+      className={'flex gap-2 items-start text-xs cursor-pointer rounded-lg px-2.5 py-2 border ' +
+        (mode === val ? 'border-sky-600 bg-sky-50 text-gray-900' : 'border-gray-200 text-gray-600')}>
+      <span className={mode === val ? 'text-sky-700 font-bold' : 'text-gray-300'}>{mode === val ? '●' : '○'}</span>
+      <span><span className="font-medium">{title}</span><br /><span className="text-gray-500">{sub}</span></span>
+    </label>
+  )
+
+  const selOpt = monthOptions.find(o => o.value === selMonth)
+
+  return (
+    <div>
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+        {resume ? 'Dùng lại DV HCNS' : 'Tách phí HCNS khỏi phí kế toán'}
+      </p>
+      <div className="space-y-2.5 bg-sky-50 border border-sky-200 rounded-xl p-3">
+        <div className="bg-white border border-sky-200 rounded-lg p-2.5">
+          <div className="flex justify-between text-xs py-0.5 text-gray-600">
+            <span>Phí kế toán hiện tại</span><span className="font-semibold text-gray-800">{fmt(curFee)}đ</span>
+          </div>
+          <div className="flex justify-between items-center text-xs py-0.5 text-gray-600">
+            <span>{resume ? 'Phí HCNS mới' : 'Phí HCNS tách ra'}</span>
+            <input type="text" inputMode="numeric" autoFocus
+              value={hcns ? hcns.toLocaleString('vi-VN') : ''}
+              onChange={e => { setAmount(e.target.value.replace(/\D/g, '')); if (err) setErr('') }}
+              placeholder="VD: 2.160.000"
+              className="w-32 text-right px-2 py-1 border border-sky-300 rounded-md text-sm font-semibold text-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-400" />
+          </div>
+          <div className="border-t border-dashed border-sky-300 my-1.5" />
+          <div className="flex justify-between text-xs py-0.5 text-gray-700">
+            <span>{resume ? 'Phí kế toán (giữ nguyên)' : 'Phí kế toán sau khi tách'}</span>
+            <span className="font-semibold">{fmt(newFee)}đ</span>
+          </div>
+          {/* Con số DUY NHẤT khách nhìn thấy trên ĐNTT — để ngay trước mắt lúc bấm lưu. */}
+          <div className={'flex justify-between text-xs py-0.5 font-semibold ' + (overCharge === 0 ? 'text-green-700' : 'text-orange-600')}>
+            <span>Tổng khách phải trả</span>
+            <span>{fmt(total)}đ{resume ? '' : ' · ' + (overCharge === 0 ? 'không đổi ✓' : 'tăng ' + fmt(overCharge) + 'đ')}</span>
+          </div>
+        </div>
+
+        {resume ? (
+          <p className="text-xs text-gray-600 bg-white border border-sky-200 rounded-lg px-2.5 py-2">
+            Công ty này đã tách phí HCNS trước đây rồi ngừng dùng. Lần bật lại chỉ nhập mức phí mới —
+            phí kế toán giữ nguyên, không trừ thêm lần nữa.
+          </p>
+        ) : (
+          <div className="space-y-1.5">
+            {opt('split', 'Phí kế toán cũ ĐÃ GỒM phí HCNS — trừ ra', 'Khách trả y như cũ, chỉ tách làm hai dòng trên phiếu')}
+            {opt('add', 'Phí kế toán cũ CHƯA GỒM phí HCNS — cộng thêm', 'Khách trả tăng thêm đúng bằng phí HCNS')}
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <label className="text-xs text-gray-500 mb-1 block">Áp dụng từ tháng</label>
+            <select value={selMonth} onChange={e => setFromMonth(e.target.value)}
+              className="w-full px-2 py-2 border border-sky-200 rounded-lg text-sm bg-white">
+              {monthOptions.map(o => <option key={o.value} value={o.value}>{o.label}{o.past ? ' (lùi)' : ''}</option>)}
+            </select>
+          </div>
+          <div className="flex-[1.4]">
+            <label className="text-xs text-gray-500 mb-1 block">Ghi chú</label>
+            <input type="text" value={note} onChange={e => setNote(e.target.value)}
+              placeholder="Tách phí HCNS"
+              className="w-full px-2 py-2 border border-sky-200 rounded-lg text-sm bg-white" />
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-500">
+          Công nợ các tháng trước vẫn tính theo mức phí cũ. Ghi hai mốc phí cùng lúc — phí kế toán và phí HCNS.
+          {selOpt?.past && <span className="text-orange-600"> Chọn tháng lùi sẽ tính lại nợ tồn của các tháng đó.</span>}
+        </p>
+        {err && <p className="text-xs text-red-600">{err}</p>}
+        <div className="flex gap-2">
+          <button onClick={save} disabled={saving}
+            className="flex-1 bg-sky-700 text-white text-sm py-2 rounded-lg font-medium disabled:opacity-50">
+            {saving ? 'Đang lưu...' : resume ? 'Bật lại DV HCNS' : 'Lưu tách phí'}
+          </button>
+          <button onClick={() => { setEditing(false); setErr(''); setAmount('') }}
             className="px-4 border border-gray-200 rounded-lg text-sm text-gray-600">Hủy</button>
         </div>
       </div>
@@ -303,10 +521,6 @@ export default function ClientsPage() {
   const [assignEdit, setAssignEdit] = useState(null)
   const [assignRoom, setAssignRoom] = useState('')
   const [assignStaff, setAssignStaff] = useState('')
-  const [feeCollections, setFeeCollections] = useState({}) // key: clientId_year_month
-  const [collectEdit, setCollectEdit] = useState(null) // { clientId, year, month }
-  const [collectAmount, setCollectAmount] = useState('')
-  const [collectNote, setCollectNote] = useState('')
   const [otherDebtEdit, setOtherDebtEdit] = useState(null) // clientId
   const [otherDebtVal, setOtherDebtVal] = useState('')
   const [secondaryMap, setSecondaryMap] = useState({}) // clientId -> [{id, staff_id, staff:{full_name, rooms}}]
@@ -360,18 +574,6 @@ export default function ClientsPage() {
   }
 
   // Generate last N billing months for a company (quarterly = only quarter-end months)
-  const getBillingMonths = (reportType, count) => {
-    const result = []
-    let y = year, m = month
-    let iterations = 0
-    while (result.length < count && iterations < 36) {
-      iterations++
-      if (reportType !== 'quarterly' || m % 3 === 0) result.push({ y, m })
-      m--
-      if (m === 0) { m = 12; y-- }
-    }
-    return result
-  }
 
   const loadClients = async () => {
     const res = await fetch('/api/admin/clients')
@@ -452,22 +654,6 @@ export default function ClientsPage() {
     init()
   }, [router])
 
-  const loadFeeCollections = async (clientId) => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('fee_collections')
-      .select('*')
-      .eq('client_id', clientId)
-      .order('year', { ascending: false })
-      .order('month', { ascending: false })
-      .limit(24)
-    if (data) {
-      const entries = {}
-      for (const r of data) entries[clientId + '_' + r.year + '_' + r.month] = r
-      setFeeCollections(fc => ({ ...fc, ...entries }))
-    }
-  }
-
   // Lịch sử ĐỔI MỨC PHÍ. Trước đây hàm này select('*') toàn bộ service_fees nên trộn cả các
   // khoản ĐÃ THU (ketoan/khach/no_ton) vào danh sách đổi phí — sai nghĩa. Và nó đọc thẳng bằng
   // anon key ở trình duyệt, trái quy ước "mọi đọc/ghi nghiệp vụ đi qua API route" trong AGENTS.md.
@@ -488,8 +674,8 @@ export default function ClientsPage() {
   const handleExpand = (id) => {
     const next = expanded === id ? null : id
     setExpanded(next)
-    if (next) { loadFeeHistory(next); loadFeeCollections(next) }
-    setFeeEdit(null); setTransferEdit(null); setStatusEdit(null); setAssignEdit(null); setCollectEdit(null)
+    if (next) loadFeeHistory(next)
+    setFeeEdit(null); setTransferEdit(null); setStatusEdit(null); setAssignEdit(null)
   }
 
   const handleLookup = async () => {
@@ -616,40 +802,6 @@ export default function ClientsPage() {
     setStatusEdit(null); setActivateMonth('')
     await loadClients()
     setSaving(false)
-  }
-
-  const saveCollection = async () => {
-    if (!collectEdit || !collectAmount || !myStaff) return
-    setSaving(true)
-    const supabase = createClient()
-    const { data } = await supabase.from('fee_collections').upsert({
-      client_id: collectEdit.clientId,
-      year: collectEdit.year,
-      month: collectEdit.month,
-      amount: Number(collectAmount),
-      note: collectNote || null,
-      collected_by: myStaff.id,
-      collected_at: new Date().toISOString(),
-    }, { onConflict: 'client_id,year,month' }).select().single()
-    if (data) {
-      const key = collectEdit.clientId + '_' + collectEdit.year + '_' + collectEdit.month
-      setFeeCollections(fc => ({ ...fc, [key]: data }))
-    }
-    setCollectEdit(null); setCollectAmount(''); setCollectNote('')
-    setSaving(false)
-  }
-
-  const deleteCollection = async (clientId, yr, mn) => {
-    const key = clientId + '_' + yr + '_' + mn
-    const rec = feeCollections[key]
-    if (!rec) return
-    const supabase = createClient()
-    await supabase.from('fee_collections').delete().eq('id', rec.id)
-    setFeeCollections(fc => {
-      const next = { ...fc }
-      delete next[key]
-      return next
-    })
   }
 
   const saveEditClient = async () => {
@@ -840,8 +992,11 @@ export default function ClientsPage() {
               {/* Hàng 2: Phí dịch vụ + Áp dụng từ tháng */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
+                  {/* Ghi rõ "kế toán" — nhãn cũ chỉ ghi "Phí dịch vụ" nên có người hiểu là đã gồm
+                      cả phí HCNS rồi nhập gộp vào đây, ĐNTT in B1 (gộp) + B2 (HCNS) = thu trùng.
+                      Đúng tình huống của 60 công ty ký trước đây. */}
                   <label className="text-xs text-gray-500 mb-1 block">
-                    Phí dịch vụ thu theo {form.fee_period === 'quarterly' ? 'quý' : 'tháng'} (đ)
+                    Phí dịch vụ kế toán thu theo {form.fee_period === 'quarterly' ? 'quý' : 'tháng'} (đ)
                     <span className="ml-1.5 text-blue-600 font-bold">— Giá đã bao gồm VAT</span>
                   </label>
                   <input
@@ -857,6 +1012,11 @@ export default function ClientsPage() {
                   />
                   {form.monthly_fee !== '' && Number(form.monthly_fee) > 0 && (
                     <p className="text-xs text-blue-600 mt-1 font-semibold">{fmt(Number(form.monthly_fee))}đ</p>
+                  )}
+                  {form.uses_hcns && (
+                    <p className="text-xs text-amber-800 bg-amber-100 rounded px-1.5 py-0.5 mt-1 inline-block">
+                      Chưa gồm phí HCNS
+                    </p>
                   )}
                 </div>
                 <div>
@@ -901,8 +1061,26 @@ export default function ClientsPage() {
                         ? 'border-sky-300 bg-white focus:ring-sky-400'
                         : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed')}
                   />
+                  {/* Tổng khách phải trả — con số DUY NHẤT khách nhìn thấy trên ĐNTT, để ngay
+                      trước mắt lúc bấm lưu. Cùng cách làm với khối tách phí của công ty cũ, để
+                      nhân viên chỉ phải học một lần. */}
+                  {form.uses_hcns && (Number(form.monthly_fee) > 0 || Number(form.hcns_fee) > 0) && (
+                    <div className="bg-white border border-sky-300 rounded-lg p-2.5 mt-2">
+                      <div className="flex justify-between text-xs py-0.5 text-gray-600">
+                        <span>Phí kế toán</span><span>{fmt(Number(form.monthly_fee) || 0)}đ</span>
+                      </div>
+                      <div className="flex justify-between text-xs py-0.5 text-gray-600">
+                        <span>Phí HCNS</span><span>{fmt(Number(form.hcns_fee) || 0)}đ</span>
+                      </div>
+                      <div className="border-t border-dashed border-sky-300 my-1.5" />
+                      <div className="flex justify-between text-xs font-semibold text-green-700">
+                        <span>Tổng khách phải trả / {form.fee_period === 'quarterly' ? 'quý' : 'tháng'}</span>
+                        <span>{fmt((Number(form.monthly_fee) || 0) + (Number(form.hcns_fee) || 0))}đ</span>
+                      </div>
+                    </div>
+                  )}
                   {form.uses_hcns && (
-                    <p className="text-xs text-sky-700 mt-1">
+                    <p className="text-xs text-sky-700 mt-1.5">
                       Sẽ tự tạo công ty ở tag “Thời kỳ” của Phòng HCNS và thêm dòng B2 trên phiếu ĐNTT.
                     </p>
                   )}
@@ -1076,7 +1254,11 @@ export default function ClientsPage() {
                       <span className="mx-1.5">·</span>
                       {client.report_type === 'quarterly' ? 'Báo cáo quý' : 'Báo cáo tháng'}
                     </p>
+                    {/* Có DV HCNS thì ghi rõ "Phí kế toán" kèm icon cho cân với dòng phí HCNS ngay
+                        dưới — cùng cách hiển thị với tab Công nợ phòng. Không dùng HCNS thì giữ
+                        nguyên chỉ số tiền, khỏi thêm chữ thừa cho phần lớn công ty. */}
                     <p className="text-xs mt-0.5">
+                      {client.uses_hcns && <span className="text-blue-700">📋 Phí kế toán: </span>}
                       <span className="font-semibold text-blue-700">{fmt(client.monthly_fee)}đ</span>
                       <span className="text-gray-400">
                         {' / ' + ((client.fee_period || client.report_type) === 'quarterly' ? 'Quý' : 'Tháng')}
@@ -1264,97 +1446,6 @@ export default function ClientsPage() {
                             </div>
                           )}
                         </div>
-                      </div>
-                    </div>
-
-                    {/* Thu phí */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Thu phí dịch vụ</p>
-                        <div className="text-right">
-                          <span className="text-xs font-bold text-blue-700">{fmt(client.monthly_fee)}đ</span>
-                          <span className="text-xs text-gray-400">
-                            {'/' + ((client.fee_period || client.report_type) === 'quarterly' ? 'Quý' : 'Tháng')}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        {getBillingMonths(client.fee_period || client.report_type, 6).map(function(bm) {
-                          const key = client.id + '_' + bm.y + '_' + bm.m
-                          const rec = feeCollections[key]
-                          const isEditing = collectEdit && collectEdit.clientId === client.id && collectEdit.year === bm.y && collectEdit.month === bm.m
-                          const label = 'T' + bm.m + '/' + bm.y + (client.report_type === 'quarterly' ? ' (Q' + Math.ceil(bm.m / 3) + ')' : '')
-
-                          if (isEditing) {
-                            return (
-                              <div key={key} className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
-                                <p className="text-xs font-semibold text-blue-700">Ghi nhận thu phí {label}</p>
-                                <div className="flex gap-2 items-center">
-                                  <div className="flex-1">
-                                    <input type="text" inputMode="numeric"
-                                      value={collectAmount ? fmt(Number(collectAmount)) : ''}
-                                      onChange={e => setCollectAmount(e.target.value.replace(/\D/g, ''))}
-                                      placeholder={'VD: ' + fmt(client.monthly_fee) + 'đ'}
-                                      className="w-full px-3 py-1.5 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                                  </div>
-                                </div>
-                                <input type="text" value={collectNote}
-                                  onChange={e => setCollectNote(e.target.value)}
-                                  placeholder="Ghi chú: VD: Chuyển khoản ngày 15, có hóa đơn..."
-                                  className="w-full px-3 py-1.5 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                                <div className="flex gap-2">
-                                  <button onClick={saveCollection} disabled={!collectAmount || saving}
-                                    className="flex-1 bg-blue-600 text-white py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
-                                    ✓ Lưu đã thu
-                                  </button>
-                                  <button onClick={() => { setCollectEdit(null); setCollectAmount(''); setCollectNote('') }}
-                                    className="flex-1 bg-gray-100 text-gray-600 py-1.5 rounded-lg text-xs hover:bg-gray-200 transition-colors">
-                                    Hủy
-                                  </button>
-                                </div>
-                              </div>
-                            )
-                          }
-
-                          if (rec) {
-                            return (
-                              <div key={key} className="flex items-start justify-between bg-green-50 border border-green-100 rounded-xl px-3 py-2">
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-green-600 text-sm">✓</span>
-                                    <span className="text-xs font-medium text-gray-700">{label}</span>
-                                    <span className="text-xs font-semibold text-green-700">{fmt(rec.amount)}đ</span>
-                                  </div>
-                                  {rec.note && <p className="text-xs text-gray-400 ml-5 mt-0.5 italic">{rec.note}</p>}
-                                </div>
-                                <button onClick={() => deleteCollection(client.id, bm.y, bm.m)}
-                                  className="text-xs text-gray-300 hover:text-red-400 flex-shrink-0 ml-2 transition-colors">
-                                  ✕
-                                </button>
-                              </div>
-                            )
-                          }
-
-                          return (
-                            <div key={key} className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-3 py-2">
-                              <div>
-                                <span className="text-xs text-gray-600 font-medium">{label}</span>
-                                {client.monthly_fee > 0 && (
-                                  <span className="text-xs text-gray-400 ml-2">{fmt(client.monthly_fee)}đ</span>
-                                )}
-                              </div>
-                              <button
-                                onClick={() => {
-                                  setCollectEdit({ clientId: client.id, year: bm.y, month: bm.m })
-                                  setCollectAmount(String(client.monthly_fee || ''))
-                                  setCollectNote('')
-                                }}
-                                className="text-xs text-blue-600 font-medium hover:underline flex-shrink-0 bg-blue-50 px-2.5 py-1 rounded-lg">
-                                + Ghi nhận thu
-                              </button>
-                            </div>
-                          )
-                        })}
                       </div>
                     </div>
 
@@ -1565,11 +1656,12 @@ export default function ClientsPage() {
                       onPeriodChange={v => setFeePeriod(v)}
                     />
                     )}
-                    {client.uses_hcns && (
-                      <div className="mt-3">
-                        <HcnsFeeAdjust client={client} onSaved={loadClients} />
-                      </div>
-                    )}
+                    {/* Chưa tách: hiện khối tách phí. Tách rồi: hiện khối điều chỉnh phí HCNS. */}
+                    <div className="mt-3">
+                      {client.uses_hcns
+                        ? <HcnsFeeAdjust client={client} monthOptions={getFutureMonths(12)} onSaved={loadClients} />
+                        : <HcnsSplitFee client={client} monthOptions={getFutureMonths(12)} onSaved={loadClients} />}
+                    </div>
                     <FeeHistory history={history} />
 
                   </div>

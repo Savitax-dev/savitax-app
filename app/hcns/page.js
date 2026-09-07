@@ -90,7 +90,8 @@ export default function HcnsPage() {
   }, [selYear, selMonth, mode, allowed])
 
   const loadClients = async () => {
-    const res = await fetch('/api/admin/hcns/clients')
+    // includeStopped: cần cả công ty đã ngừng DV để dựng thẻ "Ngưng DV HCNS".
+    const res = await fetch('/api/admin/hcns/clients?includeStopped=1')
     const json = await res.json()
     setClients(json.data || [])
   }
@@ -115,25 +116,32 @@ export default function HcnsPage() {
   if (loading) return <AppShell><div className="flex items-center justify-center min-h-64"><p className="text-slate-500 text-sm">Đang tải...</p></div></AppShell>
   if (!allowed) return null
 
-  const byCat = (c) => c === 'all' ? clients : clients.filter(x => x.category === c)
+  // Công ty đã ngừng DV có thẻ riêng, không lẫn vào danh sách đang làm.
+  const live    = clients.filter(x => x.is_active !== false)
+  const stopped = clients.filter(x => x.is_active === false)
+  const isCase  = (x) => x.category === 'thoi_diem' || x.category === 'vang_lai'
+  const byCat = (c) => {
+    if (c === 'all')      return live
+    if (c === 'stopped')  return stopped
+    // Hồ sơ xong hết dịch vụ rời khỏi thẻ Thời điểm/Vãng lai — số đếm ở đó là việc ĐANG chạy.
+    if (c === 'done')     return live.filter(x => isCase(x) && x.allDone)
+    if (c === 'thoi_diem' || c === 'vang_lai') return live.filter(x => x.category === c && !x.allDone)
+    return live.filter(x => x.category === c)
+  }
   const q = noAccent(search)
   const filtered = (list) => !q ? list : list.filter(c =>
     noAccent(c.name).includes(q) || noAccent(c.tax_code).includes(q) ||
     noAccent(c.client_code).includes(q) || noAccent(c.case_code).includes(q))
 
-  const counts = {
-    all: clients.length,
-    thoi_ky: byCat('thoi_ky').length,
-    thoi_diem: byCat('thoi_diem').length,
-    vang_lai: byCat('vang_lai').length,
-  }
   const TABS = [
     { key: 'report',    label: 'Báo cáo phòng HCNS' },
-    { key: 'all',       label: 'Tất cả',    count: counts.all },
-    { key: 'thoi_ky',   label: 'Thời kỳ',   count: counts.thoi_ky },
-    { key: 'thoi_diem', label: 'Thời điểm', count: counts.thoi_diem },
-    { key: 'vang_lai',  label: 'Vãng lai',  count: counts.vang_lai },
-  ]
+    { key: 'all',       label: 'Tất cả' },
+    { key: 'thoi_ky',   label: 'Thời kỳ' },
+    { key: 'thoi_diem', label: 'Thời điểm' },
+    { key: 'vang_lai',  label: 'Vãng lai' },
+    { key: 'done',      label: 'Hoàn thành' },
+    { key: 'stopped',   label: 'Ngưng DV HCNS' },
+  ].map(t => t.key === 'report' ? t : { ...t, count: byCat(t.key).length })
 
   return (
     <AppShell>
@@ -192,11 +200,15 @@ export default function HcnsPage() {
           <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
             {filtered(byCat(tab)).length === 0 && (
               <p className="text-sm text-slate-500 px-4 py-8 text-center">
-                {search ? 'Không tìm thấy công ty nào khớp.' : 'Chưa có công ty nào ở mục này.'}
+                {search ? 'Không tìm thấy công ty nào khớp.'
+                  : tab === 'done' ? 'Chưa có hồ sơ nào xong hết dịch vụ.'
+                  : tab === 'stopped' ? 'Chưa có công ty nào ngừng DV HCNS.'
+                  : 'Chưa có công ty nào ở mục này.'}
               </p>
             )}
             {filtered(byCat(tab)).map((c, ri) => (
-              <ClientRow key={c.id} c={c} ri={ri} showCat={tab === 'all'} report={report}
+              <ClientRow key={c.id} c={c} ri={ri} showCat={tab === 'all' || tab === 'done'}
+                stopped={tab === 'stopped'} report={report}
                 expanded={expanded === c.id} onToggle={() => setExpanded(expanded === c.id ? null : c.id)}
                 clientMonth={clientMonth} setClientMonth={setClientMonth}
                 selMonth={selMonth} canManage={canManage}
@@ -376,7 +388,7 @@ function CaseBlock({ title, data }) {
 }
 
 /* ─────────────────────────── Một dòng công ty ─────────────────────────── */
-function ClientRow({ c, ri, showCat, report, expanded, onToggle, clientMonth, setClientMonth, selMonth, canManage, canAssign, staffList, templates, onChanged }) {
+function ClientRow({ c, ri, showCat, stopped, report, expanded, onToggle, clientMonth, setClientMonth, selMonth, canManage, canAssign, staffList, templates, onChanged }) {
   const stat = report?.thoiKy?.perClient?.find(p => p.id === c.id)
   const isThoiKy = c.category === 'thoi_ky'
   const [assigning, setAssigning] = useState(false)
@@ -403,6 +415,16 @@ function ClientRow({ c, ri, showCat, report, expanded, onToggle, clientMonth, se
           <p className="text-[15px] font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
             {c.name}
             {showCat && <span className={'text-[11px] font-medium px-2 py-0.5 rounded-full ' + CAT_STYLE[c.category]}>{CAT_LABEL[c.category]}</span>}
+            {stopped && (
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-400">
+                Đã ngưng DV
+              </span>
+            )}
+            {!stopped && c.allDone && (
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300">
+                Xong {c.doneServiceCount}/{c.serviceCount} dịch vụ
+              </span>
+            )}
           </p>
           <p className="text-xs text-slate-500 mt-0.5">
             {[c.case_code || c.client_code, c.tax_code,
@@ -422,7 +444,7 @@ function ClientRow({ c, ri, showCat, report, expanded, onToggle, clientMonth, se
         )}
         {/* Phân công nhân viên phụ trách — KPI và công nợ của công ty này sẽ tính cho người được
             chọn. Bấm vào select không được mở/đóng dòng nên chặn sự kiện lan lên nút cha. */}
-        {canAssign ? (
+        {canAssign && !stopped ? (
           <span onClick={e => { e.stopPropagation() }} className="flex-shrink-0">
             <select value={c.assigned_to || ''} disabled={assigning}
               onChange={e => assign(e.target.value)}
@@ -432,7 +454,7 @@ function ClientRow({ c, ri, showCat, report, expanded, onToggle, clientMonth, se
               {staffList.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
             </select>
           </span>
-        ) : !c.assigned_to && (
+        ) : !stopped && !c.assigned_to && (
           <span className="text-xs font-medium px-2 py-1 rounded-md bg-amber-100 text-amber-900 border border-amber-400 flex-shrink-0">Chưa phân công</span>
         )}
         <span className="text-slate-500 text-xs">{expanded ? '▲' : '▼'}</span>
@@ -440,7 +462,9 @@ function ClientRow({ c, ri, showCat, report, expanded, onToggle, clientMonth, se
 
       {expanded && (
         <div className="bg-slate-50 border-t border-slate-200">
-          {isThoiKy && c.linkedClient ? (
+          {stopped ? (
+            <StoppedSummary c={c} />
+          ) : isThoiKy && c.linkedClient ? (
             <ClientChecklist
               client={{ ...c.linkedClient, uses_hcns: true }}
               hcnsClient={c}
@@ -465,6 +489,75 @@ function ClientRow({ c, ri, showCat, report, expanded, onToggle, clientMonth, se
 
 // Đỏ "Chưa thu" / vàng "Thu thiếu ..." / xanh "Đã thu" — kế toán cập nhật xong là phòng HCNS
 // thấy đổi màu ngay, không cần báo tay.
+/* ──────────────── Công ty đã ngưng DV HCNS — chỉ XEM lại ──────────────── */
+// Ngừng dịch vụ KHÔNG xoá gì: mức phí từng tháng, tiền đã thu, checklist đã tích đều còn nguyên.
+// Khối này mở lại phần đó để tra cứu. Cố ý không cho ghi công nợ hay tích việc — muốn làm tiếp
+// thì tick lại "Có sử dụng DV HCNS" bên Danh sách công ty trước.
+function StoppedSummary({ c }) {
+  const [data, setData] = useState(null)
+
+  useEffect(() => {
+    fetch('/api/admin/hcns/debt-history?hcnsClientId=' + c.id)
+      .then(r => r.json()).then(j => setData(j)).catch(() => setData({ data: [] }))
+  }, [c.id])
+
+  if (!data) return <p className="text-xs text-slate-500 px-4 py-4">Đang tải lịch sử...</p>
+
+  const rows = data.data || []
+  const plans = data.plans || []
+  const total = rows.reduce((a, r) => a + (Number(r.amount) || 0), 0)
+
+  return (
+    <div className="px-4 py-3 space-y-3 max-w-3xl">
+      <p className="text-xs text-slate-700 bg-white border border-slate-300 rounded-lg px-3 py-2 leading-relaxed">
+        Công ty đã ngưng dùng DV HCNS. Toàn bộ lịch sử bên dưới được giữ nguyên. Cần dùng lại thì
+        vào <b>Danh sách công ty</b>, tick <b>“Có sử dụng DV HCNS”</b> và nhập mức phí mới —
+        công ty quay về thẻ <b>Thời kỳ</b> với đầy đủ dữ liệu cũ.
+      </p>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {[['Số lần đã thu', rows.length], ['Tổng đã thu', fmt(total) + 'đ'],
+          ['Số lần đổi phí', plans.length]].map(([k, v]) => (
+          <div key={k} className="bg-white border border-slate-200 rounded-lg px-2 py-1.5">
+            <p className="text-xs text-slate-500">{k}</p>
+            <p className="text-sm font-bold text-slate-800 tabular-nums">{v}</p>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <p className={colHeadCls}>Lịch sử thu phí HCNS</p>
+        {rows.length === 0 && <p className="text-xs text-slate-500">Chưa từng ghi nhận khoản thu nào.</p>}
+        <div className="space-y-0.5">
+          {rows.map(r => (
+            <div key={r.year + '-' + r.month} className="flex justify-between text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
+              <span className="text-slate-700">T{r.month}/{r.year}{r.note ? ' · ' + r.note : ''}</span>
+              <span className="font-semibold text-slate-800 tabular-nums">{fmt(r.amount)}đ</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {plans.length > 0 && (
+        <div>
+          <p className={colHeadCls}>Lịch sử mức phí</p>
+          <div className="space-y-0.5">
+            {plans.map(r => (
+              <div key={'p' + r.year + '-' + r.month} className="flex justify-between text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
+                <span className="text-slate-700">
+                  Từ T{r.month}/{r.year}
+                  {Number(r.amount) === 0 && <span className="text-slate-500"> · ngưng dịch vụ</span>}
+                </span>
+                <span className="font-semibold text-slate-800 tabular-nums">{fmt(r.amount)}đ</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function DebtBadge({ stat }) {
   // Viền cùng tông chữ — badge nền nhạt trơn bị chìm khi dòng có nền sọc xám.
   const cls = 'text-xs font-semibold px-2 py-1 rounded-md border flex-shrink-0 '
