@@ -46,12 +46,22 @@ export async function GET(request) {
   // từng hồ sơ, không dựng được thẻ.
   const caseIds = (rows || []).filter(r => r.category !== 'thoi_ky').map(r => r.id)
   const { data: svcs } = caseIds.length
-    ? await supabase.from('hcns_case_services').select('hcns_client_id, status').in('hcns_client_id', caseIds)
+    ? await supabase.from('hcns_case_services').select('hcns_client_id, status, cost').in('hcns_client_id', caseIds)
     : { data: [] }
+  // Tiền của hồ sơ — để danh sách đánh dấu được hồ sơ đã xong việc mà chưa thu đủ. Thiếu bảng
+  // (chưa chạy sql/07) thì coi như chưa thu đồng nào, không phải lỗi.
+  const { data: pays } = caseIds.length
+    ? await supabase.from('hcns_case_payments').select('hcns_client_id, amount').in('hcns_client_id', caseIds)
+    : { data: [] }
+  const paidBy = new Map()
+  for (const p of pays || []) {
+    paidBy.set(p.hcns_client_id, (paidBy.get(p.hcns_client_id) || 0) + (Number(p.amount) || 0))
+  }
   const svcStat = new Map()
   for (const sv of svcs || []) {
-    const a = svcStat.get(sv.hcns_client_id) || { total: 0, done: 0 }
+    const a = svcStat.get(sv.hcns_client_id) || { total: 0, done: 0, cost: 0 }
     a.total += 1
+    a.cost += Number(sv.cost) || 0
     if (sv.status === 'hoan_thanh') a.done += 1
     svcStat.set(sv.hcns_client_id, a)
   }
@@ -65,6 +75,9 @@ export async function GET(request) {
     // Hồ sơ CHƯA khai dịch vụ nào thì chưa gọi là xong — vẫn còn việc phải làm.
     allDone: (svcStat.get(r.id)?.total || 0) > 0
       && svcStat.get(r.id).done === svcStat.get(r.id).total,
+    caseCost: svcStat.get(r.id)?.cost || 0,
+    casePaid: paidBy.get(r.id) || 0,
+    caseRemain: Math.max(0, (svcStat.get(r.id)?.cost || 0) - (paidBy.get(r.id) || 0)),
     staff: staffMap.get(r.assigned_to) || null,
     linkedClient: clientMap.get(r.linked_client_id) || null,
   }))

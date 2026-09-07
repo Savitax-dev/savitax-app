@@ -132,9 +132,13 @@ export async function POST(request) {
   }
 }
 
+// Xét TẤT CẢ vai trò và TẤT CẢ phòng (chính + kiêm nhiệm) — trưởng phòng HCNS kiêm nhiệm mà chỉ
+// xét vai trò chính thì bị chặn ngay ở nghiệp vụ của chính họ.
 async function canWriteHcnsDebt(supabase, caller, hcnsClient) {
   if (!caller?.staffId) return false
-  if (caller.role === 'admin') return true
+  const roles = caller.roles?.length ? caller.roles : [caller.role].filter(Boolean)
+  const rooms = caller.roomIds?.length ? caller.roomIds : [caller.roomId].filter(Boolean)
+  if (roles.includes('admin')) return true
   if (hcnsClient.assigned_to && hcnsClient.assigned_to === caller.staffId) return true
 
   // Kế toán đang phụ trách chính công ty gốc.
@@ -142,12 +146,12 @@ async function canWriteHcnsDebt(supabase, caller, hcnsClient) {
     const { data: c } = await supabase.from('clients')
       .select('assigned_to, room_id').eq('id', hcnsClient.linked_client_id).maybeSingle()
     if (c?.assigned_to === caller.staffId) return true
-    if (c?.room_id && caller.roomId && c.room_id === caller.roomId && caller.role === 'leader') return true
+    if (c?.room_id && rooms.includes(c.room_id) && roles.includes('leader')) return true
   }
 
-  const { data: roleRow } = await supabase.from('roles').select('is_system').eq('id', caller.role).maybeSingle()
-  if (roleRow?.is_system) return true
+  const { data: roleRows } = await supabase.from('roles').select('is_system').in('id', roles)
+  if ((roleRows || []).some(r => r.is_system)) return true
   const { data: rp } = await supabase.from('role_permissions').select('permission_key')
-    .eq('role_id', caller.role).eq('permission_key', 'manage_hcns').maybeSingle()
-  return !!rp
+    .in('role_id', roles).eq('permission_key', 'manage_hcns').limit(1)
+  return !!(rp && rp.length)
 }

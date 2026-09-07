@@ -403,10 +403,10 @@ function CaseBlock({ title, data }) {
         <span className={'text-xs px-2 py-0.5 rounded-full border ' + tone.chip}>{data.caseCount} hồ sơ</span>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+      {/* Hàng trên: khối lượng việc CỦA KỲ đang chọn. */}
+      <div className="grid grid-cols-3 gap-2 mb-2">
         {tile('Hồ sơ', data.caseCount, 'bg-indigo-50 border-indigo-200 text-indigo-900')}
         {tile('Dịch vụ', data.serviceCount, 'bg-violet-50 border-violet-200 text-violet-900')}
-        {tile('Chi phí', fmt(data.totalCost) + 'đ', 'bg-emerald-50 border-emerald-200 text-emerald-900')}
         <div className="border rounded-lg px-2 py-1.5 bg-slate-50 border-slate-200">
           <p className="text-xs text-slate-600">% Công việc</p>
           <p className={'text-base font-bold tabular-nums leading-tight ' + pctText(data.taskPercent)}>
@@ -417,6 +417,43 @@ function CaseBlock({ title, data }) {
           </p>
         </div>
       </div>
+
+      {/* Hàng dưới: TIỀN, tính đến hiện tại chứ không theo tháng đang chọn — tiền chưa thu không
+          hết hạn theo tháng. Gộp ba ô tiền một hàng để đọc một mạch. */}
+      <div className="grid grid-cols-3 gap-2 mb-2">
+        <div className="border rounded-lg px-2 py-1.5 bg-slate-50 border-slate-200">
+          <p className="text-xs text-slate-600">Tổng chi phí</p>
+          <p className="text-base font-bold tabular-nums leading-tight text-slate-900">{fmt(data.totalCost)}đ</p>
+          <p className="text-[11px] text-slate-500">{' '}</p>
+        </div>
+        <div className="border rounded-lg px-2 py-1.5 bg-emerald-50 border-emerald-200">
+          <p className="text-xs text-emerald-800">Đã thu</p>
+          <p className="text-base font-bold tabular-nums leading-tight text-emerald-900">{fmt(data.totalPaid)}đ</p>
+          <p className="text-[11px] tabular-nums text-emerald-700">
+            {data.paidPercent === null ? ' ' : data.paidPercent + '%'}
+          </p>
+        </div>
+        <div className={'border rounded-lg px-2 py-1.5 ' +
+          (data.remain > 0 ? 'bg-red-50 border-red-300' : 'bg-emerald-50 border-emerald-200')}>
+          <p className={'text-xs ' + (data.remain > 0 ? 'text-red-800' : 'text-emerald-800')}>Còn phải thu</p>
+          <p className={'text-base font-bold tabular-nums leading-tight ' +
+            (data.remain > 0 ? 'text-[#B3261E]' : 'text-[#2E6B3A]')}>{fmt(data.remain)}đ</p>
+          <p className={'text-[11px] tabular-nums ' + (data.remain > 0 ? 'text-red-700' : 'text-emerald-700')}>
+            {data.remain > 0 ? data.unpaidCount + ' hồ sơ' : 'đã thu đủ'}
+          </p>
+        </div>
+      </div>
+      <p className="text-[11px] text-slate-500 mb-3">Ba ô tiền tính đến hiện tại, không theo tháng đang chọn.</p>
+
+      {/* Xong việc mà chưa thu đủ — nhóm dễ bị bỏ quên nhất vì đã rời sang thẻ Hoàn thành. */}
+      {data.doneUnpaidCount > 0 && (
+        <div className="flex items-center gap-2 bg-amber-50 border border-amber-300 rounded-lg px-3 py-2 mb-3">
+          <span className="text-amber-700">⚠</span>
+          <p className="text-xs text-amber-900">
+            <b>{data.doneUnpaidCount} hồ sơ đã xong việc nhưng chưa thu đủ</b> · còn {fmt(data.doneUnpaidRemain)}đ
+          </p>
+        </div>
+      )}
 
       <p className="text-xs text-slate-600 mb-1.5">Dịch vụ theo bước xử lý</p>
       {data.byStatus.map((s, i) => (
@@ -444,6 +481,9 @@ function CaseBlock({ title, data }) {
                 {s.taskPercent !== null && (
                   <span className={'ml-1.5 font-semibold ' + pctText(s.taskPercent)}>{s.taskPercent}%</span>
                 )}
+                {s.remain > 0 && (
+                  <span className="ml-1.5 font-semibold text-[#B3261E]">· còn thu {fmt(s.remain)}đ</span>
+                )}
               </span>
             </div>
           ))}
@@ -457,6 +497,8 @@ function CaseBlock({ title, data }) {
 function ClientRow({ c, ri, showCat, stopped, report, expanded, onToggle, clientMonth, setClientMonth, selMonth, canManage, canAssign, staffList, templates, onChanged }) {
   const stat = report?.thoiKy?.perClient?.find(p => p.id === c.id)
   const isThoiKy = c.category === 'thoi_ky'
+  // Xong hết việc mà vẫn còn nợ tiền — phải nhìn thấy được, kẻo nằm im ở thẻ Hoàn thành.
+  const doneUnpaid = !stopped && c.allDone && Number(c.caseRemain) > 0
   const [assigning, setAssigning] = useState(false)
 
   const assign = async (staffId) => {
@@ -476,7 +518,10 @@ function ClientRow({ c, ri, showCat, stopped, report, expanded, onToggle, client
       {/* Kẻ sọc chẵn/lẻ để mắt lần đúng hàng khi bảng trải hết bề ngang. */}
       <button onClick={onToggle}
         className={'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ' +
-          (expanded ? 'bg-[#8B1A1A]/[0.06]' : (ri % 2 ? 'bg-slate-50' : 'bg-white') + ' hover:bg-[#8B1A1A]/[0.04]')}>
+          (doneUnpaid ? 'border-l-[3px] border-l-orange-500 ' : '') +
+          (expanded ? 'bg-[#8B1A1A]/[0.06]'
+            : doneUnpaid ? 'bg-orange-50 hover:bg-orange-100'
+            : (ri % 2 ? 'bg-slate-50' : 'bg-white') + ' hover:bg-[#8B1A1A]/[0.04]')}>
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
             {c.name}
@@ -507,6 +552,11 @@ function ClientRow({ c, ri, showCat, stopped, report, expanded, onToggle, client
               </span>
             )}
           </>
+        )}
+        {doneUnpaid && (
+          <span className="text-xs font-semibold px-2 py-1 rounded-md bg-[#B3261E] text-white flex-shrink-0 whitespace-nowrap">
+            Còn thu {fmt(c.caseRemain)}đ
+          </span>
         )}
         {/* Phân công nhân viên phụ trách — KPI và công nợ của công ty này sẽ tính cho người được
             chọn. Bấm vào select không được mở/đóng dòng nên chặn sự kiện lan lên nút cha. */}

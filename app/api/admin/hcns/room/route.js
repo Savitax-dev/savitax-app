@@ -50,7 +50,8 @@ export async function GET(request) {
 
   let clients = allClients || []
   let staff = team.staff
-  if (!seeAll && auth.caller?.role !== 'admin') {
+  const isAdmin = (auth.caller?.roles || [auth.caller?.role]).includes('admin')
+  if (!seeAll && !isAdmin) {
     clients = clients.filter(c => c.assigned_to === auth.caller.staffId)
     staff = staff.filter(s => s.id === auth.caller.staffId)
   }
@@ -183,6 +184,32 @@ export async function GET(request) {
     return { done, total, percent: total > 0 ? Math.round(done / total * 100) : null }
   }
 
+  // ── Tiền của hồ sơ Thời điểm / Vãng lai ────────────────────────────────────
+  // Tính trên TOÀN BỘ dịch vụ của hồ sơ, KHÔNG lọc theo tháng đang chọn: tiền chưa thu không hết
+  // hạn theo tháng. Lọc theo kỳ thì mở T8 sẽ không thấy khoản nợ của hồ sơ nhận trong T9 — đúng
+  // thứ đang muốn tránh (hồ sơ xong việc rồi rơi vào vùng không ai nhìn).
+  const { data: pays } = caseIds.length
+    ? await supabase.from('hcns_case_payments').select('hcns_client_id, amount').in('hcns_client_id', caseIds)
+    : { data: [] }
+  const costAll = new Map()
+  for (const sv of services || []) {
+    costAll.set(sv.hcns_client_id, (costAll.get(sv.hcns_client_id) || 0) + (Number(sv.cost) || 0))
+  }
+  const paidAll = new Map()
+  for (const p of pays || []) {
+    paidAll.set(p.hcns_client_id, (paidAll.get(p.hcns_client_id) || 0) + (Number(p.amount) || 0))
+  }
+  // Hồ sơ xong HẾT dịch vụ — xét trên toàn bộ dịch vụ, khớp với cách chia thẻ ở hcns/clients.
+  const allDoneOf = (c) => {
+    const mine = (services || []).filter(sv => sv.hcns_client_id === c.id)
+    return mine.length > 0 && mine.every(sv => sv.status === 'hoan_thanh')
+  }
+  const moneyOf = (c) => {
+    const cost = costAll.get(c.id) || 0
+    const paid = paidAll.get(c.id) || 0
+    return { cost, paid, remain: Math.max(0, cost - paid) }
+  }
+
   const avg = (arr) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null
 
   const caseBlock = (cat) => {
@@ -200,7 +227,8 @@ export async function GET(request) {
       }
       byStaff[c.assigned_to].cases += 1
       byStaff[c.assigned_to].services += n
-      byStaff[c.assigned_to].cost += (svcByClient.get(c.id) || []).reduce((a, s) => a + (Number(s.cost) || 0), 0)
+      byStaff[c.assigned_to].cost += moneyOf(c).cost
+      byStaff[c.assigned_to].remain = (byStaff[c.assigned_to].remain || 0) + moneyOf(c).remain
       const p = casePct(c).percent
       if (p !== null) byStaff[c.assigned_to].pcts.push(p)
     }
@@ -212,10 +240,27 @@ export async function GET(request) {
       const p = casePct(c)
       return { done: a.done + p.done, total: a.total + p.total }
     }, { done: 0, total: 0 })
+    // Tiền: cộng phần CÒN LẠI của từng hồ sơ chứ không lấy (tổng chi phí - tổng đã thu). Một hồ sơ
+    // thu dư sẽ che mất khoản nợ của hồ sơ khác nếu trừ gộp.
+    const money = list.reduce((a, c) => {
+      const m = moneyOf(c)
+      return { cost: a.cost + m.cost, paid: a.paid + m.paid, remain: a.remain + m.remain }
+    }, { cost: 0, paid: 0, remain: 0 })
+    const unpaidCases = list.filter(c => moneyOf(c).remain > 0)
+    // Hồ sơ xong việc mà chưa thu đủ — nhóm dễ bị bỏ quên nhất, vì xong việc là rời khỏi thẻ
+    // Thời điểm/Vãng lai sang thẻ Hoàn thành, nơi trước đây không nói gì về tiền.
+    const doneUnpaid = unpaidCases.filter(allDoneOf)
+
     return {
       caseCount: list.filter(c => (svcByClient.get(c.id) || []).length > 0 || !svcInPeriod.length).length || list.length,
       serviceCount: svcs.length,
-      totalCost: svcs.reduce((a, s) => a + (Number(s.cost) || 0), 0),
+      totalCost: money.cost,
+      totalPaid: money.paid,
+      remain: money.remain,
+      paidPercent: money.cost > 0 ? Math.round(money.paid / money.cost * 100) : null,
+      unpaidCount: unpaidCases.length,
+      doneUnpaidCount: doneUnpaid.length,
+      doneUnpaidRemain: doneUnpaid.reduce((a, c) => a + moneyOf(c).remain, 0),
       taskDone: totals.done, taskTotal: totals.total,
       taskPercent: avg(perStaffRows.map(r => r.taskPercent).filter(p => p !== null)),
       byStatus,
@@ -290,12 +335,18 @@ async function fallbackStaff(supabase, ids) {
   return data || []
 }
 
+// Xét TẤT CẢ vai trò (chính + kiêm nhiệm), không chỉ staff.role.
+//
+// Ca thật: chị Diệu là nhân viên kế toán phòng Himalaya (vai trò CHÍNH) kiêm trưởng phòng HCNS
+// (vai trò KIÊM NHIỆM). Chỉ xét vai trò chính thì view_hcns_all_staff không tìm thấy -> báo cáo
+// thu hẹp về "chỉ mình tôi", chị không thấy Minh và các bạn khác trong phòng.
 async function hasPerm(supabase, caller, permKey) {
   if (!caller?.staffId) return false
-  if (caller.role === 'admin') return true
-  const { data: roleRow } = await supabase.from('roles').select('is_system').eq('id', caller.role).maybeSingle()
-  if (roleRow?.is_system) return true
+  const roles = caller.roles?.length ? caller.roles : [caller.role].filter(Boolean)
+  if (roles.includes('admin')) return true
+  const { data: roleRows } = await supabase.from('roles').select('is_system').in('id', roles)
+  if ((roleRows || []).some(r => r.is_system)) return true
   const { data } = await supabase.from('role_permissions').select('permission_key')
-    .eq('role_id', caller.role).eq('permission_key', permKey).maybeSingle()
-  return !!data
+    .in('role_id', roles).eq('permission_key', permKey).limit(1)
+  return !!(data && data.length)
 }
