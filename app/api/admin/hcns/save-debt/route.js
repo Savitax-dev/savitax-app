@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { resolveFeeForMonthWithSource } from '@/lib/feeDue'
+import { hcnsStartMonth } from '@/lib/hcnsFee'
 import { evaluateCap, CAP_OK, CAP_UNVERIFIABLE } from '@/lib/feeCap'
 import { checkPrevMonthUnpaid, prevMonthOf } from '@/lib/prevMonthDebt'
 
@@ -48,7 +49,12 @@ export async function POST(request) {
     // resolveFeeForMonthWithSource so khớp theo field `client_id` -> map lại cho khớp.
     const planRows = (feePlans || []).map(r => ({ ...r, client_id: r.hcns_client_id }))
 
-    const feeAt = (y, m) => resolveFeeForMonthWithSource(planRows, hcnsId, y, m, hc.hcns_fee, [])
+    // Tháng trước khi bật DV HCNS -> phí 0 và ĐÁNG TIN (biết chắc chưa dùng dịch vụ), nên trần
+    // chặn thu vượt vẫn có hiệu lực thay vì bỏ qua vì "không tra được phí".
+    const startYM = hcnsStartMonth(planRows, hcnsId, hc.created_at)
+    const feeAt = (y, m) => (y * 12 + m) < startYM
+      ? { fee: 0, source: 'before_start', reliable: true }
+      : resolveFeeForMonthWithSource(planRows, hcnsId, y, m, hc.hcns_fee, [])
 
     // ── Ghi nhiều kỳ (khách trả gộp) ────────────────────────────────────────────
     if (Array.isArray(periods) && periods.length) {

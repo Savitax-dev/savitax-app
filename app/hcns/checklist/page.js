@@ -81,10 +81,31 @@ export default function HcnsChecklistPage() {
     setAdding(false)
   }
 
-  const addTask = async (templateId) => {
+  const addTask = async (templateId, isRecurring) => {
     const name = (newTask[templateId] || '').trim()
     if (!name) { setErr('Nhập tên công việc trước khi thêm.'); return }
-    if (await call('POST', { templateId, taskName: name })) setNewTask(p => ({ ...p, [templateId]: '' }))
+    // Việc định kỳ nào cũng phải có hạn thì %-đúng hạn mới tính được — hỏi ngay lúc thêm.
+    let day
+    if (isRecurring) {
+      const ans = window.prompt('Hạn hoàn thành là NGÀY MẤY trong tháng? (1-31, để trống nếu không đặt hạn)', '20')
+      if (ans === null) return
+      if (ans.trim() !== '') {
+        day = Number(ans.replace(/\D/g, ''))
+        if (!day || day < 1 || day > 31) { setErr('Ngày hạn phải trong khoảng 1-31.'); return }
+      }
+    }
+    if (await call('POST', { templateId, taskName: name, deadline_day: day ?? null })) {
+      setNewTask(p => ({ ...p, [templateId]: '' }))
+    }
+  }
+
+  // Đổi hạn ngay tại ô nhập, lưu khi rời ô. Bỏ trống = gỡ hạn.
+  const saveDeadline = async (task, raw) => {
+    const txt = String(raw || '').trim()
+    const day = txt === '' ? null : Number(txt.replace(/\D/g, ''))
+    if (day === Number(task.deadline_day) || (day === null && !task.deadline_day)) return
+    if (day !== null && (!day || day < 1 || day > 31)) { setErr('Ngày hạn phải trong khoảng 1-31.'); return }
+    await call('PATCH', { taskId: task.id, deadline_day: day })
   }
 
   const renameTask = async (taskId, current) => {
@@ -246,6 +267,22 @@ export default function HcnsChecklistPage() {
                                 {i + 1}
                               </span>
                               <span className="flex-1">{task.name}</span>
+                              {t.is_recurring && (
+                                canEdit ? (
+                                  <span className="flex items-center gap-1.5 flex-shrink-0 text-xs text-slate-500">
+                                    <span>Hạn ngày</span>
+                                    <input type="text" inputMode="numeric" defaultValue={task.deadline_day ?? ''}
+                                      onBlur={e => saveDeadline(task, e.target.value)}
+                                      onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+                                      placeholder="—"
+                                      className="w-12 text-center px-1 py-0.5 border border-slate-300 rounded-md bg-white text-slate-800" />
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-slate-500 flex-shrink-0">
+                                    {task.deadline_day ? 'Hạn ngày ' + task.deadline_day : 'Không đặt hạn'}
+                                  </span>
+                                )
+                              )}
                               {canEdit && (
                                 <span className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-3 flex-shrink-0">
                                   <button onClick={() => renameTask(task.id, task.name)} className="text-xs font-medium text-slate-600 hover:text-slate-900">Sửa</button>
@@ -261,10 +298,10 @@ export default function HcnsChecklistPage() {
                         <div className="flex gap-2 flex-wrap items-center">
                           <input value={newTask[t.id] || ''}
                             onChange={e => { setNewTask(p => ({ ...p, [t.id]: e.target.value })); if (err) setErr('') }}
-                            onKeyDown={e => e.key === 'Enter' && addTask(t.id)}
+                            onKeyDown={e => e.key === 'Enter' && addTask(t.id, t.is_recurring)}
                             placeholder="Nhập tên công việc rồi bấm Thêm"
                             className={inputCls + ' flex-1 min-w-[180px] bg-white'} />
-                          <button onClick={() => addTask(t.id)}
+                          <button onClick={() => addTask(t.id, t.is_recurring)}
                             className="px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-slate-900">
                             Thêm
                           </button>

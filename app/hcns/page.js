@@ -28,6 +28,21 @@ const CAT_STYLE = {
 // Bỏ dấu để tìm kiếm gõ không dấu vẫn ra.
 const noAccent = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\u0111/gi, 'd').toLowerCase()
 
+const AVATAR_TONES = [
+  'bg-blue-100 text-blue-800', 'bg-violet-100 text-violet-800', 'bg-pink-100 text-pink-800',
+  'bg-cyan-100 text-cyan-800', 'bg-indigo-100 text-indigo-800', 'bg-teal-100 text-teal-800',
+]
+const avatarTone = (id) => {
+  const key = String(id || '')
+  let sum = 0
+  for (let i = 0; i < key.length; i++) sum += key.charCodeAt(i)
+  return AVATAR_TONES[sum % AVATAR_TONES.length]
+}
+const initialOf = (name) => {
+  const parts = String(name || '').trim().split(/\s+/)
+  return (parts[parts.length - 1][0] || '?').toUpperCase()
+}
+
 function Meter({ value }) {
   return (
     <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
@@ -254,26 +269,44 @@ function ReportBlock({ report, mode, setMode, selYear, selMonth, setSelYear, set
 
       {/* Khối Thời kỳ — chiếm hết chiều ngang */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-        <div className="flex items-baseline gap-2 mb-3">
+        {/* Vạch màu nhận diện khối — kéo trang xuống là biết đang ở khối nào mà không phải đọc
+            chữ. Màu nhận diện TÁCH RIÊNG khỏi màu trạng thái (xanh/vàng/đỏ) để hai thứ không lẫn. */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="w-1 h-4 rounded-full bg-[#8B1A1A]" />
           <h2 className="text-sm font-bold text-slate-900">Thời kỳ</h2>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{tk.clientCount} công ty</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-[#FCE8E8] text-[#8B1A1A] border border-[#E8B4B4]">{tk.clientCount} công ty</span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-            <p className="text-xs text-slate-600">KPI Công nợ — trung bình theo nhân viên</p>
-            <p className={'text-2xl font-bold mt-0.5 ' + pctText(tk.debtPercent)}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <div className="bg-white border border-indigo-200 border-t-[3px] border-t-indigo-600 rounded-b-xl p-3">
+            <p className="text-xs text-indigo-800">KPI Công nợ — trung bình theo nhân viên</p>
+            <p className={'text-3xl font-bold mt-0.5 leading-none ' + pctText(tk.debtPercent)}>
               {tk.debtPercent === null ? '—' : tk.debtPercent + '%'}
             </p>
-            <div className="mt-1.5"><Meter value={tk.debtPercent ?? 0} /></div>
-            <p className="text-xs text-slate-500 mt-1.5">Đã thu {fmt(tk.totalCollected)}đ / {fmt(tk.totalFee)}đ</p>
+            <div className="mt-2"><Meter value={tk.debtPercent ?? 0} /></div>
+            <p className="text-xs text-slate-600 mt-1.5">Đã thu {fmt(tk.totalCollected)}đ / {fmt(tk.totalFee)}đ</p>
           </div>
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-            <p className="text-xs text-slate-600">KPI % Công việc — trung bình theo nhân viên</p>
-            <p className={'text-2xl font-bold mt-0.5 ' + pctText(tk.taskPercent)}>
+          <div className="bg-white border border-violet-200 border-t-[3px] border-t-violet-600 rounded-b-xl p-3">
+            <p className="text-xs text-violet-800">KPI % Công việc — trung bình theo nhân viên</p>
+            <p className={'text-3xl font-bold mt-0.5 leading-none ' + pctText(tk.taskPercent)}>
               {tk.taskPercent === null ? '—' : tk.taskPercent + '%'}
             </p>
-            <div className="mt-1.5"><Meter value={tk.taskPercent ?? 0} /></div>
-            <p className="text-xs text-slate-500 mt-1.5">Checklist DV HCNS Thời Kỳ</p>
+            <div className="mt-2"><Meter value={tk.taskPercent ?? 0} /></div>
+            <p className="text-xs text-slate-600 mt-1.5">Checklist DV HCNS Thời Kỳ · chỉ tính việc đúng hạn</p>
+          </div>
+          {/* Nợ tồn có NGUỒN HCNS. Kỳ nào không thu đủ, qua ngày 10 tháng sau sẽ tự chuyển vào
+              đây và phải thu ở mục "Nợ tồn cũ" trong hồ sơ công ty. */}
+          <div className="bg-white border border-orange-200 border-t-[3px] border-t-orange-500 rounded-b-xl p-3">
+            <p className="text-xs text-orange-800">Nợ tồn HCNS chuyển tháng sau</p>
+            <p className={'text-3xl font-bold mt-0.5 leading-none ' +
+              (tk.oldDebt > 0 ? 'text-orange-600' : 'text-[#2E6B3A]')}>
+              {fmt(tk.oldDebt || 0)}đ
+            </p>
+            <p className="text-xs text-slate-600 mt-2">
+              {tk.oldDebt > 0
+                ? tk.oldDebtClients + ' công ty · thu ở mục “Nợ tồn cũ”'
+                : 'Chưa có kỳ nào quá hạn chuyển sang'}
+            </p>
+            <p className="text-xs text-slate-500 mt-1.5">Tính đến hiện tại, không theo tháng đang chọn</p>
           </div>
         </div>
         <p className="text-xs text-slate-500 mb-2">
@@ -282,7 +315,7 @@ function ReportBlock({ report, mode, setMode, selYear, selMonth, setSelYear, set
         <div className="overflow-x-auto">
           <table className="w-full text-xs min-w-[520px]">
             <thead>
-              <tr className="bg-slate-100 text-slate-500 text-[11px] uppercase tracking-wide">
+              <tr className="bg-indigo-50 text-indigo-900 text-[11px] uppercase tracking-wide">
                 <th className="text-left font-semibold py-2 px-2 rounded-l-lg">Nhân viên</th>
                 <th className="text-right font-semibold py-2 px-2">Cty</th>
                 <th className="text-right font-semibold py-2 px-2">Đã thu / Phải thu</th>
@@ -296,7 +329,14 @@ function ReportBlock({ report, mode, setMode, selYear, selMonth, setSelYear, set
               )}
               {tk.perStaff.map((s, ri) => (
                 <tr key={s.staffId} className={'border-b border-slate-200 last:border-0 ' + (ri % 2 ? 'bg-slate-50' : '')}>
-                  <td className="py-2 px-2 text-slate-800">{s.staffName}</td>
+                  <td className="py-2 px-2 text-slate-800">
+                    <span className="flex items-center gap-2">
+                      <span className={'w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold ' + avatarTone(s.staffId)}>
+                        {initialOf(s.staffName)}
+                      </span>
+                      {s.staffName}
+                    </span>
+                  </td>
                   <td className="py-2 px-2 text-right tabular-nums text-slate-600">{s.clientCount}</td>
                   <td className="py-2 px-2 text-right tabular-nums text-slate-600">{fmt(s.totalCollected)} / {fmt(s.totalFee)}</td>
                   <td className="py-2 px-2">
@@ -331,43 +371,69 @@ function ReportBlock({ report, mode, setMode, selYear, selMonth, setSelYear, set
   )
 }
 
+// Màu nhận diện riêng cho từng khối để phân biệt Thời điểm / Vãng lai khi hai khối nằm cạnh nhau.
+const CASE_TONE = {
+  'Thời điểm': { bar: 'bg-indigo-600', chip: 'bg-indigo-50 text-indigo-900 border-indigo-200' },
+  'Vãng lai':  { bar: 'bg-amber-500',  chip: 'bg-amber-50 text-amber-900 border-amber-300' },
+}
+
+// Dải xanh nhạt -> đậm theo THỨ TỰ 5 bước xử lý (chuỗi có thứ tự nên dùng dải chuyển sắc, không
+// phải 5 màu ngẫu nhiên). Bước cuối "Hoàn thành" chuyển xanh lá — đó là đích, không phải một bước
+// xanh dương đậm hơn.
+const STEP_BAR = ['bg-blue-200', 'bg-blue-300', 'bg-blue-400', 'bg-blue-600', 'bg-[#2E6B3A]']
+
 function CaseBlock({ title, data }) {
   const max = Math.max(1, ...data.byStatus.map(s => s.count))
+  const tone = CASE_TONE[title] || CASE_TONE['Thời điểm']
+  const tile = (label, value, cls, sub) => (
+    <div className={'border rounded-lg px-2 py-1.5 ' + cls}>
+      <p className="text-xs opacity-80">{label}</p>
+      <p className="text-base font-bold tabular-nums leading-tight">{value}</p>
+      {/* Dòng phụ LUÔN chiếm chỗ, kể cả khi rỗng — nếu chỉ hiện khi có dữ liệu thì ô này cao hơn
+          ô kia một dòng, kéo lệch cả khối bên dưới giữa Thời điểm và Vãng lai. */}
+      <p className="text-[11px] tabular-nums opacity-70">{sub || ' '}</p>
+    </div>
+  )
+
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-      <div className="flex items-baseline gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-3">
+        <span className={'w-1 h-4 rounded-full ' + tone.bar} />
         <h2 className="text-sm font-bold text-slate-900">{title}</h2>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{data.caseCount} hồ sơ</span>
+        <span className={'text-xs px-2 py-0.5 rounded-full border ' + tone.chip}>{data.caseCount} hồ sơ</span>
       </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-        {[['Hồ sơ', data.caseCount], ['Dịch vụ', data.serviceCount], ['Chi phí', fmt(data.totalCost) + 'đ']].map(([k, v]) => (
-          <div key={k} className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5">
-            <p className="text-xs text-slate-500">{k}</p>
-            <p className="text-sm font-bold text-slate-800 tabular-nums">{v}</p>
-          </div>
-        ))}
-        {/* Nhân viên tích việc trên hồ sơ thì con số này phải nhúc nhích — trước đây báo cáo chỉ
-            tính checklist định kỳ của Thời kỳ nên tích xong không thấy gì đổi. */}
-        <div className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5">
-          <p className="text-xs text-slate-500">% Công việc</p>
-          <p className={'text-sm font-bold tabular-nums ' + pctText(data.taskPercent)}>
+        {tile('Hồ sơ', data.caseCount, 'bg-indigo-50 border-indigo-200 text-indigo-900')}
+        {tile('Dịch vụ', data.serviceCount, 'bg-violet-50 border-violet-200 text-violet-900')}
+        {tile('Chi phí', fmt(data.totalCost) + 'đ', 'bg-emerald-50 border-emerald-200 text-emerald-900')}
+        <div className="border rounded-lg px-2 py-1.5 bg-slate-50 border-slate-200">
+          <p className="text-xs text-slate-600">% Công việc</p>
+          <p className={'text-base font-bold tabular-nums leading-tight ' + pctText(data.taskPercent)}>
             {data.taskPercent === null ? '—' : data.taskPercent + '%'}
           </p>
-          {data.taskTotal > 0 && (
-            <p className="text-[11px] text-slate-500 tabular-nums">{data.taskDone}/{data.taskTotal} việc</p>
-          )}
+          <p className="text-[11px] tabular-nums text-slate-500">
+            {data.taskTotal > 0 ? data.taskDone + '/' + data.taskTotal + ' việc' : ' '}
+          </p>
         </div>
       </div>
+
       <p className="text-xs text-slate-600 mb-1.5">Dịch vụ theo bước xử lý</p>
-      {data.byStatus.map(s => (
+      {data.byStatus.map((s, i) => (
         <div key={s.status} className="flex items-center gap-2 mb-1">
-          <span className="text-xs text-slate-700 w-28 flex-shrink-0">{s.label}</span>
-          <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-            <div className="h-full bg-[#1E4E8C] rounded-full" style={{ width: (s.count / max * 100) + '%' }} />
+          <span className={'text-xs w-28 flex-shrink-0 ' +
+            (i === data.byStatus.length - 1 && s.count > 0 ? 'text-[#2E6B3A] font-semibold' : 'text-slate-700')}>
+            {s.label}
+          </span>
+          <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div className={'h-full rounded-full ' + (STEP_BAR[i] || 'bg-blue-600')}
+              style={{ width: (s.count / max * 100) + '%' }} />
           </div>
-          <span className="text-xs tabular-nums w-4 text-right text-slate-800">{s.count}</span>
+          <span className={'text-xs tabular-nums w-4 text-right ' +
+            (s.count > 0 ? 'text-slate-900 font-semibold' : 'text-slate-400')}>{s.count}</span>
         </div>
       ))}
+
       {data.byStaff.length > 0 && (
         <div className="mt-3 pt-2 border-t border-slate-200">
           {data.byStaff.map(s => (

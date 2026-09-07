@@ -3,6 +3,7 @@ import { ensureRollovers } from '@/lib/debtRollover'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { countsForMonth } from '@/lib/contractDates'
 import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
+import { resolveHcnsFeeForMonth } from '@/lib/hcnsFee'
 import { requireRoomAccess } from '@/lib/serverAuth'
 
 function getAdmin() {
@@ -283,7 +284,7 @@ async function loadHcnsFees(supabase, clientIds, year, month) {
   if (!clientIds?.length) return { installed: false, byClient: out }
 
   const { data: links, error } = await supabase.from('hcns_clients')
-    .select('id, linked_client_id, hcns_fee, fee_period')
+    .select('id, linked_client_id, hcns_fee, fee_period, created_at')
     .in('linked_client_id', clientIds).eq('category', 'thoi_ky').eq('is_active', true)
   // Lỗi = thiếu bảng (bản clone). Không lỗi mà rỗng = có module, chỉ là chưa ai bật DV HCNS.
   if (error) return { installed: false, byClient: out }
@@ -306,7 +307,8 @@ async function loadHcnsFees(supabase, clientIds, year, month) {
     const due = feeCountsForMonth(l.fee_period, year, month)
     out[l.linked_client_id] = {
       due,
-      fee: due ? resolveFeeForMonth(plans, l.id, year, month, Number(l.hcns_fee) || 0, []) : 0,
+      // Tháng trước khi công ty bật DV HCNS phải là 0 — xem lib/hcnsFee.js.
+      fee: due ? resolveHcnsFeeForMonth(plans, l.id, year, month, Number(l.hcns_fee) || 0, l.created_at) : 0,
       collected: paid.get(l.id + '_' + year + '_' + month) || 0,
     }
   }

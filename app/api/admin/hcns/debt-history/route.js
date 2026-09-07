@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { resolveFeeForMonthWithSource } from '@/lib/feeDue'
+import { resolveHcnsFeeForMonth } from '@/lib/hcnsFee'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -59,7 +60,7 @@ export async function GET(request) {
   const now = new Date()
   let fy = now.getFullYear(), fm = now.getMonth() + 1
   for (let i = 0; i < 24; i++) {
-    feeByPeriod[fy + '-' + fm] = resolveFeeForMonthWithSource(planRows, hcnsId, fy, fm, hc?.hcns_fee, []).fee
+    feeByPeriod[fy + '-' + fm] = resolveHcnsFeeForMonth(planRows, hcnsId, fy, fm, hc?.hcns_fee, hc?.created_at)
     fm--; if (fm === 0) { fm = 12; fy-- }
   }
 

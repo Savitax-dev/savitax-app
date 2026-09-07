@@ -1,8 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { callerHasPermission } from '@/lib/serverAuth'
 import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
+import { resolveHcnsFeeForMonth } from '@/lib/hcnsFee'
 import { HCNS_STATUSES as STATUSES, HCNS_STATUS_LABEL as STATUS_LABEL } from '@/lib/hcnsStatus'
 import { getHcnsTeam } from '@/lib/hcnsTeam'
+import { effectiveDeadlineDate } from '@/lib/deadline'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -76,24 +78,52 @@ export async function GET(request) {
   let recDone = new Map()
   if (tpl?.id && tkIds.length) {
     const [{ data: tplTasks }, { data: recs }] = await Promise.all([
-      supabase.from('hcns_service_template_tasks').select('id').eq('template_id', tpl.id).eq('is_active', true),
-      supabase.from('hcns_recurring_tasks').select('hcns_client_id, template_task_id, year, month, done')
+      supabase.from('hcns_service_template_tasks').select('id, deadline_day').eq('template_id', tpl.id).eq('is_active', true),
+      supabase.from('hcns_recurring_tasks').select('hcns_client_id, template_task_id, year, month, done, done_at')
         .in('hcns_client_id', tkIds).eq('year', year),
     ])
     tplTaskIds = (tplTasks || []).map(t => t.id)
+    const dayOf = new Map((tplTasks || []).map(t => [t.id, t.deadline_day || null]))
+    // Chỉ đếm việc làm ĐÚNG HẠN — cùng công thức %-công việc của phòng kế toán (AGENTS.md).
+    // Việc tích muộn vẫn giữ dấu tích trong hồ sơ nhưng không cộng vào KPI.
     for (const r of (recs || [])) {
       if (!r.done) continue
+      const day = dayOf.get(r.template_task_id)
+      if (day) {
+        const deadline = effectiveDeadlineDate(r.year, r.month, day)
+        if (r.done_at && new Date(r.done_at) > deadline) continue
+      }
       const k = r.hcns_client_id + '_' + r.year + '_' + r.month
       recDone.set(k, (recDone.get(k) || 0) + 1)
     }
   }
   const taskTotal = tplTaskIds.length
 
+  // ── Nợ tồn có nguồn HCNS ───────────────────────────────────────────────────
+  // ĐỌC TỪ debt_rollovers source='hcns', KHÔNG đọc clients.other_debt: cột đó gộp chung nợ tồn
+  // kế toán và HCNS (hiện có ~181 triệu nợ tồn kế toán), lấy nhầm là báo cáo HCNS hiện luôn nợ
+  // của phòng kế toán. Xem lib/hcnsRollover.js.
+  const linkedIds = thoiKy.map(c => c.linked_client_id).filter(Boolean)
+  let hcnsOldDebt = 0
+  let hcnsOldDebtClients = 0
+  if (linkedIds.length) {
+    const { data: rolls } = await supabase.from('debt_rollovers')
+      .select('client_id, remaining_amount').in('client_id', linkedIds)
+      .eq('source', 'hcns').gt('remaining_amount', 0)
+    const perClientDebt = new Map()
+    for (const r of rolls || []) {
+      const v = Number(r.remaining_amount) || 0
+      hcnsOldDebt += v
+      perClientDebt.set(r.client_id, (perClientDebt.get(r.client_id) || 0) + v)
+    }
+    hcnsOldDebtClients = perClientDebt.size
+  }
+
   const perClient = thoiKy.map(c => {
     let dueFee = 0, collected = 0
     for (const m of months) {
       if (!feeCountsForMonth(c.fee_period, year, m, now)) continue
-      dueFee += resolveFeeForMonth(planRows, c.id, year, m, c.hcns_fee, [])
+      dueFee += resolveHcnsFeeForMonth(planRows, c.id, year, m, c.hcns_fee, c.created_at)
       collected += paidMap.get(c.id + '_' + year + '_' + m) || 0
     }
     // %-công việc lấy theo tháng đang xem (checklist là việc của từng tháng, không cộng dồn kỳ).
@@ -225,6 +255,8 @@ export async function GET(request) {
       totalCollected: perClient.reduce((a, c) => a + c.collected, 0),
       debtPercent: roomDebtPercent,
       taskPercent: roomTaskPercent,
+      oldDebt: hcnsOldDebt,
+      oldDebtClients: hcnsOldDebtClients,
       perStaff,
       perClient,
     },

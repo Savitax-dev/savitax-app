@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { isPastEditDeadline } from '@/lib/feeDue'
+import { loadPermissionData, can } from '@/lib/permissions'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : ''
@@ -40,6 +41,11 @@ const CRED_CATS = [
 // vẫn chặn độc lập ở lib/debtScope.js — đây chỉ là lớp giao diện cho đỡ nhầm.
 export default function ClientChecklist({ client, clientMonth, onMonthChange, onDebtSaved, defaultPanel = 'work', isAdmin = false, isTrueAdmin = false, hcnsClient: hcnsClientProp = null, context = 'ketoan' }) {
   const hcnsOnly = context === 'hcns'
+  // Tab "Công việc HCNS" chỉ dành cho người làm HCNS. Kế toán mở hồ sơ công ty có tick DV HCNS
+  // mà thấy tab này thì rất dễ tick nhầm việc của phòng khác.
+  // MẶC ĐỊNH ẨN cho tới khi biết chắc có quyền — hiện ra rồi mới ẩn thì cái nhấp nháy đó cũng đủ
+  // để ai đó bấm vào, mà đó đúng là thứ đang muốn tránh.
+  const [canHcnsWork, setCanHcnsWork] = useState(hcnsOnly)
   const now = new Date()
   const [tasks,        setTasks]        = useState([])
   const [loading,      setLoading]      = useState(false)
@@ -95,9 +101,32 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
 
   useEffect(() => { loadTasks() }, [clientMonth, client.id])
 
+  // Quyền xem tab "Công việc HCNS". Hỏi ngay trong component thay vì bắt 3 trang gọi nó (Checklist
+  // công việc, Công nợ của tôi, Phòng nghiệp vụ) cùng nạp dữ liệu phân quyền — ba chỗ là ba chỗ
+  // có thể quên. Cả hai nguồn đều có bộ đệm nên không tốn thêm request.
+  useEffect(() => {
+    if (hcnsOnly) return
+    let alive = true
+    ;(async () => {
+      try {
+        const [me, perm] = await Promise.all([
+          fetch('/api/admin/me').then(r => r.json()).catch(() => ({})),
+          loadPermissionData(),
+        ])
+        if (alive) setCanHcnsWork(can(me?.roles || [], 'view_hcns', perm))
+      } catch { /* không đọc được quyền -> giữ nguyên trạng thái ẩn */ }
+    })()
+    return () => { alive = false }
+  }, [hcnsOnly])
+
+  // Mất quyền trong lúc đang mở tab HCNS (đổi vai trò ở tab khác) -> đưa về tab Công việc.
+  useEffect(() => {
+    if (panel === 'hcns_work' && !canHcnsWork) setPanel('work')
+  }, [panel, canHcnsWork])
+
   // Đổi tháng khi đang mở tab "Công việc HCNS" thì phải tải lại checklist của đúng tháng đó.
   useEffect(() => {
-    if (panel === 'hcns_work') loadHcnsTasks()
+    if (panel === 'hcns_work' && canHcnsWork) loadHcnsTasks()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientMonth, selYear])
 
@@ -347,8 +376,16 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
 
   const saveDebt = async () => {
     if (!debtAmount) return
-    if (debtType === 'ketoan' && !isTrueAdmin && isPastEditDeadline(selYear, clientMonth)) {
-      alert('Đã quá hạn cập nhật công nợ của Tháng ' + clientMonth + ', vui lòng cập nhật công nợ Tồn')
+    // Quá hạn thì kỳ đó ĐÃ chuyển thành nợ tồn — ghi tiếp vào ô của kỳ đó là ghi trùng một khoản
+    // tiền hai lần (một ở kỳ gốc, một ở nợ tồn). Áp cho CẢ phí HCNS: từ khi phí HCNS cũng chuyển
+    // nợ tồn (lib/hcnsRollover.js) thì mục này có đúng rủi ro như phí kế toán.
+    if ((debtType === 'ketoan' || debtType === 'hcns') && !isTrueAdmin && isPastEditDeadline(selYear, clientMonth)) {
+      alert([
+        'Đã quá hạn cập nhật công nợ ' + (debtType === 'hcns' ? 'DV HCNS ' : '') +
+          'của Tháng ' + clientMonth + '/' + selYear + '.',
+        '',
+        'Khoản chưa thu của kỳ này đã chuyển sang "Nợ tồn cũ" — vui lòng thu ở mục đó.',
+      ].join('\n'))
       return
     }
     const paid = Number(String(debtAmount).replace(/\D/g, ''))
@@ -547,6 +584,9 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   const totalTasks = tasks.length
   const pct = totalTasks === 0 ? 0 : Math.round(doneTasks / totalTasks * 100)
   const days = Array.from(new Set(tasks.map(t => t.deadline_day))).sort((a,b)=>a-b)
+  // Ngày hạn của checklist HCNS. Việc chưa đặt hạn (null) xếp cuối, không lẫn vào các ngày thật.
+  const hcnsDays = Array.from(new Set((hcnsTasks?.tasks || []).map(t => t.deadlineDay || null)))
+    .sort((a, b) => (a === null ? 99 : a) - (b === null ? 99 : b))
 
   const extraTotal = extraRows.reduce((s, r) => s + (Number(r.amount)||0), 0)
   // b1Amount đã được tách VAT sẵn khi mở panel (xem openPanel) — đây là số "chưa VAT" thật
@@ -590,7 +630,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
         {!hcnsOnly && btn('work', '✅', 'Công việc',
           'bg-blue-600 text-white border-blue-600',
           'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100')}
-        {hcnsClient && btn('hcns_work', '🏢', 'Công việc HCNS',
+        {hcnsClient && canHcnsWork && btn('hcns_work', '🏢', 'Công việc HCNS',
           'bg-sky-600 text-white border-sky-600',
           'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100')}
         {btn('dntt', '📄', 'ĐNTT',
@@ -907,7 +947,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
 
       {/* ── Panel: Công nợ ── */}
       {/* ── Panel: Công việc HCNS (checklist định kỳ hàng tháng của khách thời kỳ) ── */}
-      {panel === 'hcns_work' && (
+      {panel === 'hcns_work' && canHcnsWork && (
         <div className="mx-3 my-2 bg-white border border-sky-200 rounded-xl overflow-hidden">
           <div className="px-3 py-2 bg-sky-50 border-b border-sky-100 flex items-center gap-2">
             <p className="text-xs font-bold text-sky-800 flex-1">
@@ -934,24 +974,58 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                     (hcnsTasks.percent >= 90 ? 'bg-[#2E6B3A]' : hcnsTasks.percent >= 70 ? 'bg-[#D89614]' : 'bg-[#B3261E]')}
                     style={{ width: hcnsTasks.percent + '%' }} />
                 </div>
-                <div className="space-y-1">
-                  {hcnsTasks.tasks.map(t => (
-                    <label key={t.templateTaskId}
-                      className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer py-0.5">
-                      <input type="checkbox" checked={t.done} disabled={hcnsToggling === t.templateTaskId}
-                        onChange={e => toggleHcnsTask(t.templateTaskId, e.target.checked)}
-                        className="w-4 h-4 accent-[#2E6B3A] flex-shrink-0" />
-                      <span className={t.done ? 'line-through text-gray-400' : ''}>{t.name}</span>
-                      {t.done && (
-                        <span className="text-xs text-gray-400 ml-auto flex-shrink-0">
-                          {t.doneByName || ''}{t.doneAt ? ' · ' + fmtDate(t.doneAt) : ''}
-                        </span>
-                      )}
-                    </label>
-                  ))}
+                {/* Gom theo NGÀY HẠN, y như tab Công việc của kế toán — nhân viên nhìn quen mắt và
+                    thấy ngay hôm nay còn việc nào tới hạn. Việc không đặt hạn gom vào nhóm cuối. */}
+                <div className="space-y-2">
+                  {hcnsDays.map(day => {
+                    const dayTasks  = hcnsTasks.tasks.filter(t => (t.deadlineDay || null) === day)
+                    const dayDone   = dayTasks.filter(t => String(t.status).startsWith('done')).length
+                    const dayOntime = dayTasks.filter(t => t.status === 'done_ontime').length
+                    const allOntime = dayOntime === dayTasks.length && dayTasks.length > 0
+                    return (
+                      <div key={day ?? 'none'} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                        <div className={'flex items-center justify-between px-3 py-1.5 border-b ' +
+                          (allOntime ? 'bg-green-50 border-green-100' : dayDone > 0 ? 'bg-yellow-50 border-yellow-100' : 'bg-gray-50 border-gray-100')}>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={'text-xs font-bold ' + (allOntime ? 'text-green-700' : 'text-gray-600')}>
+                              {day ? 'Ngày ' + day + '/' + clientMonth : 'Không đặt hạn'}
+                            </span>
+                            {allOntime && <span className="text-xs text-green-600">✓ Hoàn thành đúng hạn</span>}
+                            {!allOntime && dayDone === dayTasks.length && dayDone > 0 && (
+                              <span className="text-xs text-orange-500">⚠ Hoàn thành trễ hạn</span>
+                            )}
+                          </div>
+                          <span className={'text-xs font-semibold ' + pctClr(dayTasks.length ? Math.round(dayOntime / dayTasks.length * 100) : 100)}>
+                            {dayOntime}/{dayTasks.length}
+                          </span>
+                        </div>
+                        <div className="divide-y divide-gray-50">
+                          {dayTasks.map(t => {
+                            const st = STATUS_STYLE[t.status] || STATUS_STYLE.pending
+                            return (
+                              <label key={t.templateTaskId}
+                                className="flex items-start gap-2.5 px-3 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 flex-wrap">
+                                <input type="checkbox" checked={t.done} disabled={hcnsToggling === t.templateTaskId}
+                                  onChange={e => toggleHcnsTask(t.templateTaskId, e.target.checked)}
+                                  className="w-4 h-4 mt-0.5 accent-[#2E6B3A] flex-shrink-0" />
+                                <span className={'flex-1 min-w-[140px] ' + (t.done ? 'line-through text-gray-400' : '')}>{t.name}</span>
+                                <span className={'text-xs font-medium flex-shrink-0 ' + st.text}>{st.label}</span>
+                                {t.done && (
+                                  <span className="text-xs text-gray-400 flex-shrink-0">
+                                    {t.doneByName || ''}{t.doneAt ? ' · ' + fmtDate(t.doneAt) : ''}
+                                  </span>
+                                )}
+                              </label>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
                 <p className="text-xs text-gray-400 mt-2">
-                  Checklist này chưa tính thời hạn — chỉ theo dõi tỉ lệ hoàn thành.
+                  % chỉ tính việc làm <b>đúng hạn</b> — làm muộn vẫn ghi nhận nhưng không cộng vào %.
+                  Đổi hạn ở trang <b>Checklist HCNS</b>.
                 </p>
               </>
             )}

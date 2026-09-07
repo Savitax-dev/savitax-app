@@ -52,7 +52,7 @@ export async function POST(request) {
   const auth = await callerHasPermission('manage_hcns_template')
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
-  const { name, is_recurring, templateId, taskName, group_name } = await request.json()
+  const { name, is_recurring, templateId, taskName, group_name, deadline_day } = await request.json()
   const supabase = getAdmin()
 
   if (templateId && taskName) {
@@ -60,6 +60,9 @@ export async function POST(request) {
       .select('sort_order').eq('template_id', templateId).order('sort_order', { ascending: false }).limit(1).maybeSingle()
     const { data, error } = await supabase.from('hcns_service_template_tasks').insert({
       template_id: templateId, name: taskName, sort_order: (last?.sort_order || 0) + 1, is_active: true,
+      // Hạn theo ngày trong tháng — chỉ mẫu định kỳ dùng, dịch vụ theo hồ sơ để trống.
+      deadline_day: deadline_day === undefined || deadline_day === null || deadline_day === ''
+        ? null : Number(deadline_day) || null,
     }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 400 })
     return Response.json({ data })
@@ -89,13 +92,20 @@ export async function PATCH(request) {
   const auth = await callerHasPermission('manage_hcns_template')
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
-  const { templateId, taskId, name, sort_order, group_name } = await request.json()
+  const { templateId, taskId, name, sort_order, group_name, deadline_day } = await request.json()
   const supabase = getAdmin()
 
   if (taskId) {
     const patch = {}
     if (name !== undefined) patch.name = name
     if (sort_order !== undefined) patch.sort_order = Number(sort_order)
+    if (deadline_day !== undefined) {
+      const d = deadline_day === null || deadline_day === '' ? null : Number(deadline_day)
+      if (d !== null && (!Number.isFinite(d) || d < 1 || d > 31)) {
+        return Response.json({ error: 'Ngày hạn phải trong khoảng 1-31.' }, { status: 400 })
+      }
+      patch.deadline_day = d
+    }
     const { error } = await supabase.from('hcns_service_template_tasks').update(patch).eq('id', taskId)
     if (error) return Response.json({ error: error.message }, { status: 400 })
     return Response.json({ ok: true })
