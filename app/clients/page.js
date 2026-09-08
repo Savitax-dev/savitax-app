@@ -240,6 +240,10 @@ function HcnsSplitFee({ client, monthOptions, onSaved }) {
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
 
+  // Công ty thu theo QUÝ: monthly_fee là tiền CẢ QUÝ. Không ghi rõ thì nhân viên gõ mức phí một
+  // tháng vào đây, trừ nhầm 1/3 khỏi phí quý và phí HCNS bị ghi nhận thiếu 2/3.
+  const isQuarter = (client.fee_period || 'monthly') === 'quarterly'
+  const perLabel = isQuarter ? 'Quý' : 'Tháng'
   const curFee = Number(client.monthly_fee) || 0
   const hcns   = Number(String(amount).replace(/\D/g, '')) || 0
   const newFee = mode === 'split' ? curFee - hcns : curFee
@@ -288,7 +292,9 @@ function HcnsSplitFee({ client, monthOptions, onSaved }) {
             <p className="text-xs text-sky-600 mb-0.5">
               {resume ? 'Đã ngừng dùng DV HCNS · phí kế toán hiện tại' : 'Phí kế toán hiện tại'}
             </p>
-            <p className="text-base font-bold text-sky-900">{fmt(curFee)}đ</p>
+            <p className="text-base font-bold text-sky-900">
+              {fmt(curFee)}đ<span className="text-xs font-normal text-sky-600 ml-1">/{perLabel}</span>
+            </p>
           </div>
           <button onClick={() => setEditing(true)}
             className="text-xs text-sky-700 hover:underline font-medium bg-white px-3 py-1.5 rounded-lg border border-sky-200">
@@ -318,10 +324,14 @@ function HcnsSplitFee({ client, monthOptions, onSaved }) {
       <div className="space-y-2.5 bg-sky-50 border border-sky-200 rounded-xl p-3">
         <div className="bg-white border border-sky-200 rounded-lg p-2.5">
           <div className="flex justify-between text-xs py-0.5 text-gray-600">
-            <span>Phí kế toán hiện tại</span><span className="font-semibold text-gray-800">{fmt(curFee)}đ</span>
+            <span>Phí kế toán hiện tại</span>
+            <span className="font-semibold text-gray-800">{fmt(curFee)}đ/{perLabel}</span>
           </div>
           <div className="flex justify-between items-center text-xs py-0.5 text-gray-600">
-            <span>{resume ? 'Phí HCNS mới' : 'Phí HCNS tách ra'}</span>
+            <span>
+              {resume ? 'Phí HCNS mới' : 'Phí HCNS tách ra'}
+              {isQuarter && <b className="text-sky-800"> (cả quý)</b>}
+            </span>
             <input type="text" inputMode="numeric" autoFocus
               value={hcns ? hcns.toLocaleString('vi-VN') : ''}
               onChange={e => { setAmount(e.target.value.replace(/\D/g, '')); if (err) setErr('') }}
@@ -335,7 +345,7 @@ function HcnsSplitFee({ client, monthOptions, onSaved }) {
           </div>
           {/* Con số DUY NHẤT khách nhìn thấy trên ĐNTT — để ngay trước mắt lúc bấm lưu. */}
           <div className={'flex justify-between text-xs py-0.5 font-semibold ' + (overCharge === 0 ? 'text-green-700' : 'text-orange-600')}>
-            <span>Tổng khách phải trả</span>
+            <span>Tổng khách phải trả / {perLabel.toLowerCase()}</span>
             <span>{fmt(total)}đ{resume ? '' : ' · ' + (overCharge === 0 ? 'không đổi ✓' : 'tăng ' + fmt(overCharge) + 'đ')}</span>
           </div>
         </div>
@@ -368,6 +378,12 @@ function HcnsSplitFee({ client, monthOptions, onSaved }) {
           </div>
         </div>
 
+        {isQuarter && (
+          <p className="text-xs text-amber-900 bg-amber-100 border border-amber-300 rounded-lg px-2.5 py-2">
+            Công ty này <b>thu phí theo quý</b> — mọi số tiền ở đây là tiền <b>CẢ QUÝ</b>, không phải một
+            tháng. Phí HCNS 540.000đ/tháng thì nhập <b>1.620.000đ</b>.
+          </p>
+        )}
         <p className="text-xs text-gray-500">
           Công nợ các tháng trước vẫn tính theo mức phí cũ. Ghi hai mốc phí cùng lúc — phí kế toán và phí HCNS.
           {selOpt?.past && <span className="text-orange-600"> Chọn tháng lùi sẽ tính lại nợ tồn của các tháng đó.</span>}

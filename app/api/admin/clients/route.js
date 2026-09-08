@@ -222,7 +222,7 @@ export async function PATCH(request) {
 
   // Bật/tắt DV HCNS -> tạo hoặc ẩn công ty tương ứng bên Phòng HCNS. Không chặn luồng kế toán
   // nếu module HCNS chưa cài (bản clone) — syncHcnsForClient tự bỏ qua trong im lặng.
-  else if (uses_hcns !== undefined || hcns_fee !== undefined) {
+  else if (uses_hcns !== undefined || hcns_fee !== undefined || fee_period !== undefined) {
     await syncHcnsForClient(supabase, {
       clientId: id,
       usesHcns: uses_hcns !== undefined ? uses_hcns === true : true,
