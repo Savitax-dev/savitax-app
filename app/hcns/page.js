@@ -688,6 +688,11 @@ function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
   const [services, setServices] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
   const [panel, setPanel] = useState(null)   // null | 'debt' | 'dntt'
+  // Sửa lại thông tin dịch vụ đã khai (nhập nhầm phí, nhầm ngày). API đã nhận sẵn, trước đây chỉ
+  // thiếu chỗ bấm nên nhập sai là phải xoá dịch vụ rồi khai lại — mất luôn checklist đã tích.
+  const [editSvc, setEditSvc] = useState(null)   // { id, cost, received_at, expected_at }
+  const [savingSvc, setSavingSvc] = useState(false)
+  const [svcErr, setSvcErr] = useState('')
   const [debt, setDebt] = useState(null)
   // Ghi chú nội bộ: gom theo case_service_id. notesOk=false nghĩa là chưa chạy
   // sql/10_hcns_case_notes.sql (hoặc bản clone) — cột 3 báo rõ thay vì im lặng hỏng.
@@ -723,6 +728,45 @@ function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
     })
     load(); onChanged && onChanged()
   }
+  const openEdit = (sv) => {
+    setSvcErr('')
+    setEditSvc({
+      id: sv.id,
+      cost: String(Number(sv.cost) || ''),
+      received_at: sv.received_at || '',
+      expected_at: sv.expected_at || '',
+    })
+  }
+
+  const saveSvc = async () => {
+    const cost = Number(String(editSvc.cost).replace(/\D/g, '')) || 0
+    if (cost <= 0) { setSvcErr('Chi phí phải lớn hơn 0.'); return }
+    if (!editSvc.received_at) { setSvcErr('Chọn ngày nhận hồ sơ.'); return }
+    // Hạ phí xuống dưới số ĐÃ THU thì hồ sơ thành "thu dư" — hỏi lại cho chắc thay vì lặng lẽ lưu.
+    const paid = Number(debt?.perService?.find(x => x.id === editSvc.id)?.paid) || 0
+    if (cost < paid) {
+      const ok = window.confirm([
+        'Dịch vụ này ĐÃ THU ' + fmt(paid) + 'đ, nhiều hơn mức phí mới ' + fmt(cost) + 'đ.',
+        '',
+        'Lưu tiếp thì hồ sơ sẽ thành thu dư ' + fmt(paid - cost) + 'đ. Vẫn lưu?',
+      ].join('\n'))
+      if (!ok) return
+    }
+    setSavingSvc(true)
+    const j = await fetch('/api/admin/hcns/case-services', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: editSvc.id, cost,
+        received_at: editSvc.received_at || null,
+        expected_at: editSvc.expected_at || null,
+      }),
+    }).then(r => r.json()).catch(() => ({ error: 'Không lưu được, thử lại.' }))
+    setSavingSvc(false)
+    if (j.error) { setSvcErr(j.error); return }
+    setEditSvc(null)
+    load(); onChanged && onChanged()
+  }
+
   const changeStatus = async (id, status) => {
     await fetch('/api/admin/hcns/case-services', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -782,12 +826,57 @@ function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
             <p className="text-xs text-slate-600">
               Nhận {fmtDate(s.received_at)} · Dự kiến trả {fmtDate(s.expected_at)} · Chi phí {fmt(s.cost)}đ
             </p>
+            {canManage && editSvc?.id !== s.id && (
+              <button onClick={() => openEdit(s)}
+                className="text-xs font-medium px-2 py-1 rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-100">
+                Sửa phí
+              </button>
+            )}
             {s.totalCount > 0 && (
               <span className={'text-xs font-semibold px-2 py-1 rounded-md border border-slate-300 bg-white ' + pctText(s.percent)}>
                 {s.doneCount}/{s.totalCount} việc · {s.percent}%
               </span>
             )}
           </div>
+
+          {/* Form sửa — mở ngay dưới đầu thẻ, không phải bật cửa sổ riêng. */}
+          {editSvc?.id === s.id && (
+            <div className="px-3 py-3 bg-sky-50 border-b border-sky-200">
+              <div className="flex gap-2 flex-wrap items-end max-w-3xl">
+                <div className="flex-1 min-w-[150px]">
+                  <label className="text-xs text-slate-600 mb-1 block">
+                    Chi phí (đ) <span className="text-sky-700 font-bold">— đã gồm VAT</span>
+                  </label>
+                  <input type="text" inputMode="numeric" autoFocus
+                    value={editSvc.cost ? Number(String(editSvc.cost).replace(/\D/g, '') || 0).toLocaleString('vi-VN') : ''}
+                    onChange={e => { setEditSvc(p => ({ ...p, cost: e.target.value.replace(/\D/g, '') })); if (svcErr) setSvcErr('') }}
+                    className="w-full px-2 py-1.5 border border-sky-300 rounded-lg text-sm bg-white text-slate-800" />
+                </div>
+                <div className="min-w-[140px]">
+                  <label className="text-xs text-slate-600 mb-1 block">Ngày nhận</label>
+                  <input type="date" value={editSvc.received_at || ''}
+                    onChange={e => setEditSvc(p => ({ ...p, received_at: e.target.value }))}
+                    className="w-full px-2 py-1.5 border border-sky-300 rounded-lg text-sm bg-white text-slate-800" />
+                </div>
+                <div className="min-w-[140px]">
+                  <label className="text-xs text-slate-600 mb-1 block">Dự kiến trả</label>
+                  <input type="date" value={editSvc.expected_at || ''}
+                    onChange={e => setEditSvc(p => ({ ...p, expected_at: e.target.value }))}
+                    className="w-full px-2 py-1.5 border border-sky-300 rounded-lg text-sm bg-white text-slate-800" />
+                </div>
+                <button onClick={saveSvc} disabled={savingSvc}
+                  className="px-4 py-1.5 bg-sky-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
+                  {savingSvc ? 'Đang lưu...' : 'Lưu'}
+                </button>
+                <button onClick={() => { setEditSvc(null); setSvcErr('') }}
+                  className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-600 bg-white">Hủy</button>
+              </div>
+              <p className="text-xs text-slate-600 mt-2">
+                Sửa phí không đụng tới checklist đã tích hay các khoản đã thu — chỉ đổi số phải thu của dịch vụ này.
+              </p>
+              {svcErr && <p className="text-xs text-red-700 mt-1">{svcErr}</p>}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-6 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
             {/* Phần 1 — Công việc */}
