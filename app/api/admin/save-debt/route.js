@@ -41,6 +41,18 @@ export async function POST(request) {
     // vào 1 tháng thì các tháng còn lại vẫn bị coi là chưa thu -> %-KPI sai và ensureRollovers
     // tự ghi chúng thành "nợ tồn" -> sinh nợ ảo cho tiền đã thu. Xem lib/feeCap.js.
     if (Array.isArray(periods) && periods.length) {
+      // Khoá tận gốc: công ty CÒN nợ tồn thì không được ghi gộp (quy tắc chốt 2026-09-09). Luồng
+      // gộp không trừ nợ tồn, gộp lúc đang có nợ tồn sẽ tính trùng một khoản tiền hai lần. Có nợ
+      // tồn thì ghi đúng phí kỳ rồi trừ phần dư vào nợ tồn (save-old-debt).
+      const { data: cliGop } = await supabase.from('clients')
+        .select('other_debt').eq('id', clientId).maybeSingle()
+      const debtGop = Number(cliGop?.other_debt) || 0
+      if (debtGop > 0) {
+        return Response.json({
+          error: 'Công ty đang còn nợ tồn ' + debtGop.toLocaleString('vi-VN') + 'đ nên không ghi gộp nhiều kỳ được. '
+            + 'Hãy ghi đúng phí của kỳ này, phần dư sẽ được trừ vào nợ tồn.',
+        }, { status: 400 })
+      }
       const rows = periods.map(p => ({
         client_id: clientId,
         year: Number(p.year), month: Number(p.month),
@@ -64,7 +76,7 @@ export async function POST(request) {
     // ── Hai lớp kiểm cho phí kế toán, dùng chung một lần đọc dữ liệu ───────────────────────
     if (type === 'ketoan' && !force) {
       const [{ data: cli }, { data: plans }, { data: chg }, { data: paidRows }] = await Promise.all([
-        supabase.from('clients').select('name, monthly_fee, fee_period').eq('id', clientId).maybeSingle(),
+        supabase.from('clients').select('name, monthly_fee, fee_period, other_debt').eq('id', clientId).maybeSingle(),
         supabase.from('service_fees').select('client_id, year, month, amount').eq('client_id', clientId).eq('type', 'fee_plan'),
         supabase.from('client_change_log').select('client_id, old_value, changed_at')
           .eq('client_id', clientId).eq('entity', 'monthly_fee').eq('action', 'update'),
@@ -96,6 +108,8 @@ export async function POST(request) {
         amount: numAmount, fee, reliable, year: numYear, month: numMonth,
         paidPeriods: new Set((paidRows || []).map(r => r.year * 12 + r.month)),
         label: 'phí dịch vụ kế toán',
+        // Còn nợ tồn thì KHÔNG gợi ý trả gộp nữa — xem lib/feeCap.js.
+        otherDebt: Number(cli?.other_debt) || 0,
       })
       // Vượt thật -> trả 409 để giao diện hỏi lại, KHÔNG tự ý lưu.
       if (verdict.kind !== CAP_OK && verdict.kind !== CAP_UNVERIFIABLE) {

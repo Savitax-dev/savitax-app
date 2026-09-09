@@ -474,12 +474,41 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
           const periods = cap.suggestedPeriods.map(p => ({ ...p, amount: cap.perPeriod }))
           ;({ status, json } = await post({ periods }))
         } else if (cap.kind === 'excess') {
+          const debtNow = Number(cap.otherDebt) || 0
+          // Phần dư được TỰ ĐỘNG trừ vào nợ tồn (chốt 2026-09-09) — trước đây chỉ nhắc nhân viên
+          // tự vào mục "Nợ tồn cũ" ghi tay, rất dễ quên nên tiền đã thu vẫn treo thành nợ.
+          const willApply = Math.min(cap.excess, debtNow)
+          const leftOver  = cap.excess - willApply
           const agree = window.confirm(
-            cap.message + '\n\nBấm OK để ghi ' + fmt(cap.feeForPeriod) + 'đ cho kỳ này. ' +
-            'Sau đó nhớ vào mục "Nợ tồn cũ" ghi tiếp ' + fmt(cap.excess) + 'đ.'
+            cap.message + '\n\nBấm OK để ghi ' + fmt(cap.feeForPeriod) + 'đ cho kỳ này' +
+            (willApply > 0 ? ', và tự động trừ ' + fmt(willApply) + 'đ vào nợ tồn' : '') + '.' +
+            (leftOver > 0
+              ? '\n\nLƯU Ý: còn thừa ' + fmt(leftOver) + 'đ vượt quá nợ tồn hiện có — phần này ' +
+                'app KHÔNG tự ghi, anh/chị kiểm tra lại rồi ghi cho kỳ phù hợp.'
+              : '')
           )
           if (!agree) { setSavingDebt(false); return }
           ;({ status, json } = await post({ amount: cap.feeForPeriod, force: true }))
+
+          // Chỉ trừ nợ tồn khi dòng phí kỳ đã lưu xong — tránh trừ nợ tồn cho khoản chưa ghi được.
+          if (!json.error && willApply > 0) {
+            const oldRes = await fetch('/api/admin/save-old-debt', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                clientId: client.id, amount: willApply, createdBy: userId,
+                note: debtNote || ('Phần dư khi thu phí T' + basePayload.month + '/' + basePayload.year),
+              }),
+            }).then(r => r.json()).catch(() => ({ error: 'Không gọi được' }))
+            if (oldRes.error) {
+              alert('Đã ghi phí kỳ, NHƯNG trừ nợ tồn thất bại: ' + oldRes.error +
+                '\n\nVui lòng vào mục "Nợ tồn cũ" ghi tay ' + fmt(willApply) + 'đ.')
+            } else {
+              alert('Đã ghi ' + fmt(cap.feeForPeriod) + 'đ cho kỳ này và trừ ' + fmt(oldRes.paid) +
+                'đ vào nợ tồn. Nợ tồn còn lại: ' + fmt(oldRes.remainingOtherDebt) + 'đ.' +
+                (leftOver > 0 ? '\n\nCòn thừa ' + fmt(leftOver) + 'đ chưa ghi — kiểm tra lại giúp.' : ''))
+            }
+          }
         }
       }
 

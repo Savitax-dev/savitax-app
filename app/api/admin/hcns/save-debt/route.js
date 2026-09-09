@@ -56,8 +56,27 @@ export async function POST(request) {
       ? { fee: 0, source: 'before_start', reliable: true }
       : resolveFeeForMonthWithSource(planRows, hcnsId, y, m, hc.hcns_fee, [])
 
+    // Nợ tồn của HCNS dồn chung vào clients.other_debt khi có liên kết công ty kế toán (xem
+    // lib/hcnsRollover.js); hồ sơ HCNS độc lập thì dùng cột riêng hcns_clients.other_debt.
+    const readOtherDebt = async () => {
+      if (hc.linked_client_id) {
+        const { data: c } = await supabase.from('clients')
+          .select('other_debt').eq('id', hc.linked_client_id).maybeSingle()
+        return Number(c?.other_debt) || 0
+      }
+      return Number(hc.other_debt) || 0
+    }
+
     // ── Ghi nhiều kỳ (khách trả gộp) ────────────────────────────────────────────
     if (Array.isArray(periods) && periods.length) {
+      // Cùng quy tắc với phí kế toán: còn nợ tồn thì không được ghi gộp (chốt 2026-09-09).
+      const debtGop = await readOtherDebt()
+      if (debtGop > 0) {
+        return Response.json({
+          error: 'Công ty đang còn nợ tồn ' + debtGop.toLocaleString('vi-VN') + 'đ nên không ghi gộp nhiều kỳ được. '
+            + 'Hãy ghi đúng phí của kỳ này, phần dư sẽ được trừ vào nợ tồn.',
+        }, { status: 400 })
+      }
       const rows = periods.map(p => ({
         hcns_client_id: hcnsId,
         year: Number(p.year), month: Number(p.month),
@@ -105,6 +124,8 @@ export async function POST(request) {
     const verdict = evaluateCap({
       amount: numAmount, fee, reliable, year: numYear, month: numMonth,
       paidPeriods, label: 'phí HCNS',
+      // Còn nợ tồn thì KHÔNG gợi ý trả gộp nữa — xem lib/feeCap.js.
+      otherDebt: await readOtherDebt(),
     })
 
     // Vượt phí và người dùng chưa xác nhận -> trả 409 để giao diện hỏi lại.
