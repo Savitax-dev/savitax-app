@@ -97,9 +97,20 @@ export default function DebtPage() {
 
   // Công ty quý chưa tới hạn thu (hoặc còn trong hạn khoan) có periodFee=0 để loại khỏi %
   // công nợ — nhưng vẫn cần phân biệt với "công ty không có phí gì" khi hiển thị badge.
+  // Nợ THẬT của công ty trong kỳ: API trả sẵn `remainDue` — kỳ đã chốt sổ chuyển nợ tồn thì lấy
+  // theo nợ tồn còn lại, vì khoản đó được thu ở mục "Nợ tồn cũ" chứ không ghi vào tháng gốc.
+  const remainOf = (c) => c.remainDue !== undefined
+    ? Math.max(0, Number(c.remainDue) || 0)
+    : Math.max(0, (Number(c.periodFee) || 0) - (c.collected || 0))
+
   const debtStatus = (c) => {
     const fee = Number(c.periodFee) || 0
     const col = c.collected || 0
+    // Đã chuyển nợ tồn và thu xong ở đó -> báo đúng trạng thái, không kêu "Quá hạn" nữa (nhân
+    // viên từng đi thu lại lần 2 vì tưởng khách chưa trả).
+    if (fee > 0 && col < fee && remainOf(c) <= 0) {
+      return { label: '✅ Đã thu qua nợ tồn', cls: 'text-green-600 bg-green-50' }
+    }
     if (fee === 0) {
       if (col > 0) return { label: '✅ Đã thu (chưa đến hạn)', cls: 'text-green-600 bg-green-50' }
       if (c.fee_period === 'quarterly' && Number(c.monthly_fee) > 0) {
@@ -117,7 +128,7 @@ export default function DebtPage() {
   const grandFee = data.reduce((a, r) => a + r.totalFee, 0)
   const grandCol = data.reduce((a, r) => a + r.totalCollected, 0)
   const grandPct = grandFee === 0 ? 0 : Math.round(grandCol / grandFee * 100)
-  const grandUnpaid = data.flatMap(r => r.staff.flatMap(s => s.clients)).filter(c => c.collected < c.periodFee && c.periodFee > 0)
+  const grandUnpaid = data.flatMap(r => r.staff.flatMap(s => s.clients)).filter(c => remainOf(c) > 0)
   const grandOverdue = grandUnpaid.filter(() => isPeriodPast)
 
   // ── Dữ liệu cho 3 thẻ bấm mở được ──────────────────────────────────────────────────────────
@@ -135,6 +146,13 @@ export default function DebtPage() {
 
   const grandOtherDebt = allOwned.reduce((a, c) => a + (Number(c.other_debt) || 0), 0)
   const grandKhach     = allOwned.reduce((a, c) => a + (Number(c.collectedKhach) || 0), 0)
+  // Còn phải thu THẬT của kỳ — kỳ đã chuyển nợ tồn thì lấy theo nợ tồn còn lại. Trước đây lấy
+  // "tổng phí trừ đã thu" nên số tiền và số công ty trên cùng 1 thẻ đá nhau (T6/2026 hiện
+  // 59.500.000đ nhưng chỉ 1 công ty).
+  const grandRemain = allOwned.reduce((a, c) => a + remainOf(c), 0)
+  // Phần đã được thu qua mục "Nợ tồn cũ" — để 3 con số Tổng phí = Đã thu + Thu qua nợ tồn +
+  // Còn phải thu khớp nhau, không thì người xem thấy hụt tiền mà không hiểu đi đâu.
+  const grandViaOldDebt = Math.max(0, grandFee - grandCol - grandRemain)
 
   // Gom 2 cấp: PHÒNG → NHÂN VIÊN → công ty, để công ty của cùng 1 nhân viên nằm liền nhau
   // (trước đây chỉ gom theo phòng rồi sắp theo số tiền nên nhân viên bị trộn lẫn, khó dò).
@@ -159,8 +177,8 @@ export default function DebtPage() {
     .sort((a, b) => b.total - a.total)
 
   const unpaidByRoom = groupByRoomStaff(
-    c => c.periodFee > 0 && c.collected < c.periodFee,
-    c => c.periodFee - c.collected)
+    c => remainOf(c) > 0,
+    c => remainOf(c))
   const unpaidCount = unpaidByRoom.reduce((a, r) => a + r.count, 0)
 
   const otherDebtByRoom = groupByRoomStaff(
@@ -263,14 +281,17 @@ export default function DebtPage() {
               <div className="bg-white border border-gray-100 border-t-4 border-t-emerald-600 rounded-2xl px-4 py-3">
                 <p className="text-xs text-gray-400 mb-1">Đã thu</p>
                 <p className="text-lg font-bold text-green-600">{fmt(grandCol)}đ</p>
+                {grandViaOldDebt > 0 && (
+                  <p className="text-xs text-gray-400 mt-1">+ {fmt(grandViaOldDebt)}đ thu qua nợ tồn</p>
+                )}
               </div>
 
               <button onClick={() => toggleCard('unpaid')}
                 className={'text-left bg-white border border-t-4 border-t-red-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
                   (openCard === 'unpaid' ? 'border-red-300 ring-1 ring-red-200' : 'border-gray-100')}>
                 <p className="text-xs text-gray-400 mb-1">Còn phải thu</p>
-                <p className={'text-lg font-bold ' + (grandFee - grandCol > 0 ? 'text-red-500' : 'text-green-600')}>
-                  {fmt(grandFee - grandCol)}đ
+                <p className={'text-lg font-bold ' + (grandRemain > 0 ? 'text-red-500' : 'text-green-600')}>
+                  {fmt(grandRemain)}đ
                 </p>
                 <p className="text-xs text-gray-400 mt-1">{unpaidCount} công ty</p>
                 <p className="text-xs text-blue-600 mt-1">
@@ -420,9 +441,9 @@ export default function DebtPage() {
               </div>
               <Bar value={grandPct} className="h-2.5" />
               <div className="flex gap-4 mt-2 text-xs text-gray-400">
-                <span>✅ {data.flatMap(r=>r.staff.flatMap(s=>s.clients)).filter(c=>c.collected>=c.periodFee && c.periodFee>0).length} cty đủ phí</span>
-                <span>⚠️ {data.flatMap(r=>r.staff.flatMap(s=>s.clients)).filter(c=>c.collected>0&&c.collected<c.periodFee).length} cty một phần</span>
-                <span>○ {data.flatMap(r=>r.staff.flatMap(s=>s.clients)).filter(c=>c.collected===0&&c.periodFee>0).length} cty chưa thu</span>
+                <span>✅ {allOwned.filter(c=>c.periodFee>0 && remainOf(c)===0).length} cty đủ phí</span>
+                <span>⚠️ {allOwned.filter(c=>remainOf(c)>0 && remainOf(c)<c.periodFee).length} cty một phần</span>
+                <span>○ {allOwned.filter(c=>c.periodFee>0 && remainOf(c)>=c.periodFee).length} cty chưa thu</span>
               </div>
             </div>
 

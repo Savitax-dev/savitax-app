@@ -469,28 +469,42 @@ export default function RoomPage({ params }) {
               const totalFee    = ownedClients.reduce((a, c) => a + (c.dueThisMonth ? Number(c.monthly_fee) || 0 : 0), 0)
               const totalKetoan = ownedClients.reduce((a, c) => a + (c.dueThisMonth ? c.ketoan : 0), 0)
               const debtPct     = totalFee === 0 ? 0 : Math.round(totalKetoan / totalFee * 100)
-              const overdue     = ownedClients.filter(c => c.dueThisMonth && isMonthPast && c.ketoan < Number(c.monthly_fee) && Number(c.monthly_fee) > 0)
+              // Cảnh báo "quá hạn" phải bỏ qua công ty đã chuyển nợ tồn và thu xong ở mục đó —
+              // xem ketoanRemainOf bên dưới. Trước đây vẫn kêu quá hạn nên nhân viên đi đòi lại
+              // khoản khách đã trả.
+              const overdue     = ownedClients.filter(c =>
+                c.dueThisMonth && isMonthPast && Number(c.monthly_fee) > 0 &&
+                ((c.rolloverRemaining !== null && c.rolloverRemaining !== undefined)
+                  ? Number(c.rolloverRemaining) > 0
+                  : c.ketoan < Number(c.monthly_fee)))
 
               // ── Dữ liệu cho 3 thẻ bấm mở được ────────────────────────────────────────────
               // Đều CHỈ tính công ty phụ trách CHÍNH (bỏ phụ trách phụ) cho khớp nguyên tắc
               // doanh thu — trước đây dòng "N công ty chưa đủ" đếm cả công ty phụ trách phụ và
               // công ty quý chưa tới hạn nên lệch với số tiền ngay bên trên.
               const staffNameOf = (id) => (staffData.find(s => s.id === id) || {}).full_name || '—'
+
+              // Nợ phí kế toán THẬT của công ty trong tháng đang xem.
+              // Tháng đã chốt sổ chuyển nợ tồn (rolloverRemaining khác null) thì khoản chưa thu
+              // đã nằm ở "Nợ tồn cũ" và được thu ở đó — tháng gốc KHÔNG bao giờ có thêm dòng
+              // 'ketoan' nữa, nên "phí trừ đã thu" sẽ treo mãi dù khách đã trả xong (ca thật:
+              // VƯU ĐỨC PHÁT trả đủ 38.880.000đ qua nợ tồn mà T6/T7 vẫn hiện "Quá hạn").
+              // Lúc đó số nợ đúng của tháng là phần nợ tồn còn lại.
+              const daChuyenNoTon = (c) => c.rolloverRemaining !== null && c.rolloverRemaining !== undefined
+              const ketoanRemainOf = (c) => daChuyenNoTon(c)
+                ? Math.max(0, Number(c.rolloverRemaining) || 0)
+                : (c.dueThisMonth ? Math.max(0, (Number(c.monthly_fee) || 0) - c.ketoan) : 0)
+              const hcnsRemainOf = (c) => Math.max(0, (Number(c.hcnsFee) || 0) - (Number(c.hcnsPaid) || 0))
               // Công ty chỉ còn nợ phí HCNS cũng phải có mặt ở đây, nếu không con số trên thẻ
               // (đã gồm HCNS) sẽ không khớp với danh sách bấm mở ra.
-              const unpaidClients = ownedClients.filter(c =>
-                (c.dueThisMonth && Number(c.monthly_fee) > 0 && c.ketoan < Number(c.monthly_fee))
-                || (Number(c.hcnsFee) || 0) - (Number(c.hcnsPaid) || 0) > 0)
+              const unpaidClients = ownedClients.filter(c => ketoanRemainOf(c) > 0 || hcnsRemainOf(c) > 0)
               const unpaidByStaff = []
               for (const s of staffData) {
                 const items = unpaidClients.filter(c => c.assigned_to === s.id)
                 if (items.length === 0) continue
                 unpaidByStaff.push({
                   id: s.id, name: s.full_name, items,
-                  total: items.reduce((a, c) => {
-                    const kt = c.dueThisMonth ? Math.max(0, (Number(c.monthly_fee) || 0) - c.ketoan) : 0
-                    return a + kt + Math.max(0, (Number(c.hcnsFee) || 0) - (Number(c.hcnsPaid) || 0))
-                  }, 0),
+                  total: items.reduce((a, c) => a + ketoanRemainOf(c) + hcnsRemainOf(c), 0),
                 })
               }
               // "Thu khác" = tiền thật đã ghi nhận trong tháng, không phụ thuộc hạn thu quý.
@@ -521,8 +535,9 @@ export default function RoomPage({ params }) {
                   paid: items.reduce((a, c) => a + c.hcnsPaid, 0),
                 })
               }
-              // Tổng còn phải thu = phí kế toán còn thiếu + phí HCNS còn thiếu.
-              const totalRemainAll = (totalFee - totalKetoan) + totalHcnsRemain
+              // Tổng còn phải thu = phí kế toán còn thiếu + phí HCNS còn thiếu. Phần kế toán lấy
+              // theo ketoanRemainOf để tháng đã chuyển nợ tồn không treo lại khoản đã thu.
+              const totalRemainAll = ownedClients.reduce((a, c) => a + ketoanRemainOf(c), 0) + totalHcnsRemain
 
               const toggleCard = (k) => setOpenDebtCard(prev => prev === k ? null : k)
               // Nền xen kẽ đậm/nhạt giữa các công ty cho dễ dò mắt theo hàng.
@@ -533,7 +548,16 @@ export default function RoomPage({ params }) {
               // `bg`/`bgAlt` = 2 sắc độ của CÙNG màu trạng thái, dùng xen kẽ theo thứ tự dòng
               // (bgAlt cho dòng lẻ) — giữ nguyên ý nghĩa màu "đã thu / chưa thu" nhưng 2 công ty
               // liền nhau cùng trạng thái vẫn phân biệt được, đỡ mỏi mắt khi dò danh sách dài.
-              const debtStatus = (ketoan, fee, notDueYet) => {
+              // rollRemain: nợ tồn còn lại của tháng này (null = tháng chưa chuyển nợ tồn).
+              const debtStatus = (ketoan, fee, notDueYet, rollRemain = null) => {
+                // Tháng đã chốt sổ chuyển nợ tồn: khoản nợ nằm ở "Nợ tồn cũ", thu ở đó chứ không
+                // ghi vào tháng gốc. Hiện đúng trạng thái thay vì "Quá hạn" gây hiểu lầm là khách
+                // chưa trả (đã có người đi thu lại lần 2 vì tưởng vậy).
+                if (rollRemain !== null && rollRemain !== undefined) {
+                  return Number(rollRemain) > 0
+                    ? { label: 'Còn nợ tồn',        color: 'text-orange-700', bg: 'bg-orange-50', bgAlt: 'bg-orange-100/70', dot: 'bg-orange-500', pill: 'bg-orange-500' }
+                    : { label: 'Đã thu qua nợ tồn', color: 'text-green-700',  bg: 'bg-green-50',  bgAlt: 'bg-green-100/70',  dot: 'bg-green-500',  pill: 'bg-green-600' }
+                }
                 if (notDueYet) {
                   return ketoan > 0
                     ? { label: 'Đã thu (chưa đến hạn)', color: 'text-green-700', bg: 'bg-green-50', bgAlt: 'bg-green-100/70', dot: 'bg-green-500', pill: 'bg-green-600' }
@@ -821,7 +845,7 @@ export default function RoomPage({ params }) {
                           {myClients.map((c, ci) => {
                             const fee = Number(c.monthly_fee) || 0
                             const notDueYet = c.fee_period === 'quarterly' && !c.dueThisMonth && fee > 0
-                            const st  = debtStatus(c.ketoan, fee, notDueYet)
+                            const st  = debtStatus(c.ketoan, fee, notDueYet, c.rolloverRemaining)
                             const colPct = fee === 0 ? 0 : Math.min(100, Math.round(c.ketoan / fee * 100))
                             return (
                               <div key={c.id} className={'px-4 py-3 ' + (ci % 2 === 0 ? st.bg : st.bgAlt)}>

@@ -110,7 +110,7 @@ export async function GET(request) {
   const hcnsByClient = hcns.byClient
 
   // task_records + fee_collections for selected month (both types)
-  const [taskRecords, feeCollections, feeKhach, feePlanRows, changeLogRows] = await Promise.all([
+  const [taskRecords, feeCollections, feeKhach, feePlanRows, changeLogRows, rolloverRows] = await Promise.all([
     fetchAllRows(() => supabase.from('task_records').select('id, client_id, task_def_id, is_done, done_at, note').in('client_id', clientIds).eq('year', year).eq('month', month)),
     fetchAllRows(() => supabase.from('service_fees').select('client_id, amount').in('client_id', clientIds).eq('year', year).eq('month', month).eq('type', 'ketoan')),
     // Lấy kèm `note` — tab "Công nợ phòng" hiển thị nội dung ghi chú của khoản thu khác
@@ -120,6 +120,12 @@ export async function GET(request) {
     fetchAllRows(() => supabase.from('service_fees').select('client_id, year, month, amount').in('client_id', clientIds).eq('type', 'fee_plan')),
     fetchAllRows(() => supabase.from('client_change_log').select('client_id, old_value, changed_at')
       .in('client_id', clientIds).eq('entity', 'monthly_fee').eq('action', 'update')),
+    // Dòng "nợ tồn tự động" của ĐÚNG tháng đang xem. Tháng đã quá hạn thì khoản chưa thu đã
+    // chuyển sang nợ tồn và được thu ở mục "Nợ tồn cũ" (tạo dòng type='no_ton', KHÔNG tạo dòng
+    // 'ketoan' cho tháng gốc) — nên "phí trừ đã thu" của tháng gốc không còn nói đúng số nợ nữa.
+    // Số nợ thật của tháng đó là remaining_amount ở đây. Xem lib/debtRollover.js.
+    fetchAllRows(() => supabase.from('debt_rollovers').select('client_id, remaining_amount')
+      .in('client_id', clientIds).eq('year', year).eq('month', month)),
   ])
 
   // Build lookup maps
@@ -128,6 +134,10 @@ export async function GET(request) {
 
   const feeMap = {}
   for (const f of (feeCollections || [])) feeMap[f.client_id] = Number(f.amount) || 0
+  // clientId → số nợ CÒN LẠI của tháng này sau khi đã chuyển sang nợ tồn. Có mặt trong map =
+  // tháng này đã chốt sổ chuyển nợ tồn; giá trị 0 = đã thu xong qua mục "Nợ tồn cũ".
+  const rolloverMap = {}
+  for (const r of (rolloverRows || [])) rolloverMap[r.client_id] = Number(r.remaining_amount) || 0
   const feeKhachMap = {}
   const feeKhachNoteMap = {}
   for (const f of (feeKhach || [])) {
@@ -186,6 +196,9 @@ export async function GET(request) {
       address: extra.address || null, tax_status: extra.tax_status || null, other_debt: Number(extra.other_debt) || 0,
       collected: feeMap[c.id] || 0, collectedKhach: feeKhachMap[c.id] || 0,
       collectedKhachNote: feeKhachNoteMap[c.id] || null,
+      // Tháng này đã chốt sổ chuyển nợ tồn chưa, và còn nợ bao nhiêu sau khi thu qua "Nợ tồn cũ".
+      // null = chưa chuyển (còn trong hạn thu bình thường).
+      rolloverRemaining: Object.prototype.hasOwnProperty.call(rolloverMap, c.id) ? rolloverMap[c.id] : null,
       // Phí HCNS — chỉ để hiển thị/gộp vào "Còn phải thu", KHÔNG cộng vào collected.
       usesHcns: !!hcnsByClient[c.id],
       hcnsFee: hcnsByClient[c.id]?.fee || 0,

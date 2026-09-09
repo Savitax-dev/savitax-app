@@ -45,7 +45,7 @@ export async function GET(request) {
 
   const supabase = getAdmin()
 
-  const [{ data: roomList }, { data: staffList }, { data: clientList }, feesKetoan, feesKhach, { data: secondaryRows }, feePlanRows, changeLogRows] = await Promise.all([
+  const [{ data: roomList }, { data: staffList }, { data: clientList }, feesKetoan, feesKhach, { data: secondaryRows }, feePlanRows, changeLogRows, rolloverRows] = await Promise.all([
     // Công nợ HCNS theo dõi riêng ở trang /hcns, không trộn vào công nợ phòng kế toán.
     supabase.from('rooms').select('id, name, type').neq('type', 'hcns').order('name'),
     supabase.from('staff').select('id, full_name, room_id').order('full_name'),
@@ -58,6 +58,11 @@ export async function GET(request) {
     // Lịch sử đổi phí — tra đúng phí tại kỳ đang xem thay vì monthly_fee sống (xem resolveFeeForMonth).
     fetchAllRows(() => supabase.from('service_fees').select('client_id, year, month, amount').eq('type', 'fee_plan')),
     fetchAllRows(() => supabase.from('client_change_log').select('client_id, old_value, changed_at').eq('entity', 'monthly_fee').eq('action', 'update')),
+    // Dòng "nợ tồn tự động" của các tháng trong kỳ đang xem — tháng đã chốt sổ chuyển nợ tồn thì
+    // số nợ thật nằm ở remaining_amount, không còn là "phí trừ đã thu" nữa (khoản đó được thu ở
+    // mục "Nợ tồn cũ", không tạo dòng 'ketoan' cho tháng gốc). Xem lib/debtRollover.js.
+    fetchAllRows(() => supabase.from('debt_rollovers').select('client_id, year, month, remaining_amount')
+      .eq('year', year).in('month', months)),
   ])
 
   // Tự động chuyển nợ thiếu của các tháng trước thành nợ tồn — chỉ khi đang xem đúng tháng hiện tại.
@@ -85,6 +90,26 @@ export async function GET(request) {
     }
   }
 
+  // clientId → tổng nợ CÒN LẠI của các tháng trong kỳ đã chốt sổ chuyển nợ tồn, và có chốt sổ
+  // hay chưa. Có dòng = tháng đó đã chuyển nợ tồn; tổng 0 = đã thu xong qua mục "Nợ tồn cũ".
+  const rolloverMap = {}
+  for (const r of (rolloverRows || [])) {
+    if (!rolloverMap[r.client_id]) rolloverMap[r.client_id] = { remaining: 0, months: 0 }
+    rolloverMap[r.client_id].remaining += Number(r.remaining_amount) || 0
+    rolloverMap[r.client_id].months += 1
+  }
+  // Nợ kế toán THẬT của công ty trong kỳ đang xem.
+  const remainOf = (c) => {
+    const r = rolloverMap[c.id]
+    // Kỳ nhiều tháng (quý/năm): phần đã chuyển nợ tồn lấy theo remaining, phần chưa chuyển vẫn
+    // tính "phí trừ đã thu" — cộng cả hai, tránh bỏ sót tháng còn trong hạn.
+    if (!r) return Math.max(0, (c.periodFee || 0) - (c.collected || 0))
+    if (r.months >= months.length) return r.remaining
+    const perMonth = months.length ? (c.periodFee || 0) / months.length : 0
+    const chuaChuyen = Math.max(0, perMonth * (months.length - r.months) - (c.collected || 0))
+    return r.remaining + chuaChuyen
+  }
+
   const clientMap = {}
   for (const c of (clientList || [])) clientMap[c.id] = c
 
@@ -108,7 +133,7 @@ export async function GET(request) {
         collected:      feeMap[c.id] || 0,
         collectedKhach: feeKhachMap[c.id] || 0,
         khachDetails:   feeKhachDetailMap[c.id] || [],
-      }))
+      })).map(c => ({ ...c, remainDue: remainOf(c) }))
       // Công ty mình là nhân viên phụ — chỉ để theo dõi, không cộng vào totalFee/totalCollected
       const secondaryClients = (secondaryRows || [])
         .filter(r => r.staff_id === s.id)
