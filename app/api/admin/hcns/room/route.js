@@ -263,6 +263,17 @@ export async function GET(request) {
       doneUnpaidRemain: doneUnpaid.reduce((a, c) => a + moneyOf(c).remain, 0),
       taskDone: totals.done, taskTotal: totals.total,
       taskPercent: avg(perStaffRows.map(r => r.taskPercent).filter(p => p !== null)),
+      // Danh sách từng hồ sơ đứng sau ba ô tiền — bấm vào ô là xem được ngay công ty nào, thay vì
+      // chỉ thấy con số tổng rồi phải tự dò.
+      cases: list.map(c => {
+        const m = moneyOf(c)
+        return {
+          id: c.id, name: c.name, caseCode: c.case_code || null,
+          staffName: staffName(staff, c.assigned_to),
+          cost: m.cost, paid: m.paid, remain: m.remain,
+          allDone: allDoneOf(c),
+        }
+      }).sort((a, b) => b.remain - a.remain),
       byStatus,
       byStaff: perStaffRows,
     }

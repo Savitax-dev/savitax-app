@@ -385,6 +385,13 @@ const STEP_BAR = ['bg-blue-200', 'bg-blue-300', 'bg-blue-400', 'bg-blue-600', 'b
 function CaseBlock({ title, data }) {
   const max = Math.max(1, ...data.byStatus.map(s => s.count))
   const tone = CASE_TONE[title] || CASE_TONE['Thời điểm']
+  // Bấm ô tiền để xem NGAY hồ sơ nào đứng sau con số — trước đây chỉ có tổng, muốn biết công ty
+  // nào còn nợ thì phải mở từng thẻ ra dò.
+  const [openList, setOpenList] = useState(null)   // null | 'cost' | 'paid' | 'remain'
+  const cases = data.cases || []
+  const shown = openList === 'paid' ? cases.filter(c => c.paid > 0)
+    : openList === 'remain' ? cases.filter(c => c.remain > 0)
+    : cases
   const tile = (label, value, cls, sub) => (
     <div className={'border rounded-lg px-2 py-1.5 ' + cls}>
       <p className="text-xs opacity-80">{label}</p>
@@ -421,28 +428,73 @@ function CaseBlock({ title, data }) {
       {/* Hàng dưới: TIỀN, tính đến hiện tại chứ không theo tháng đang chọn — tiền chưa thu không
           hết hạn theo tháng. Gộp ba ô tiền một hàng để đọc một mạch. */}
       <div className="grid grid-cols-3 gap-2 mb-2">
-        <div className="border rounded-lg px-2 py-1.5 bg-slate-50 border-slate-200">
+        <button onClick={() => setOpenList(openList === 'cost' ? null : 'cost')}
+          className={'text-left border rounded-lg px-2 py-1.5 transition-colors bg-slate-50 hover:bg-slate-100 ' +
+            (openList === 'cost' ? 'border-slate-400 ring-1 ring-slate-300' : 'border-slate-200')}>
           <p className="text-xs text-slate-600">Tổng chi phí</p>
           <p className="text-base font-bold tabular-nums leading-tight text-slate-900">{fmt(data.totalCost)}đ</p>
-          <p className="text-[11px] text-slate-500">{' '}</p>
-        </div>
-        <div className="border rounded-lg px-2 py-1.5 bg-emerald-50 border-emerald-200">
+          <p className="text-[11px] text-slate-500">
+            {cases.length ? (openList === 'cost' ? '▴ đang mở' : '▾ xem ' + cases.length + ' hồ sơ') : ' '}
+          </p>
+        </button>
+        <button onClick={() => setOpenList(openList === 'paid' ? null : 'paid')}
+          className={'text-left border rounded-lg px-2 py-1.5 transition-colors bg-emerald-50 hover:bg-emerald-100 ' +
+            (openList === 'paid' ? 'border-emerald-400 ring-1 ring-emerald-300' : 'border-emerald-200')}>
           <p className="text-xs text-emerald-800">Đã thu</p>
           <p className="text-base font-bold tabular-nums leading-tight text-emerald-900">{fmt(data.totalPaid)}đ</p>
           <p className="text-[11px] tabular-nums text-emerald-700">
-            {data.paidPercent === null ? ' ' : data.paidPercent + '%'}
+            {data.paidPercent === null ? ' '
+              : data.paidPercent + '%' + (openList === 'paid' ? ' · đang mở' : ' · xem')}
           </p>
-        </div>
-        <div className={'border rounded-lg px-2 py-1.5 ' +
-          (data.remain > 0 ? 'bg-red-50 border-red-300' : 'bg-emerald-50 border-emerald-200')}>
+        </button>
+        <button onClick={() => setOpenList(openList === 'remain' ? null : 'remain')}
+          className={'text-left border rounded-lg px-2 py-1.5 transition-colors ' +
+            (data.remain > 0
+              ? 'bg-red-50 hover:bg-red-100 ' + (openList === 'remain' ? 'border-red-400 ring-1 ring-red-300' : 'border-red-300')
+              : 'bg-emerald-50 border-emerald-200')}>
           <p className={'text-xs ' + (data.remain > 0 ? 'text-red-800' : 'text-emerald-800')}>Còn phải thu</p>
           <p className={'text-base font-bold tabular-nums leading-tight ' +
             (data.remain > 0 ? 'text-[#B3261E]' : 'text-[#2E6B3A]')}>{fmt(data.remain)}đ</p>
           <p className={'text-[11px] tabular-nums ' + (data.remain > 0 ? 'text-red-700' : 'text-emerald-700')}>
-            {data.remain > 0 ? data.unpaidCount + ' hồ sơ' : 'đã thu đủ'}
+            {data.remain > 0
+              ? data.unpaidCount + ' hồ sơ' + (openList === 'remain' ? ' · đang mở' : ' · xem')
+              : 'đã thu đủ'}
           </p>
-        </div>
+        </button>
       </div>
+
+      {openList && (
+        <div className="border border-slate-200 rounded-lg overflow-hidden mb-2">
+          <div className="flex items-center justify-between px-2.5 py-1.5 bg-slate-100 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+            <span>
+              {openList === 'cost' ? 'Tất cả hồ sơ' : openList === 'paid' ? 'Hồ sơ đã thu' : 'Hồ sơ còn phải thu'}
+              {' (' + shown.length + ')'}
+            </span>
+            <button onClick={() => setOpenList(null)}
+              className="normal-case tracking-normal text-slate-500 hover:text-slate-800">✕ Đóng</button>
+          </div>
+          {shown.length === 0 && <p className="px-2.5 py-3 text-xs text-slate-500">Không có hồ sơ nào.</p>}
+          {shown.map((c, i) => (
+            <div key={c.id} className={'px-2.5 py-1.5 border-t border-slate-100 ' + (i % 2 ? 'bg-slate-50' : 'bg-white')}>
+              <div className="flex justify-between gap-2 items-start">
+                <span className="text-xs text-slate-800 flex-1 min-w-0">
+                  <span className="block truncate">{c.name}</span>
+                  <span className="text-[11px] text-slate-500">
+                    {[c.caseCode, c.staffName].filter(Boolean).join(' · ')}
+                    {c.allDone && <span className="text-[#2E6B3A]"> · xong việc</span>}
+                  </span>
+                </span>
+                <span className="text-xs tabular-nums text-right flex-shrink-0">
+                  <span className="block text-slate-600">{fmt(c.paid)} / {fmt(c.cost)}đ</span>
+                  <span className={'text-[11px] font-semibold ' + (c.remain > 0 ? 'text-[#B3261E]' : 'text-[#2E6B3A]')}>
+                    {c.remain > 0 ? 'còn ' + fmt(c.remain) + 'đ' : 'đã thu đủ'}
+                  </span>
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       <p className="text-[11px] text-slate-500 mb-3">Ba ô tiền tính đến hiện tại, không theo tháng đang chọn.</p>
 
       {/* Xong việc mà chưa thu đủ — nhóm dễ bị bỏ quên nhất vì đã rời sang thẻ Hoàn thành. */}
