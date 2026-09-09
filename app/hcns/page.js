@@ -211,27 +211,117 @@ export default function HcnsPage() {
         {tab === 'report' && <ReportBlock report={report} mode={mode} setMode={setMode}
           selYear={selYear} selMonth={selMonth} setSelYear={setSelYear} setSelMonth={setSelMonth} monthOpts={monthOpts} />}
 
-        {tab !== 'report' && (
-          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-            {filtered(byCat(tab)).length === 0 && (
-              <p className="text-sm text-slate-500 px-4 py-8 text-center">
-                {search ? 'Không tìm thấy công ty nào khớp.'
-                  : tab === 'done' ? 'Chưa có hồ sơ nào xong hết dịch vụ.'
-                  : tab === 'stopped' ? 'Chưa có công ty nào ngừng DV HCNS.'
-                  : 'Chưa có công ty nào ở mục này.'}
-              </p>
-            )}
-            {filtered(byCat(tab)).map((c, ri) => (
-              <ClientRow key={c.id} c={c} ri={ri} showCat={tab === 'all' || tab === 'done'}
-                stopped={tab === 'stopped'} report={report}
-                expanded={expanded === c.id} onToggle={() => setExpanded(expanded === c.id ? null : c.id)}
-                clientMonth={clientMonth} setClientMonth={setClientMonth}
-                selMonth={selMonth} canManage={canManage}
-                canAssign={canAssign} staffList={staffList}
-                templates={templates} onChanged={() => { loadClients(); loadReport() }} />
-            ))}
-          </div>
-        )}
+        {tab !== 'report' && (() => {
+          const rows = filtered(byCat(tab))
+          const rowProps = (c, ri) => ({
+            key: c.id, c, ri, showCat: tab === 'all' || tab === 'done',
+            stopped: tab === 'stopped', report,
+            expanded: expanded === c.id, onToggle: () => setExpanded(expanded === c.id ? null : c.id),
+            clientMonth, setClientMonth, selMonth, canManage, canAssign, staffList, templates,
+            onChanged: () => { loadClients(); loadReport() },
+          })
+          const empty = (
+            <p className="text-sm text-slate-500 px-4 py-8 text-center">
+              {search ? 'Không tìm thấy công ty nào khớp.'
+                : tab === 'done' ? 'Chưa có hồ sơ nào xong hết dịch vụ.'
+                : tab === 'stopped' ? 'Chưa có công ty nào ngừng DV HCNS.'
+                : 'Chưa có công ty nào ở mục này.'}
+            </p>
+          )
+
+          // Tag "Thời kỳ" gom theo nhân viên phụ trách — 55 công ty xếp phẳng thì không theo dõi
+          // được ai đang giữ công ty nào. Các tag khác chỉ vài dòng nên để nguyên danh sách phẳng.
+          if (tab !== 'thoi_ky') {
+            return (
+              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                {rows.length === 0 && empty}
+                {rows.map((c, ri) => <ClientRow {...rowProps(c, ri)} />)}
+              </div>
+            )
+          }
+
+          // Nhóm CHƯA PHÂN CÔNG luôn đứng đầu — đó là việc cần xử lý trước, không phải để cuối.
+          const groups = []
+          const unassigned = rows.filter(c => !c.assigned_to)
+          if (unassigned.length) groups.push({ key: 'none', staff: null, items: unassigned })
+          for (const st of staffList) {
+            const items = rows.filter(c => c.assigned_to === st.id)
+            if (items.length) groups.push({ key: st.id, staff: st, items })
+          }
+          // Người phụ trách không còn trong danh sách nhân viên HCNS (đổi phòng, nghỉ) vẫn phải
+          // hiện ra, nếu không công ty của họ biến mất khỏi trang.
+          const shownIds = new Set(groups.flatMap(g => g.items.map(x => x.id)))
+          const orphan = rows.filter(c => !shownIds.has(c.id))
+          if (orphan.length) groups.push({ key: 'orphan', staff: null, orphan: true, items: orphan })
+
+          if (rows.length === 0) {
+            return <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">{empty}</div>
+          }
+
+          return (
+            <div className="space-y-3">
+              {groups.map(g => {
+                // Số liệu lấy THẲNG từ Báo cáo phòng, không tính lại — tính riêng ở đây thì hai
+                // trang dễ ra hai con số khác nhau, đúng loại lỗi khó truy nhất.
+                const st = g.staff ? report?.thoiKy?.perStaff?.find(x => x.staffId === g.staff.id) : null
+                const fee = g.items.reduce((a, c) => a + (Number(c.hcns_fee) || 0), 0)
+                const border = !g.staff ? '#EA580C'
+                  : st?.debtPercent === null || st?.debtPercent === undefined ? '#CBD5E1'
+                  : st.debtPercent >= 90 ? '#2E6B3A' : st.debtPercent >= 70 ? '#D89614' : '#B3261E'
+                return (
+                  <div key={g.key}
+                    className={'bg-white rounded-2xl overflow-hidden shadow-sm border ' +
+                      (g.staff ? 'border-slate-200' : 'border-amber-300')}>
+                    <div className={'flex items-center justify-between gap-3 px-3 py-2.5 ' +
+                      (g.staff ? 'bg-slate-50 border-b border-slate-200' : 'bg-amber-50 border-b border-amber-200')}
+                      style={{ borderLeft: '5px solid ' + border }}>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {g.staff ? (
+                          <span className={'w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ' + avatarTone(g.staff.id)}>
+                            {initialOf(g.staff.full_name)}
+                          </span>
+                        ) : (
+                          <span className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-amber-100 text-amber-700">⚠</span>
+                        )}
+                        <div className="min-w-0">
+                          <p className={'text-sm font-semibold truncate ' + (g.staff ? 'text-slate-900' : 'text-amber-900')}>
+                            {g.staff ? g.staff.full_name : g.orphan ? 'Người phụ trách không thuộc phòng HCNS' : 'Chưa phân công'}
+                          </p>
+                          <p className={'text-xs ' + (g.staff ? 'text-slate-500' : 'text-amber-800')}>
+                            {g.items.length} cty{g.staff ? '' : ' · cần gán nhân viên phụ trách'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        {g.staff && st ? (
+                          <>
+                            <p className={'text-xl font-bold leading-none ' + pctText(st.debtPercent)}>
+                              {st.debtPercent === null ? '—' : st.debtPercent + '%'}
+                            </p>
+                            <p className="text-xs text-slate-600 mt-0.5 tabular-nums">
+                              {fmt(st.totalCollected)} / {fmt(st.totalFee)}đ
+                            </p>
+                            <p className="text-[11px] text-slate-500">
+                              công việc {st.taskPercent === null ? '—' : st.taskPercent + '%'}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className={'text-xs ' + (g.staff ? 'text-slate-500' : 'text-amber-800')}>Phí HCNS</p>
+                            <p className={'text-sm font-bold tabular-nums ' + (g.staff ? 'text-slate-800' : 'text-amber-900')}>
+                              {fmt(fee)}đ/tháng
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {g.items.map((c, ri) => <ClientRow {...rowProps(c, ri)} />)}
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })()}
 
         {showAdd && (
           <AddCaseModal category={tab === 'vang_lai' ? 'vang_lai' : 'thoi_diem'} staffList={staffList}
