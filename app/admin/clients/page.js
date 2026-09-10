@@ -30,6 +30,8 @@ export default function AdminClientsPage() {
   const [search, setSearch]       = useState('')
   const [filterRoom, setFilterRoom]     = useState('')
   const [filterStatus, setFilterStatus] = useState('')
+  const [filterStaff, setFilterStaff]   = useState('')   // id nhân viên phụ trách CHÍNH
+  const [filterReport, setFilterReport] = useState('')   // 'monthly' | 'quarterly'
   const [showForm, setShowForm]   = useState(false)
   const [form, setForm]           = useState({ name:'', tax_code:'', assigned_to:'', report_type:'monthly', monthly_fee:'', status:'active' })
   const [saving, setSaving]       = useState(false)
@@ -201,13 +203,23 @@ export default function AdminClientsPage() {
   )
 
   const displayed = clients.filter(c => {
-    const matchSearch = !search ||
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      (c.tax_code ?? '').includes(search)
-    const matchRoom   = !filterRoom || c.staff?.room_id === filterRoom
+    const kw = search.trim().toLowerCase()
+    // Tìm cả MÃ KH (vd ARCHCAFE, SPONGEROOM) — trước đây chỉ tìm được tên công ty và MST nên gõ
+    // mã ra rỗng, trong khi cột Mã KH hiện ngay đầu bảng.
+    const matchSearch = !kw ||
+      c.name.toLowerCase().includes(kw) ||
+      (c.tax_code ?? '').includes(kw) ||
+      (c.client_code ?? '').toLowerCase().includes(kw)
+    const matchRoom   = !filterRoom   || c.staff?.room_id === filterRoom
     const matchStatus = !filterStatus || c.status === filterStatus
-    return matchSearch && matchRoom && matchStatus
+    const matchStaff  = !filterStaff  || c.assigned_to === filterStaff
+    const matchReport = !filterReport || (c.report_type || 'monthly') === filterReport
+    return matchSearch && matchRoom && matchStatus && matchStaff && matchReport
   })
+  const dangLoc = !!(search.trim() || filterRoom || filterStatus || filterStaff || filterReport)
+  const clearFilters = () => {
+    setSearch(''); setFilterRoom(''); setFilterStatus(''); setFilterStaff(''); setFilterReport('')
+  }
 
   // Staff grouped by room for optgroup
   const staffByRoom = rooms.map(r => ({
@@ -310,21 +322,60 @@ export default function AdminClientsPage() {
 
         {/* Filters */}
         <div className="flex flex-wrap gap-2 mb-4">
-          <input type="text" placeholder="🔍 Tìm tên công ty hoặc MST..." value={search}
+          <input type="text" placeholder="🔍 Tìm tên công ty, MST hoặc mã KH..." value={search}
             onChange={e => setSearch(e.target.value)}
             className="flex-1 min-w-48 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           {isAdmin && (
-            <select value={filterRoom} onChange={e => setFilterRoom(e.target.value)}
+            <select value={filterRoom}
+              onChange={e => {
+                const v = e.target.value
+                setFilterRoom(v)
+                // Đổi phòng mà nhân viên đang lọc không thuộc phòng mới -> bỏ chọn, tránh ra
+                // danh sách rỗng khó hiểu (ô nhân viên bên dưới cũng chỉ liệt kê người phòng đó).
+                if (v && filterStaff && !staffList.some(s => s.id === filterStaff && s.room_id === v)) setFilterStaff('')
+              }}
               className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Tất cả phòng</option>
               {rooms.map(r => <option key={r.id} value={r.id}>Phòng {r.name}</option>)}
             </select>
           )}
+          {/* Chọn phòng rồi thì chỉ liệt kê nhân viên phòng đó; chưa chọn thì nhóm theo phòng. */}
+          <select value={filterStaff} onChange={e => setFilterStaff(e.target.value)}
+            className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Tất cả nhân viên</option>
+            {filterRoom
+              ? staffList.filter(s => s.room_id === filterRoom).map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)
+              : staffByRoom.map(g => (
+                  <optgroup key={g.room.id} label={'Phòng ' + g.room.name}>
+                    {g.staff.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+                  </optgroup>
+                ))}
+          </select>
+          <select value={filterReport} onChange={e => setFilterReport(e.target.value)}
+            className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Tất cả loại BC</option>
+            <option value="monthly">BC Tháng</option>
+            <option value="quarterly">BC Quý</option>
+          </select>
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
             className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">Tất cả trạng thái</option>
             {STATUS_OPTS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
           </select>
+        </div>
+
+        {/* Số kết quả + xóa lọc — để không ai tưởng "mất công ty" khi quên là đang lọc */}
+        <div className="flex items-center gap-3 mb-3 text-xs">
+          <span className="text-gray-500">
+            Đang xem <span className="font-semibold text-gray-800">{displayed.length}</span>
+            {displayed.length !== clients.length && <> / {clients.length}</>} công ty
+          </span>
+          {dangLoc && (
+            <button onClick={clearFilters}
+              className="px-2.5 py-1 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors">
+              ✕ Xóa lọc
+            </button>
+          )}
         </div>
 
         {/* Table */}
