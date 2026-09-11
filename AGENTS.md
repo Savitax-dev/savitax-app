@@ -51,6 +51,37 @@ công việc hàng tháng/quý, công nợ dịch vụ, KPI nhân viên/phòng b
   2 → ngày 28/29) và task chỉ "Quá hạn" sau khi qua HẾT ngày hạn (0h ngày kế), không phải ngay
   khi vừa tới ngày hạn.
 
+## Module Phòng Kinh doanh (`/sales`)
+
+Khách tiềm năng + báo giá SVT.MB03 + báo cáo, dựng 2026-09-11 (commit `78c529d`), tách rời như HCNS: SQL
+`sql/13_sales_module.sql` + `sql/14_sales_room.sql` (đã chạy), route `app/api/admin/sales/**`, quyền nhóm
+"Phòng Kinh doanh" (`view_sales`, `manage_sales_all`, `approve_sales_quote`). Đặc tả gốc: gói bàn giao
+`app.baogia/` (gitignore — chứa dữ liệu khách thật, KHÔNG commit).
+
+- **Engine phí** `lib/salesPricing.js` chép nguyên bản chạy thử Giám đốc đã chốt — đổi gì cũng phải chạy
+  `node scripts/test-sales-pricing.mjs` (5 báo giá thật phải khớp từng dòng). Server luôn tính lại phí lúc lưu,
+  không tin số trình duyệt gửi. `fees` lưu ảnh chụp lúc lập để in lại vẫn đúng khi biểu phí đổi.
+- **Số báo giá DDMMNN không có năm** → khoá duy nhất là `(quote_date, seq)`, sinh ở server theo **giờ VN**
+  (`todayVN`; Vercel chạy UTC, 6h sáng VN vẫn là hôm qua). Xoá mềm để số đã phát không dùng lại.
+- **File Word** `lib/salesDocx.js`: mỗi ô bảng phải có ≥1 `<w:p>`, thứ tự thẻ trong `<w:pPr>` cố định (sai là
+  Word báo file hỏng). Bản gửi khách KHÔNG in dòng BCTC năm và "Căn cứ" (mẫu Giám đốc sửa 11/09); có đề xuất
+  mức khác thì phần chênh dồn vào dòng kế toán trọn gói để cộng ra đúng tổng (`printedMonthlyLines`).
+- **Duyệt giá**: đề xuất khác biểu phí → `pending`, khoá xuất Word và khoá "Đã gửi/Chốt HĐ" tới khi duyệt.
+- **Google Drive**: service account `savitax-app-drive@savitax-app.iam.gserviceaccount.com` (thành viên Shared
+  drive Phòng PTKH), env `GOOGLE_SA_EMAIL` / `GOOGLE_SA_PRIVATE_KEY` / `SALES_DRIVE_FOLDER_ID`. Bấm Lưu tự nộp
+  phiếu khảo sát + file báo giá (`lib/salesFiling.js fileOnSave`, TUẦN TỰ — song song sinh 2 thư mục trùng tên).
+  Service account không có dung lượng riêng: chỉ ghi được vào Shared drive. Kiểm:
+  `node --env-file=.env.local scripts/test-drive-connection.mjs`.
+- **"Tình trạng chăm sóc"** ở danh sách báo giá = giai đoạn của KHÁCH (`careOf`), không phải cột riêng; "Ký hợp
+  đồng" luôn đi cùng báo giá "Chốt HĐ". Giai đoạn chỉ tự đẩy TIẾN; chỉ hạ khi người dùng bấm đổi.
+- **Dò trùng**: `phone_norm` / `tax_norm` (MST bỏ số 0 đầu), so cả với `clients` đang phục vụ.
+- Phòng `rooms.type='kinhdoanh'` bị loại khỏi KPI/công nợ phòng nghiệp vụ như `hcns`; người chỉ thuộc phòng
+  KD/HCNS ẩn phân khu Kế toán (`/api/admin/me` → `noAccounting`).
+- Giao diện riêng (phương án B "Xanh báo giá"): `app/sales/sales.css` (mọi selector dưới `.sales-ui`),
+  `app/sales/layout.js` chỉ khai biến font Be Vietnam Pro / IBM Plex Mono — menu trái dùng chung không đổi.
+- Script: `verify-sales-schema`, `seed-sales-channels` (thứ tự kênh), `refile-sales-quote <số>`,
+  `cleanup-sales-test --quote <số> | --all` (xem trước trước khi `--apply`), `probe-sales-quotes`.
+
 ## Quy trình làm việc
 
 - Sửa code tại đây → `git push` lên `main` → Vercel tự build & deploy `app.savitax.vn` (~1-2
