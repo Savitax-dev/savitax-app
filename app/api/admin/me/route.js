@@ -11,18 +11,22 @@ export async function GET() {
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
   const c = auth.caller
 
-  // hcnsOnly = MỌI phòng của người này đều là phòng HCNS -> họ không làm kế toán, ẩn phân khu
-  // Kế toán trên menu cho đỡ rối. Người kiêm nhiệm (vừa kế toán vừa HCNS) KHÔNG rơi vào đây.
-  let hcnsOnly = false
+  // hcnsOnly = MỌI phòng của người này đều là phòng HCNS.
+  // noAccounting = MỌI phòng đều là phòng KHÔNG làm kế toán (HCNS, Kinh doanh) -> ẩn phân khu Kế toán
+  // trên menu cho đỡ rối. Người kiêm nhiệm (vừa kế toán vừa HCNS/KD) KHÔNG rơi vào đây.
+  let hcnsOnly = false, noAccounting = false
   const roomIds = c.roomIds || [c.roomId].filter(Boolean)
   if (roomIds.length) {
     const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
     const { data: rooms } = await admin.from('rooms').select('id, type').in('id', roomIds)
-    hcnsOnly = (rooms || []).length > 0 && (rooms || []).every(r => r.type === 'hcns')
+    const list = rooms || []
+    hcnsOnly = list.length > 0 && list.every(r => r.type === 'hcns')
+    noAccounting = list.length > 0 && list.every(r => r.type === 'hcns' || r.type === 'kinhdoanh')
   }
 
   return Response.json({
     hcnsOnly,
+    noAccounting,
     staffId: c.staffId,
     role: c.role,          // vai trò chính
     roomId: c.roomId,      // phòng chính

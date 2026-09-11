@@ -44,3 +44,7 @@ next-env.d.ts
 # Bản chụp dữ liệu công nợ + file rà soát xuất ra từ scripts/ — CHỨA DỮ LIỆU KHÁCH HÀNG THẬT,
 # tuyệt đối không commit lên GitHub.
 /snapshots/
+
+# Gói bàn giao module Báo giá (bản chạy thử + hồ sơ đã gửi khách) — CHỨA TÊN, MST, SĐT, EMAIL
+# KHÁCH HÀNG THẬT. Chỉ lưu trên máy nội bộ, không commit.
+/app.baogia/

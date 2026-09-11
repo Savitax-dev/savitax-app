@@ -56,9 +56,9 @@ export async function GET(request) {
   const supabase = getAdmin()
 
   const [{ data: rooms }, { data: staffList }, { data: clients }, { data: taskDefs }] = await Promise.all([
-    // Loại phòng HCNS khỏi KPI/xếp hạng phòng kế toán — phòng này có trang báo cáo riêng ở /hcns,
-    // giống cách phòng Remote bị loại khỏi "Phòng xuất sắc nhất".
-    supabase.from('rooms').select('id, name, type').neq('type', 'hcns').order('type').order('name'),
+    // Loại phòng HCNS và phòng Kinh doanh khỏi KPI/xếp hạng phòng kế toán — hai phòng này có trang
+    // báo cáo riêng (/hcns, /sales/report), giống cách phòng Remote bị loại khỏi "Phòng xuất sắc nhất".
+    supabase.from('rooms').select('id, name, type').not('type', 'in', '(hcns,kinhdoanh)').order('type').order('name'),
     supabase.from('staff').select('id, full_name, room_id, role'),
     supabase.from('clients').select('id, monthly_fee, report_type, fee_period, assigned_to, contract_start, created_at').eq('status', 'active'),
     supabase.from('task_definitions').select('id, deadline_day, month, report_type, is_active').eq('is_active', true).eq('month', month),

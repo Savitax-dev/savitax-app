@@ -1,0 +1,163 @@
+/* Giao diện Phòng Kinh doanh — phương án B "Xanh báo giá" (chốt 2026-09-11).
+   Bảng màu lấy đúng từ mẫu báo giá SVT.MB03 Giám đốc đã duyệt: xanh 2A6CA8, xanh thanh 4A8FC4,
+   vàng kim C9A027, nền xen kẽ F2F8FD, viền CFE2F0. Mọi selector nằm dưới .sales-ui nên không lan
+   sang trang khác của app. */
+.sales-ui {
+  --svt-canvas: #ECF2F7;
+  --svt-surface: #FFFFFF;
+  --svt-raised: #F6F9FC;
+  --svt-ink: #15283C;
+  --svt-muted: #5A6C7E;
+  --svt-line: #D5E2ED;
+  --svt-primary: #2A6CA8;
+  --svt-primary-h: #215A8E;
+  --svt-primary-soft: #E2EEF8;
+  --svt-bar: #4A8FC4;
+  --svt-gold: #C9A027;
+  --svt-gold-ink: #8E6A0C;
+  --svt-gold-soft: #FFF4D6;
+  --svt-wash: #F2F8FD;
+  --svt-row-h: #E8F2FB;
+  font-family: var(--font-svt-sans), "Segoe UI", Arial, sans-serif;
+  color: var(--svt-ink);
+  background: var(--svt-canvas);
+  min-height: 100vh;
+}
+.sales-ui .num {
+  font-family: var(--font-svt-mono), ui-monospace, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+/* Dải tiêu đề trang — như dải banner xanh viền vàng của file báo giá */
+.sales-ui .s-head {
+  background: var(--svt-primary);
+  color: #fff;
+  border-radius: 14px;
+  border-bottom: 3px solid var(--svt-gold);
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sales-ui .s-head h1 { margin: 0; font-size: 20px; font-weight: 700; color: #fff; }
+.sales-ui .s-head p { margin: 2px 0 0; font-size: 13px; color: #D6E6F5; }
+.sales-ui .s-head .s-btn { background: rgba(255, 255, 255, .12); color: #fff; border-color: rgba(255, 255, 255, .35); }
+.sales-ui .s-head .s-btn:hover { background: rgba(255, 255, 255, .2); }
+.sales-ui .s-head .s-btn-p { background: var(--svt-gold); color: var(--svt-ink); border-color: transparent; }
+.sales-ui .s-head .s-btn-p:hover { background: #D8B03A; }
+
+/* Nút */
+.sales-ui .s-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 500;
+  border: 1px solid var(--svt-line); background: var(--svt-surface); color: var(--svt-ink);
+  white-space: nowrap; transition: background .15s, border-color .15s;
+}
+.sales-ui .s-btn:hover { background: var(--svt-raised); border-color: #B9CCDD; }
+.sales-ui .s-btn:disabled { opacity: .5; cursor: not-allowed; }
+.sales-ui .s-btn-p { background: var(--svt-primary); color: #fff; border-color: transparent; font-weight: 600; }
+.sales-ui .s-btn-p:hover { background: var(--svt-primary-h); }
+.sales-ui .s-btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 8px; }
+.sales-ui .s-btn:focus-visible, .sales-ui .s-back:focus-visible { outline: 2px solid var(--svt-gold); outline-offset: 2px; }
+
+/* Nút quay lại danh sách — nổi bật, ghim trên đầu khi cuộn */
+.sales-ui .s-topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: var(--svt-surface); border: 1px solid var(--svt-line);
+  border-top: 3px solid var(--svt-gold); border-radius: 14px;
+  padding: 10px 14px; box-shadow: 0 6px 16px rgba(21, 40, 60, .06);
+}
+.sales-ui .s-back {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 16px 8px 10px; border-radius: 11px;
+  background: var(--svt-primary-soft); color: var(--svt-primary);
+  border: 1.5px solid var(--svt-primary); font-weight: 700; font-size: 14px; white-space: nowrap;
+}
+.sales-ui .s-back:hover { background: #D3E5F5; }
+.sales-ui .s-back .ar {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--svt-primary); color: #fff;
+  display: grid; place-items: center; font-size: 14px; line-height: 1;
+}
+
+/* Ô số liệu — mỗi ô một màu nhạt riêng */
+.sales-ui .s-tile { border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; background: var(--tb); color: var(--tc); }
+.sales-ui .s-tile .k { font-size: 12px; font-weight: 600; }
+.sales-ui .s-tile .v { font-size: 24px; font-weight: 700; line-height: 1.2; }
+.sales-ui .s-tile .v small { font-size: 12px; font-weight: 500; margin-left: 3px; }
+.sales-ui .s-tile .f { font-size: 12px; color: var(--svt-muted); }
+.sales-ui .tone-red  { --tc: #B42318; --tb: #FDE8E6; }
+.sales-ui .tone-amb  { --tc: #A15C07; --tb: #FDF0DC; }
+.sales-ui .tone-grn  { --tc: #18704A; --tb: #E0F3E9; }
+.sales-ui .tone-blue { --tc: #2A6CA8; --tb: #E2EEF8; }
+.sales-ui .tone-gold { --tc: #8E6A0C; --tb: #FFF2CC; }
+.sales-ui .tone-sky  { --tc: #2F7FB8; --tb: #E4F0FA; }
+
+/* Khối nội dung + tiêu đề khối */
+.sales-ui .s-panel { background: var(--svt-surface); border: 1px solid var(--svt-line); border-radius: 14px; overflow: hidden; }
+.sales-ui .s-panel-h {
+  padding: 10px 16px; font-size: 14px; font-weight: 700;
+  background: var(--svt-primary-soft); color: var(--svt-primary); border-bottom: 1px solid var(--svt-line);
+}
+.sales-ui .s-card-h {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; font-size: 14px; font-weight: 700;
+  background: var(--svt-bar); color: #fff;
+}
+.sales-ui .s-card-h .st {
+  font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  background: #FFD98A; color: var(--svt-ink); padding: 2px 8px; border-radius: 6px;
+}
+.sales-ui .s-card-b { padding: 14px 16px; }
+
+/* Bảng — tiêu đề nền xanh, dòng xen kẽ như bảng trong file báo giá */
+.sales-ui .s-tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.sales-ui .s-tbl th {
+  background: var(--svt-bar); color: #fff; font-size: 12px; font-weight: 600;
+  padding: 10px 12px; text-align: center; white-space: nowrap;
+}
+.sales-ui .s-tbl td { padding: 10px 12px; border-top: 1px solid var(--svt-line); text-align: center; vertical-align: middle; }
+.sales-ui .s-tbl th.l, .sales-ui .s-tbl td.l { text-align: left; }
+.sales-ui .s-tbl th.r, .sales-ui .s-tbl td.r { text-align: right; }
+.sales-ui .s-tbl tbody tr:nth-child(even) td { background: var(--svt-wash); }
+.sales-ui .s-tbl tbody tr.s-click { cursor: pointer; }
+.sales-ui .s-tbl tbody tr:hover td { background: var(--svt-row-h); }
+
+/* Nút lọc dạng chip */
+.sales-ui .s-chip {
+  padding: 6px 12px; border-radius: 9px; font-size: 13px;
+  border: 1px solid var(--svt-line); background: var(--svt-surface); color: var(--svt-ink);
+}
+.sales-ui .s-chip:hover { border-color: #B9CCDD; }
+.sales-ui .s-chip.on { background: var(--svt-primary); color: #fff; border-color: var(--svt-primary); font-weight: 600; }
+.sales-ui .s-chip .n { margin-left: 4px; opacity: .65; font-weight: 600; }
+
+/* Ô nhập */
+.sales-ui .s-input {
+  width: 100%; padding: 8px 12px; border-radius: 10px; font-size: 14px;
+  border: 1px solid var(--svt-line); background: var(--svt-surface); color: var(--svt-ink);
+}
+.sales-ui .s-input:focus { outline: none; border-color: var(--svt-primary); box-shadow: 0 0 0 3px var(--svt-primary-soft); }
+.sales-ui .s-input:disabled { background: var(--svt-raised); color: var(--svt-muted); }
+
+/* Khung tổng phí */
+.sales-ui .s-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; background: var(--svt-gold-soft); border-top: 2px solid var(--svt-gold);
+}
+.sales-ui .s-total .num { font-size: 22px; font-weight: 600; color: var(--svt-gold-ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sales-ui * { transition: none !important; }
+}
+
+/* Bộ lọc kỳ đặt trên dải tiêu đề xanh */
+.sales-ui .s-head .s-chip { background: rgba(255, 255, 255, .12); color: #fff; border-color: rgba(255, 255, 255, .3); }
+.sales-ui .s-head .s-chip:hover { background: rgba(255, 255, 255, .2); }
+.sales-ui .s-head .s-chip.on { background: var(--svt-gold); color: var(--svt-ink); border-color: transparent; }
+.sales-ui .s-head .s-input { background: #fff; }
+.sales-ui .s-head b { color: #FFE8A3; }
