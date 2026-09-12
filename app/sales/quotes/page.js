@@ -590,10 +590,10 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
               {N('invIn', 'SLHĐ mua vào')}
               {N('invOut', 'SLHĐ bán ra')}
               {N('bankStmt', 'Số tờ sao kê ngân hàng')}
-              <Field label="Tổng chứng từ/tháng" hint="tự cộng, dùng để tính phí">
+              <Field label="Tổng chứng từ/tháng">
                 <input value={fmt(s.docs)} readOnly className={inputCls + ' bg-gray-50 tabular-nums font-semibold'} />
               </Field>
-              {N('revenueYear', 'Doanh thu (đồng/năm)', '0 nếu chưa phát sinh')}
+              {N('revenueYear', 'Doanh thu (đồng/năm)')}
               {T('taxMix', 'Cơ cấu thuế suất', { ph: 'VD: 100% thuế suất 8%' })}
               <p className="sm:col-span-3 text-xs font-semibold text-gray-500 uppercase tracking-wide -mb-1">Nhân sự</p>
               {N('laborBh', 'Lao động tham gia BHXH')}
@@ -618,7 +618,7 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
             {(s.customs || s.wantHcns) && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                 {s.customs && T('customsCount', 'Số tờ khai hải quan', { ph: 'VD: 02 – 03 tờ khai/tháng' })}
-                {s.wantHcns && N('hcnsHeads', 'Số lao động tính phí HCNS', fmtMoney(HCNS_PER_HEAD) + '/người/tháng')}
+                {s.wantHcns && N('hcnsHeads', 'Số lao động tính phí HCNS')}
               </div>
             )}
           </Card>

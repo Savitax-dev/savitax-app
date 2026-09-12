@@ -115,7 +115,9 @@ export function Modal({ title, onClose, children, wide, footer }) {
 export function Field({ label, hint, children, className }) {
   return (
     <label className={'block ' + (className || '')}>
-      <span className="block text-xs font-medium text-gray-600 mb-1">{label}{hint && <span className="font-normal text-gray-400"> · {hint}</span>}</span>
+      <span className="block text-xs font-medium text-gray-600 mb-1 truncate" title={hint ? label + ' · ' + hint : label}>
+        {label}{hint && <span className="font-normal text-gray-400"> · {hint}</span>}
+      </span>
       {children}
     </label>
   )
