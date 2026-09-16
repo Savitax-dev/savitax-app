@@ -1650,8 +1650,13 @@ function AddServiceModal({ hcnsClient, templates, onClose, onDone }) {
           {/* Gom theo nhóm nghiệp vụ — 24 dịch vụ trong một danh sách phẳng rất khó tìm. */}
           <select value={f.templateId} onChange={e => setF(p => ({ ...p, templateId: e.target.value }))} className={inputCls}>
             <option value="">-- Chọn dịch vụ --</option>
+            {/* Mục cuối là "vét" — MỌI nhóm khác BHXH/HCNS đều rơi vào đây (gồm cả nhóm Cá nhân
+                dùng để sắp xếp bên trang Checklist). Nếu lọc đúng bằng null như trước thì dịch vụ
+                thuộc nhóm mới sẽ KHÔNG hiện ra ở đây, tạo xong không dùng được mà không báo gì. */}
             {[['BHXH', 'Bảo hiểm xã hội'], ['HCNS', 'Hành chính nhân sự'], [null, 'Khác']].map(([k, lbl]) => {
-              const list = templates.filter(t => (t.group_name || null) === k)
+              const list = templates.filter(t => k
+                ? t.group_name === k
+                : !['BHXH', 'HCNS'].includes(t.group_name))
               if (!list.length) return null
               return (
                 <optgroup key={lbl} label={lbl}>

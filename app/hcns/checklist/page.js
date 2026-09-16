@@ -10,11 +10,15 @@ const inputCls = 'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm te
 // Bỏ dấu để gõ không dấu vẫn tìm ra.
 const noAccent = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase()
 
+// Khoá nhóm lưu xuống database dùng chữ KHÔNG DẤU, nhãn hiển thị mới có dấu — đổi nhãn sau này
+// không phải đụng vào dữ liệu đã lưu.
 const TABS = [
   { key: 'recurring', label: 'DV HCNS Thời Kỳ' },
   { key: 'BHXH',      label: 'BHXH' },
   { key: 'HCNS',      label: 'HCNS' },
+  { key: 'CANHAN',    label: 'Cá nhân' },
 ]
+const tabLabel = (k) => TABS.find(t => t.key === k)?.label || k
 
 export default function HcnsChecklistPage() {
   const router = useRouter()
@@ -177,7 +181,7 @@ export default function HcnsChecklistPage() {
             <>
               <input value={newTpl} onChange={e => { setNewTpl(e.target.value); if (err) setErr('') }}
                 onKeyDown={e => e.key === 'Enter' && addTemplate()}
-                placeholder={'Tên dịch vụ mới cho nhóm ' + tab} className={inputCls + ' flex-1 min-w-[200px] max-w-sm'} />
+                placeholder={'Tên dịch vụ mới cho nhóm ' + tabLabel(tab)} className={inputCls + ' flex-1 min-w-[200px] max-w-sm'} />
               <button onClick={addTemplate} disabled={adding}
                 className="px-4 py-2 bg-[#8B1A1A] text-white rounded-lg text-sm font-medium whitespace-nowrap hover:bg-[#6B1212] disabled:opacity-60">
                 {adding ? 'Đang thêm...' : '+ Thêm dịch vụ'}
@@ -313,6 +317,7 @@ export default function HcnsChecklistPage() {
                                 <option value="">Chưa phân nhóm</option>
                                 <option value="BHXH">Nhóm BHXH</option>
                                 <option value="HCNS">Nhóm HCNS</option>
+                                <option value="CANHAN">Nhóm Cá nhân</option>
                               </select>
                               <button onClick={() => removeTemplate(t)}
                                 className="px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-50 border border-red-300 rounded-lg">
