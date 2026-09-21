@@ -212,6 +212,13 @@ export async function GET(request) {
 
   const avg = (arr) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null
 
+  // Tên dịch vụ cho file Excel "Chi tiết dịch vụ".
+  const tplIdsInPeriod = [...new Set(svcInPeriod.map(s => s.template_id).filter(Boolean))]
+  const { data: svcTpls } = tplIdsInPeriod.length
+    ? await supabase.from('hcns_service_templates').select('id, name').in('id', tplIdsInPeriod)
+    : { data: [] }
+  const tplName = new Map((svcTpls || []).map(t => [t.id, t.name]))
+
   const caseBlock = (cat) => {
     const list = cases.filter(c => c.category === cat)
     const svcs = list.flatMap(c => svcByClient.get(c.id) || [])
@@ -269,11 +276,27 @@ export async function GET(request) {
         const m = moneyOf(c)
         return {
           id: c.id, name: c.name, caseCode: c.case_code || null,
+          taxCode: c.tax_code || null,
           staffName: staffName(staff, c.assigned_to),
           cost: m.cost, paid: m.paid, remain: m.remain,
           allDone: allDoneOf(c),
+          // Theo KỲ đang chọn (dịch vụ nhận trong kỳ) — dùng cho xuất Excel.
+          periodServices: (svcByClient.get(c.id) || []).length,
+          taskPercent: casePct(c).percent,
         }
       }).sort((a, b) => b.remain - a.remain),
+      // Dịch vụ NHẬN TRONG KỲ đang chọn — sheet "Chi tiết dịch vụ" của file Excel.
+      services: list.flatMap(c => (svcByClient.get(c.id) || []).map(sv => {
+        const t = taskBySvc.get(sv.id) || { done: 0, total: 0 }
+        return {
+          caseId: c.id, caseCode: c.case_code || null, name: c.name,
+          staffName: staffName(staff, c.assigned_to),
+          serviceName: tplName.get(sv.template_id) || '',
+          receivedAt: sv.received_at || null, expectedAt: sv.expected_at || null,
+          status: STATUS_LABEL[sv.status] || sv.status,
+          taskDone: t.done, taskTotal: t.total, cost: Number(sv.cost) || 0,
+        }
+      })),
       byStatus,
       byStaff: perStaffRows,
     }

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { loadPermissionData, can } from '@/lib/permissions'
 import AppShell from '@/components/AppShell'
 import ClientChecklist from '@/components/ClientChecklist'
+import * as XLSX from 'xlsx'
 import { HCNS_STATUSES, HCNS_STATUS_LABEL } from '@/lib/hcnsStatus'
 
 const fmt = (n) => Number(n || 0).toLocaleString('vi-VN')
@@ -71,6 +72,8 @@ export default function HcnsPage() {
   const [canManage, setCanManage] = useState(false)
   // Trưởng phòng mới được phân công nhân viên phụ trách — số liệu KPI/công nợ đi theo người này.
   const [canAssign, setCanAssign] = useState(false)
+  // Chỉ Quản trị: sửa thông tin / xoá hồ sơ Thời điểm-Vãng lai tạo trùng, nhầm.
+  const [isAdmin, setIsAdmin] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
 
   const monthOpts = []
@@ -94,6 +97,7 @@ export default function HcnsPage() {
       setAllowed(true)
       setCanManage(can(roles, 'manage_hcns', perm))
       setCanAssign(can(roles, 'view_hcns_all_staff', perm))
+      setIsAdmin(roles.includes('admin'))
       await Promise.all([loadClients(), loadReport(), loadStaff(), loadTemplates()])
       setLoading(false)
     }
@@ -148,12 +152,106 @@ export default function HcnsPage() {
     noAccent(c.name).includes(q) || noAccent(c.tax_code).includes(q) ||
     noAccent(c.client_code).includes(q) || noAccent(c.case_code).includes(q))
 
+  // Xuất Excel theo KỲ đang lọc (Tháng/Quý/Năm). Dùng lại đúng số của báo cáo phòng (đã tính theo
+  // kỳ + đã thu hẹp theo quyền xem) để file luôn khớp với màn hình.
+  const exportExcel = (kind) => {
+    if (!report) return
+    const q = Math.ceil(selMonth / 3)
+    const periodLabel = mode === 'year' ? 'Năm ' + selYear : mode === 'quarter' ? 'Quý ' + q + '/' + selYear : 'T' + selMonth + '/' + selYear
+    const fileTag = mode === 'year' ? 'Nam' + selYear : mode === 'quarter' ? 'Q' + q + '-' + selYear : 'T' + selMonth + '-' + selYear
+    const pct = (v) => v === null || v === undefined ? '' : v / 100
+    const wb = XLSX.utils.book_new()
+    const addSheet = (name, rows, widths, pctCols = [], moneyCols = []) => {
+      const ws = XLSX.utils.aoa_to_sheet(rows)
+      ws['!cols'] = widths.map(w => ({ wch: w }))
+      // Định dạng ô số / % (bỏ qua các dòng tiêu đề chữ).
+      for (let r = 0; r < rows.length; r++) {
+        for (const c of [...pctCols, ...moneyCols]) {
+          const cell = ws[XLSX.utils.encode_cell({ r, c })]
+          if (cell && typeof cell.v === 'number') cell.z = pctCols.includes(c) ? '0%' : '#,##0'
+        }
+      }
+      XLSX.utils.book_append_sheet(wb, ws, name)
+    }
+
+    if (kind === 'thoi_ky') {
+      const tk = report.thoiKy
+      const nameOf = new Map((tk.perStaff || []).map(s => [s.staffId, s.staffName]))
+      const byId = new Map(clients.map(c => [c.id, c]))
+      const order = new Map(byCat('thoi_ky').map((c, i) => [c.id, i]))
+      const staffOrder = new Map((tk.perStaff || []).map((s, i) => [s.staffId, i]))
+      const rank = (c) => !c.assigned_to ? -1 : staffOrder.has(c.assigned_to) ? staffOrder.get(c.assigned_to) : 999
+      const list = [...(tk.perClient || [])].sort((a, b) =>
+        rank(a) - rank(b) || (order.get(a.id) ?? 9999) - (order.get(b.id) ?? 9999))
+
+      const s1 = [
+        ['BÁO CÁO HCNS THỜI KỲ — ' + periodLabel],
+        ['KPI phòng = trung bình cộng % của từng nhân viên. % công việc tính theo tháng cuối của kỳ, chỉ đếm việc đúng hạn.'],
+        [],
+        ['Nhân viên', 'Số cty', 'Phí phải thu', 'Đã thu', 'Còn phải thu', '% Công nợ', '% Công việc'],
+        ...(tk.perStaff || []).map(s => [s.staffName, s.clientCount, s.totalFee, s.totalCollected,
+          Math.max(0, s.totalFee - s.totalCollected), pct(s.debtPercent), pct(s.taskPercent)]),
+      ]
+      const un = list.filter(c => !c.assigned_to)
+      if (un.length) {
+        const fee = un.reduce((a, c) => a + c.dueFee, 0), col = un.reduce((a, c) => a + c.collected, 0)
+        s1.push(['Chưa phân công', un.length, fee, col, Math.max(0, fee - col), '', ''])
+      }
+      s1.push(['KPI PHÒNG', tk.clientCount, tk.totalFee, tk.totalCollected,
+        Math.max(0, tk.totalFee - tk.totalCollected), pct(tk.debtPercent), pct(tk.taskPercent)])
+      addSheet('Tổng hợp nhân viên', s1, [28, 8, 16, 16, 16, 11, 12], [5, 6], [2, 3, 4])
+
+      const s2 = [
+        ['CHI TIẾT CÔNG TY THỜI KỲ — ' + periodLabel],
+        [],
+        ['STT', 'Mã KH', 'Tên công ty', 'MST', 'NV phụ trách', 'Kỳ thu phí', 'Phí phải thu', 'Đã thu', 'Còn phải thu', '% Công nợ', 'Việc xong/Tổng', '% Công việc'],
+        ...list.map((c, i) => {
+          const src = byId.get(c.id)
+          return [i + 1, c.client_code || '', c.name, src?.linkedClient?.tax_code || src?.tax_code || '',
+            c.assigned_to ? (nameOf.get(c.assigned_to) || '') : 'Chưa phân công',
+            c.fee_period === 'quarterly' ? 'Quý' : 'Tháng',
+            c.dueFee, c.collected, c.remain, pct(c.debtPercent),
+            c.taskTotal ? c.taskDone + '/' + c.taskTotal : '', pct(c.taskPercent)]
+        }),
+      ]
+      addSheet('Chi tiết công ty', s2, [5, 14, 45, 14, 22, 10, 14, 14, 14, 10, 13, 11], [9, 11], [6, 7, 8])
+    } else {
+      const td = report.thoiDiem
+      const cases = (td.cases || []).filter(c => c.periodServices > 0)
+        .sort((a, b) => (a.staffName || '').localeCompare(b.staffName || '') || (a.caseCode || '').localeCompare(b.caseCode || ''))
+      const dateVN = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : ''
+      const s1 = [
+        ['BÁO CÁO HCNS THỜI ĐIỂM — ' + periodLabel],
+        ['Lấy hồ sơ có dịch vụ NHẬN trong kỳ. Ba cột tiền (Tổng chi phí / Đã thu / Còn phải thu) tính trên toàn bộ hồ sơ, đến thời điểm xuất.'],
+        [],
+        ['STT', 'Mã hồ sơ', 'Tên công ty', 'MST', 'NV phụ trách', 'Số DV trong kỳ', '% Công việc', 'Tổng chi phí', 'Đã thu', 'Còn phải thu', 'Tình trạng'],
+        ...cases.map((c, i) => [i + 1, c.caseCode || '', c.name, c.taxCode || '', c.staffName || 'Chưa phân công',
+          c.periodServices, pct(c.taskPercent), c.cost, c.paid, c.remain, c.allDone ? 'Xong việc' : 'Đang làm']),
+      ]
+      const t = cases.reduce((a, c) => ({ cost: a.cost + c.cost, paid: a.paid + c.paid, remain: a.remain + c.remain }), { cost: 0, paid: 0, remain: 0 })
+      s1.push(['', '', 'TỔNG', '', '', cases.reduce((a, c) => a + c.periodServices, 0), '', t.cost, t.paid, t.remain, ''])
+      addSheet('Hồ sơ', s1, [5, 26, 45, 14, 22, 12, 11, 15, 15, 15, 11], [6], [7, 8, 9])
+
+      const svcs = [...(td.services || [])].sort((a, b) =>
+        (a.caseCode || '').localeCompare(b.caseCode || '') || (a.receivedAt || '').localeCompare(b.receivedAt || ''))
+      const s2 = [
+        ['CHI TIẾT DỊCH VỤ THỜI ĐIỂM — ' + periodLabel],
+        [],
+        ['STT', 'Mã hồ sơ', 'Tên công ty', 'NV phụ trách', 'Dịch vụ', 'Ngày nhận', 'Dự kiến trả', 'Trạng thái', 'Việc xong/Tổng', 'Chi phí'],
+        ...svcs.map((s, i) => [i + 1, s.caseCode || '', s.name, s.staffName || '', s.serviceName,
+          dateVN(s.receivedAt), dateVN(s.expectedAt), s.status,
+          s.taskTotal ? s.taskDone + '/' + s.taskTotal : '', s.cost]),
+      ]
+      addSheet('Chi tiết dịch vụ', s2, [5, 26, 45, 22, 32, 12, 12, 18, 13, 15], [], [9])
+    }
+    XLSX.writeFile(wb, 'HCNS_' + (kind === 'thoi_ky' ? 'ThoiKy' : 'ThoiDiem') + '_' + fileTag + '.xlsx')
+  }
+
   const TABS = [
     { key: 'report',    label: 'Báo cáo phòng HCNS' },
     { key: 'all',       label: 'Tất cả' },
     { key: 'thoi_ky',   label: 'Thời kỳ' },
     { key: 'thoi_diem', label: 'Thời điểm' },
-    { key: 'vang_lai',  label: 'Vãng lai' },
     { key: 'done',      label: 'Hoàn thành' },
     { key: 'stopped',   label: 'Ngưng DV HCNS' },
   ].map(t => t.key === 'report' ? t : { ...t, count: byCat(t.key).length })
@@ -199,6 +297,12 @@ export default function HcnsPage() {
               className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
               {monthOpts.map(o => <option key={o.label} value={o.y + '-' + o.m}>{o.label}</option>)}
             </select>
+            {(tab === 'thoi_ky' || tab === 'thoi_diem') && (
+              <button onClick={() => exportExcel(tab)} disabled={!report}
+                className="px-3 py-1.5 bg-[#2E6B3A] text-white rounded-lg text-sm font-medium hover:bg-[#245530] disabled:opacity-40">
+                📥 Xuất Excel
+              </button>
+            )}
             {canManage && (tab === 'thoi_diem' || tab === 'vang_lai') && (
               <button onClick={() => setShowAdd(true)}
                 className="px-3 py-1.5 bg-[#8B1A1A] text-white rounded-lg text-sm font-medium hover:bg-[#6B1212]">
@@ -214,10 +318,10 @@ export default function HcnsPage() {
         {tab !== 'report' && (() => {
           const rows = filtered(byCat(tab))
           const rowProps = (c, ri) => ({
-            key: c.id, c, ri, showCat: tab === 'all' || tab === 'done',
+            c, ri, showCat: tab === 'all' || tab === 'done',
             stopped: tab === 'stopped', report,
             expanded: expanded === c.id, onToggle: () => setExpanded(expanded === c.id ? null : c.id),
-            clientMonth, setClientMonth, selMonth, canManage, canAssign, staffList, templates,
+            clientMonth, setClientMonth, selMonth, canManage, canAssign, isAdmin, staffList, templates,
             onChanged: () => { loadClients(); loadReport() },
           })
           const empty = (
@@ -235,7 +339,7 @@ export default function HcnsPage() {
             return (
               <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                 {rows.length === 0 && empty}
-                {rows.map((c, ri) => <ClientRow {...rowProps(c, ri)} />)}
+                {rows.map((c, ri) => <ClientRow key={c.id} {...rowProps(c, ri)} />)}
               </div>
             )
           }
@@ -315,7 +419,7 @@ export default function HcnsPage() {
                         )}
                       </div>
                     </div>
-                    {g.items.map((c, ri) => <ClientRow {...rowProps(c, ri)} />)}
+                    {g.items.map((c, ri) => <ClientRow key={c.id} {...rowProps(c, ri)} />)}
                   </div>
                 )
               })}
@@ -452,11 +556,9 @@ function ReportBlock({ report, mode, setMode, selYear, selMonth, setSelYear, set
         </div>
       </div>
 
-      {/* Hai khối case chia đôi */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <CaseBlock title="Thời điểm" data={report.thoiDiem} />
-        <CaseBlock title="Vãng lai"  data={report.vangLai} />
-      </div>
+      {/* Đã ẩn Vãng lai (2026-09-21) — chỉ còn Thời kỳ + Thời điểm, khối Thời điểm trải hết bề
+          ngang cho cân với khối Thời kỳ phía trên. */}
+      <CaseBlock title="Thời điểm" data={report.thoiDiem} wide />
     </div>
   )
 }
@@ -472,7 +574,7 @@ const CASE_TONE = {
 // xanh dương đậm hơn.
 const STEP_BAR = ['bg-blue-200', 'bg-blue-300', 'bg-blue-400', 'bg-blue-600', 'bg-[#2E6B3A]']
 
-function CaseBlock({ title, data }) {
+function CaseBlock({ title, data, wide }) {
   const max = Math.max(1, ...data.byStatus.map(s => s.count))
   const tone = CASE_TONE[title] || CASE_TONE['Thời điểm']
   // Bấm ô tiền để xem NGAY hồ sơ nào đứng sau con số — trước đây chỉ có tổng, muốn biết công ty
@@ -500,8 +602,10 @@ function CaseBlock({ title, data }) {
         <span className={'text-xs px-2 py-0.5 rounded-full border ' + tone.chip}>{data.caseCount} hồ sơ</span>
       </div>
 
+      {/* Khối rộng: 6 ô một hàng (3 ô việc | 3 ô tiền); khối hẹp: 2 hàng 3 ô. */}
+      <div className={wide ? 'grid grid-cols-3 lg:grid-cols-6 gap-2 mb-2' : 'contents'}>
       {/* Hàng trên: khối lượng việc CỦA KỲ đang chọn. */}
-      <div className="grid grid-cols-3 gap-2 mb-2">
+      <div className={wide ? 'contents' : 'grid grid-cols-3 gap-2 mb-2'}>
         {tile('Hồ sơ', data.caseCount, 'bg-indigo-50 border-indigo-200 text-indigo-900')}
         {tile('Dịch vụ', data.serviceCount, 'bg-violet-50 border-violet-200 text-violet-900')}
         <div className="border rounded-lg px-2 py-1.5 bg-slate-50 border-slate-200">
@@ -517,7 +621,7 @@ function CaseBlock({ title, data }) {
 
       {/* Hàng dưới: TIỀN, tính đến hiện tại chứ không theo tháng đang chọn — tiền chưa thu không
           hết hạn theo tháng. Gộp ba ô tiền một hàng để đọc một mạch. */}
-      <div className="grid grid-cols-3 gap-2 mb-2">
+      <div className={wide ? 'contents' : 'grid grid-cols-3 gap-2 mb-2'}>
         <button onClick={() => setOpenList(openList === 'cost' ? null : 'cost')}
           className={'text-left border rounded-lg px-2 py-1.5 transition-colors bg-slate-50 hover:bg-slate-100 ' +
             (openList === 'cost' ? 'border-slate-400 ring-1 ring-slate-300' : 'border-slate-200')}>
@@ -551,6 +655,7 @@ function CaseBlock({ title, data }) {
               : 'đã thu đủ'}
           </p>
         </button>
+      </div>
       </div>
 
       {openList && (
@@ -597,6 +702,8 @@ function CaseBlock({ title, data }) {
         </div>
       )}
 
+      <div className={wide ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : ''}>
+      <div>
       <p className="text-xs text-slate-600 mb-1.5">Dịch vụ theo bước xử lý</p>
       {data.byStatus.map((s, i) => (
         <div key={s.status} className="flex items-center gap-2 mb-1">
@@ -613,8 +720,10 @@ function CaseBlock({ title, data }) {
         </div>
       ))}
 
+      </div>
       {data.byStaff.length > 0 && (
-        <div className="mt-3 pt-2 border-t border-slate-200">
+        <div className={wide ? 'lg:border-l lg:border-slate-200 lg:pl-6' : 'mt-3 pt-2 border-t border-slate-200'}>
+          {wide && <p className="text-xs text-slate-600 mb-1.5">Theo nhân viên phụ trách</p>}
           {data.byStaff.map(s => (
             <div key={s.staffId} className="flex justify-between gap-2 text-xs text-slate-600 py-1">
               <span className="truncate">{s.staffName || '(chưa gán)'}</span>
@@ -631,12 +740,13 @@ function CaseBlock({ title, data }) {
           ))}
         </div>
       )}
+      </div>
     </div>
   )
 }
 
 /* ─────────────────────────── Một dòng công ty ─────────────────────────── */
-function ClientRow({ c, ri, showCat, stopped, report, expanded, onToggle, clientMonth, setClientMonth, selMonth, canManage, canAssign, staffList, templates, onChanged }) {
+function ClientRow({ c, ri, showCat, stopped, report, expanded, onToggle, clientMonth, setClientMonth, selMonth, canManage, canAssign, isAdmin, staffList, templates, onChanged }) {
   const stat = report?.thoiKy?.perClient?.find(p => p.id === c.id)
   const isThoiKy = c.category === 'thoi_ky'
   // Xong hết việc mà vẫn còn nợ tiền — phải nhìn thấy được, kẻo nằm im ở thẻ Hoàn thành.
@@ -753,7 +863,7 @@ function ClientRow({ c, ri, showCat, stopped, report, expanded, onToggle, client
               client={{ ...c.linkedClient, uses_hcns: true }}
               hcnsClient={c}
               context="hcns"
-              defaultPanel="debt"
+              defaultPanel="hcns_work"
               clientMonth={clientMonth[c.id] || selMonth}
               onMonthChange={m => setClientMonth(p => ({ ...p, [c.id]: m }))}
               onDebtSaved={onChanged}
@@ -763,7 +873,7 @@ function ClientRow({ c, ri, showCat, stopped, report, expanded, onToggle, client
               Chưa tìm thấy công ty kế toán gốc — có thể công ty đã bị xoá bên Danh sách công ty.
             </p>
           ) : (
-            <CaseServices hcnsClient={c} canManage={canManage} templates={templates} onChanged={onChanged} />
+            <CaseServices hcnsClient={c} canManage={canManage} isAdmin={isAdmin} staffList={staffList} templates={templates} onChanged={onChanged} />
           )}
         </div>
       )}
@@ -852,9 +962,11 @@ function DebtBadge({ stat }) {
 }
 
 /* ──────────────── Dịch vụ trong hồ sơ Thời điểm / Vãng lai ──────────────── */
-function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
+function CaseServices({ hcnsClient, canManage, isAdmin, staffList, templates, onChanged }) {
   const [services, setServices] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
+  const [showEditCase, setShowEditCase] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [panel, setPanel] = useState(null)   // null | 'debt' | 'dntt'
   // Sửa lại thông tin dịch vụ đã khai (nhập nhầm phí, nhầm ngày). API đã nhận sẵn, trước đây chỉ
   // thiếu chỗ bấm nên nhập sai là phải xoá dịch vụ rồi khai lại — mất luôn checklist đã tích.
@@ -943,6 +1055,28 @@ function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
     load(); onChanged && onChanged()
   }
 
+  // Chỉ Quản trị. Server tự từ chối nếu hồ sơ đã có khoản thu — không xoá mất dấu tiền thật.
+  const deleteCase = async () => {
+    const paidCount = debt?.data?.length || 0
+    const taskDone = (services || []).reduce((n, s) => n + (s.tasks || []).filter(t => t.done).length, 0)
+    const ok = window.confirm([
+      'XOÁ HỒ SƠ: ' + hcnsClient.name,
+      'Mã hồ sơ: ' + (hcnsClient.case_code || '—'),
+      '',
+      'Sẽ xoá luôn ' + (services || []).length + ' dịch vụ, ' + taskDone + ' việc đã tích, ghi chú và nhật ký trạng thái.',
+      paidCount ? 'Hồ sơ đang có ' + paidCount + ' khoản thu — hệ thống sẽ từ chối xoá.' : 'Hồ sơ chưa có khoản thu nào.',
+      '',
+      'Thao tác này KHÔNG khôi phục được. Xoá?',
+    ].join('\n'))
+    if (!ok) return
+    setDeleting(true)
+    const j = await fetch('/api/admin/hcns/clients?id=' + hcnsClient.id, { method: 'DELETE' })
+      .then(r => r.json()).catch(() => ({ error: 'Không xoá được, thử lại.' }))
+    setDeleting(false)
+    if (j.error) { window.alert(j.error); return }
+    onChanged && onChanged()
+  }
+
   if (services === null) return <p className="text-xs text-slate-500 px-4 py-4">Đang tải dịch vụ...</p>
 
   return (
@@ -975,7 +1109,24 @@ function CaseServices({ hcnsClient, canManage, templates, onChanged }) {
             + Thêm dịch vụ
           </button>
         )}
+        {isAdmin && (
+          <>
+            <button onClick={() => setShowEditCase(true)}
+              className="text-xs px-3 py-1.5 rounded-lg font-medium border bg-white text-slate-700 border-slate-300 hover:bg-slate-50">
+              ✏️ Sửa thông tin
+            </button>
+            <button onClick={deleteCase} disabled={deleting}
+              className="text-xs px-3 py-1.5 rounded-lg font-medium border bg-red-50 text-[#B3261E] border-red-300 hover:bg-red-100 disabled:opacity-50">
+              {deleting ? 'Đang xoá...' : '🗑 Xoá hồ sơ'}
+            </button>
+          </>
+        )}
       </div>
+      {showEditCase && (
+        <AddCaseModal category={hcnsClient.category} staffList={staffList || []} initial={hcnsClient}
+          onClose={() => setShowEditCase(false)}
+          onDone={() => { setShowEditCase(false); onChanged && onChanged() }} />
+      )}
 
       {panel === 'dntt' && <CaseDnttPanel hcnsClient={hcnsClient} services={services} />}
       {panel === 'debt' && (
@@ -1517,8 +1668,16 @@ function Modal({ title, subtitle, children, onClose }) {
 const inputCls = 'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8B1A1A]/30'
 const labelCls = 'text-xs text-slate-600 mb-1 block'
 
-function AddCaseModal({ category, staffList, onClose, onDone }) {
-  const [f, setF] = useState({ category, case_code: '', name: '', tax_code: '', address: '', representative: '', phone: '', assigned_to: '', note: '' })
+// initial có giá trị = chế độ SỬA hồ sơ đã có (Quản trị sửa hồ sơ nhân viên nhập nhầm).
+function AddCaseModal({ category, staffList, initial, onClose, onDone }) {
+  const editing = !!initial?.id
+  const [f, setF] = useState(() => {
+    const blank = { category, case_code: '', name: '', tax_code: '', address: '', representative: '', phone: '', assigned_to: '', note: '' }
+    if (!editing) return blank
+    const out = { ...blank }
+    for (const k of Object.keys(blank)) out[k] = initial[k] ?? ''
+    return out
+  })
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
   const [lookup, setLookup] = useState(false)
@@ -1542,7 +1701,8 @@ function AddCaseModal({ category, staffList, onClose, onDone }) {
     if (!f.assigned_to) return setErr('Vui lòng chọn nhân viên phụ trách')
     setSaving(true)
     const res = await fetch('/api/admin/hcns/clients', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(f),
+      method: editing ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editing ? { ...f, id: initial.id } : f),
     })
     const j = await res.json()
     setSaving(false)
@@ -1551,7 +1711,8 @@ function AddCaseModal({ category, staffList, onClose, onDone }) {
   }
 
   return (
-    <Modal title="Thêm công ty" subtitle={'Phòng HCNS · loại ' + CAT_LABEL[category]} onClose={onClose}>
+    <Modal title={editing ? 'Sửa thông tin hồ sơ' : 'Thêm công ty'}
+      subtitle={editing ? 'Quản trị · ' + (initial.case_code || initial.name) : 'Phòng HCNS · loại ' + CAT_LABEL[category]} onClose={onClose}>
       <div className="p-4 space-y-3">
         <div>
           <label className={labelCls}>Mã số thuế</label>
@@ -1589,9 +1750,10 @@ function AddCaseModal({ category, staffList, onClose, onDone }) {
           </div>
           <div>
             <label className={labelCls}>Loại khách <span className="text-red-500">*</span></label>
+            {/* Đã ẩn Vãng lai — chỉ còn hiện lựa chọn này nếu hồ sơ đang sửa vốn là Vãng lai. */}
             <select value={f.category} onChange={e => setF(p => ({ ...p, category: e.target.value }))} className={inputCls}>
               <option value="thoi_diem">Thời điểm</option>
-              <option value="vang_lai">Vãng lai</option>
+              {f.category === 'vang_lai' && <option value="vang_lai">Vãng lai</option>}
             </select>
           </div>
         </div>
@@ -1612,7 +1774,7 @@ function AddCaseModal({ category, staffList, onClose, onDone }) {
         <button onClick={onClose} className="px-4 py-2 text-sm border border-slate-300 rounded-lg text-slate-700">Hủy</button>
         <button onClick={submit} disabled={saving}
           className="px-4 py-2 text-sm bg-[#8B1A1A] text-white rounded-lg font-medium disabled:opacity-50">
-          {saving ? 'Đang lưu...' : 'Thêm công ty'}
+          {saving ? 'Đang lưu...' : editing ? 'Lưu thay đổi' : 'Thêm công ty'}
         </button>
       </div>
     </Modal>

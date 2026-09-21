@@ -144,6 +144,11 @@ export async function PATCH(request) {
   if (note           !== undefined) patch.note           = note
   if (status         !== undefined) patch.status         = status
   if (is_active      !== undefined) patch.is_active      = is_active === true
+  // Đổi loại chỉ giữa Thời điểm ↔ Vãng lai; Thời kỳ gắn với công ty kế toán, không đổi ở đây.
+  if (body.category !== undefined && ['thoi_diem', 'vang_lai'].includes(body.category)) {
+    const { data: cur } = await supabase.from('hcns_clients').select('category').eq('id', id).maybeSingle()
+    if (cur && ['thoi_diem', 'vang_lai'].includes(cur.category)) patch.category = body.category
+  }
 
   const { error } = await supabase.from('hcns_clients').update(patch).eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 400 })
@@ -152,5 +157,39 @@ export async function PATCH(request) {
     await writeHcnsFeePlan(supabase, id, Number(hcns_fee) || 0, updatedBy || auth.caller?.staffId || null)
   }
 
+  return Response.json({ ok: true })
+}
+
+// DELETE /api/admin/hcns/clients?id=...   — CHỈ quản trị viên, để dọn hồ sơ nhân viên tạo trùng/nhầm.
+// Chỉ hồ sơ Thời điểm/Vãng lai (Thời kỳ gắn công nợ kế toán, dùng "Ngưng DV HCNS").
+// Đã có khoản thu thì từ chối — không xoá mất dấu tiền thật.
+export async function DELETE(request) {
+  const auth = await requireLogin()
+  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+  const roles = auth.caller.roles?.length ? auth.caller.roles : [auth.caller.role]
+  if (!roles.includes('admin')) {
+    return Response.json({ error: 'Chỉ tài khoản Quản trị được xoá hồ sơ' }, { status: 403 })
+  }
+
+  const id = new URL(request.url).searchParams.get('id')
+  if (!id) return Response.json({ error: 'Thiếu id' }, { status: 400 })
+
+  const supabase = getAdmin()
+  const { data: row } = await supabase.from('hcns_clients').select('id, name, category').eq('id', id).maybeSingle()
+  if (!row) return Response.json({ error: 'Không tìm thấy hồ sơ' }, { status: 404 })
+  if (!['thoi_diem', 'vang_lai'].includes(row.category)) {
+    return Response.json({ error: 'Chỉ xoá được hồ sơ Thời điểm/Vãng lai' }, { status: 400 })
+  }
+
+  const { count: payCount, error: payErr } = await supabase.from('hcns_case_payments')
+    .select('id', { count: 'exact', head: true }).eq('hcns_client_id', id)
+  if (payErr) return Response.json({ error: payErr.message }, { status: 400 })
+  if (payCount > 0) {
+    return Response.json({ error: 'Hồ sơ đã ghi nhận ' + payCount + ' khoản thu — xoá các khoản thu trước rồi mới xoá hồ sơ' }, { status: 409 })
+  }
+
+  // Dịch vụ, checklist, nhật ký trạng thái, ghi chú + lượt đã đọc đều khai "on delete cascade".
+  const { error } = await supabase.from('hcns_clients').delete().eq('id', id)
+  if (error) return Response.json({ error: error.message }, { status: 400 })
   return Response.json({ ok: true })
 }
