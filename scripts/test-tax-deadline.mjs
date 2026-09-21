@@ -57,6 +57,10 @@ kiem('"2/2026" với tờ khai quý → Q2.2026',  chuanHoaKy('2/2026', 'quarter
 kiem('"2/2026" với tờ khai tháng → T02.2026', chuanHoaKy('2/2026', 'month'), 'T02.2026')
 kiem('"09/2026" tháng → T09.2026',          chuanHoaKy('09/2026', 'month'), 'T09.2026')
 kiem('"2026" → NAM.2026',                   chuanHoaKy('2026', 'settlement'), 'NAM.2026')
+// Bảng tra cứu của cổng ghi sẵn có tiền tố, nhận luôn không cần biết loại kỳ.
+kiem('"Q2/2026" (bảng tra cứu) → Q2.2026',  chuanHoaKy('Q2/2026', 'quarter'), 'Q2.2026')
+kiem('"T09/2026" (bảng tra cứu) → T09.2026', chuanHoaKy('T09/2026', 'month'), 'T09.2026')
+kiem('"Q2/2026" đọc đúng kể cả khi loại kỳ ghi nhầm là tháng', chuanHoaKy('Q2/2026', 'month'), 'Q2.2026')
 kiem('quý 5 là sai → null',                 chuanHoaKy('5/2026', 'quarter'), null)
 kiem('chuỗi lạ → null',                     chuanHoaKy('linh tinh', 'month'), null)
 kiem('rỗng → null',                         chuanHoaKy('', 'month'), null)

@@ -88,6 +88,19 @@ function DongCongTy({ cty, dangMo, onMo, onXong }) {
   const [thongBao, setThongBao] = useState(null)   // { loai: 'ok'|'loi'|'cho', chu }
   const [captcha, setCaptcha] = useState({ maPhien: null, anh: null, ma: '' })
   const [daCo, setDaCo]       = useState(null)
+  // Đồng bộ đi qua 2 mã captcha: 'dang_nhap' rồi 'tra_cuu'. null = không đang đồng bộ.
+  const [buocDongBo, setBuocDongBo] = useState(null)
+  const [ketQua, setKetQua]   = useState(null)
+  // Cổng chỉ cho tra tối đa 30 ngày mỗi lượt, và tra nhiều cửa sổ liền tay thì bị chặn (429).
+  // Nên để người dùng tự chọn đúng khoảng cần, mặc định 30 ngày gần nhất.
+  const homNay = new Date().toISOString().slice(0, 10)
+  const truoc30 = new Date(Date.now() - 29 * 864e5).toISOString().slice(0, 10)
+  const [tuNgay, setTuNgay]   = useState(truoc30)
+  const [denNgay, setDenNgay] = useState(homNay)
+
+  const soNgayChon = Math.round((new Date(denNgay) - new Date(tuNgay)) / 864e5) + 1
+  const soCuaSo = soNgayChon > 0 ? Math.ceil(soNgayChon / 30) : 0
+  const khoangHopLe = soNgayChon > 0 && soCuaSo <= 12
 
   useEffect(() => {
     if (!dangMo) return
@@ -154,6 +167,62 @@ function DongCongTy({ cty, dangMo, onMo, onXong }) {
     } catch (e) { setThongBao({ loai: 'loi', chu: e.message }) }
   }
 
+  // ── Đồng bộ: bước 1 mở phiên, bước 2 đăng nhập, bước 3 tra cứu + ghi dữ liệu ──
+  async function goiDongBo(payload) {
+    const r = await fetch('/api/admin/tokhai/sync', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    })
+    return r.json()
+  }
+
+  async function batDauDongBo() {
+    setKetQua(null); setThongBao({ loai: 'cho', chu: 'Đang mở phiên với cổng thuế…' })
+    const j = await goiDongBo({ clientId: cty.id, tuNgay, denNgay })
+    if (j.error) { setThongBao({ loai: 'loi', chu: j.error }); return }
+    setBuocDongBo('dang_nhap')
+    setCaptcha({ maPhien: j.maPhien, anh: j.anhCaptcha, ma: '' })
+    setThongBao({ loai: 'cho', chu: 'Mã thứ 1/2 — đăng nhập. Gõ mã trong ảnh rồi Enter.' })
+  }
+
+  async function guiMaDongBo() {
+    if (!captcha.ma.trim()) return
+    const dangODangNhap = buocDongBo === 'dang_nhap'
+    setThongBao({ loai: 'cho', chu: dangODangNhap ? 'Đang đăng nhập cổng…' : 'Đang tra cứu hồ sơ…' })
+
+    const j = await goiDongBo(dangODangNhap
+      ? { maPhien: captcha.maPhien, captcha: captcha.ma }
+      : { maPhien: captcha.maPhien, captchaTraCuu: captcha.ma })
+
+    if (j.error) {
+      setThongBao({ loai: 'loi', chu: j.error })
+      setBuocDongBo(null); setCaptcha({ maPhien: null, anh: null, ma: '' })
+      return
+    }
+    if (j.ket_qua === 'sai_captcha') {
+      setCaptcha({ maPhien: j.maPhien, anh: j.anhCaptcha, ma: '' })
+      setThongBao({ loai: 'loi', chu: 'Mã chưa đúng — ảnh mới đã hiện. Dễ nhầm số 0 với chữ o.' })
+      return
+    }
+    if (j.ket_qua === 'sai_mat_khau') {
+      setBuocDongBo(null); setCaptcha({ maPhien: null, anh: null, ma: '' })
+      setThongBao({ loai: 'loi', chu: 'Sai mật khẩu: ' + (j.moTa || '') + ' — đã dừng, KHÔNG thử lại.' })
+      onXong()
+      return
+    }
+    if (j.buoc === 'tra_cuu') {
+      setBuocDongBo('tra_cuu')
+      setCaptcha({ maPhien: j.maPhien, anh: j.anhCaptcha, ma: '' })
+      setThongBao({ loai: 'cho', chu: `Đăng nhập xong. Mã thứ 2/2 — tra cứu ${j.soCuaSo} cửa sổ 30 ngày bằng đúng mã này.` })
+      return
+    }
+    if (j.ket_qua === 'ok') {
+      setBuocDongBo(null); setCaptcha({ maPhien: null, anh: null, ma: '' })
+      setKetQua(j)
+      setThongBao({ loai: 'ok', chu: `✓ Xong ${j.khoangNgay}: ${j.themMoi} hồ sơ mới, ${j.capNhat} cập nhật, ${j.khopNghiaVu} khớp lịch hạn nộp.` })
+      onXong()
+    }
+  }
+
   const mauTrangThai = cty.trangThaiTaiKhoan === 'active' ? 'text-green-700 bg-green-50 border-green-200'
     : cty.trangThaiTaiKhoan === 'wrong_password' ? 'text-red-700 bg-red-50 border-red-200'
     : 'text-slate-600 bg-slate-50 border-slate-200'
@@ -199,6 +268,24 @@ function DongCongTy({ cty, dangMo, onMo, onXong }) {
               title={daCo ? '' : 'Lưu tài khoản trước đã'}>
               Kiểm tra kết nối
             </button>
+            <span className="w-px h-5 bg-gray-200" />
+            <span className="text-xs text-gray-500">Từ</span>
+            <input type="date" value={tuNgay} max={denNgay} onChange={e => setTuNgay(e.target.value)}
+              className="px-2 py-1 border border-gray-200 rounded-lg text-xs" />
+            <span className="text-xs text-gray-500">đến</span>
+            <input type="date" value={denNgay} min={tuNgay} max={homNay} onChange={e => setDenNgay(e.target.value)}
+              className="px-2 py-1 border border-gray-200 rounded-lg text-xs" />
+            <button onClick={batDauDongBo} disabled={!daCo || !!buocDongBo || !khoangHopLe}
+              className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs disabled:opacity-40"
+              title={daCo ? 'Vẫn chỉ tốn 2 mã captcha' : 'Lưu tài khoản trước đã'}>
+              Đồng bộ tờ khai
+            </button>
+            <span className="text-[11px] text-gray-400">
+              {soNgayChon > 0
+                ? `${soNgayChon} ngày · ${soCuaSo} lượt tra${soCuaSo > 1 ? ' (giãn 2,5 giây mỗi lượt)' : ''}`
+                : 'Khoảng ngày chưa hợp lệ'}
+              {soCuaSo > 12 && ' — quá dài, cổng sẽ chặn'}
+            </span>
             {daCo?.last_success_at && (
               <span className="text-xs text-gray-400">
                 Kết nối gần nhất: {new Date(daCo.last_success_at).toLocaleString('vi-VN')}
@@ -214,15 +301,49 @@ function DongCongTy({ cty, dangMo, onMo, onXong }) {
               <div className="flex-1 min-w-[180px]">
                 <input value={captcha.ma} autoFocus
                   onChange={e => setCaptcha(p => ({ ...p, ma: e.target.value }))}
-                  onKeyDown={e => e.key === 'Enter' && guiCaptcha()}
+                  onKeyDown={e => e.key === 'Enter' && (buocDongBo ? guiMaDongBo() : guiCaptcha())}
                   placeholder="Gõ mã trong ảnh rồi Enter"
                   className="w-full px-2 py-1.5 border border-blue-300 rounded-lg text-sm font-mono" />
                 <p className="text-[11px] text-gray-500 mt-1">Dễ nhầm: số 0 ↔ chữ o, số 1 ↔ chữ l</p>
               </div>
-              <button onClick={guiCaptcha} className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs">
+              <button onClick={buocDongBo ? guiMaDongBo : guiCaptcha}
+                className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs">
                 Xác nhận
               </button>
             </div>
+          )}
+
+          {ketQua?.hoSo?.length > 0 && (
+            <div className="rounded-lg border border-gray-200 overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-gray-50 text-gray-600">
+                    <th className="text-left px-2 py-1.5">Mã hồ sơ</th>
+                    <th className="text-left px-2 py-1.5">Tờ khai</th>
+                    <th className="text-left px-2 py-1.5">Kỳ</th>
+                    <th className="text-left px-2 py-1.5">Ngày nộp</th>
+                    <th className="text-left px-2 py-1.5">Trạng thái trên cổng</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ketQua.hoSo.map(h => (
+                    <tr key={h.maHoSo} className="border-t border-gray-100">
+                      <td className="px-2 py-1.5 font-mono text-[11px]">{h.maHoSo}</td>
+                      <td className="px-2 py-1.5">{(h.tenToKhai || '').split(' - ')[0]}</td>
+                      <td className="px-2 py-1.5">{h.ky}</td>
+                      <td className="px-2 py-1.5">{h.ngayNop ? h.ngayNop.slice(8, 10) + '/' + h.ngayNop.slice(5, 7) + '/' + h.ngayNop.slice(0, 4) : '—'}</td>
+                      <td className="px-2 py-1.5">{h.trangThai}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {ketQua && ketQua.khongKhop > 0 && (
+            <p className="text-[11px] text-amber-700">
+              {ketQua.khongKhop} hồ sơ không khớp được với lịch hạn nộp (loại tờ khai chưa có trong
+              danh mục, hoặc kỳ nằm ngoài các kỳ đã sinh) — vẫn lưu đầy đủ, chỉ là chưa gắn vào ô nào.
+            </p>
           )}
 
           {thongBao && (
