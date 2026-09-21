@@ -121,7 +121,7 @@ export async function POST(request) {
 // tra được phí ĐÚNG của tháng cũ (giống cơ chế bên kế toán).
 export async function PATCH(request) {
   const auth = await callerHasPermission('manage_hcns')
-  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+  if (!auth.caller) return Response.json({ error: auth.error }, { status: auth.status })
 
   const body = await request.json()
   const { id, hcns_fee, fee_period, assigned_to, name, case_code, tax_code, address,
@@ -129,7 +129,27 @@ export async function PATCH(request) {
   if (!id) return Response.json({ error: 'Thiếu id' }, { status: 400 })
 
   const supabase = getAdmin()
-  const { data: before } = await supabase.from('hcns_clients').select('hcns_fee').eq('id', id).maybeSingle()
+  const { data: before } = await supabase.from('hcns_clients')
+    .select('hcns_fee, category, linked_client_id').eq('id', id).maybeSingle()
+  if (!before) return Response.json({ error: 'Không tìm thấy hồ sơ' }, { status: 404 })
+
+  // Chỉ đổi PHÍ HCNS của công ty Thời kỳ: kế toán phụ trách công ty gốc được làm (điều chỉnh phí ở
+  // "Danh sách công ty"), không cần quyền manage_hcns — cùng phạm vi được sửa phí kế toán.
+  const sentKeys = Object.keys(body).filter(k => !['id', 'updatedBy'].includes(k))
+  const feeOnly = sentKeys.length > 0 && sentKeys.every(k => k === 'hcns_fee')
+  if (!auth.ok) {
+    const allowed = feeOnly && before.category === 'thoi_ky' && before.linked_client_id &&
+      await canEditLinkedFee(supabase, auth.caller, before.linked_client_id)
+    if (!allowed) return Response.json({ error: auth.error || 'Không đủ quyền' }, { status: 403 })
+  }
+
+  // Sửa thông tin nhận diện hồ sơ (mã hồ sơ, tên, MST...) cần quyền riêng edit_hcns_case_info
+  // (sql/17) — admin luôn có. Phân công / phí / trạng thái vẫn theo manage_hcns như cũ.
+  const INFO_KEYS = ['name', 'case_code', 'tax_code', 'address', 'representative', 'phone', 'category']
+  if (sentKeys.some(k => INFO_KEYS.includes(k))) {
+    const infoPerm = await callerHasPermission('edit_hcns_case_info')
+    if (!infoPerm.ok) return Response.json({ error: 'Không có quyền sửa thông tin hồ sơ' }, { status: 403 })
+  }
 
   const patch = {}
   if (hcns_fee       !== undefined) patch.hcns_fee       = Number(hcns_fee) || 0
@@ -192,4 +212,21 @@ export async function DELETE(request) {
   const { error } = await supabase.from('hcns_clients').delete().eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 400 })
   return Response.json({ ok: true })
+}
+
+// Ai được đổi phí HCNS của 1 công ty Thời kỳ khi KHÔNG có manage_hcns — khớp phạm vi sửa phí kế
+// toán ở /api/admin/clients: có manage_clients, là NV phụ trách chính, hoặc trưởng phòng của
+// phòng chứa công ty đó (xét cả vai trò/phòng kiêm nhiệm).
+async function canEditLinkedFee(supabase, caller, linkedClientId) {
+  if (!caller?.staffId) return false
+  const roles = caller.roles?.length ? caller.roles : [caller.role].filter(Boolean)
+  const rooms = caller.roomIds?.length ? caller.roomIds : [caller.roomId].filter(Boolean)
+  if (roles.includes('admin')) return true
+  const { data: c } = await supabase.from('clients')
+    .select('assigned_to, room_id').eq('id', linkedClientId).maybeSingle()
+  if (!c) return false
+  if (c.assigned_to === caller.staffId) return true
+  if (c.room_id && rooms.includes(c.room_id) && roles.includes('leader')) return true
+  const mc = await callerHasPermission('manage_clients')
+  return mc.ok
 }

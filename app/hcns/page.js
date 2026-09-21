@@ -74,6 +74,8 @@ export default function HcnsPage() {
   const [canAssign, setCanAssign] = useState(false)
   // Chỉ Quản trị: sửa thông tin / xoá hồ sơ Thời điểm-Vãng lai tạo trùng, nhầm.
   const [isAdmin, setIsAdmin] = useState(false)
+  // Quyền riêng edit_hcns_case_info (sql/17) — tích cho nhân viên HCNS ở trang Vai trò.
+  const [canEditInfo, setCanEditInfo] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
 
   const monthOpts = []
@@ -98,6 +100,7 @@ export default function HcnsPage() {
       setCanManage(can(roles, 'manage_hcns', perm))
       setCanAssign(can(roles, 'view_hcns_all_staff', perm))
       setIsAdmin(roles.includes('admin'))
+      setCanEditInfo(can(roles, 'edit_hcns_case_info', perm))
       await Promise.all([loadClients(), loadReport(), loadStaff(), loadTemplates()])
       setLoading(false)
     }
@@ -321,7 +324,7 @@ export default function HcnsPage() {
             c, ri, showCat: tab === 'all' || tab === 'done',
             stopped: tab === 'stopped', report,
             expanded: expanded === c.id, onToggle: () => setExpanded(expanded === c.id ? null : c.id),
-            clientMonth, setClientMonth, selMonth, canManage, canAssign, isAdmin, staffList, templates,
+            clientMonth, setClientMonth, selMonth, canManage, canAssign, isAdmin, canEditInfo, staffList, templates,
             onChanged: () => { loadClients(); loadReport() },
           })
           const empty = (
@@ -746,7 +749,7 @@ function CaseBlock({ title, data, wide }) {
 }
 
 /* ─────────────────────────── Một dòng công ty ─────────────────────────── */
-function ClientRow({ c, ri, showCat, stopped, report, expanded, onToggle, clientMonth, setClientMonth, selMonth, canManage, canAssign, isAdmin, staffList, templates, onChanged }) {
+function ClientRow({ c, ri, showCat, stopped, report, expanded, onToggle, clientMonth, setClientMonth, selMonth, canManage, canAssign, isAdmin, canEditInfo, staffList, templates, onChanged }) {
   const stat = report?.thoiKy?.perClient?.find(p => p.id === c.id)
   const isThoiKy = c.category === 'thoi_ky'
   // Xong hết việc mà vẫn còn nợ tiền — phải nhìn thấy được, kẻo nằm im ở thẻ Hoàn thành.
@@ -873,7 +876,7 @@ function ClientRow({ c, ri, showCat, stopped, report, expanded, onToggle, client
               Chưa tìm thấy công ty kế toán gốc — có thể công ty đã bị xoá bên Danh sách công ty.
             </p>
           ) : (
-            <CaseServices hcnsClient={c} canManage={canManage} isAdmin={isAdmin} staffList={staffList} templates={templates} onChanged={onChanged} />
+            <CaseServices hcnsClient={c} canManage={canManage} isAdmin={isAdmin} canEditInfo={canEditInfo} staffList={staffList} templates={templates} onChanged={onChanged} />
           )}
         </div>
       )}
@@ -962,7 +965,7 @@ function DebtBadge({ stat }) {
 }
 
 /* ──────────────── Dịch vụ trong hồ sơ Thời điểm / Vãng lai ──────────────── */
-function CaseServices({ hcnsClient, canManage, isAdmin, staffList, templates, onChanged }) {
+function CaseServices({ hcnsClient, canManage, isAdmin, canEditInfo, staffList, templates, onChanged }) {
   const [services, setServices] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
   const [showEditCase, setShowEditCase] = useState(false)
@@ -1109,17 +1112,18 @@ function CaseServices({ hcnsClient, canManage, isAdmin, staffList, templates, on
             + Thêm dịch vụ
           </button>
         )}
+        {(isAdmin || canEditInfo) && (
+          <button onClick={() => setShowEditCase(true)}
+            className="text-xs px-3 py-1.5 rounded-lg font-medium border bg-white text-slate-700 border-slate-300 hover:bg-slate-50">
+            ✏️ Sửa thông tin
+          </button>
+        )}
+        {/* Xoá hồ sơ: CHỈ Quản trị. */}
         {isAdmin && (
-          <>
-            <button onClick={() => setShowEditCase(true)}
-              className="text-xs px-3 py-1.5 rounded-lg font-medium border bg-white text-slate-700 border-slate-300 hover:bg-slate-50">
-              ✏️ Sửa thông tin
-            </button>
-            <button onClick={deleteCase} disabled={deleting}
-              className="text-xs px-3 py-1.5 rounded-lg font-medium border bg-red-50 text-[#B3261E] border-red-300 hover:bg-red-100 disabled:opacity-50">
-              {deleting ? 'Đang xoá...' : '🗑 Xoá hồ sơ'}
-            </button>
-          </>
+          <button onClick={deleteCase} disabled={deleting}
+            className="text-xs px-3 py-1.5 rounded-lg font-medium border bg-red-50 text-[#B3261E] border-red-300 hover:bg-red-100 disabled:opacity-50">
+            {deleting ? 'Đang xoá...' : '🗑 Xoá hồ sơ'}
+          </button>
         )}
       </div>
       {showEditCase && (
@@ -1712,7 +1716,7 @@ function AddCaseModal({ category, staffList, initial, onClose, onDone }) {
 
   return (
     <Modal title={editing ? 'Sửa thông tin hồ sơ' : 'Thêm công ty'}
-      subtitle={editing ? 'Quản trị · ' + (initial.case_code || initial.name) : 'Phòng HCNS · loại ' + CAT_LABEL[category]} onClose={onClose}>
+      subtitle={editing ? (initial.case_code || initial.name) : 'Phòng HCNS · loại ' + CAT_LABEL[category]} onClose={onClose}>
       <div className="p-4 space-y-3">
         <div>
           <label className={labelCls}>Mã số thuế</label>
