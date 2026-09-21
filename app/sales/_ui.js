@@ -7,15 +7,23 @@ import { useEffect, useState } from 'react'
 export const BRAND = '#2A6CA8'
 export const GOLD = '#C9A027'
 
+// Tình trạng khách 7 bước (chốt 2026-09-21) — dùng chung danh sách báo giá, khách tiềm năng, báo cáo.
+// Mã khớp lib/salesScope.js STAGE_ORDER; 'moi' cũ hiển thị như "Đang chăm sóc".
+// Màu ĐẶC, mỗi bước một sắc khác hẳn nhau (người dùng góp ý 2026-09-21: màu nhạt dễ lẫn với nền xanh nhạt
+// của trang). Đi từ trung tính → xanh → tím → cam → xanh lá khi chốt; Thất bại đỏ. hex/fg dùng tô từng
+// dòng trong ô chọn và thanh phễu ở trang Báo cáo.
 export const STAGES = [
-  { k: 'moi',      label: 'Mới',          cls: 'bg-sky-50 text-sky-700 border-sky-200' },
-  { k: 'tu_van',   label: 'Đang tư vấn',  cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  { k: 'bao_gia',  label: 'Đã báo giá',   cls: 'bg-amber-50 text-amber-800 border-amber-200' },
-  { k: 'gui_hd',   label: 'Đã gửi HĐ',    cls: 'bg-orange-50 text-orange-700 border-orange-200' },
-  { k: 'chot',     label: 'Chốt HĐ',      cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  { k: 'that_bai', label: 'Không thành',  cls: 'bg-gray-100 text-gray-500 border-gray-200' },
-]
-export const stageOf = k => STAGES.find(s => s.k === k) || STAGES[0]
+  { k: 'tu_van',       label: 'Đang chăm sóc', hex: '#64748B', fg: '#FFFFFF' },
+  { k: 'gui_khao_sat', label: 'Gửi khảo sát',  hex: '#0284C7', fg: '#FFFFFF' },
+  { k: 'bao_gia',      label: 'Gửi báo giá',   hex: '#4F46E5', fg: '#FFFFFF' },
+  { k: 'chot_bao_gia', label: 'Chốt báo giá',  hex: '#9333EA', fg: '#FFFFFF' },
+  { k: 'gui_hd',       label: 'Gửi hợp đồng',  hex: '#EA580C', fg: '#FFFFFF' },
+  { k: 'chot',         label: 'Chốt hợp đồng', hex: '#15803D', fg: '#FFFFFF' },
+  { k: 'that_bai',     label: 'Thất bại',      hex: '#DC2626', fg: '#FFFFFF' },
+].map(s => ({ ...s, cls: 'font-semibold', style: { background: s.hex, color: s.fg, borderColor: s.hex } }))
+export const stageOf = k => STAGES.find(s => s.k === (k === 'moi' ? 'tu_van' : k)) || STAGES[0]
+// Khách còn đang theo (chưa chốt HĐ, chưa thất bại)
+export const OPEN_STAGES = ['moi', 'tu_van', 'gui_khao_sat', 'bao_gia', 'chot_bao_gia', 'gui_hd']
 
 export const NEEDS = [
   { k: 'ke_toan',    label: 'Kế toán trọn gói' },
@@ -88,7 +96,7 @@ export function PeriodFilter({ value, onChange }) {
 
 export function StageChip({ stage }) {
   const s = stageOf(stage)
-  return <span className={'inline-block text-xs px-2 py-0.5 rounded-full border whitespace-nowrap ' + s.cls}>{s.label}</span>
+  return <span className={'inline-block text-xs px-2 py-0.5 rounded-full border whitespace-nowrap ' + s.cls} style={s.style}>{s.label}</span>
 }
 
 export function Modal({ title, onClose, children, wide, footer }) {

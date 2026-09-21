@@ -6,10 +6,8 @@ import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import {
   STAGES, NEEDS, ACT_KINDS, StageChip, Modal, Field, inputCls, btnPrimary, btnGhost, useToast, api,
-  needLabel, actLabel, fmtMoney, dmy, dmyTime, todayVN, isoVN, addDaysISO, StatCard, PageHead,
+  needLabel, actLabel, fmtMoney, dmy, dmyTime, todayVN, isoVN, addDaysISO, StatCard, PageHead, OPEN_STAGES,
 } from './_ui'
-
-const OPEN_STAGES = ['moi', 'tu_van', 'bao_gia', 'gui_hd']
 
 export default function SalesLeadsPage() {
   const router = useRouter()
@@ -64,7 +62,7 @@ export default function SalesLeadsPage() {
     if (fStage === 'open' && !OPEN_STAGES.includes(l.stage)) return false
     if (fStage === 'due' && !(OPEN_STAGES.includes(l.stage) && l.next_follow_up && l.next_follow_up <= today)) return false
     if (fStage === 'none' && l.assigned_to) return false
-    if (!['open', 'due', 'none', 'all'].includes(fStage) && l.stage !== fStage) return false
+    if (!['open', 'due', 'none', 'all'].includes(fStage) && (l.stage === 'moi' ? 'tu_van' : l.stage) !== fStage) return false
     if (fChannel && l.channel_id !== fChannel) return false
     if (fStaff === 'me' && l.assigned_to !== me) return false
     if (fStaff && fStaff !== 'me' && l.assigned_to !== fStaff) return false
@@ -76,7 +74,7 @@ export default function SalesLeadsPage() {
     return true
   })
 
-  const countStage = k => leads.filter(l => l.stage === k).length
+  const countStage = k => leads.filter(l => l.stage === k || (k === 'tu_van' && l.stage === 'moi')).length
   const monthKey = today.slice(0, 7)
   const newThisMonth = leads.filter(l => isoVN(l.created_at).slice(0, 7) === monthKey).length
 
@@ -100,7 +98,7 @@ export default function SalesLeadsPage() {
             foot={unassigned.length ? unassigned.length + ' khách chưa ai nhận' : 'mọi khách đều có người phụ trách'} tone="sky" />
           <StatCard label={res.perms.all ? 'Cần chăm sóc hôm nay (cả phòng)' : 'Tôi cần chăm sóc hôm nay'} value={dueList.length}
             foot={dueList.filter(l => l.next_follow_up < today).length + ' khách đã quá hẹn'} tone="red" />
-          <StatCard label="Chốt HĐ (toàn thời gian)" value={countStage('chot')} foot={countStage('that_bai') + ' khách không thành'} tone="grn" />
+          <StatCard label="Chốt hợp đồng (toàn thời gian)" value={countStage('chot')} foot={countStage('that_bai') + ' khách thất bại'} tone="grn" />
         </div>
 
         {dueList.length > 0 && (
@@ -317,7 +315,7 @@ function LeadDetailModal({ id, res, staffMap, chMap, toast, onClose, onChanged }
   const [d, setD] = useState(null)
   const [edit, setEdit] = useState(null)
   const [act, setAct] = useState({ kind: 'goi', content: '', next_follow_up: '' })
-  const [lost, setLost] = useState(null) // lý do khi chuyển "Không thành"
+  const [lost, setLost] = useState(null) // lý do khi chuyển "Thất bại"
   const [busy, setBusy] = useState(false)
   const [tick, setTick] = useState(0) // tăng lên để tải lại khách sau mỗi lần sửa
 
@@ -457,15 +455,15 @@ function LeadDetailModal({ id, res, staffMap, chMap, toast, onClose, onChanged }
                 {STAGES.filter(s => s.k !== l.stage && s.k !== 'chot').map(s => (
                   <button key={s.k} disabled={busy}
                     onClick={() => s.k === 'that_bai' ? setLost('') : patch({ stage: s.k }, 'Đã chuyển sang ' + s.label)}
-                    className={'text-xs px-2.5 py-1 rounded-lg border ' + s.cls}>{s.label}</button>
+                    className={'text-xs px-2.5 py-1 rounded-lg border ' + s.cls} style={s.style}>{s.label}</button>
                 ))}
               </div>
-              <p className="text-xs text-gray-400 mt-1.5">“Chốt HĐ” tự chuyển khi báo giá của khách được đổi sang Chốt HĐ.</p>
+              <p className="text-xs text-gray-400 mt-1.5">“Chốt hợp đồng” chọn ở cột Tình trạng trong trang Báo giá — báo giá của khách tự chuyển Chốt HĐ theo.</p>
               {lost !== null && (
                 <div className="mt-2 space-y-2">
                   <input autoFocus value={lost} onChange={e => setLost(e.target.value)} placeholder="Lý do không thành (giá cao, chọn bên khác, chưa có nhu cầu…)" className={inputCls} />
                   <div className="flex gap-2">
-                    <button disabled={busy} onClick={async () => { if (await patch({ stage: 'that_bai', lost_reason: lost }, 'Đã chuyển Không thành')) setLost(null) }} className={btnPrimary}>Xác nhận</button>
+                    <button disabled={busy} onClick={async () => { if (await patch({ stage: 'that_bai', lost_reason: lost }, 'Đã chuyển Thất bại')) setLost(null) }} className={btnPrimary}>Xác nhận</button>
                     <button onClick={() => setLost(null)} className={btnGhost}>Hủy</button>
                   </div>
                 </div>

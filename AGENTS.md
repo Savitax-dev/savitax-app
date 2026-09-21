@@ -66,14 +66,23 @@ Khách tiềm năng + báo giá SVT.MB03 + báo cáo, dựng 2026-09-11 (commit 
 - **File Word** `lib/salesDocx.js`: mỗi ô bảng phải có ≥1 `<w:p>`, thứ tự thẻ trong `<w:pPr>` cố định (sai là
   Word báo file hỏng). Bản gửi khách KHÔNG in dòng BCTC năm và "Căn cứ" (mẫu Giám đốc sửa 11/09); có đề xuất
   mức khác thì phần chênh dồn vào dòng kế toán trọn gói để cộng ra đúng tổng (`printedMonthlyLines`).
-- **Duyệt giá**: đề xuất khác biểu phí → `pending`, khoá xuất Word và khoá "Đã gửi/Chốt HĐ" tới khi duyệt.
+- **Duyệt báo giá**: công tắc `APPROVE_ALL_QUOTES` (lib/salesPricing.js) — **đang TẮT** (người dùng tạm tắt
+  2026-09-21, "sẽ bật lại sau"): đúng biểu phí (`ok`) xuất ngay, chỉ giá đề xuất khác biểu phí (`pending`) chờ
+  quản trị (`approve_sales_quote`) duyệt. Bật = mọi báo giá phải duyệt mới xuất Word / gửi, chốt HĐ / nộp file
+  báo giá vào Drive — nhớ chạy `scripts/approve-existing-sales-quotes.mjs --apply` TRƯỚC khi deploy. Lưu lại báo
+  giá đã duyệt: phí + số liệu không đổi thì giữ duyệt (`nextPriceStatus` / `pricingChanged`).
+- **Phí HCNS 300.000 đ/người/tháng** (`HCNS_PER_HEAD`, đổi từ 200.000 ngày 2026-09-21). Báo giá cũ giữ số trong
+  ảnh chụp `fees` tới khi Lưu lại.
 - **Google Drive**: service account `savitax-app-drive@savitax-app.iam.gserviceaccount.com` (thành viên Shared
   drive Phòng PTKH), env `GOOGLE_SA_EMAIL` / `GOOGLE_SA_PRIVATE_KEY` / `SALES_DRIVE_FOLDER_ID`. Bấm Lưu tự nộp
   phiếu khảo sát + file báo giá (`lib/salesFiling.js fileOnSave`, TUẦN TỰ — song song sinh 2 thư mục trùng tên).
   Service account không có dung lượng riêng: chỉ ghi được vào Shared drive. Kiểm:
   `node --env-file=.env.local scripts/test-drive-connection.mjs`.
-- **"Tình trạng chăm sóc"** ở danh sách báo giá = giai đoạn của KHÁCH (`careOf`), không phải cột riêng; "Ký hợp
-  đồng" luôn đi cùng báo giá "Chốt HĐ". Giai đoạn chỉ tự đẩy TIẾN; chỉ hạ khi người dùng bấm đổi.
+- **Tình trạng khách 7 bước** (2026-09-21, `sql/15_sales_stage_7.sql`): Đang chăm sóc → Gửi khảo sát → Gửi báo
+  giá → Chốt báo giá → Gửi hợp đồng → Chốt hợp đồng | Thất bại, lưu ở `sales_leads.stage` (mã `tu_van`,
+  `gui_khao_sat`, `bao_gia`, `chot_bao_gia`, `gui_hd`, `chot`, `that_bai`; `moi` cũ = Đang chăm sóc). Đổi ở cột
+  "Tình trạng" của danh sách báo giá (action `stage`) → trạng thái HĐ của báo giá đi theo (`contractForStage`).
+  Tự đẩy chỉ đi TIẾN. Báo cáo: phễu 6 bước lũy kế + bảng tình trạng hiện tại (`lib/salesReport.js`).
 - **Dò trùng**: `phone_norm` / `tax_norm` (MST bỏ số 0 đầu), so cả với `clients` đang phục vụ.
 - Phòng `rooms.type='kinhdoanh'` bị loại khỏi KPI/công nợ phòng nghiệp vụ như `hcns`; người chỉ thuộc phòng
   KD/HCNS ẩn phân khu Kế toán (`/api/admin/me` → `noAccounting`).

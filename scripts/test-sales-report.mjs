@@ -28,11 +28,15 @@ const rep = buildSalesReport({
   today: '2026-09-11',
 })
 
-t('khách chốt tính lũy kế là đã báo giá + đã gửi', leadProgress(leads[0]), { quoted: true, sent: true, signed: true, signedFee: 5000000, quotedFee: 5000000 })
+t('khách chốt tính lũy kế là đã báo giá + đã gửi', leadProgress(leads[0]), { reached: 5, quoted: true, sent: true, signed: true, signedFee: 5000000, quotedFee: 5000000 })
+t('"Chốt báo giá" chưa có HĐ -> tới bước 4/6, chưa gửi HĐ', (({ reached, quoted, sent }) => ({ reached, quoted, sent }))(leadProgress({ stage: 'chot_bao_gia', quotes: [Q('draft', 1)] })), { reached: 3, quoted: true, sent: false })
+t('"Gửi khảo sát" chưa có báo giá -> bước 2, chưa tính là đã báo giá', (({ reached, quoted }) => ({ reached, quoted }))(leadProgress({ stage: 'gui_khao_sat', quotes: [] })), { reached: 1, quoted: false })
 t('lứa T9: 5 khách (khách T8 không tính)', rep.total.leads, 5)
 t('đã báo giá 3 · đã gửi 2 · chốt 1', [rep.total.quoted, rep.total.sent, rep.total.signed], [3, 2, 1])
 t('phí chốt chỉ cộng báo giá đã chốt', rep.total.signedFee, 5000000)
 t('tỷ lệ chuyển đổi 1/5 = 20%, chốt/gửi = 50%', [rep.total.convRate, rep.total.closeRate], [20, 50])
+t('phễu 6 bước lũy kế', rep.total.steps, [5, 3, 3, 2, 2, 1])
+t('đếm tình trạng hiện tại ("Mới" cũ tính là Đang chăm sóc)', rep.total.states, { tu_van: 1, gui_khao_sat: 0, bao_gia: 0, chot_bao_gia: 0, gui_hd: 1, chot: 1, that_bai: 2 })
 t('kênh: Facebook 2 khách đứng đầu, có dòng "Chưa rõ kênh"',
   rep.channelRows.map(r => [r.name, r.leads]), [['Facebook', 2], ['Zalo', 2], ['Chưa rõ kênh', 1]])
 t('lý do không thành gộp không phân biệt hoa/thường, khoảng trắng', rep.lostReasons, [{ reason: 'Giá cao', count: 2 }])

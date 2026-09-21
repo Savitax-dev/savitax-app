@@ -8,7 +8,7 @@
 // Chỉ đọc file, KHÔNG đụng database. state.json nằm trong app.baogia/ (đã gitignore vì chứa dữ liệu
 // khách thật) — máy không có file đó thì lớp 1 tự bỏ qua.
 import { readFileSync, existsSync } from 'node:fs'
-import { computeFees, normalizeSurvey, priceQuote } from '../lib/salesPricing.js'
+import { computeFees, normalizeSurvey, priceQuote, money, HCNS_PER_HEAD, nextPriceStatus, pricingChanged, canExportPrice, awaitingApproval, APPROVE_ALL_QUOTES } from '../lib/salesPricing.js'
 import { printedMonthlyLines } from '../lib/salesDocx.js'
 
 let pass = 0, fail = 0
@@ -22,17 +22,30 @@ const statePath = process.argv[2] || 'app.baogia/02. APP DANG CHAY/state.json'
 if (existsSync(statePath)) {
   console.log('1. Chạy lại báo giá thật của bản chạy thử\n')
   const { quotes } = JSON.parse(readFileSync(statePath, 'utf8'))
+  // Bản chạy thử tính HCNS 200.000 đ/người; từ 2026-09-21 là HCNS_PER_HEAD (300.000). Quy đổi riêng dòng
+  // HCNS trong số liệu gốc về mức hiện hành rồi mới so — mọi dòng khác phải khớp y nguyên.
+  const OLD_HCNS = 200000
+  const adjust = q => {
+    const heads = Number(q.survey.hcnsHeads || 0)
+    const fix = l => /hành chính nhân sự/.test(l.label)
+      ? { ...l, fee: heads * HCNS_PER_HEAD, ...(l.note ? { note: l.note.replace(money(OLD_HCNS), money(HCNS_PER_HEAD)) } : {}) } : l
+    const lines = q.fees.lines.map(fix)
+    const diff = lines.reduce((a, l) => a + (l.yearly ? 0 : l.fee), 0) - q.fees.lines.reduce((a, l) => a + (l.yearly ? 0 : l.fee), 0)
+    return { lines, optional: q.fees.optional.map(fix), standard: q.standardMonthly + diff,
+      final: q.override?.on ? q.monthlyFinal : q.monthlyFinal + diff }
+  }
   for (const q of quotes) {
     const s = normalizeSurvey(q.survey)
     const f = computeFees(s)
+    const exp = adjust(q)
     const tag = q.no + ' ' + (q.survey.company || '').slice(0, 28)
-    t(tag + ' — dòng phí', f.lines, q.fees.lines)
-    t(tag + ' — dịch vụ tùy chọn', f.optional, q.fees.optional)
+    t(tag + ' — dòng phí', f.lines, exp.lines)
+    t(tag + ' — dịch vụ tùy chọn', f.optional, exp.optional)
     t(tag + ' — căn cứ', f.basis, q.fees.basis)
     t(tag + ' — cảnh báo', f.warnings, q.fees.warnings)
-    t(tag + ' — phí/tháng theo biểu', f.monthly, q.standardMonthly)
+    t(tag + ' — phí/tháng theo biểu', f.monthly, exp.standard)
     const p = priceQuote(q.survey, q.override)
-    t(tag + ' — phí thực áp dụng', p.monthlyFinal, q.monthlyFinal)
+    t(tag + ' — phí thực áp dụng', p.monthlyFinal, exp.final)
   }
 } else {
   console.log('(Bỏ qua lớp 1 — không thấy ' + statePath + ')')
@@ -63,7 +76,8 @@ t('Vượt bậc, doanh thu 30 tỷ -> 20.000.000', base({ invIn: 100, revenueYe
 }
 t('Kê khai tháng ×1,2: 2.500.000 -> 3.000.000', base({ invIn: 15, monthlyFiling: true }), 3000000)
 t('Phụ thu vùng b cộng vào tổng tháng', fee({ invIn: 15, area: 'b' }), 3000000)
-t('HCNS có chọn: 5 người cộng 1.000.000 vào tổng', fee({ invIn: 15, wantHcns: true, hcnsHeads: 5 }), 3500000)
+t('Phí HCNS = 300.000 đ/người/tháng', HCNS_PER_HEAD, 300000)
+t('HCNS có chọn: 5 người cộng 1.500.000 vào tổng', fee({ invIn: 15, wantHcns: true, hcnsHeads: 5 }), 4000000)
 {
   const f = computeFees(normalizeSurvey({ invIn: 15, wantHcns: false, hcnsHeads: 5 }))
   t('HCNS không chọn: không vào tổng, xuống mục tùy chọn', [f.monthly, f.optional.length], [2500000, 1])
@@ -97,10 +111,10 @@ t('Mã dịch vụ lẻ lạ bị loại', normalizeSurvey({ extras: ['qt_tncn',
 
 console.log('\n3. Dòng phí in trong file Word khi đề xuất mức khác\n')
 {
-  // biểu phí: kế toán 2.500.000 + HCNS 1.000.000 = 3.500.000; đề xuất 3.000.000
+  // biểu phí: kế toán 2.500.000 + HCNS 1.500.000 = 4.000.000; đề xuất 3.000.000
   const p = priceQuote({ invIn: 15, wantHcns: true, hcnsHeads: 5 }, { on: true, amount: 3000000 })
   const L = printedMonthlyLines(p.fees, p.monthlyFinal)
-  t('Đề xuất thấp hơn: dòng kế toán 2.500.000 → 2.000.000, HCNS giữ nguyên', L.map(l => l.fee), [2000000, 1000000])
+  t('Đề xuất thấp hơn: dòng kế toán 2.500.000 → 1.500.000, HCNS giữ nguyên', L.map(l => l.fee), [1500000, 1500000])
   t('Cộng các dòng in ra = đúng dòng TỔNG', L.reduce((a, l) => a + l.fee, 0), 3000000)
   t('Không đụng dữ liệu gốc (fees vẫn theo biểu phí)', p.fees.lines[0].fee, 2500000)
 }
@@ -110,11 +124,35 @@ console.log('\n3. Dòng phí in trong file Word khi đề xuất mức khác\n')
 }
 {
   const p = priceQuote({ invIn: 15, wantHcns: true, hcnsHeads: 5 }, { on: true, amount: 500000 })
-  t('Chênh làm dòng kế toán âm → giữ nguyên theo biểu phí, không in số âm', printedMonthlyLines(p.fees, p.monthlyFinal).map(l => l.fee), [2500000, 1000000])
+  t('Chênh làm dòng kế toán âm → giữ nguyên theo biểu phí, không in số âm', printedMonthlyLines(p.fees, p.monthlyFinal).map(l => l.fee), [2500000, 1500000])
 }
 {
   const p = priceQuote({ invIn: 15, area: 'a' }, null)
   t('Không đề xuất: in y như biểu phí', printedMonthlyLines(p.fees, p.monthlyFinal).map(l => l.fee), [2500000, 200000])
+}
+
+console.log('\n4. Duyệt báo giá (từ 2026-09-21 mọi báo giá phải quản trị duyệt)\n')
+// Công tắc APPROVE_ALL_QUOTES (lib/salesPricing.js) — đang TẮT từ 2026-09-21: đúng biểu phí xuất ngay,
+// chỉ giá đề xuất phải chờ duyệt. Bật lại thì 'ok' cũng thành chờ duyệt.
+t('Công tắc duyệt mọi báo giá đang ' + (APPROVE_ALL_QUOTES ? 'BẬT' : 'TẮT'), typeof APPROVE_ALL_QUOTES, 'boolean')
+t('Được xuất gửi khách: ' + (APPROVE_ALL_QUOTES ? 'chỉ đã duyệt' : 'đúng biểu phí + đã duyệt'),
+  ['ok', 'pending', 'approved', 'rejected'].map(canExportPrice), [!APPROVE_ALL_QUOTES, false, true, false])
+t('Chờ duyệt: ' + (APPROVE_ALL_QUOTES ? 'đúng biểu phí + giá đề xuất' : 'chỉ giá đề xuất'),
+  ['ok', 'pending', 'approved', 'rejected'].map(awaitingApproval), [APPROVE_ALL_QUOTES, true, false, false])
+t('Đã duyệt, sửa lặt vặt (phí không đổi) → giữ đã duyệt', nextPriceStatus('approved', { priceChanged: false, overrideOn: false }), 'approved')
+t('Đã duyệt, đổi phí/số liệu → chờ duyệt lại', nextPriceStatus('approved', { priceChanged: true, overrideOn: false }), 'ok')
+t('Đã duyệt, bật đề xuất giá → chờ duyệt giá đề xuất', nextPriceStatus('approved', { priceChanged: true, overrideOn: true }), 'pending')
+t('Bị từ chối, lưu lại (dù phí không đổi) → gửi duyệt lại', nextPriceStatus('rejected', { priceChanged: false, overrideOn: false }), 'ok')
+t('Đang chờ duyệt, lưu lại → vẫn chờ duyệt', nextPriceStatus('ok', { priceChanged: false, overrideOn: false }), 'ok')
+{
+  const a = priceQuote({ invIn: 15, address: 'Q1' }, null)
+  const saved = { fees: a.fees, monthly_final: a.monthlyFinal, override_on: false }
+  t('Sửa địa chỉ không tính là đổi phí', pricingChanged(saved, priceQuote({ invIn: 15, address: 'Q3' }, null)), false)
+  t('Đổi số hóa đơn là đổi phí', pricingChanged(saved, priceQuote({ invIn: 25, address: 'Q1' }, null)), true)
+  const b = priceQuote({ invIn: 15 }, { on: true, amount: 2000000 })
+  const savedB = { fees: b.fees, monthly_final: b.monthlyFinal, override_on: true, override_amount: 2000000, override_reason: 'khách cũ' }
+  t('Giá đề xuất giữ nguyên + cùng lý do → không đổi', pricingChanged(savedB, { ...b, overrideReason: 'khách cũ' }), false)
+  t('Đổi lý do đề xuất → phải duyệt lại', pricingChanged(savedB, { ...b, overrideReason: 'cam kết 2 năm' }), true)
 }
 
 console.log('\n' + pass + ' đạt, ' + fail + ' lỗi')

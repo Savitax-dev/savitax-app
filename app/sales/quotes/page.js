@@ -6,12 +6,12 @@ import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import {
   SECTORS, AREA_SURCHARGE, EXTRA_SERVICES, HCNS_PER_HEAD, CONTRACT_STATES, PRICE_STATES,
-  emptySurvey, syncDocs, priceQuote, canExportPrice,
+  emptySurvey, syncDocs, priceQuote, canExportPrice, awaitingApproval,
 } from '@/lib/salesPricing'
 import { readSurveyDocx, applySurveyRows } from '@/lib/salesSurvey'
 import {
   PeriodFilter, defaultPeriod, inPeriod, periodLabel, StatCard, Field, inputCls, btnPrimary, btnGhost,
-  NumInput, useToast, api, fmt, fmtMoney, dmy, dmyTime, StageChip, GOLD, Modal, PageHead,
+  NumInput, useToast, api, fmt, fmtMoney, dmy, dmyTime, StageChip, GOLD, Modal, PageHead, STAGES, stageOf,
 } from '../_ui'
 
 const DRAFT_KEY = 'svt_sales_quote_draft_v1'
@@ -19,16 +19,20 @@ const readDraft = () => { try { const o = JSON.parse(localStorage.getItem(DRAFT_
 const writeDraft = d => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ t: Date.now(), d })) } catch (_) {} }
 const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY) } catch (_) {} }
 
-// Tình trạng chăm sóc (giai đoạn của khách, suy ra ở server — lib/salesScope careOf)
-const CARE = [
-  { k: 'cham_soc', label: 'Đang chăm sóc', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  { k: 'ky_hd',    label: 'Ký hợp đồng',   cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  { k: 'that_bai', label: 'Thất bại',      cls: 'bg-gray-100 text-gray-600 border-gray-200' },
-]
+// Tình trạng khách 7 bước (lưu ở khách — sales_leads.stage); 'moi' cũ tính là "Đang chăm sóc".
+const stageKey = st => (st === 'moi' || !st ? 'tu_van' : st)
+// Chọn "Gửi hợp đồng" / "Chốt hợp đồng" cần báo giá được phép gửi khách.
+const needsExport = k => k === 'gui_hd' || k === 'chot'
 
 function PriceChip({ status }) {
   const p = PRICE_STATES[status] || PRICE_STATES.ok
-  return <span className={'inline-block text-xs px-2 py-0.5 rounded-full border whitespace-nowrap ' + p.cls}>{p.label}</span>
+  return (
+    <span className={'inline-flex flex-col items-center leading-tight text-xs px-2.5 py-0.5 border whitespace-nowrap ' +
+      (p.sub ? 'rounded-xl ' : 'rounded-full ') + p.cls}>
+      <span className="font-medium">{p.label}</span>
+      {p.sub && <span className="text-[11px] opacity-80">{p.sub}</span>}
+    </span>
+  )
 }
 
 async function downloadWord(id, toast) {
@@ -56,7 +60,7 @@ export default function SalesQuotesPage() {
   const [editor, setEditor] = useState(null) // { mode:'new'|'edit', id?, leadId? , restore? }
   const [draftInfo, setDraftInfo] = useState(null)
   const [qText, setQText] = useState('')
-  const [fCare, setFCare] = useState('')
+  const [fStage, setFStage] = useState('')
   const [lostFor, setLostFor] = useState(null)
   const [lostText, setLostText] = useState('')
   const [toastNode, toast] = useToast()
@@ -90,19 +94,13 @@ export default function SalesQuotesPage() {
     window.scrollTo(0, 0)
   }
 
-  const setContract = async (q, st) => {
-    const r = await api('/api/admin/sales/quotes', { method: 'PATCH', body: { id: q.id, action: 'contract', contract_status: st } })
-    if (!r.ok) { toast(r.data.error || 'Chưa đổi được trạng thái', true); load(); return }
-    toast('Báo giá ' + q.quote_no + ': ' + CONTRACT_STATES.find(c => c[0] === st)[1])
-    load()
-  }
-  // Tình trạng chăm sóc — "Thất bại" phải ghi lý do nên mở hộp hỏi trước, không đổi ngay.
-  const setCare = async (q, care, lostReason) => {
-    if (care === 'that_bai' && lostReason === undefined) { setLostFor(q); setLostText(''); return }
-    const r = await api('/api/admin/sales/quotes', { method: 'PATCH', body: { id: q.id, action: 'care', care, lost_reason: lostReason } })
+  // Tình trạng 7 bước — "Thất bại" phải ghi lý do nên mở hộp hỏi trước, không đổi ngay.
+  const setStage = async (q, stage, lostReason) => {
+    if (stage === 'that_bai' && lostReason === undefined) { setLostFor(q); setLostText(''); return }
+    const r = await api('/api/admin/sales/quotes', { method: 'PATCH', body: { id: q.id, action: 'stage', stage, lost_reason: lostReason } })
     if (!r.ok) { toast(r.data.error || 'Chưa đổi được tình trạng', true); load(); return }
     setLostFor(null)
-    toast((q.company_name || 'Khách') + ': ' + CARE.find(c => c.k === care).label)
+    toast((q.company_name || 'Khách') + ': ' + stageOf(stage).label)
     load()
   }
   const del = async (q) => {
@@ -140,11 +138,11 @@ export default function SalesQuotesPage() {
     return hay.includes(needle) || (needleDigits.length >= 3 && digits.includes(needleDigits))
   }
 
-  const pendingAll = all.filter(q => q.price_status === 'pending')
-  const inKy = all.filter(q => inPeriod(q.quote_date, period)).filter(q => !onlyPending || q.price_status === 'pending').filter(match)
-  const qs = inKy.filter(q => !fCare || q.care === fCare)
+  const pendingAll = all.filter(q => awaitingApproval(q.price_status))
+  const inKy = all.filter(q => inPeriod(q.quote_date, period)).filter(q => !onlyPending || awaitingApproval(q.price_status)).filter(match)
+  const qs = inKy.filter(q => !fStage || stageKey(q.lead_stage) === fStage)
   const pl = periodLabel(period)
-  const pending = inKy.filter(q => q.price_status === 'pending').length
+  const pending = inKy.filter(q => awaitingApproval(q.price_status)).length
   const sent = inKy.filter(q => q.contract_status === 'sent' || q.contract_status === 'signed').length
   const signed = inKy.filter(q => q.contract_status === 'signed').length
   const sum = inKy.reduce((a, q) => a + (Number(q.monthly_final) || 0), 0)
@@ -179,7 +177,8 @@ export default function SalesQuotesPage() {
           <button onClick={() => { setOnlyPending(v => !v); setPeriod(p => ({ ...p, mode: 'all' })) }}
             className="w-full text-left flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-3 mb-4 hover:border-red-300">
             <span className="text-2xl">🔏</span>
-            <span className="flex-1 text-sm text-red-900"><b>{pendingAll.length} báo giá</b> đang chờ Giám đốc duyệt mức phí đề xuất khác biểu phí</span>
+            <span className="flex-1 text-sm text-red-900"><b>{pendingAll.length} báo giá</b> đang chờ duyệt — nhân viên chỉ xuất được file gửi khách sau khi quản trị duyệt
+              {pendingAll.some(q => q.price_status === 'pending') && <> (<b>{pendingAll.filter(q => q.price_status === 'pending').length}</b> báo giá đề xuất khác biểu phí)</>}</span>
             <span className="text-sm text-red-700 underline">{onlyPending ? 'Xem tất cả' : 'Lọc ra để duyệt'}</span>
           </button>
         )}
@@ -193,20 +192,20 @@ export default function SalesQuotesPage() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
-          <StatCard label="Tổng báo giá" value={inKy.length} foot={pl + (pending ? ' · ' + pending + ' chờ duyệt giá' : '')} tone="red" />
+          <StatCard label="Tổng báo giá" value={inKy.length} foot={pl + (pending ? ' · ' + pending + ' chờ duyệt' : '')} tone="red" />
           <StatCard label="Hợp đồng đã gửi" value={sent} foot={inKy.length ? Math.round(sent * 100 / inKy.length) + '% số báo giá' : '—'} tone="amb" />
           <StatCard label="Hợp đồng đã chốt" value={signed} foot={sent ? Math.round(signed * 100 / sent) + '% số đã gửi' : '—'} tone="grn" />
           <StatCard label="Tổng phí báo giá" value={fmt(sum)} unit="đ/tháng" foot={pl} tone="blue" />
           <StatCard label="Phí đã chốt" value={fmt(sumSigned)} unit="đ/tháng" foot={sum ? Math.round(sumSigned * 100 / sum) + '% tổng phí báo giá' : 'chưa có hợp đồng chốt'} tone="gold" />
         </div>
 
-        {/* Đếm theo tình trạng chăm sóc — bấm để lọc */}
+        {/* Đếm theo tình trạng 7 bước — bấm để lọc */}
         <div className="flex gap-1.5 flex-wrap mb-3">
-          {[{ k: '', label: 'Tất cả', cls: 'bg-white text-gray-700 border-gray-200' }, ...CARE].map(c => {
-            const n = c.k ? inKy.filter(q => q.care === c.k).length : inKy.length
-            const on = fCare === c.k
+          {[{ k: '', label: 'Tất cả' }, ...STAGES].map(c => {
+            const n = c.k ? inKy.filter(q => stageKey(q.lead_stage) === c.k).length : inKy.length
+            const on = fStage === c.k
             return (
-              <button key={c.k || 'all'} onClick={() => setFCare(c.k)} className={'s-chip' + (on ? ' on' : '')}>
+              <button key={c.k || 'all'} onClick={() => setFStage(c.k)} className={'s-chip' + (on ? ' on' : '')}>
                 {c.label}<span className="n num">{n}</span>
               </button>
             )
@@ -229,8 +228,7 @@ export default function SalesQuotesPage() {
                     <th className={th}>Ngày</th>
                     <th className={th}>Phí/tháng</th>
                     <th className={th}>Lưu ý</th>
-                    <th className={th}>Tình trạng chăm sóc</th>
-                    <th className={th}>Trạng thái HĐ</th>
+                    <th className={th}>Tình trạng</th>
                     <th className={th}>Người lập</th>
                     <th className={th}>Thao tác</th>
                   </tr>
@@ -238,7 +236,7 @@ export default function SalesQuotesPage() {
                 <tbody>
                   {qs.map(q => {
                     const exportable = canExportPrice(q.price_status)
-                    const careInfo = CARE.find(c => c.k === q.care) || CARE[0]
+                    const stInfo = stageOf(q.lead_stage)
                     return (
                       <tr key={q.id}>
                         <td className={td}><button onClick={() => setEditor({ mode: 'edit', id: q.id })} className="font-semibold text-[#2A6CA8] num hover:underline">{q.quote_no}</button></td>
@@ -256,19 +254,13 @@ export default function SalesQuotesPage() {
                         </td>
                         <td className={td}><PriceChip status={q.price_status} /></td>
                         <td className={td}>
-                          <select value={q.care} disabled={!q.canEdit || !q.lead_id} onChange={e => setCare(q, e.target.value)}
-                            title={q.care === 'that_bai' && q.lost_reason ? 'Lý do: ' + q.lost_reason : undefined}
-                            className={'px-2 py-1 rounded-lg text-xs border ' + careInfo.cls}>
-                            {CARE.map(c => <option key={c.k} value={c.k} disabled={c.k === 'ky_hd' && !exportable}>{c.label}</option>)}
+                          <select value={stageKey(q.lead_stage)} disabled={!q.canEdit || !q.lead_id} onChange={e => setStage(q, e.target.value)}
+                            title={q.lead_stage === 'that_bai' && q.lost_reason ? 'Lý do: ' + q.lost_reason : undefined}
+                            className={'px-2 py-1 rounded-lg text-xs border ' + stInfo.cls} style={stInfo.style}>
+                            {STAGES.map(c => <option key={c.k} value={c.k} disabled={needsExport(c.k) && !exportable}
+                              style={{ background: c.hex, color: c.fg }}>{c.label}</option>)}
                           </select>
-                          {q.care === 'that_bai' && q.lost_reason && <p className="text-[11px] text-gray-400 mt-0.5 max-w-[140px] mx-auto truncate">{q.lost_reason}</p>}
-                        </td>
-                        <td className={td}>
-                          <select value={q.contract_status} disabled={!q.canEdit} onChange={e => setContract(q, e.target.value)}
-                            className={'px-2 py-1 rounded-lg text-xs border ' + (q.contract_status === 'signed' ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                              : q.contract_status === 'sent' ? 'bg-orange-50 border-orange-200 text-orange-800' : 'bg-white border-gray-200 text-gray-700')}>
-                            {CONTRACT_STATES.map(([k, lb]) => <option key={k} value={k} disabled={k !== 'draft' && !exportable}>{lb}</option>)}
-                          </select>
+                          {q.lead_stage === 'that_bai' && q.lost_reason && <p className="text-[11px] text-gray-400 mt-0.5 max-w-[140px] mx-auto truncate">{q.lost_reason}</p>}
                         </td>
                         <td className={td + ' text-gray-500 whitespace-nowrap'}>{q.author_name || '—'}</td>
                         <td className={td + ' whitespace-nowrap'}>
@@ -297,7 +289,7 @@ export default function SalesQuotesPage() {
         <Modal title={'Thất bại — ' + (lostFor.company_name || '')} onClose={() => setLostFor(null)}
           footer={<>
             <button onClick={() => setLostFor(null)} className={btnGhost}>Hủy</button>
-            <button onClick={() => setCare(lostFor, 'that_bai', lostText)} disabled={!lostText.trim()} className={btnPrimary}>Xác nhận thất bại</button>
+            <button onClick={() => setStage(lostFor, 'that_bai', lostText)} disabled={!lostText.trim()} className={btnPrimary}>Xác nhận thất bại</button>
           </>}>
           <Field label="Lý do khách không ký" hint="dùng để thống kê lý do mất khách">
             <input autoFocus value={lostText} onChange={e => setLostText(e.target.value)} className={inputCls}
@@ -441,7 +433,7 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
     const q = r.data.data
     const dv = r.data.drive || {}
     toast((isNew ? 'Đã lưu báo giá số ' : 'Đã lưu thay đổi báo giá ') + q.quote_no +
-      (q.price_status === 'pending' ? ' — chờ Giám đốc duyệt giá, duyệt xong mới nộp file báo giá' : '') +
+      (awaitingApproval(q.price_status) ? ' — chờ quản trị duyệt, duyệt xong mới xuất được file gửi khách' : '') +
       (dv.filed?.length ? '. Đã nộp ' + dv.filed.join(' + ') + ' vào Drive' : '') +
       (dv.warning ? '. ' + dv.warning : ''), !!dv.warning)
     if (isNew) onSavedNew(q.id)
@@ -454,18 +446,23 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
     const r = await api('/api/admin/sales/quotes', { method: 'PATCH', body: { id: d.id, action: 'review', decision, note: review } })
     if (!r.ok) { toast(r.data.error || 'Chưa duyệt được', true); return }
     toast(decision === 'approve'
-      ? 'Đã duyệt mức phí' + (r.data.drive?.filed?.length ? ' và nộp file báo giá vào Drive' : r.data.drive?.warning ? '. ' + r.data.drive.warning : '')
-      : 'Đã từ chối mức phí', !!(decision === 'approve' && r.data.drive?.warning))
+      ? 'Đã duyệt báo giá' + (r.data.drive?.filed?.length ? ' và nộp file báo giá vào Drive' : r.data.drive?.warning ? '. ' + r.data.drive.warning : '')
+      : 'Đã từ chối báo giá', !!(decision === 'approve' && r.data.drive?.warning))
     setMeta(m => ({ ...m, price_status: r.data.price_status, review_note: review || null,
       drive_folder_url: r.data.drive?.folderUrl || m.drive_folder_url }))
     setReview('')
   }
 
-  const setContract = async (st) => {
-    const r = await api('/api/admin/sales/quotes', { method: 'PATCH', body: { id: d.id, action: 'contract', contract_status: st } })
-    if (!r.ok) { toast(r.data.error || 'Chưa đổi được trạng thái', true); return }
-    setMeta(m => ({ ...m, contract_status: st }))
-    toast('Đã chuyển: ' + CONTRACT_STATES.find(c => c[0] === st)[1])
+  const setStage = async (stage) => {
+    let lostReason
+    if (stage === 'that_bai') {
+      lostReason = window.prompt('Lý do khách không ký (giá cao, chọn đơn vị khác, chưa có nhu cầu…):', '')
+      if (!lostReason || !lostReason.trim()) return
+    }
+    const r = await api('/api/admin/sales/quotes', { method: 'PATCH', body: { id: d.id, action: 'stage', stage, lost_reason: lostReason } })
+    if (!r.ok) { toast(r.data.error || 'Chưa đổi được tình trạng', true); return }
+    setMeta(m => ({ ...m, contract_status: r.data.contract_status, lead: m.lead ? { ...m.lead, stage } : m.lead }))
+    toast('Đã chuyển: ' + stageOf(stage).label)
   }
 
   const leadOptions = (leads?.leads || []).filter(l => l.canEdit && l.stage !== 'chot' && l.stage !== 'that_bai')
@@ -678,7 +675,7 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
             {f.basis.filter(Boolean).length > 0 && <p className="text-xs text-gray-500 mt-3"><b>Căn cứ:</b> {f.basis.filter(Boolean).join(' ')}</p>}
             {f.warnings.map((w, i) => <p key={i} className="text-xs text-amber-700 bg-amber-50 rounded-lg px-2 py-1.5 mt-2">⚠ {w}</p>)}
 
-            <p className="text-xs text-gray-500 bg-gray-50 rounded-lg px-2 py-1.5 mt-3">🔒 Mức phí do biểu phí Savitax quyết định. Muốn báo mức khác thì phải ghi lý do và chờ Giám đốc duyệt.</p>
+            <p className="text-xs text-gray-500 bg-gray-50 rounded-lg px-2 py-1.5 mt-3">🔒 Mức phí do biểu phí Savitax quyết định. Muốn báo mức khác thì ghi lý do để quản trị xem khi duyệt.</p>
             {!locked && (
               <div className="mt-3">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
@@ -693,7 +690,7 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
                       <textarea rows={2} value={d.override.reason} onChange={e => upd(n => { n.override.reason = e.target.value })} className={inputCls}
                         placeholder="VD: khách hàng cũ giới thiệu, cam kết ký 2 năm." />
                     </Field>
-                    <p className="text-xs text-red-700">Báo giá sẽ hiện nhãn “Chờ Giám đốc duyệt” và chưa xuất được file gửi khách.</p>
+                    <p className="text-xs text-red-700">Báo giá hiện nhãn “Chờ duyệt · giá đề xuất” — quản trị xem lý do trước khi duyệt.</p>
                     {(() => {
                       // Cùng quy tắc với printedMonthlyLines (lib/salesDocx.js): phần chênh dồn vào dòng kế toán trọn gói.
                       const baseLine = f.lines.find(l => l.key === 'base')
@@ -710,12 +707,16 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
             </div>
           </div>
 
-          {/* Giám đốc duyệt */}
-          {!isNew && res.perms.approve && savedStatus === 'pending' && (
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 space-y-2">
-              <p className="text-sm font-semibold text-red-900">🔏 Duyệt mức phí đề xuất</p>
-              <p className="text-sm text-red-900">Biểu phí <b>{fmtMoney(meta.standard_monthly)}</b> → đề xuất <b>{fmtMoney(meta.monthly_final)}</b>/tháng</p>
-              <p className="text-sm text-red-900">Lý do: {meta.override_reason}</p>
+          {/* Quản trị duyệt — mọi báo giá (kể cả đúng biểu phí) phải duyệt mới xuất gửi khách */}
+          {!isNew && res.perms.approve && awaitingApproval(savedStatus) && (
+            <div className={'rounded-2xl p-4 space-y-2 border ' + (savedStatus === 'pending' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200')}>
+              <p className="text-sm font-semibold text-[#15283C]">🔏 Duyệt báo giá để nhân viên xuất gửi khách</p>
+              {savedStatus === 'pending' ? (<>
+                <p className="text-sm text-red-900">Giá đề xuất khác biểu phí: biểu phí <b className="num">{fmtMoney(meta.standard_monthly)}</b> → đề xuất <b className="num">{fmtMoney(meta.monthly_final)}</b>/tháng</p>
+                <p className="text-sm text-red-900">Lý do: {meta.override_reason}</p>
+              </>) : (
+                <p className="text-sm text-amber-900">Đúng biểu phí: <b className="num">{fmtMoney(meta.monthly_final)}</b>/tháng. Kiểm tra số liệu khảo sát và lưu ý gửi khách trước khi duyệt.</p>
+              )}
               <textarea rows={2} value={review} onChange={e => setReview(e.target.value)} placeholder="Ghi chú cho nhân viên (bắt buộc khi từ chối)" className={inputCls} />
               <div className="flex gap-2">
                 <button onClick={() => doReview('approve')} disabled={dirty} className={btnPrimary}>Duyệt</button>
@@ -725,7 +726,7 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
           )}
           {!isNew && (savedStatus === 'approved' || savedStatus === 'rejected') && (meta.review_note || meta.reviewerName) && (
             <div className={'rounded-2xl p-3 text-sm ' + (savedStatus === 'approved' ? 'bg-blue-50 text-blue-900' : 'bg-gray-100 text-gray-700')}>
-              {savedStatus === 'approved' ? 'Giám đốc đã duyệt' : 'Giám đốc từ chối'}{meta.reviewerName ? ' (' + meta.reviewerName + (meta.reviewed_at ? ', ' + dmyTime(meta.reviewed_at) : '') + ')' : ''}
+              {savedStatus === 'approved' ? 'Đã duyệt' : 'Bị từ chối'}{meta.reviewerName ? ' (' + meta.reviewerName + (meta.reviewed_at ? ', ' + dmyTime(meta.reviewed_at) : '') + ')' : ''}
               {meta.review_note ? ': ' + meta.review_note : ''}
             </div>
           )}
@@ -745,14 +746,15 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
             {!isNew && !exportable && (
               <p className="text-xs text-gray-500">
                 {dirty ? 'Lưu thay đổi trước rồi mới xuất file.'
-                  : savedStatus === 'pending' ? 'Chờ Giám đốc duyệt mức phí rồi mới xuất file gửi khách.'
-                  : savedStatus === 'rejected' ? 'Mức phí bị từ chối — sửa lại mức phí rồi lưu để gửi duyệt lại.' : ''}
+                  : awaitingApproval(savedStatus) ? 'Báo giá đang chờ quản trị duyệt — duyệt xong mới xuất file gửi khách được.'
+                  : savedStatus === 'rejected' ? 'Báo giá bị từ chối — sửa theo ghi chú của quản trị rồi Lưu để gửi duyệt lại.' : ''}
               </p>
             )}
             {!isNew && (
-              <Field label="Trạng thái hợp đồng" hint="dùng để thống kê đã gửi / đã chốt">
-                <select value={meta.contract_status} disabled={!meta.canEdit} onChange={e => setContract(e.target.value)} className={inputCls}>
-                  {CONTRACT_STATES.map(([k, lb]) => <option key={k} value={k} disabled={k !== 'draft' && !canExportPrice(savedStatus)}>{lb}</option>)}
+              <Field label="Tình trạng khách">
+                <select value={stageKey(meta.lead?.stage)} disabled={!meta.canEdit || !meta.lead} onChange={e => setStage(e.target.value)} className={inputCls}>
+                  {STAGES.map(c => <option key={c.k} value={c.k} disabled={needsExport(c.k) && !canExportPrice(savedStatus)}
+                    style={{ background: c.hex, color: c.fg }}>{c.label}</option>)}
                 </select>
               </Field>
             )}

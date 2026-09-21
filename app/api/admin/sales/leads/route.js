@@ -128,7 +128,7 @@ export async function POST(request) {
     company_name, contact_name, phone, email, tax_code,
     phone_norm: normPhone(phone), tax_norm: normTax(tax_code),
     address: clean(b.address), need: b.need || null, channel_id: b.channel_id,
-    source_note: clean(b.source_note), assigned_to, stage: 'moi',
+    source_note: clean(b.source_note), assigned_to, stage: 'tu_van',
     next_follow_up: b.next_follow_up || null, note: clean(b.note),
     created_by: auth.caller.staffId,
   }).select(LEAD_COLS).single()
@@ -202,7 +202,7 @@ export async function PATCH(request) {
     if (b.stage === 'chot') {
       const { data: signed } = await admin.from('sales_quotes').select('id').eq('lead_id', lead.id)
         .eq('contract_status', 'signed').eq('is_deleted', false).limit(1)
-      if (!signed?.length) return Response.json({ error: 'Muốn chuyển "Chốt HĐ", đổi trạng thái báo giá của khách sang "Chốt HĐ" ở trang Báo giá' }, { status: 400 })
+      if (!signed?.length) return Response.json({ error: 'Muốn chuyển "Chốt hợp đồng", chọn ở cột Tình trạng của báo giá trong trang Báo giá' }, { status: 400 })
     }
     patch.stage = b.stage
     patch.stage_changed_at = now

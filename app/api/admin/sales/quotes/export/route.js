@@ -5,7 +5,7 @@ import { fileQuoteToDrive } from '@/lib/salesFiling'
 
 // POST { id } — dựng file báo giá Word SVT.MB03 từ bản ghi ĐÃ LƯU (số liệu + phí chụp lúc lập, không
 // tính lại theo biểu phí hiện hành), nộp vào thư mục Drive của báo giá, trả file về cho trình duyệt tải.
-// Khoá khi mức phí đang chờ duyệt / bị từ chối (chốt 2026-09-11: không gửi khách giá chưa duyệt).
+// Chỉ báo giá ĐÃ DUYỆT mới xuất được (từ 2026-09-21 mọi báo giá đều phải quản trị duyệt).
 export async function POST(request) {
   const auth = await requireSales()
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
@@ -20,8 +20,8 @@ export async function POST(request) {
   if (!canExportPrice(q.price_status)) {
     return Response.json({
       error: q.price_status === 'rejected'
-        ? 'Giám đốc đã từ chối mức phí đề xuất — sửa lại báo giá rồi gửi duyệt lại'
-        : 'Mức phí đang chờ Giám đốc duyệt — chưa xuất file gửi khách được',
+        ? 'Báo giá bị từ chối — sửa lại rồi Lưu để gửi duyệt lại'
+        : 'Báo giá đang chờ quản trị duyệt — chưa xuất file gửi khách được',
     }, { status: 400 })
   }
 

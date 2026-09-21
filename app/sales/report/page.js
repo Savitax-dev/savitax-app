@@ -3,8 +3,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
-import { buildSalesReport } from '@/lib/salesReport'
-import { PeriodFilter, defaultPeriod, inPeriod, periodLabel, StatCard, PageHead, api, fmt, todayVN, isoVN } from '../_ui'
+import { buildSalesReport, FUNNEL, STATE_KEYS } from '@/lib/salesReport'
+import { PeriodFilter, defaultPeriod, inPeriod, periodLabel, StatCard, PageHead, api, fmt, todayVN, isoVN, stageOf } from '../_ui'
 
 export default function SalesReportPage() {
   const router = useRouter()
@@ -40,12 +40,8 @@ export default function SalesReportPage() {
   const t = rep.total
   const pl = periodLabel(period)
   const maxFunnel = Math.max(1, t.leads)
-  const funnel = [
-    ['Khách tiếp nhận', t.leads, '#4A8FC4'],
-    ['Đã báo giá', t.quoted, '#D9922E'],
-    ['Đã gửi hợp đồng', t.sent, '#C9A027'],
-    ['Chốt hợp đồng', t.signed, '#18704A'],
-  ]
+  // Phễu 6 bước theo tình trạng khách (chốt 2026-09-21), lũy kế: khách đã chốt HĐ được tính cả ở các bước trước.
+  const funnel = FUNNEL.map((f, i) => [f.label, t.steps[i], stageOf(f.k).hex])
   const pctTxt = v => (v == null ? '—' : v + '%')
 
   return (
@@ -60,9 +56,9 @@ export default function SalesReportPage() {
 
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
           <StatCard label="Khách tiếp nhận" value={t.leads} foot={pl} tone="sky" />
-          <StatCard label="Đã báo giá" value={t.quoted} foot={pctTxt(t.quoteRate) + ' số khách'} tone="amb" />
+          <StatCard label="Đã gửi báo giá" value={t.quoted} foot={pctTxt(t.quoteRate) + ' số khách'} tone="amb" />
           <StatCard label="Chốt hợp đồng" value={t.signed} foot={'tỷ lệ chuyển đổi ' + pctTxt(t.convRate)} tone="grn" />
-          <StatCard label="Không thành" value={t.lost} foot={t.leads ? Math.round(t.lost * 100 / t.leads) + '% số khách' : '—'} tone="red" />
+          <StatCard label="Thất bại" value={t.lost} foot={t.leads ? Math.round(t.lost * 100 / t.leads) + '% số khách' : '—'} tone="red" />
           <StatCard label="Phí đã chốt" value={fmt(t.signedFee)} unit="đ/tháng" foot={t.signed ? 'bình quân ' + fmt(Math.round(t.signedFee / t.signed)) + ' đ/HĐ' : 'chưa có HĐ chốt'} tone="gold" />
         </div>
 
@@ -157,9 +153,28 @@ export default function SalesReportPage() {
             )}
           </div>
 
+          <div className="flex flex-col gap-4">
+          {/* Tình trạng HIỆN TẠI của lứa khách trong kỳ — đủ 7 ô, ô 0 vẫn hiện để thấy bước nào đang trống */}
           <div className="s-panel">
-            <div className="s-panel-h">Lý do không thành</div>
-            {!rep.lostReasons.length ? <p className="text-sm text-gray-400 p-4">Không có khách nào “Không thành” trong kỳ</p> : (
+            <div className="s-panel-h">Tình trạng hiện tại</div>
+            <div className="p-4 space-y-2">
+              {STATE_KEYS.map(k => {
+                const st = stageOf(k), n = t.states[k] || 0
+                return (
+                  <div key={k} className="flex items-center justify-between gap-3 text-sm">
+                    <span className={'inline-block text-xs px-2 py-0.5 rounded-full border whitespace-nowrap ' + st.cls} style={st.style}>{st.label}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="num font-semibold">{n}</span>
+                      <span className="text-xs text-[#5A6C7E] w-9 text-right num">{t.leads ? Math.round(n * 100 / t.leads) + '%' : '—'}</span>
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+          <div className="s-panel">
+            <div className="s-panel-h">Lý do thất bại</div>
+            {!rep.lostReasons.length ? <p className="text-sm text-gray-400 p-4">Không có khách nào “Thất bại” trong kỳ</p> : (
               <div className="p-4 space-y-2">
                 {rep.lostReasons.map(r => (
                   <div key={r.reason} className="flex items-start justify-between gap-3 text-sm">
@@ -169,6 +184,7 @@ export default function SalesReportPage() {
                 ))}
               </div>
             )}
+          </div>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
-import { requireSales, canEditLead, canEditQuote, fetchAll, normPhone, normTax, todayVN, advanceLeadStage, recomputeLeadStage, careOf } from '@/lib/salesScope'
-import { priceQuote, canExportPrice, money, CONTRACT_STATES } from '@/lib/salesPricing'
+import { requireSales, canEditLead, canEditQuote, fetchAll, normPhone, normTax, todayVN, advanceLeadStage, recomputeLeadStage, STAGE_ORDER, STAGE_LABEL, contractForStage } from '@/lib/salesScope'
+import { priceQuote, canExportPrice, awaitingApproval, nextPriceStatus, pricingChanged, money, CONTRACT_STATES } from '@/lib/salesPricing'
 import { fileOnSave } from '@/lib/salesFiling'
 import { driveConfigured } from '@/lib/googleDrive'
 
@@ -99,7 +99,6 @@ export async function GET(request) {
         lead_assigned_to: lead?.assigned_to || null,
         lead_stage: lead?.stage || null,
         lost_reason: lead?.lost_reason || null,
-        care: careOf(lead?.stage),
         reviewerName: rn.get(q.reviewed_by) || null,
         canEdit: canEditQuote(auth, q, lead),
       }
@@ -152,7 +151,7 @@ export async function POST(request) {
       company_name: s.company.trim(), contact_name: s.contact || null, phone: s.phone || null, email: s.email || null,
       tax_code: s.mst || null, address: s.address || null, phone_norm: normPhone(s.phone), tax_norm: tn,
       need: 'ke_toan', channel_id: b.channel_id, source_note: String(b.source_note || '').trim() || null,
-      assigned_to: me, stage: 'moi', created_by: me,
+      assigned_to: me, stage: 'tu_van', created_by: me,
     }).select('id, assigned_to, stage').single()
     if (le) return Response.json({ error: le.message }, { status: 400 })
     const { data: ch } = await admin.from('sales_channels').select('name').eq('id', b.channel_id).maybeSingle()
@@ -176,7 +175,7 @@ export async function POST(request) {
 
   await advanceLeadStage(admin, lead.id, 'bao_gia', me, 'lập báo giá ' + quote.quote_no)
   await logLead(admin, lead.id, 'Lập báo giá số ' + quote.quote_no + ' — ' + money(quote.monthly_final) + '/tháng' +
-    (p.overrideOn ? ' (đề xuất khác biểu phí ' + money(p.standardMonthly) + ', chờ Giám đốc duyệt)' : ''), me)
+    (p.overrideOn ? ' (đề xuất khác biểu phí ' + money(p.standardMonthly) + ')' : '') + ' — chờ quản trị duyệt', me)
 
   // Nộp Drive ngay khi lưu: phiếu khảo sát (nếu có) + file báo giá (nếu đúng biểu phí).
   const drive = await fileOnSave(admin, quote, file?.bytes)
@@ -201,10 +200,11 @@ export async function PATCH(request) {
   const me = auth.caller.staffId
   const now = new Date().toISOString()
 
-  // ── Giám đốc duyệt / từ chối mức phí đề xuất ──
+  // ── Quản trị duyệt / từ chối báo giá ──
+  // Từ 2026-09-21 MỌI báo giá (kể cả đúng biểu phí) phải được duyệt mới xuất gửi khách.
   if (b.action === 'review') {
-    if (!auth.perms.approve) return Response.json({ error: 'Chỉ Giám đốc mới duyệt được mức phí' }, { status: 403 })
-    if (q.price_status !== 'pending') return Response.json({ error: 'Báo giá này không ở trạng thái chờ duyệt' }, { status: 400 })
+    if (!auth.perms.approve) return Response.json({ error: 'Chỉ quản trị mới duyệt được báo giá' }, { status: 403 })
+    if (!awaitingApproval(q.price_status)) return Response.json({ error: 'Báo giá này không ở trạng thái chờ duyệt' }, { status: 400 })
     const note = String(b.note || '').trim()
     if (b.decision !== 'approve' && b.decision !== 'reject') return Response.json({ error: 'Chọn duyệt hoặc từ chối' }, { status: 400 })
     if (b.decision === 'reject' && !note) return Response.json({ error: 'Ghi lý do từ chối để nhân viên biết sửa gì' }, { status: 400 })
@@ -213,8 +213,8 @@ export async function PATCH(request) {
       price_status: status, reviewed_by: me, reviewed_at: now, review_note: note || null, updated_at: now,
     }).eq('id', q.id)
     if (error) return Response.json({ error: error.message }, { status: 400 })
-    await logLead(admin, q.lead_id, 'Giám đốc ' + (status === 'approved' ? 'DUYỆT' : 'TỪ CHỐI') + ' mức phí ' +
-      money(q.monthly_final) + '/tháng của báo giá ' + q.quote_no + (note ? ' — ' + note : ''), me)
+    await logLead(admin, q.lead_id, 'Quản trị ' + (status === 'approved' ? 'DUYỆT' : 'TỪ CHỐI') + ' báo giá ' + q.quote_no +
+      ' — ' + money(q.monthly_final) + '/tháng' + (q.override_on ? ' (giá đề xuất)' : '') + (note ? ' — ' + note : ''), me)
     // Duyệt xong là báo giá gửi khách được → nộp luôn file báo giá vào Drive.
     const drive = status === 'approved' ? await fileOnSave(admin, { ...q, price_status: status }, null) : null
     return Response.json({ ok: true, price_status: status, drive })
@@ -228,7 +228,7 @@ export async function PATCH(request) {
     if (!['draft', 'sent', 'signed'].includes(st)) return Response.json({ error: 'Trạng thái không hợp lệ' }, { status: 400 })
     if (st === q.contract_status) return Response.json({ ok: true })
     if (st !== 'draft' && !canExportPrice(q.price_status)) {
-      return Response.json({ error: 'Mức phí chưa được Giám đốc duyệt — chưa gửi hợp đồng được' }, { status: 400 })
+      return Response.json({ error: 'Báo giá chưa được quản trị duyệt — chưa gửi hợp đồng được' }, { status: 400 })
     }
     const { error } = await admin.from('sales_quotes').update({ contract_status: st, contract_changed_at: now, updated_at: now }).eq('id', q.id)
     if (error) return Response.json({ error: error.message }, { status: 400 })
@@ -239,42 +239,38 @@ export async function PATCH(request) {
     return Response.json({ ok: true })
   }
 
-  // ── Tình trạng chăm sóc: Đang chăm sóc / Ký hợp đồng / Thất bại ──
-  // Là giai đoạn của KHÁCH (đo số lượng ở Báo cáo), đổi từ dòng báo giá cho tiện. Giữ khớp với cột
-  // Trạng thái HĐ: "Ký hợp đồng" = báo giá này Chốt HĐ; rời "Ký hợp đồng" thì báo giá về "Đã gửi HĐ".
-  if (b.action === 'care') {
-    const care = b.care
-    if (!['cham_soc', 'ky_hd', 'that_bai'].includes(care)) return Response.json({ error: 'Tình trạng không hợp lệ' }, { status: 400 })
+  // ── Tình trạng khách 7 bước (chốt 2026-09-21), đổi ngay trên dòng báo giá ──
+  // Đang chăm sóc → Gửi khảo sát → Gửi báo giá → Chốt báo giá → Gửi hợp đồng → Chốt hợp đồng | Thất bại.
+  // Lưu ở sales_leads.stage (báo cáo đếm theo khách). Trạng thái HĐ của CHÍNH báo giá này đi theo:
+  // Gửi hợp đồng = Đã gửi HĐ, Chốt hợp đồng = Chốt HĐ, các bước trước = Chưa gửi (contractForStage).
+  if (b.action === 'stage') {
+    const stage = b.stage
+    if (!STAGE_ORDER.includes(stage) && stage !== 'that_bai') return Response.json({ error: 'Tình trạng không hợp lệ' }, { status: 400 })
     if (!q.lead_id) return Response.json({ error: 'Báo giá chưa gắn khách tiềm năng' }, { status: 400 })
-    const cur = careOf(lead?.stage)
-    if (care === cur) return Response.json({ ok: true })
-    const setContractTo = async (st, why) => {
-      if (q.contract_status === st) return
-      await admin.from('sales_quotes').update({ contract_status: st, contract_changed_at: now, updated_at: now }).eq('id', q.id)
-      await logLead(admin, q.lead_id, 'Báo giá ' + q.quote_no + ': ' + contractLabel(q.contract_status) + ' → ' + contractLabel(st) + ' (' + why + ')', me)
+    if ((stage === 'gui_hd' || stage === 'chot') && !canExportPrice(q.price_status)) {
+      return Response.json({ error: 'Báo giá chưa được duyệt mức phí — chưa gửi/chốt hợp đồng được' }, { status: 400 })
     }
-
-    if (care === 'ky_hd') {
-      if (!canExportPrice(q.price_status)) return Response.json({ error: 'Mức phí chưa được Giám đốc duyệt — chưa ký hợp đồng được' }, { status: 400 })
-      await setContractTo('signed', 'ký hợp đồng')
-      await advanceLeadStage(admin, q.lead_id, 'chot', me, 'ký hợp đồng báo giá ' + q.quote_no)
-      return Response.json({ ok: true })
+    let lostReason = null
+    if (stage === 'that_bai') {
+      lostReason = String(b.lost_reason || '').trim()
+      if (!lostReason) return Response.json({ error: 'Ghi lý do thất bại — cần để báo cáo lý do mất khách' }, { status: 400 })
     }
-
-    if (care === 'that_bai') {
-      const reason = String(b.lost_reason || '').trim()
-      if (!reason) return Response.json({ error: 'Ghi lý do thất bại — cần để báo cáo lý do mất khách' }, { status: 400 })
-      if (q.contract_status === 'signed') await setContractTo('sent', 'khách không ký')
-      const { error } = await admin.from('sales_leads').update({ stage: 'that_bai', lost_reason: reason, stage_changed_at: now, updated_at: now }).eq('id', q.lead_id)
+    const st = contractForStage(stage, q.contract_status)
+    if (st !== q.contract_status) {
+      const { error } = await admin.from('sales_quotes').update({ contract_status: st, contract_changed_at: now, updated_at: now }).eq('id', q.id)
       if (error) return Response.json({ error: error.message }, { status: 400 })
-      await logLead(admin, q.lead_id, 'Giai đoạn → Không thành — lý do: ' + reason + ' (từ báo giá ' + q.quote_no + ')', me)
-      return Response.json({ ok: true })
+      await logLead(admin, q.lead_id, 'Báo giá ' + q.quote_no + ': ' + contractLabel(q.contract_status) + ' → ' + contractLabel(st), me)
     }
-
-    // care === 'cham_soc': kéo khách về đang chăm sóc
-    if (q.contract_status === 'signed') await setContractTo('sent', 'chưa ký')
-    await recomputeLeadStage(admin, q.lead_id, me, 'chăm sóc lại từ báo giá ' + q.quote_no)
-    return Response.json({ ok: true })
+    const prevStage = lead?.stage
+    if (prevStage !== stage || stage === 'that_bai') {
+      const { error } = await admin.from('sales_leads').update({
+        stage, lost_reason: lostReason, stage_changed_at: now, updated_at: now,
+      }).eq('id', q.lead_id)
+      if (error) return Response.json({ error: error.message }, { status: 400 })
+      await logLead(admin, q.lead_id, 'Tình trạng: ' + (STAGE_LABEL[prevStage] || '—') + ' → ' + STAGE_LABEL[stage] +
+        (lostReason ? ' — lý do: ' + lostReason : '') + ' (từ báo giá ' + q.quote_no + ')', me)
+    }
+    return Response.json({ ok: true, stage, contract_status: st })
   }
 
   // ── Sửa nội dung báo giá (tính lại phí ở server) ──
@@ -287,13 +283,11 @@ export async function PATCH(request) {
     if (p.overrideOn && !reason) return Response.json({ error: 'Ghi lý do đề xuất mức phí khác' }, { status: 400 })
     if (p.overrideOn && !(p.overrideAmount > 0)) return Response.json({ error: 'Nhập mức phí đề xuất' }, { status: 400 })
 
-    // Đề xuất giá: giữ kết quả duyệt CHỈ KHI mức phí + lý do không đổi. Đổi bất cứ gì → duyệt lại.
-    let price_status = 'ok', review = { reviewed_by: null, reviewed_at: null, review_note: null }
-    if (p.overrideOn) {
-      const same = q.override_on && Number(q.override_amount) === p.overrideAmount && (q.override_reason || '') === reason
-      if (same && (q.price_status === 'approved' || q.price_status === 'rejected')) { price_status = q.price_status; review = {} }
-      else price_status = 'pending'
-    }
+    // Đã duyệt mà phí + số liệu tính phí không đổi (chỉ sửa địa chỉ, SĐT, lưu ý...) → giữ đã duyệt.
+    // Đổi phí/số liệu, hoặc đang chờ duyệt / bị từ chối → quay về chờ duyệt (chốt 2026-09-21).
+    const priceChanged = pricingChanged(q, { ...p, overrideReason: reason })
+    const price_status = nextPriceStatus(q.price_status, { priceChanged, overrideOn: p.overrideOn })
+    const review = price_status === 'approved' ? {} : { reviewed_by: null, reviewed_at: null, review_note: null }
     const { data: updated, error } = await admin.from('sales_quotes').update({
       company_name: s.company.trim(), tax_code: s.mst || null,
       survey: s, fees: p.fees, standard_monthly: p.standardMonthly, monthly_final: p.monthlyFinal,
@@ -304,7 +298,7 @@ export async function PATCH(request) {
     if (error) return Response.json({ error: error.message }, { status: 400 })
     if (Number(q.monthly_final) !== p.monthlyFinal || q.price_status !== price_status) {
       await logLead(admin, q.lead_id, 'Sửa báo giá ' + q.quote_no + ': ' + money(q.monthly_final) + ' → ' + money(p.monthlyFinal) + '/tháng' +
-        (price_status === 'pending' ? ' (chờ Giám đốc duyệt)' : ''), me)
+        (awaitingApproval(price_status) ? ' — chờ quản trị duyệt lại' : ''), me)
     }
     const drive = await fileOnSave(admin, updated, file?.bytes)
     return Response.json({ data: { ...updated, drive_folder_url: drive.folderUrl || updated.drive_folder_url }, drive })
