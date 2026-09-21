@@ -16,6 +16,13 @@ const APPLY = process.argv.includes('--apply')
 const iNam = process.argv.indexOf('--nam')
 const NAM = iNam > 0 && process.argv[iNam + 1] ? +process.argv[iNam + 1] : new Date().getUTCFullYear()
 
+// Mặc định CHỈ sinh các kỳ CHƯA TỚI HẠN. Sinh cả kỳ đã qua thì app hiện "Quá hạn" đỏ rực cho
+// gần như mọi công ty, trong khi kế toán đã nộp đủ — app chỉ biết điều đó sau khi đồng bộ với
+// cổng (GĐ 3). Báo động giả hàng loạt còn tệ hơn là chưa có dữ liệu.
+// Cần dựng lại lịch sử (sau khi đồng bộ được) thì thêm --ca-qua-khu.
+const CA_QUA_KHU = process.argv.includes('--ca-qua-khu')
+const HOM_NAY = new Date().toISOString().slice(0, 10)
+
 const s = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 
 // PostgREST trả tối đa 1000 dòng mỗi lần — phải phân trang, nếu không là âm thầm cụt dữ liệu.
@@ -67,10 +74,12 @@ for (const c of dangPhucVu) {
       if (c.contract_start && k.period_end < c.contract_start) continue
       const khoa = `${c.id}|${t.id}|${k.period_code}`
       if (daCo.has(khoa)) continue
+      const han = hanNop(k.period_kind, k.period_end, ngayLe)
+      if (!CA_QUA_KHU && han <= HOM_NAY) continue
       canThem.push({
         client_id: c.id, filing_type_id: t.id,
         period_code: k.period_code, period_start: k.period_start, period_end: k.period_end,
-        due_date: hanNop(k.period_kind, k.period_end, ngayLe),
+        due_date: han,
         state: 'not_filed',
       })
     }
@@ -81,16 +90,22 @@ for (const c of dangPhucVu) {
     if (c.contract_start && kyNam.period_end < c.contract_start) continue
     const khoa = `${c.id}|${t.id}|${kyNam.period_code}`
     if (daCo.has(khoa)) continue
+    const han = hanNop(kyNam.period_kind, kyNam.period_end, ngayLe)
+    if (!CA_QUA_KHU && han <= HOM_NAY) continue
     canThem.push({
       client_id: c.id, filing_type_id: t.id,
       period_code: kyNam.period_code, period_start: kyNam.period_start, period_end: kyNam.period_end,
-      due_date: hanNop(kyNam.period_kind, kyNam.period_end, ngayLe),
+      due_date: han,
       state: 'not_filed',
     })
   }
 }
 
-console.log(`\nNghĩa vụ đã có sẵn : ${daCo.size}`)
+console.log('')
+console.log(CA_QUA_KHU
+  ? 'Chế độ: sinh CẢ những kỳ đã qua hạn'
+  : `Chế độ: chỉ sinh kỳ có hạn SAU ngày ${HOM_NAY}`)
+console.log(`Nghĩa vụ đã có sẵn : ${daCo.size}`)
 console.log(`Nghĩa vụ sẽ thêm   : ${canThem.length}`)
 
 // Xem thử lịch hạn nộp của một công ty để mắt người soát lại cho chắc.

@@ -9,14 +9,16 @@ const BANG = [
   'tax_filings', 'tax_notices', 'tax_sync_jobs', 'tax_holidays', 'tax_access_logs',
 ]
 const QUYEN = [
-  'view_tax_filings', 'manage_tax_account', 'reveal_tax_password',
+  'view_tax_filings', 'manage_tax_account', 'reveal_credentials',
   'sync_tax_filings', 'bulk_download_tax', 'manage_tax_catalog',
 ]
 
 let thieu = 0
 console.log('Bảng:')
 for (const t of BANG) {
-  const { error } = await s.from(t).select('*', { head: true, count: 'exact' }).limit(1)
+  // KHÔNG dùng { head: true }: kiểu gọi đó nuốt mất lỗi 404, bảng không tồn tại vẫn báo OK —
+  // đã làm cả buổi tin nhầm là 9 bảng đã tạo xong trong khi chưa hề có bảng nào (21/09/2026).
+  const { error } = await s.from(t).select('*').limit(1)
   const ok = !error
   if (!ok) thieu++
   console.log(`  ${ok ? 'OK   ' : 'THIẾU'} ${t}${ok ? '' : '  → ' + error.message}`)
@@ -24,7 +26,7 @@ for (const t of BANG) {
 
 console.log('\nCột password_enc trong client_credentials:')
 {
-  const { error } = await s.from('client_credentials').select('password_enc', { head: true }).limit(1)
+  const { error } = await s.from('client_credentials').select('password_enc').limit(1)
   if (error) { thieu++; console.log('  THIẾU → ' + error.message) }
   else console.log('  OK')
 }
@@ -42,8 +44,8 @@ console.log('\nĐã gán cho vai trò:')
 const theoVaiTro = {}
 for (const r of rp || []) (theoVaiTro[r.role_id] ||= []).push(r.permission_key)
 for (const [vai, ds] of Object.entries(theoVaiTro)) console.log(`  ${vai}: ${ds.join(', ')}`)
-if (!(rp || []).some(r => r.permission_key === 'reveal_tax_password')) {
-  console.log('  (reveal_tax_password chưa gán cho ai — ĐÚNG như thiết kế, mở bằng trang Vai trò & phân quyền)')
+if (!(rp || []).some(r => r.permission_key === 'reveal_credentials')) {
+  console.log('  (reveal_credentials chưa gán cho ai — mở bằng trang Vai trò & phân quyền)')
 }
 
 console.log('\nMật khẩu còn lưu chữ rõ trong nhật ký:')
@@ -54,6 +56,14 @@ console.log('\nMật khẩu còn lưu chữ rõ trong nhật ký:')
     (r.old_value && r.old_value !== '(đã ẩn)') || (r.new_value && r.new_value !== '(đã ẩn)'))
   if (con.length) { thieu++; console.log(`  CÒN ${con.length} dòng chưa ẩn`) }
   else console.log(`  OK — đã ẩn hết (${(data || []).length} dòng liên quan)`)
+}
+
+console.log('\nDanh mục tờ khai + ngày lễ (sql/16):')
+for (const [bang, nhan] of [['tax_filing_types', 'loại tờ khai'], ['tax_holidays', 'ngày lễ']]) {
+  const { data, error } = await s.from(bang).select('*')
+  if (error) { thieu++; console.log(`  THIẾU ${nhan} → ${error.message}`) }
+  else if (!data.length) { thieu++; console.log(`  CHƯA NẠP ${nhan} (bảng rỗng)`) }
+  else console.log(`  OK    ${data.length} ${nhan}`)
 }
 
 console.log('\nKhóa mã hóa TAX_ENC_KEY:', process.env.TAX_ENC_KEY ? 'có trong .env.local' : 'CHƯA CÓ trong .env.local')

@@ -257,3 +257,23 @@ on conflict do nothing;
 -- Bản đầu đặt tên 'reveal_tax_password' (chỉ mật khẩu thuế) — đã thay bằng quyền chung ở trên.
 delete from role_permissions where permission_key = 'reveal_tax_password';
 delete from permissions      where key            = 'reveal_tax_password';
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 12. Bật RLS cho toàn bộ bảng tax_*
+--
+--     Mọi đọc/ghi nghiệp vụ đi qua API route bằng khóa service_role (bỏ qua RLS), nên KHÔNG cần
+--     policy nào. Bật RLS mà không có policy = khóa cửa với khóa anon phía trình duyệt: không ai
+--     gọi thẳng từ ngoài vào đọc được tài khoản cổng thuế, mật khẩu hay nhật ký truy cập.
+--     Giống hệt cách các bảng trong sql/00_bootstrap_core_tables.sql đang làm.
+--
+--     Bản đầu thiếu phần này nên Supabase SQL Editor phải hỏi "Run and enable RLS" (21/09/2026).
+-- ─────────────────────────────────────────────────────────────────────────────
+alter table tax_accounts       enable row level security;
+alter table tax_filing_types   enable row level security;
+alter table tax_client_filings enable row level security;
+alter table tax_obligations    enable row level security;
+alter table tax_filings        enable row level security;
+alter table tax_notices        enable row level security;
+alter table tax_sync_jobs      enable row level security;
+alter table tax_holidays       enable row level security;
+alter table tax_access_logs    enable row level security;
