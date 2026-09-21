@@ -48,3 +48,7 @@ next-env.d.ts
 # Gói bàn giao module Báo giá (bản chạy thử + hồ sơ đã gửi khách) — CHỨA TÊN, MST, SĐT, EMAIL
 # KHÁCH HÀNG THẬT. Chỉ lưu trên máy nội bộ, không commit.
 /app.baogia/
+
+# Gói bàn giao Phân hệ Tờ khai (đặc tả + mockup + bản Word/PDF) — kèm ảnh chụp màn hình có
+# dữ liệu công ty thật. Chỉ lưu trên máy nội bộ, không commit.
+/PhanHe-ToKhai-Savitax-BanGiao/
