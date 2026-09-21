@@ -722,8 +722,11 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 mb-0.5 block">Mật khẩu / PIN</label>
+                  {/* Sửa dòng đã có mật khẩu mà người sửa không được xem chuỗi: để trống nghĩa là
+                      GIỮ NGUYÊN mật khẩu cũ (server không ghi đè khi không nhận chuỗi mới). */}
                   <input value={editCred.password || ''} onChange={e => setEditCred(p => ({ ...p, password: e.target.value }))}
-                    placeholder="Mật khẩu..."
+                    placeholder={editCred.id && !editCred.password && editCred.hasPassword
+                      ? 'Để trống = giữ nguyên mật khẩu cũ' : 'Mật khẩu...'}
                     className="w-full px-2 py-1.5 border border-purple-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-purple-400" />
                 </div>
                 <div className="col-span-2">
@@ -773,16 +776,22 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                               <span className="text-xs font-mono text-gray-800 select-all break-all">{cr.username}</span>
                             </div>
                           )}
-                          {cr.password && (
+                          {/* Không có quyền xem chuỗi: API không gửi cr.password về nữa, chỉ báo
+                              hasPassword để biết là CÓ mật khẩu mà không đọc được. */}
+                          {(cr.password || cr.hasPassword) && (
                             <div className="flex items-center gap-1.5">
                               <span className="text-xs text-gray-400 w-9 flex-shrink-0">Pass:</span>
                               <span className="text-xs font-mono text-gray-800 select-all">
-                                {showPass[cr.id] ? cr.password : '••••••'}
+                                {cr.password ? (showPass[cr.id] ? cr.password : '••••••') : '••••••'}
                               </span>
-                              <button onClick={() => setShowPass(p => ({ ...p, [cr.id]: !p[cr.id] }))}
-                                className="text-gray-400 hover:text-purple-600 ml-0.5 leading-none text-xs">
-                                {showPass[cr.id] ? '🙈' : '👁'}
-                              </button>
+                              {cr.password ? (
+                                <button onClick={() => setShowPass(p => ({ ...p, [cr.id]: !p[cr.id] }))}
+                                  className="text-gray-400 hover:text-purple-600 ml-0.5 leading-none text-xs">
+                                  {showPass[cr.id] ? '🙈' : '👁'}
+                                </button>
+                              ) : (
+                                <span className="text-[10px] text-gray-400 italic">(không có quyền xem)</span>
+                              )}
                             </div>
                           )}
                           {cr.extra && <p className="text-xs text-blue-600 mt-0.5 break-all">{cr.extra}</p>}
