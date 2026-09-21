@@ -167,6 +167,8 @@ export default function Sidebar({ onClose }) {
   const isManager = can(role, 'manage_staff', permData) || can(role, 'manage_clients', permData) || can(role, 'view_all_rooms', permData)
   const canViewRooms   = can(role, 'view_all_rooms', permData)
   const canViewKpi      = can(role, 'view_kpi_report', permData)
+  // Phân hệ Tờ khai: chưa chạy sql/15 thì quyền không tồn tại → mục tự ẩn, y như HCNS/Kinh doanh.
+  const canViewToKhai   = can(role, 'view_tax_filings', permData)
   const canManageStaff   = can(role, 'manage_staff', permData)
   const canManageClients  = can(role, 'manage_clients', permData)
   const canManageRooms    = can(role, 'manage_rooms', permData)
@@ -250,6 +252,9 @@ export default function Sidebar({ onClose }) {
         {!noAccounting && <SectionLabel>Kế toán</SectionLabel>}
         {!noAccounting && <NavItem href="/checklist"  icon="📋" label="Checklist công việc" pathname={pathname} onClose={onClose} />}
         {!noAccounting && <NavItem href="/my-debt"    icon="💰" label="Quản lý công nợ"     pathname={pathname} onClose={onClose} />}
+        {canViewToKhai && !noAccounting && (
+          <NavItem href="/tokhai" icon="🧾" label="Tờ khai & Hạn nộp" pathname={pathname} onClose={onClose} />
+        )}
         {/* Nhật ký làm việc: để ở menu chính cho người KHÔNG có mục Quản trị (nhân viên/trưởng phòng);
             với tài khoản quản trị thì hiện trong mục Quản trị bên dưới cho đồng bộ */}
         {!showAdminSection && !noAccounting && (

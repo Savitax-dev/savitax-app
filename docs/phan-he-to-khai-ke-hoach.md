@@ -25,15 +25,28 @@ Chạy bằng `scripts/test-dvc-login.mjs` và `scripts/test-dvc-tracuu.mjs` (ca
 **Chi phí thật cho 293 công ty:** khoảng **293 mã** mỗi đợt cập nhật trạng thái (tài liệu ước 590),
 chia theo nhân viên phụ trách thì mỗi người gõ vài phút.
 
-### Ẩn số còn lại
+### Vercel bị chặn — đã đo, đã chốt hướng đi
 
-**IP Singapore của Vercel** có bị cổng chặn không. Máy tại Việt Nam thì thông. Đo bằng route tạm
-`app/api/admin/tokhai-probe/route.js` (chỉ mở trang công khai + tải ảnh captcha, không đăng nhập),
-**xóa ngay sau khi đo**.
+Đo ngày 21/09/2026 bằng route tạm (đã xóa sau khi đo):
 
-Nếu bị chặn, phương án dự phòng theo thứ tự ưu tiên:
-1. Tiện ích Chrome chạy trên máy nhân viên (IP Việt Nam thật, dùng luôn phiên nhân viên tự đăng nhập).
-2. Thuê 1 VPS tại Việt Nam làm nơi trung chuyển (~200–400k/tháng).
+| Phép đo từ Vercel | Kết quả |
+| --- | --- |
+| `dichvucong.gdt.gov.vn` phân giải tên miền | ok, `103.9.200.200` |
+| `dichvucong.gdt.gov.vn` mở cổng 443 | **hết giờ chờ 5.055ms — gói tin bị nuốt im lặng** |
+| `www.gdt.gov.vn` mở cổng 443 | hết giờ chờ |
+| `thuedientu.gdt.gov.vn` mở cổng 443 | **ok 155ms** |
+| `example.com` (mốc đối chiếu) | ok 112ms |
+
+Gói tin bị nuốt im lặng là dấu hiệu chặn theo vùng địa lý. Mạng của Vercel bình thường.
+Đáng chú ý: **cổng thuedientu KHÔNG chặn IP nước ngoài** → phần lấy hồ sơ cũ (GĐ 6) sau này có thể
+chạy thẳng trên Vercel.
+
+**Chốt: làm tiện ích Chrome cài trên máy nhân viên** (gần 100% nhân viên dùng Chrome trên máy
+tính), không thuê VPS. Tiện ích thiết kế MỎNG — chỉ chuyển tiếp yêu cầu mạng, mọi logic nghiệp vụ
+nằm trong web app, để sửa nghiệp vụ không phải đi cài lại từng máy.
+
+⚠ Đính chính: tiện ích **không** bỏ được việc lưu mật khẩu trên server — tiện ích cũng cần mật khẩu
+mới đăng nhập cổng. Nó chỉ giải quyết đường ra mạng từ Việt Nam.
 
 ---
 
