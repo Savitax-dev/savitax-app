@@ -35,7 +35,9 @@ export default function TrangToKhai() {
   const nam = new Date().getFullYear()
 
   const [dl, setDl]         = useState(null)
-  const [ky, setKy]         = useState('')
+  // kyChon = kỳ NGƯỜI DÙNG tự chọn. Để trống thì server tự lấy kỳ sắp tới hạn gần nhất và trả
+  // về trong dl.ky — nhờ vậy mở màn hình chỉ tốn MỘT lời gọi, không phải gọi lần hai để chọn kỳ.
+  const [kyChon, setKyChon] = useState('')
   const [dangTai, setDangTai] = useState(true)
   const [loi, setLoi]       = useState('')
   const [timKiem, setTimKiem] = useState('')
@@ -52,23 +54,21 @@ export default function TrangToKhai() {
     setDangTai(true)
     setLoi('')
     const q = new URLSearchParams({ nam: String(nam) })
-    if (ky) q.set('ky', ky)
+    if (kyChon) q.set('ky', kyChon)
     fetch('/api/admin/tokhai/overview?' + q)
       .then(r => r.json())
       .then(j => {
         if (huy) return
         if (j.error) { setLoi(j.error); return }
         setDl(j)
-        // Lần đầu chưa chọn kỳ: mặc định kỳ gần nhất có nghĩa vụ, để không mở ra màn hình trống.
-        if (!ky && j.congTy?.length) {
-          const cac = [...new Set(j.congTy.flatMap(c => c.nghiaVu.map(o => o.ky)))].sort()
-          if (cac.length) setKy(cac[cac.length - 1])
-        }
       })
       .catch(e => !huy && setLoi(e.message))
       .finally(() => !huy && setDangTai(false))
     return () => { huy = true }
-  }, [nam, ky])
+  }, [nam, kyChon])
+
+  // Ô chọn hiện kỳ người dùng chọn, hoặc kỳ server đã tự chốt.
+  const kyDangXem = kyChon || dl?.ky || ''
 
   const loai = dl?.loaiToKhai || []
   const congTy = (dl?.congTy || []).filter(c => {
@@ -84,7 +84,7 @@ export default function TrangToKhai() {
       <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <h1 className="text-lg font-bold text-gray-800">Tờ khai &amp; Hạn nộp</h1>
-          <select value={ky} onChange={e => setKy(e.target.value)}
+          <select value={kyDangXem} onChange={e => setKyChon(e.target.value)}
             className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white">
             <option value="">— Chọn kỳ —</option>
             {(dl?.cacKy || []).map(k => <option key={k.ma} value={k.ma}>{k.nhan}</option>)}

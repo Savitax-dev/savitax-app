@@ -41,15 +41,28 @@ export async function GET(request) {
   const laAdmin = roles.includes('admin')
   const laTruongPhong = roles.includes('leader')
 
-  try {
-    // 1. Công ty trong phạm vi
-    let clients = await docHet(() => supabase.from('clients')
-      .select('id, name, client_code, tax_code, report_type, room_id, assigned_to, is_active, status'))
-    clients = clients.filter(c => c.is_active !== false && c.status !== 'inactive')
+  const homNayISO = new Date().toISOString().slice(0, 10)
 
+  try {
+    // Mỗi lượt gọi Supabase từ Việt Nam mất 300-600ms, nên 5 lượt NỐI TIẾP là hơn 3 giây.
+    // Bốn thứ dưới đây không phụ thuộc nhau → gọi SONG SONG, chỉ còn 2 vòng chờ.
+    const [dsClients, dsLoai, kySapToi, dsTaiKhoan, dsPhu] = await Promise.all([
+      docHet(() => supabase.from('clients')
+        .select('id, name, client_code, tax_code, report_type, room_id, assigned_to, is_active, status')),
+      docHet(() => supabase.from('tax_filing_types')
+        .select('id, code, name, tax_kind, period_kind, sort_order, is_active')),
+      kyChon ? Promise.resolve(null) : supabase.from('tax_obligations')
+        .select('period_code, due_date').gte('due_date', homNayISO)
+        .order('due_date', { ascending: true }).limit(1),
+      docHet(() => supabase.from('tax_accounts').select('client_id, portal, status')),
+      laAdmin ? Promise.resolve([]) : docHet(() => supabase.from('client_secondary_staff')
+        .select('client_id, staff_id').eq('staff_id', caller.staffId)),
+    ])
+
+    // 1. Công ty trong phạm vi
+    let clients = dsClients.filter(c => c.is_active !== false && c.status !== 'inactive')
     if (!laAdmin) {
-      const phu = new Set((await docHet(() => supabase.from('client_secondary_staff')
-        .select('client_id, staff_id').eq('staff_id', caller.staffId))).map(r => r.client_id))
+      const phu = new Set(dsPhu.map(r => r.client_id))
       clients = clients.filter(c =>
         c.assigned_to === caller.staffId
         || phu.has(c.id)
@@ -61,39 +74,42 @@ export async function GET(request) {
     }
 
     const idCty = clients.map(c => c.id)
+    const trongPhamVi = new Set(idCty)
 
-    // 2. Danh mục tờ khai + nghĩa vụ của kỳ đang chọn
-    const loaiToKhai = (await docHet(() => supabase.from('tax_filing_types')
-      .select('id, code, name, tax_kind, period_kind, sort_order, is_active')))
-      .filter(t => t.is_active)
+    // 2. Danh mục tờ khai
+    const loaiToKhai = dsLoai.filter(t => t.is_active)
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
 
+    // 3. Kỳ cần xem: người dùng chọn, hoặc kỳ SẮP TỚI HẠN GẦN NHẤT.
+    //    Chốt ngay ở server để mở màn hình chỉ tốn MỘT lời gọi — trước đây không truyền kỳ thì
+    //    route kéo nghĩa vụ của cả năm (2.175 dòng) rồi trình duyệt mới chọn kỳ và gọi lần hai.
+    const ky = kyChon || kySapToi?.data?.[0]?.period_code || null
+
+    // 4. Nghĩa vụ của đúng kỳ đó.
+    //    Quản trị viên xem tất cả → lọc theo kỳ là đủ, không cần liệt kê 293 mã công ty vào URL.
     let nghiaVu = []
-    for (let i = 0; i < idCty.length; i += 200) {
-      const lo = idCty.slice(i, i + 200)
-      nghiaVu = nghiaVu.concat(await docHet(() => {
-        let q = supabase.from('tax_obligations')
+    if (ky) {
+      if (laAdmin) {
+        nghiaVu = await docHet(() => supabase.from('tax_obligations')
           .select('id, client_id, filing_type_id, period_code, due_date, state')
-          .in('client_id', lo)
-        if (kyChon) q = q.eq('period_code', kyChon)
-        else q = q.like('period_code', `%.${nam}`)
-        return q
-      }))
+          .eq('period_code', ky))
+      } else {
+        for (let i = 0; i < idCty.length; i += 300) {
+          nghiaVu = nghiaVu.concat(await docHet(() => supabase.from('tax_obligations')
+            .select('id, client_id, filing_type_id, period_code, due_date, state')
+            .eq('period_code', ky).in('client_id', idCty.slice(i, i + 300))))
+        }
+      }
+      nghiaVu = nghiaVu.filter(o => trongPhamVi.has(o.client_id))
     }
 
-    // 3. Công ty nào đã nối tài khoản cổng thuế
-    let taiKhoan = []
-    for (let i = 0; i < idCty.length; i += 200) {
-      taiKhoan = taiKhoan.concat(await docHet(() => supabase.from('tax_accounts')
-        .select('client_id, portal, status').in('client_id', idCty.slice(i, i + 200))))
-    }
-    const daNoi = new Map(taiKhoan.map(t => [t.client_id, t.status]))
+    // 5. Công ty nào đã nối tài khoản cổng thuế (đã lấy song song ở trên, lọc tại chỗ)
+    const daNoi = new Map(dsTaiKhoan.filter(t => trongPhamVi.has(t.client_id)).map(t => [t.client_id, t.status]))
 
     // 4. Gom theo công ty
     const theoCty = new Map(clients.map(c => [c.id, []]))
     for (const o of nghiaVu) theoCty.get(o.client_id)?.push(o)
 
-    const homNay = new Date().toISOString().slice(0, 10)
     const congTy = clients.map(c => {
       const ds = theoCty.get(c.id) || []
       return {
@@ -112,7 +128,7 @@ export async function GET(request) {
           hanNop: o.due_date,
           // Quá hạn tính TẠI CHỖ để khỏi phụ thuộc một công việc chạy nền: qua HẾT ngày hạn mới
           // là quá hạn, giống quy ước của Checklist công việc.
-          trangThai: (o.state === 'not_filed' && o.due_date < homNay) ? 'overdue' : o.state,
+          trangThai: (o.state === 'not_filed' && o.due_date < homNayISO) ? 'overdue' : o.state,
         })),
       }
     })
@@ -138,7 +154,7 @@ export async function GET(request) {
       kyQuyetToanNam(nam).period_code,
     ].map(code => ({ ma: code, nhan: nhanKy(code) }))
 
-    return Response.json({ nam, ky: kyChon, cacKy, loaiToKhai, congTy, oTong })
+    return Response.json({ nam, ky, cacKy, loaiToKhai, congTy, oTong })
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 })
   }
