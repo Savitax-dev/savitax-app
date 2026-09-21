@@ -37,10 +37,10 @@ function doTcp(host, port = 443, timeout = 8000) {
   })
 }
 
-async function doHttp(url, headers = {}) {
+async function doHttp(url, headers = {}, timeout = 6000) {
   const t = Date.now()
   try {
-    const res = await fetch(url, { headers, redirect: 'manual', cache: 'no-store', signal: AbortSignal.timeout(10000) })
+    const res = await fetch(url, { headers, redirect: 'manual', cache: 'no-store', signal: AbortSignal.timeout(timeout) })
     const body = await res.text()
     return { ok: true, http: res.status, ms: Date.now() - t, bytes: body.length, trichDan: body.slice(0, 150).replace(/\s+/g, ' ') }
   } catch (e) {
@@ -56,90 +56,44 @@ export async function GET() {
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
   const ketQua = {}
-  const cookies = new Map()
-  const keep = res => {
-    for (const line of res.headers.getSetCookie?.() || []) {
-      const [pair] = line.split(';')
-      const i = pair.indexOf('=')
-      if (i > 0) cookies.set(pair.slice(0, i).trim(), pair.slice(i + 1).trim())
-    }
-  }
-
   // 0. IP đi ra của Vercel — để biết cổng đang nhìn thấy mình từ đâu.
   try {
     const t = Date.now()
-    const r = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' })
+    const r = await fetch('https://api.ipify.org?format=json', { cache: 'no-store', signal: AbortSignal.timeout(5000) })
     ketQua.ipRaMang = { ...(await r.json()), ms: Date.now() - t }
   } catch (e) {
     ketQua.ipRaMang = { loi: e.message }
   }
 
-  // 1. Chặn ở tầng nào? Đo riêng tên miền / cổng 443 / HTTPS cho cả 2 cổng thuế,
-  //    kèm 2 mốc đối chiếu: một trang Việt Nam khác và một trang quốc tế.
+  // 1. Chặn ở tầng nào? Đo tên miền / cổng 443 / HTTPS cho cả 2 cổng thuế, kèm 2 mốc đối chiếu.
+  //    CHẠY SONG SONG và chờ tối đa 5 giây mỗi phép — chạy nối tiếp sẽ vượt hạn 30 giây của Vercel.
+  const [dnsDvc, tcpDvc, httpsDvc, tcpTdt, tcpGdt, tcpQte] = await Promise.all([
+    doDns('dichvucong.gdt.gov.vn'),
+    doTcp('dichvucong.gdt.gov.vn', 443, 5000),
+    doHttp(BASE + 'login', { 'User-Agent': UA, 'Accept-Language': 'vi-VN,vi;q=0.9' }, 6000),
+    doTcp('thuedientu.gdt.gov.vn', 443, 5000),
+    doTcp('www.gdt.gov.vn', 443, 5000),
+    doTcp('example.com', 443, 5000),
+  ])
   ketQua.chanOTangNao = {
-    dichvucong_dns: await doDns('dichvucong.gdt.gov.vn'),
-    dichvucong_tcp443: await doTcp('dichvucong.gdt.gov.vn'),
-    dichvucong_https: await doHttp(BASE + 'login', { 'User-Agent': UA, 'Accept-Language': 'vi-VN,vi;q=0.9' }),
-    thuedientu_tcp443: await doTcp('thuedientu.gdt.gov.vn'),
-    // Mốc đối chiếu: nếu 2 dòng này chạy được thì mạng ra của Vercel bình thường,
-    // vấn đề nằm đúng ở cổng thuế chứ không phải hạ tầng.
-    mocDoiChieu_gdt: await doTcp('www.gdt.gov.vn'),
-    mocDoiChieu_quocTe: await doTcp('example.com'),
+    dichvucong_dns: dnsDvc,
+    dichvucong_tcp443: tcpDvc,
+    dichvucong_https: httpsDvc,
+    thuedientu_tcp443: tcpTdt,
+    mocDoiChieu_gdt: tcpGdt,
+    mocDoiChieu_quocTe: tcpQte,
   }
 
-  // 2. Trang đăng nhập công khai — đây là phép thử chính.
-  try {
-    const t = Date.now()
-    const res = await fetch(BASE + 'login', {
-      headers: { 'User-Agent': UA, 'Accept-Language': 'vi-VN,vi;q=0.9' },
-      redirect: 'manual',
-      cache: 'no-store',
-      signal: AbortSignal.timeout(12000),
-    })
-    keep(res)
-    const html = await res.text()
-    ketQua.trangDangNhap = {
-      http: res.status,
-      ms: Date.now() - t,
-      bytes: html.length,
-      coPhien: cookies.has('JSESSIONID'),
-      coToken: /name="csrf-token" content="/.test(html),
-      // Cổng chặn thì thường trả trang chặn của F5/WAF thay vì trang đăng nhập thật.
-      dungTrangDangNhap: /Dịch Vụ Công Thuế|captcha/i.test(html),
-      trichDan: html.slice(0, 200).replace(/\s+/g, ' '),
-    }
-  } catch (e) {
-    ketQua.trangDangNhap = { loi: e.name + ': ' + e.message, nguyenNhan: e.cause?.code || e.cause?.message || null }
+  // 2. Ảnh captcha — chỉ thử khi bước trên vào được cổng, khỏi phí thời gian chờ.
+  ketQua.trangDangNhap = httpsDvc
+  if (httpsDvc.ok) {
+    ketQua.anhCaptcha = await doHttp(`${BASE}login/getCaptcha?${Date.now()}`,
+      { 'User-Agent': UA, Accept: 'image/*', Referer: BASE + 'login' }, 6000)
+  } else {
+    ketQua.anhCaptcha = { boQua: 'không vào được cổng nên chưa thử tải ảnh' }
   }
 
-  // 3. Ảnh captcha — nếu bước 2 qua được thì bước này cho biết có đẩy ảnh về cho nhân viên gõ được không.
-  try {
-    const t = Date.now()
-    const res = await fetch(`${BASE}login/getCaptcha?${Date.now()}`, {
-      headers: {
-        'User-Agent': UA,
-        Accept: 'image/*',
-        Referer: BASE + 'login',
-        Cookie: [...cookies].map(([k, v]) => `${k}=${v}`).join('; '),
-      },
-      cache: 'no-store',
-      signal: AbortSignal.timeout(10000),
-    })
-    const buf = Buffer.from(await res.arrayBuffer())
-    ketQua.anhCaptcha = {
-      http: res.status,
-      ms: Date.now() - t,
-      kieu: res.headers.get('content-type'),
-      bytes: buf.length,
-      laAnhThat: buf.subarray(1, 4).toString('binary') === 'PNG',
-    }
-  } catch (e) {
-    ketQua.anhCaptcha = { loi: e.name + ': ' + e.message, nguyenNhan: e.cause?.code || e.cause?.message || null }
-  }
-
-  const dat = ketQua.trangDangNhap?.http === 200
-    && ketQua.trangDangNhap?.coPhien
-    && ketQua.anhCaptcha?.laAnhThat
+  const dat = httpsDvc.ok && httpsDvc.http === 200
 
   return Response.json({
     ketLuan: dat
