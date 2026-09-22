@@ -277,7 +277,9 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     setHcnsTasksLoading(false)
   }
 
-  const toggleHcnsTask = async (templateTaskId, done) => {
+  // Việc "Cập nhật số lượng nhân sự" — mở ô nhập thay vì tick thẳng (xem HeadcountForm).
+  const [hcFormFor, setHcFormFor] = useState(null)
+  const toggleHcnsTask = async (templateTaskId, done, extra = {}) => {
     const hc = hcnsClient || await ensureHcnsClient()
     if (!hc) return
     setHcnsToggling(templateTaskId)
@@ -290,11 +292,12 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
           kind: 'recurring', hcnsClientId: hc.id, templateTaskId,
           year: selYear, month: clientMonth, done,
           staffId: sd.session ? sd.session.user.id : null,
+          ...extra,
         }),
       })
       const json = await res.json()
       if (json.error) alert('Không lưu được: ' + json.error)
-      else await loadHcnsTasks()
+      else { setHcFormFor(null); await loadHcnsTasks() }
     } catch (_) { alert('Không lưu được, vui lòng thử lại') }
     setHcnsToggling(null)
   }
@@ -1040,13 +1043,35 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                         <div className="divide-y divide-gray-50">
                           {dayTasks.map(t => {
                             const st = STATUS_STYLE[t.status] || STATUS_STYLE.pending
+                            const hc = t.requiresHeadcount ? hcnsTasks.headcount : null
+                            const prevHc = hcnsTasks.prevHeadcount
                             return (
-                              <label key={t.templateTaskId}
+                              <div key={t.templateTaskId}>
+                              <label
                                 className="flex items-start gap-2.5 px-3 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 flex-wrap">
                                 <input type="checkbox" checked={t.done} disabled={hcnsToggling === t.templateTaskId}
-                                  onChange={e => toggleHcnsTask(t.templateTaskId, e.target.checked)}
+                                  onChange={e => {
+                                    // Việc bắt buộc nhập số nhân sự: tick = mở ô nhập; bỏ tick = xoá số tháng này.
+                                    if (t.requiresHeadcount && e.target.checked) { setHcFormFor(hcFormFor === t.templateTaskId ? null : t.templateTaskId); return }
+                                    if (t.requiresHeadcount && !e.target.checked &&
+                                      !window.confirm('Bỏ tích sẽ xoá số nhân sự đã nhập của tháng này. Tiếp tục?')) return
+                                    toggleHcnsTask(t.templateTaskId, e.target.checked)
+                                  }}
                                   className="w-4 h-4 mt-0.5 accent-[#2E6B3A] flex-shrink-0" />
                                 <span className={'flex-1 min-w-[140px] ' + (t.done ? 'line-through text-gray-400' : '')}>{t.name}</span>
+                                {t.requiresHeadcount && !t.done && (
+                                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 flex-shrink-0">
+                                    Bắt buộc nhập số nhân sự
+                                  </span>
+                                )}
+                                {hc && (
+                                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 flex-shrink-0">
+                                    {hc.headcount} người
+                                    {hc.unchanged ? ' · không đổi'
+                                      : prevHc ? (hc.headcount - prevHc.headcount === 0 ? ' · không đổi'
+                                        : ' · ' + (hc.headcount > prevHc.headcount ? '+' : '') + (hc.headcount - prevHc.headcount)) : ''}
+                                  </span>
+                                )}
                                 <span className={'text-xs font-medium flex-shrink-0 ' + st.text}>{st.label}</span>
                                 {t.done && (
                                   <span className="text-xs text-gray-400 flex-shrink-0">
@@ -1054,6 +1079,12 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                                   </span>
                                 )}
                               </label>
+                              {hcFormFor === t.templateTaskId && !t.done && (
+                                <HeadcountForm prev={prevHc} month={clientMonth} busy={hcnsToggling === t.templateTaskId}
+                                  onCancel={() => setHcFormFor(null)}
+                                  onSave={extra => toggleHcnsTask(t.templateTaskId, true, extra)} />
+                              )}
+                              </div>
                             )
                           })}
                         </div>
@@ -1427,6 +1458,54 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
           })}
         </div>
       ))}
+    </div>
+  )
+}
+
+// Ô nhập số nhân sự cho việc "Cập nhật số lượng nhân sự" (HCNS Thời kỳ). Bắt buộc 1 trong 2:
+// nhập số người, hoặc "Không thay đổi" (giữ số gần nhất trước đó — chỉ có khi đã từng nhập).
+function HeadcountForm({ prev, month, busy, onCancel, onSave }) {
+  const [val, setVal] = useState('')
+  const [same, setSame] = useState(false)
+  const [err, setErr] = useState('')
+  const n = val === '' ? null : Number(val)
+  const diff = prev && n !== null ? n - prev.headcount : null
+  const submit = () => {
+    if (same) return onSave({ unchanged: true })
+    if (n === null || !Number.isInteger(n) || n < 0) { setErr('Nhập số nhân sự (số nguyên ≥ 0) hoặc chọn "Không thay đổi".'); return }
+    onSave({ headcount: n })
+  }
+  return (
+    <div className="mx-3 mb-2 ml-9 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 space-y-2">
+      <p className="text-xs text-gray-600">
+        {prev ? 'Gần nhất (T' + prev.month + '/' + prev.year + '): ' : 'Chưa có số tháng trước — '}
+        {prev ? <b className="text-gray-800">{prev.headcount} người</b> : 'lần đầu phải nhập số.'}
+      </p>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs text-gray-700 w-32">Số nhân sự T{month}</span>
+        <input type="text" inputMode="numeric" value={val} disabled={same} autoFocus
+          onChange={e => { setVal(e.target.value.replace(/\D/g, '')); setErr('') }}
+          className="w-24 px-2 py-1 border border-amber-300 rounded-md text-sm bg-white disabled:bg-gray-100" placeholder="VD: 12" />
+        {diff !== null && !same && (
+          <span className={'text-xs font-semibold ' + (diff > 0 ? 'text-[#B3261E]' : diff < 0 ? 'text-[#2E6B3A]' : 'text-gray-500')}>
+            {diff === 0 ? 'không đổi' : (diff > 0 ? '+' : '') + diff + ' so với lần trước'}
+          </span>
+        )}
+      </div>
+      {prev && (
+        <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+          <input type="checkbox" checked={same} onChange={e => { setSame(e.target.checked); setErr('') }} className="accent-[#2E6B3A]" />
+          Không thay đổi (giữ {prev.headcount} người)
+        </label>
+      )}
+      {err && <p className="text-xs text-red-600">{err}</p>}
+      <div className="flex gap-2">
+        <button type="button" onClick={submit} disabled={busy}
+          className="px-3 py-1 bg-[#2E6B3A] text-white rounded-md text-xs font-medium disabled:opacity-50">
+          {busy ? 'Đang lưu...' : 'Lưu và hoàn thành'}
+        </button>
+        <button type="button" onClick={onCancel} className="px-3 py-1 border border-gray-300 rounded-md text-xs text-gray-600 bg-white">Hủy</button>
+      </div>
     </div>
   )
 }

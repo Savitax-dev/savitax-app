@@ -6,6 +6,7 @@ import { loadPermissionData, can } from '@/lib/permissions'
 import AppShell from '@/components/AppShell'
 import ClientChecklist from '@/components/ClientChecklist'
 import * as XLSX from 'xlsx'
+import { HCNS_PER_HEAD } from '@/lib/salesPricing'
 import { HCNS_STATUSES, HCNS_STATUS_LABEL } from '@/lib/hcnsStatus'
 import { hcnsDueState, hcnsDueDate } from '@/lib/hcnsDue'
 
@@ -162,7 +163,7 @@ export default function HcnsPage() {
 
   // Xuất Excel theo KỲ đang lọc (Tháng/Quý/Năm). Dùng lại đúng số của báo cáo phòng (đã tính theo
   // kỳ + đã thu hẹp theo quyền xem) để file luôn khớp với màn hình.
-  const exportExcel = (kind) => {
+  const exportExcel = async (kind) => {
     if (!report) return
     const q = Math.ceil(selMonth / 3)
     const periodLabel = mode === 'year' ? 'Năm ' + selYear : mode === 'quarter' ? 'Quý ' + q + '/' + selYear : 'T' + selMonth + '/' + selYear
@@ -223,6 +224,42 @@ export default function HcnsPage() {
         }),
       ]
       addSheet('Chi tiết công ty', s2, [5, 14, 45, 14, 22, 10, 14, 14, 14, 14, 10, 13, 11], [10, 12], [6, 7, 8, 9])
+
+      // Sheet 3 — Biến động nhân sự trong kỳ (số nhập ở việc "Cập nhật số lượng nhân sự"), làm căn
+      // cứ điều chỉnh phí HCNS. Phí đề xuất = số người cuối kỳ × HCNS_PER_HEAD (cùng mức báo giá).
+      const mList = report.period?.months || [selMonth]
+      const hj = await fetch('/api/admin/hcns/headcount?year=' + selYear + '&months=' + mList.join(','))
+        .then(r => r.json()).catch(() => ({ data: [] }))
+      const hrows = [...(hj.data || [])].sort((a, b) =>
+        (a.staffName === 'Chưa phân công' ? -1 : 0) - (b.staffName === 'Chưa phân công' ? -1 : 0) ||
+        (a.staffName || '').localeCompare(b.staffName || '') || (a.name || '').localeCompare(b.name || ''))
+      const s3 = [
+        ['BIẾN ĐỘNG NHÂN SỰ — ' + periodLabel],
+        ['Số nhân sự tham gia BHXH nhập hằng tháng · "—" = tháng chưa nhập · Phí đề xuất = số người cuối kỳ × ' +
+          HCNS_PER_HEAD.toLocaleString('vi-VN') + 'đ/người/tháng (như báo giá). Phí quý quy về tháng để so sánh.'],
+        [],
+        ['STT', 'Mã KH', 'Tên công ty', 'MST', 'NV phụ trách', 'Trước kỳ',
+          ...mList.map(m => 'T' + m), 'Cuối kỳ', 'Biến động', 'Phí HCNS/tháng', 'Phí / người', 'Phí đề xuất', 'Chênh lệch'],
+        ...hrows.map((c, i) => {
+          const vals = mList.map(m => c.values[m])
+          const known = vals.filter(v => v !== null && v !== undefined)
+          const endVal = known.length ? known[known.length - 1] : null
+          const startVal = c.baseline ?? (known.length ? known[0] : null)
+          const monthly = c.feePeriod === 'quarterly' ? Math.round(c.hcnsFee / 3) : c.hcnsFee
+          const suggest = endVal !== null ? endVal * HCNS_PER_HEAD : ''
+          return [i + 1, c.clientCode || '', c.name, c.taxCode || '', c.staffName, c.baseline ?? '—',
+            ...vals.map(v => v ?? '—'),
+            endVal ?? '—',
+            endVal !== null && startVal !== null ? endVal - startVal : '',
+            monthly,
+            endVal ? Math.round(monthly / endVal) : '',
+            suggest,
+            suggest !== '' ? suggest - monthly : '']
+        }),
+      ]
+      const nM = mList.length
+      const moneyIdx = [8 + nM, 9 + nM, 10 + nM, 11 + nM]
+      addSheet('Biến động nhân sự', s3, [5, 14, 45, 14, 22, 9, ...mList.map(() => 7), 9, 10, 15, 13, 15, 15], [], moneyIdx)
     } else {
       const td = report.thoiDiem
       const cases = (td.cases || []).filter(c => c.periodServices > 0)

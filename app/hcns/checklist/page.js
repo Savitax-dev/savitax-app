@@ -317,6 +317,19 @@ export default function HcnsChecklistPage() {
                                   </span>
                                 )
                               )}
+                              {/* Việc bắt buộc nhập số nhân sự khi tích (sql/19) — dùng cho báo cáo
+                                  biến động nhân sự để điều chỉnh phí HCNS. */}
+                              {t.is_recurring && (canEdit ? (
+                                <label className="flex items-center gap-1 flex-shrink-0 text-xs text-slate-600 cursor-pointer"
+                                  title="Tích việc này bắt buộc nhập số nhân sự hoặc chọn Không thay đổi">
+                                  <input type="checkbox" checked={task.requires_headcount === true}
+                                    onChange={e => call('PATCH', { taskId: task.id, requires_headcount: e.target.checked })}
+                                    className="accent-[#8B1A1A]" />
+                                  Nhập số NS
+                                </label>
+                              ) : task.requires_headcount && (
+                                <span className="text-xs text-amber-800 flex-shrink-0">Nhập số NS</span>
+                              ))}
                               {canEdit && (
                                 <span className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-3 flex-shrink-0">
                                   <button onClick={() => renameTask(task.id, task.name)} className="text-xs font-medium text-slate-600 hover:text-slate-900">Sửa</button>

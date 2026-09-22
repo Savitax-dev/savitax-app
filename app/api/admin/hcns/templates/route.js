@@ -92,13 +92,15 @@ export async function PATCH(request) {
   const auth = await callerHasPermission('manage_hcns_template')
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
-  const { templateId, taskId, name, sort_order, group_name, deadline_day, sla_days } = await request.json()
+  const { templateId, taskId, name, sort_order, group_name, deadline_day, sla_days, requires_headcount } = await request.json()
   const supabase = getAdmin()
 
   if (taskId) {
     const patch = {}
     if (name !== undefined) patch.name = name
     if (sort_order !== undefined) patch.sort_order = Number(sort_order)
+    // Việc bắt buộc nhập số nhân sự khi tích (sql/19).
+    if (requires_headcount !== undefined) patch.requires_headcount = requires_headcount === true
     if (deadline_day !== undefined) {
       const d = deadline_day === null || deadline_day === '' ? null : Number(deadline_day)
       if (d !== null && (!Number.isFinite(d) || d < 1 || d > 31)) {
