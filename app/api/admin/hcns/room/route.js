@@ -217,7 +217,7 @@ export async function GET(request) {
   // hạn theo tháng. Lọc theo kỳ thì mở T8 sẽ không thấy khoản nợ của hồ sơ nhận trong T9 — đúng
   // thứ đang muốn tránh (hồ sơ xong việc rồi rơi vào vùng không ai nhìn).
   const { data: pays } = caseIds.length
-    ? await supabase.from('hcns_case_payments').select('hcns_client_id, amount, created_at').in('hcns_client_id', caseIds)
+    ? await supabase.from('hcns_case_payments').select('*').in('hcns_client_id', caseIds)
     : { data: [] }
   const costAll = new Map()
   for (const sv of services || []) {
@@ -258,7 +258,8 @@ export async function GET(request) {
     }
     for (const p of pays || []) {
       if (p.hcns_client_id !== c.id) continue
-      const d = vnDay(p.created_at)
+      // Ngày khách trả thật (paid_at, sql/20); khoản cũ chưa có thì lấy ngày ghi.
+      const d = p.paid_at ? String(p.paid_at).slice(0, 10) : vnDay(p.created_at)
       if (d < p0) paidBefore += Number(p.amount) || 0
       else if (d <= p1) paidIn += Number(p.amount) || 0
     }

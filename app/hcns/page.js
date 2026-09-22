@@ -766,7 +766,10 @@ function FlowTiles({ flow, rows, unit, note }) {
                   <span className="text-[11px] text-slate-500">{r.sub}</span>
                 </span>
                 <span className="text-[11px] tabular-nums text-slate-500 text-right hidden md:block">
-                  tồn {fmt(r.opening)} · phí {fmt(r.fee)} · thu {fmt(r.paid)}
+                  tồn {fmt(r.opening)} · phí {fmt(r.fee)} · thu {fmt(r.paid)} ·{' '}
+                  <b className={r.remain > 0 ? 'text-[#B3261E] font-semibold' : 'text-[#2E6B3A] font-semibold'}>
+                    {r.remain > 0 ? 'còn ' + fmt(r.remain) + 'đ cuối kỳ' : 'đã thu đủ'}
+                  </b>
                 </span>
                 <span className={'text-xs font-semibold tabular-nums w-28 text-right flex-shrink-0 ' +
                   (open === 'remain' ? 'text-[#B3261E]' : 'text-slate-800')}>
@@ -1653,6 +1656,9 @@ function CaseDebtPanel({ hcnsClient, debt, canManage, onChanged }) {
   const [amount, setAmount] = useState('')
   const [serviceId, setServiceId] = useState('')
   const [note, setNote] = useState('')
+  // Ngày khách trả THẬT — báo cáo Tồn đầu kỳ / Đã thu trong kỳ tính theo ngày này (sql/20).
+  const todayVN = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10)
+  const [paidAt, setPaidAt] = useState(todayVN)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
 
@@ -1674,13 +1680,30 @@ function CaseDebtPanel({ hcnsClient, debt, canManage, onChanged }) {
     setSaving(true)
     const res = await fetch('/api/admin/hcns/case-payments', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hcnsClientId: hcnsClient.id, caseServiceId: serviceId || null, amount: amt, note: note || null }),
+      body: JSON.stringify({ hcnsClientId: hcnsClient.id, caseServiceId: serviceId || null, amount: amt, note: note || null, paid_at: paidAt || null }),
     })
     const j = await res.json()
     setSaving(false)
     if (j.error) { setErr(j.error); return }
-    setAmount(''); setNote('')
+    setAmount(''); setNote(''); setPaidAt(todayVN)
     onChanged()
+  }
+
+  // Sửa ngày thu của khoản đã ghi (ghi muộn / chọn nhầm ngày).
+  const editPaidAt = async (p) => {
+    const cur = p.paid_at ? String(p.paid_at).slice(0, 10) : ''
+    const txt = window.prompt('Ngày khách trả thật (dd/mm/yyyy):', cur ? cur.split('-').reverse().join('/') : '')
+    if (txt === null) return
+    const m = txt.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+    if (!m) { setErr('Ngày phải có dạng dd/mm/yyyy.'); return }
+    const iso = m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0')
+    const res = await fetch('/api/admin/hcns/case-payments', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: p.id, paid_at: iso }),
+    })
+    const j = await res.json()
+    if (j.error) setErr(j.error)
+    else onChanged()
   }
 
   const removePayment = async (p) => {
@@ -1710,7 +1733,11 @@ function CaseDebtPanel({ hcnsClient, debt, canManage, onChanged }) {
             {debt.perService.map(s => (
               <div key={s.id} className="flex items-center gap-2 text-xs">
                 <span className="text-slate-700 flex-1 truncate">{s.name}</span>
-                <span className="text-slate-500 tabular-nums">{fmt(s.paid)} / {fmt(s.cost)}đ</span>
+                <span className="text-slate-500 tabular-nums">
+                  {s.paidShared > 0
+                    ? (s.paidDirect > 0 ? fmt(s.paidDirect) + ' + ' : '') + fmt(s.paidShared) + ' thu chung'
+                    : fmt(s.paid)} / {fmt(s.cost)}đ
+                </span>
                 <span className={'w-24 text-right tabular-nums font-medium ' +
                   (s.remain === 0 ? 'text-[#2E6B3A]' : 'text-[#B3261E]')}>
                   {s.remain === 0 ? 'đủ' : 'còn ' + fmt(s.remain) + 'đ'}
@@ -1719,7 +1746,7 @@ function CaseDebtPanel({ hcnsClient, debt, canManage, onChanged }) {
             ))}
             {t.unassigned > 0 && (
               <p className="text-xs text-slate-500 pt-1">
-                Trong đó {fmt(t.unassigned)}đ thu chung cho cả hồ sơ, chưa tách theo dịch vụ.
+                Trong đó {fmt(t.unassigned)}đ thu chung cho cả hồ sơ — tự trừ lần lượt vào các dịch vụ, dịch vụ nhận trước trừ trước.
               </p>
             )}
           </div>
@@ -1727,7 +1754,7 @@ function CaseDebtPanel({ hcnsClient, debt, canManage, onChanged }) {
 
         {canManage && (
           <div className="border-t border-slate-200 pt-3 space-y-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div>
                 <label className="text-xs text-slate-600 mb-1 block">Thu cho</label>
                 <select value={serviceId} onChange={e => setServiceId(e.target.value)} className={inputCls}>
@@ -1743,6 +1770,10 @@ function CaseDebtPanel({ hcnsClient, debt, canManage, onChanged }) {
                   value={amount ? Number(String(amount).replace(/\D/g, '') || 0).toLocaleString('vi-VN') : ''}
                   onChange={e => { setAmount(e.target.value.replace(/\D/g, '')); if (err) setErr('') }}
                   placeholder={'Còn phải thu ' + fmt(t.remain) + 'đ'} className={inputCls} />
+              </div>
+              <div>
+                <label className="text-xs text-slate-600 mb-1 block">Ngày thu <span className="text-slate-400">(ngày khách trả)</span></label>
+                <input type="date" value={paidAt} max={todayVN} onChange={e => setPaidAt(e.target.value)} className={inputCls} />
               </div>
             </div>
             <input value={note} onChange={e => setNote(e.target.value)}
@@ -1765,7 +1796,11 @@ function CaseDebtPanel({ hcnsClient, debt, canManage, onChanged }) {
                 <span className="text-slate-800">{p.serviceName || 'Thu chung cả hồ sơ'}</span>
                 {p.note && <span className="text-slate-500"> — {p.note}</span>}
                 <span className="block text-slate-500">
-                  {p.createdByName || '—'} · {new Date(p.created_at).toLocaleString('vi-VN')}
+                  <b className="text-slate-700 font-medium">Ngày thu {fmtDate(p.paid_at || p.created_at)}</b>
+                  {canManage && (
+                    <button onClick={() => editPaidAt(p)} className="ml-1 text-blue-600 hover:underline">sửa ngày</button>
+                  )}
+                  {' · ghi bởi '}{p.createdByName || '—'} · {new Date(p.created_at).toLocaleString('vi-VN')}
                 </span>
               </span>
               {canManage && (
