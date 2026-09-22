@@ -317,7 +317,7 @@ export default function Sidebar({ onClose }) {
         {canViewHcns && (
           <div>
             <SectionLabel>HCNS - BHXH</SectionLabel>
-            <NavItem href="/hcns"           icon="💼" label="Công ty phụ trách" pathname={pathname} onClose={onClose} />
+            <NavItem href="/hcns"           icon="💼" label="Phòng HCNS" pathname={pathname} onClose={onClose} />
             <NavItem href="/hcns/checklist" icon="📝" label="Checklist HCNS"    pathname={pathname} onClose={onClose} />
             <NavItem href="/hcns/work-log"  icon="📔" label="Nhật ký làm việc HCNS" pathname={pathname} onClose={onClose} />
           </div>

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin, callerHasPermission } from '@/lib/serverAuth'
 import { writeHcnsFeePlan, applyScheduledHcnsStops } from '@/lib/hcnsSync'
+import { hcnsDueState } from '@/lib/hcnsDue'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -44,9 +45,11 @@ export async function GET(request) {
   // Tiến độ dịch vụ của hồ sơ Thời điểm/Vãng lai — để danh sách biết hồ sơ nào đã xong hết mà
   // chuyển sang thẻ "Hoàn thành". Không có phần này thì trạng thái chỉ biết được sau khi bấm mở
   // từng hồ sơ, không dựng được thẻ.
-  const caseIds = (rows || []).filter(r => r.category !== 'thoi_ky').map(r => r.id)
+  // Gồm cả công ty Thời kỳ: dịch vụ gắn vào bản ghi Thời kỳ là "việc phát sinh" (không phí) —
+  // trang Thời kỳ – Phát sinh đọc serviceCount/doneServiceCount của chúng.
+  const caseIds = (rows || []).map(r => r.id)
   const { data: svcs } = caseIds.length
-    ? await supabase.from('hcns_case_services').select('hcns_client_id, status, cost').in('hcns_client_id', caseIds)
+    ? await supabase.from('hcns_case_services').select('hcns_client_id, status, cost, due_at, completed_at').in('hcns_client_id', caseIds)
     : { data: [] }
   // Tiền của hồ sơ — để danh sách đánh dấu được hồ sơ đã xong việc mà chưa thu đủ. Thiếu bảng
   // (chưa chạy sql/07) thì coi như chưa thu đồng nào, không phải lỗi.
@@ -59,8 +62,10 @@ export async function GET(request) {
   }
   const svcStat = new Map()
   for (const sv of svcs || []) {
-    const a = svcStat.get(sv.hcns_client_id) || { total: 0, done: 0, cost: 0 }
+    const a = svcStat.get(sv.hcns_client_id) || { total: 0, done: 0, cost: 0, late: 0 }
     a.total += 1
+    // Đang làm mà đã quá hạn hoàn thành — nhãn "Trễ hạn" ở dòng công ty.
+    if (hcnsDueState(sv).kind === 'late') a.late += 1
     a.cost += Number(sv.cost) || 0
     if (sv.status === 'hoan_thanh') a.done += 1
     svcStat.set(sv.hcns_client_id, a)
@@ -72,6 +77,7 @@ export async function GET(request) {
     other_debt: Number(r.other_debt) || 0,
     serviceCount: svcStat.get(r.id)?.total || 0,
     doneServiceCount: svcStat.get(r.id)?.done || 0,
+    lateServiceCount: svcStat.get(r.id)?.late || 0,
     // Hồ sơ CHƯA khai dịch vụ nào thì chưa gọi là xong — vẫn còn việc phải làm.
     allDone: (svcStat.get(r.id)?.total || 0) > 0
       && svcStat.get(r.id).done === svcStat.get(r.id).total,

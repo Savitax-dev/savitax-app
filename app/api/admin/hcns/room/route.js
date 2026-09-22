@@ -5,6 +5,7 @@ import { resolveHcnsFeeForMonth } from '@/lib/hcnsFee'
 import { HCNS_STATUSES as STATUSES, HCNS_STATUS_LABEL as STATUS_LABEL } from '@/lib/hcnsStatus'
 import { getHcnsTeam } from '@/lib/hcnsTeam'
 import { effectiveDeadlineDate } from '@/lib/deadline'
+import { hcnsDueState } from '@/lib/hcnsDue'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -107,25 +108,42 @@ export async function GET(request) {
   const linkedIds = thoiKy.map(c => c.linked_client_id).filter(Boolean)
   let hcnsOldDebt = 0
   let hcnsOldDebtClients = 0
+  // Nợ tồn HCNS theo (công ty kế toán, năm, tháng) — dùng cho thẻ "Tồn đầu kỳ" và cho quy tắc
+  // AGENTS.md: tháng ĐÃ chuyển nợ tồn thì "còn phải thu" lấy remaining_amount, KHÔNG lấy phí − thu
+  // (thu qua Nợ tồn cũ không quay lại tháng gốc — lấy phí − thu sẽ báo nợ oan).
+  const rollRemain = new Map()
   if (linkedIds.length) {
     const { data: rolls } = await supabase.from('debt_rollovers')
-      .select('client_id, remaining_amount').in('client_id', linkedIds)
-      .eq('source', 'hcns').gt('remaining_amount', 0)
+      .select('client_id, year, month, remaining_amount').in('client_id', linkedIds)
+      .eq('source', 'hcns')
     const perClientDebt = new Map()
     for (const r of rolls || []) {
       const v = Number(r.remaining_amount) || 0
+      rollRemain.set(r.client_id + '_' + r.year + '_' + r.month, v)
+      if (v <= 0) continue
       hcnsOldDebt += v
       perClientDebt.set(r.client_id, (perClientDebt.get(r.client_id) || 0) + v)
     }
     hcnsOldDebtClients = perClientDebt.size
   }
+  const periodStartKey = year * 12 + (months[0] - 1)
 
   const perClient = thoiKy.map(c => {
-    let dueFee = 0, collected = 0
+    let dueFee = 0, collected = 0, periodRemain = 0
     for (const m of months) {
       if (!feeCountsForMonth(c.fee_period, year, m, now)) continue
-      dueFee += resolveHcnsFeeForMonth(planRows, c.id, year, m, c.hcns_fee, c.created_at)
-      collected += paidMap.get(c.id + '_' + year + '_' + m) || 0
+      const fee = resolveHcnsFeeForMonth(planRows, c.id, year, m, c.hcns_fee, c.created_at)
+      const got = paidMap.get(c.id + '_' + year + '_' + m) || 0
+      dueFee += fee
+      collected += got
+      const rk = c.linked_client_id + '_' + year + '_' + m
+      periodRemain += rollRemain.has(rk) ? rollRemain.get(rk) : Math.max(0, fee - got)
+    }
+    // Tồn đầu kỳ = nợ tồn HCNS (còn lại tới hôm nay) của các tháng TRƯỚC kỳ đang xem.
+    let opening = 0
+    for (const [k, v] of rollRemain) {
+      const [cid, y, mm] = k.split('_')
+      if (cid === c.linked_client_id && Number(y) * 12 + (Number(mm) - 1) < periodStartKey) opening += v
     }
     // %-công việc lấy theo tháng đang xem (checklist là việc của từng tháng, không cộng dồn kỳ).
     const doneThisMonth = recDone.get(c.id + '_' + year + '_' + months[months.length - 1]) || 0
@@ -135,6 +153,8 @@ export async function GET(request) {
       fee_period: c.fee_period,
       dueFee, collected,
       remain: Math.max(0, dueFee - collected),
+      opening, periodRemain,
+      totalRemain: opening + periodRemain,
       debtPercent: dueFee > 0 ? Math.round(collected / dueFee * 100) : null,
       taskDone: doneThisMonth, taskTotal,
       taskPercent: taskTotal > 0 ? Math.round(doneThisMonth / taskTotal * 100) : null,
@@ -164,13 +184,21 @@ export async function GET(request) {
   const svcIds = svcInPeriod.map(s => s.id)
   const caseTasks = svcIds.length
     ? await fetchAllRows(() => supabase.from('hcns_case_service_tasks')
-        .select('case_service_id, done').in('case_service_id', svcIds).order('id'))
+        .select('case_service_id, done, done_at').in('case_service_id', svcIds).order('id'))
     : []
+  // Việc chỉ được tính "xong" khi tích TRONG hạn hoàn thành của dịch vụ (due_at, chốt lúc thêm dịch
+  // vụ — lib/hcnsDue.js). Cùng tinh thần %-công việc đúng hạn của Thời kỳ và phòng kế toán.
+  const dueBySvc = new Map(svcInPeriod.map(sv => [sv.id, sv.due_at || null]))
+  const vnDay = (t) => new Date(new Date(t).getTime() + 7 * 3600 * 1000).toISOString().slice(0, 10)
   const taskBySvc = new Map()
   for (const t of caseTasks) {
-    const a = taskBySvc.get(t.case_service_id) || { done: 0, total: 0 }
+    const a = taskBySvc.get(t.case_service_id) || { done: 0, total: 0, doneAny: 0 }
     a.total += 1
-    if (t.done) a.done += 1
+    if (t.done) {
+      a.doneAny += 1
+      const due = dueBySvc.get(t.case_service_id)
+      if (!due || !t.done_at || vnDay(t.done_at) <= due) a.done += 1
+    }
     taskBySvc.set(t.case_service_id, a)
   }
   // % của 1 hồ sơ = gộp công việc của MỌI dịch vụ trong hồ sơ đó.
@@ -189,7 +217,7 @@ export async function GET(request) {
   // hạn theo tháng. Lọc theo kỳ thì mở T8 sẽ không thấy khoản nợ của hồ sơ nhận trong T9 — đúng
   // thứ đang muốn tránh (hồ sơ xong việc rồi rơi vào vùng không ai nhìn).
   const { data: pays } = caseIds.length
-    ? await supabase.from('hcns_case_payments').select('hcns_client_id, amount').in('hcns_client_id', caseIds)
+    ? await supabase.from('hcns_case_payments').select('hcns_client_id, amount, created_at').in('hcns_client_id', caseIds)
     : { data: [] }
   const costAll = new Map()
   for (const sv of services || []) {
@@ -210,6 +238,34 @@ export async function GET(request) {
     return { cost, paid, remain: Math.max(0, cost - paid) }
   }
 
+  // Công nợ THEO KỲ: Tồn đầu kỳ → Phí trong kỳ → Đã thu trong kỳ → Còn phải thu.
+  //   tồn  = chi phí dịch vụ nhận TRƯỚC kỳ − tiền thu TRƯỚC kỳ
+  //   phí  = chi phí dịch vụ nhận TRONG kỳ
+  //   thu  = tiền ghi nhận TRONG kỳ (theo ngày VN)
+  //   còn  = tồn + phí − thu (tối thiểu 0; thu dư không che nợ hồ sơ khác vì tính từng hồ sơ)
+  const pad = (n) => String(n).padStart(2, '0')
+  const p0 = year + '-' + pad(months[0]) + '-01'
+  const lastM = months[months.length - 1]
+  const p1 = year + '-' + pad(lastM) + '-' + pad(new Date(Date.UTC(year, lastM, 0)).getUTCDate())
+  const flowOf = (c) => {
+    let costBefore = 0, costIn = 0, paidBefore = 0, paidIn = 0
+    for (const sv of services || []) {
+      if (sv.hcns_client_id !== c.id) continue
+      const v = Number(sv.cost) || 0
+      const d = sv.received_at ? String(sv.received_at).slice(0, 10) : null
+      if (d && d < p0) costBefore += v
+      else if (!d || d <= p1) costIn += v
+    }
+    for (const p of pays || []) {
+      if (p.hcns_client_id !== c.id) continue
+      const d = vnDay(p.created_at)
+      if (d < p0) paidBefore += Number(p.amount) || 0
+      else if (d <= p1) paidIn += Number(p.amount) || 0
+    }
+    const opening = Math.max(0, costBefore - paidBefore)
+    return { opening, periodFee: costIn, periodPaid: paidIn, remain: Math.max(0, opening + costIn - paidIn) }
+  }
+
   const avg = (arr) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null
 
   // Tên dịch vụ cho file Excel "Chi tiết dịch vụ".
@@ -218,6 +274,21 @@ export async function GET(request) {
     ? await supabase.from('hcns_service_templates').select('id, name').in('id', tplIdsInPeriod)
     : { data: [] }
   const tplName = new Map((svcTpls || []).map(t => [t.id, t.name]))
+
+  // Đúng hạn / trễ hạn của các dịch vụ trong kỳ (theo due_at chốt lúc thêm dịch vụ).
+  const onTimeOf = (svcs) => {
+    const r = { withDue: 0, doneOk: 0, doneLate: 0, openLate: 0, open: 0 }
+    for (const sv of svcs) {
+      const st = hcnsDueState(sv, now)
+      if (st.kind === 'none') continue
+      r.withDue += 1
+      if (st.kind === 'done_ok') r.doneOk += 1
+      else if (st.kind === 'done_late') r.doneLate += 1
+      else if (st.kind === 'late') r.openLate += 1
+      else r.open += 1
+    }
+    return r
+  }
 
   const caseBlock = (cat) => {
     const list = cases.filter(c => c.category === cat)
@@ -234,6 +305,8 @@ export async function GET(request) {
       }
       byStaff[c.assigned_to].cases += 1
       byStaff[c.assigned_to].services += n
+      byStaff[c.assigned_to].late = (byStaff[c.assigned_to].late || 0) +
+        (svcByClient.get(c.id) || []).filter(sv => hcnsDueState(sv, now).kind === 'late').length
       byStaff[c.assigned_to].cost += moneyOf(c).cost
       byStaff[c.assigned_to].remain = (byStaff[c.assigned_to].remain || 0) + moneyOf(c).remain
       const p = casePct(c).percent
@@ -253,6 +326,11 @@ export async function GET(request) {
       const m = moneyOf(c)
       return { cost: a.cost + m.cost, paid: a.paid + m.paid, remain: a.remain + m.remain }
     }, { cost: 0, paid: 0, remain: 0 })
+    const flows = list.map(c => ({ c, f: flowOf(c) }))
+    const flow = flows.reduce((a, { f }) => ({
+      opening: a.opening + f.opening, periodFee: a.periodFee + f.periodFee,
+      periodPaid: a.periodPaid + f.periodPaid, remain: a.remain + f.remain,
+    }), { opening: 0, periodFee: 0, periodPaid: 0, remain: 0 })
     const unpaidCases = list.filter(c => moneyOf(c).remain > 0)
     // Hồ sơ xong việc mà chưa thu đủ — nhóm dễ bị bỏ quên nhất, vì xong việc là rời khỏi thẻ
     // Thời điểm/Vãng lai sang thẻ Hoàn thành, nơi trước đây không nói gì về tiền.
@@ -269,6 +347,8 @@ export async function GET(request) {
       doneUnpaidCount: doneUnpaid.length,
       doneUnpaidRemain: doneUnpaid.reduce((a, c) => a + moneyOf(c).remain, 0),
       taskDone: totals.done, taskTotal: totals.total,
+      flow,
+      onTime: onTimeOf(svcs),
       taskPercent: avg(perStaffRows.map(r => r.taskPercent).filter(p => p !== null)),
       // Danh sách từng hồ sơ đứng sau ba ô tiền — bấm vào ô là xem được ngay công ty nào, thay vì
       // chỉ thấy con số tổng rồi phải tự dò.
@@ -283,6 +363,7 @@ export async function GET(request) {
           // Theo KỲ đang chọn (dịch vụ nhận trong kỳ) — dùng cho xuất Excel.
           periodServices: (svcByClient.get(c.id) || []).length,
           taskPercent: casePct(c).percent,
+          ...(() => { const f = flowOf(c); return { opening: f.opening, periodFee: f.periodFee, periodPaid: f.periodPaid, periodRemain: f.remain } })(),
         }
       }).sort((a, b) => b.remain - a.remain),
       // Dịch vụ NHẬN TRONG KỲ đang chọn — sheet "Chi tiết dịch vụ" của file Excel.
@@ -293,6 +374,10 @@ export async function GET(request) {
           staffName: staffName(staff, c.assigned_to),
           serviceName: tplName.get(sv.template_id) || '',
           receivedAt: sv.received_at || null, expectedAt: sv.expected_at || null,
+          dueAt: sv.due_at || null,
+          dueLabel: (() => { const st = hcnsDueState(sv, now)
+            return st.kind === 'done_ok' ? 'Xong đúng hạn' : st.kind === 'done_late' ? 'Xong trễ ' + st.days + ' ngày'
+              : st.kind === 'late' ? 'Trễ ' + st.daysLate + ' ngày' : st.kind === 'open' ? 'Còn ' + st.daysLeft + ' ngày' : '' })(),
           status: STATUS_LABEL[sv.status] || sv.status,
           taskDone: t.done, taskTotal: t.total, cost: Number(sv.cost) || 0,
         }
@@ -321,6 +406,33 @@ export async function GET(request) {
     }
   })
 
+  // ── Khối "Thời kỳ – Phát sinh": việc thời điểm của công ty Thời kỳ (không thu phí riêng) ──
+  // Dịch vụ gắn thẳng vào bản ghi Thời kỳ. Không có tiền — chỉ theo dõi tiến độ và đúng hạn.
+  const { data: psAll } = tkIds.length
+    ? await supabase.from('hcns_case_services').select('*').in('hcns_client_id', tkIds)
+    : { data: [] }
+  const psSvcs = (psAll || []).filter(inPeriod)
+  const psByClient = new Map()
+  for (const sv of psSvcs) {
+    if (!psByClient.has(sv.hcns_client_id)) psByClient.set(sv.hcns_client_id, [])
+    psByClient.get(sv.hcns_client_id).push(sv)
+  }
+  const phatSinh = {
+    companyCount: psByClient.size,
+    serviceCount: psSvcs.length,
+    doneCount: psSvcs.filter(sv => sv.status === 'hoan_thanh').length,
+    onTime: onTimeOf(psSvcs),
+    byStatus: STATUSES.map(st => ({ status: st, label: STATUS_LABEL[st], count: psSvcs.filter(sv => sv.status === st).length })),
+    companies: thoiKy.filter(c => psByClient.has(c.id)).map(c => {
+      const list = psByClient.get(c.id)
+      return {
+        id: c.id, name: c.name, staffName: staffName(staff, c.assigned_to),
+        services: list.length, done: list.filter(sv => sv.status === 'hoan_thanh').length,
+        late: list.filter(sv => hcnsDueState(sv, now).kind === 'late').length,
+      }
+    }),
+  }
+
   const roomDebtPercent = avg(perStaff.map(s => s.debtPercent).filter(p => p !== null))
   const roomTaskPercent = avg(perStaff.map(s => s.taskPercent).filter(p => p !== null))
 
@@ -336,10 +448,18 @@ export async function GET(request) {
       taskPercent: roomTaskPercent,
       oldDebt: hcnsOldDebt,
       oldDebtClients: hcnsOldDebtClients,
+      // Công nợ 4 bước theo kỳ (Tồn đầu kỳ → Phí → Đã thu → Còn phải thu).
+      flow: {
+        opening: perClient.reduce((a, c) => a + c.opening, 0),
+        periodFee: perClient.reduce((a, c) => a + c.dueFee, 0),
+        periodPaid: perClient.reduce((a, c) => a + c.collected, 0),
+        remain: perClient.reduce((a, c) => a + c.totalRemain, 0),
+      },
       perStaff,
       perClient,
     },
     thoiDiem: caseBlock('thoi_diem'),
+    phatSinh,
     vangLai: caseBlock('vang_lai'),
   })
 }

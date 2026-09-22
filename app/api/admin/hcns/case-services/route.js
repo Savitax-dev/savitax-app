@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { callerHasPermission } from '@/lib/serverAuth'
 import { HCNS_STATUSES as STATUSES, HCNS_STATUS_LABEL as STATUS_LABEL } from '@/lib/hcnsStatus'
+import { hcnsDueDate } from '@/lib/hcnsDue'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -86,6 +87,11 @@ export async function POST(request) {
   const initStatus = STATUSES.includes(status) ? status : 'thu_thap'
   const supabase = getAdmin()
 
+  // Hạn hoàn thành CHỐT ngay lúc thêm: ngày nhận + số ngày của mẫu (bỏ chủ nhật). Đổi số ngày ở
+  // mẫu sau này không kéo hạn của hồ sơ đã mở.
+  const { data: tpl } = await supabase.from('hcns_service_templates').select('sla_days').eq('id', templateId).maybeSingle()
+  const dueAt = hcnsDueDate(received_at, tpl?.sla_days)
+
   const { data: svc, error } = await supabase.from('hcns_case_services').insert({
     hcns_client_id: hcnsClientId,
     template_id: templateId,
@@ -93,6 +99,8 @@ export async function POST(request) {
     received_at, expected_at: expected_at || null,
     status: initStatus,
     note: note || null,
+    due_at: dueAt,
+    completed_at: initStatus === 'hoan_thanh' ? new Date().toISOString() : null,
   }).select().single()
   if (error) return Response.json({ error: error.message }, { status: 400 })
 
@@ -116,21 +124,60 @@ export async function PATCH(request) {
   const auth = await callerHasPermission('manage_hcns')
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
-  const { id, status, cost, received_at, expected_at, note } = await request.json()
+  const { id, status, cost, received_at, expected_at, note, fixOnTime, due_at } = await request.json()
   if (!id) return Response.json({ error: 'Thiếu id dịch vụ' }, { status: 400 })
 
   const supabase = getAdmin()
-  const { data: before } = await supabase.from('hcns_case_services').select('status').eq('id', id).maybeSingle()
+
+  // "Sửa đúng hạn" — CHỈ Quản trị, giống nút cùng tên bên checklist kế toán (task-override): kéo
+  // mốc hoàn thành của dịch vụ và các việc tích SAU hạn về đúng ngày hạn. Không đổi trạng thái.
+  const callerIsAdmin = (auth.caller.roles?.length ? auth.caller.roles : [auth.caller.role]).includes('admin')
+  // Gia hạn / sửa hạn hoàn thành — CHỈ Quản trị (hạn là mốc chốt, nhân viên không tự dời được).
+  if (due_at !== undefined) {
+    if (!callerIsAdmin) return Response.json({ error: 'Chỉ tài khoản Quản trị được sửa hạn hoàn thành' }, { status: 403 })
+    if (due_at !== null && !/^\d{4}-\d{2}-\d{2}$/.test(String(due_at))) return Response.json({ error: 'Ngày hạn không hợp lệ' }, { status: 400 })
+    const { error: e } = await supabase.from('hcns_case_services').update({ due_at: due_at || null }).eq('id', id)
+    if (e) return Response.json({ error: e.message }, { status: 400 })
+    return Response.json({ ok: true })
+  }
+  if (fixOnTime) {
+    if (!callerIsAdmin) return Response.json({ error: 'Chỉ tài khoản Quản trị được sửa đúng hạn' }, { status: 403 })
+    const { data: sv } = await supabase.from('hcns_case_services').select('due_at, completed_at').eq('id', id).maybeSingle()
+    if (!sv?.due_at) return Response.json({ error: 'Dịch vụ chưa có hạn hoàn thành' }, { status: 400 })
+    // 12:00 giờ VN của ngày hạn — chắc chắn nằm TRONG ngày hạn dù đọc theo múi giờ nào.
+    const dueTs = new Date(sv.due_at + 'T05:00:00Z').toISOString()
+    const dueEnd = new Date(sv.due_at + 'T17:00:00Z')   // 24:00 giờ VN ngày hạn
+    if (sv.completed_at && new Date(sv.completed_at) >= dueEnd) {
+      await supabase.from('hcns_case_services').update({ completed_at: dueTs }).eq('id', id)
+    }
+    const { data: late } = await supabase.from('hcns_case_service_tasks')
+      .select('id, done_at').eq('case_service_id', id).eq('done', true)
+    const lateIds = (late || []).filter(t => t.done_at && new Date(t.done_at) >= dueEnd).map(t => t.id)
+    if (lateIds.length) await supabase.from('hcns_case_service_tasks').update({ done_at: dueTs }).in('id', lateIds)
+    return Response.json({ ok: true, fixedTasks: lateIds.length })
+  }
+
+  const { data: before } = await supabase.from('hcns_case_services')
+    .select('status, template_id, received_at').eq('id', id).maybeSingle()
 
   const patch = {}
   if (status !== undefined) {
     if (!STATUSES.includes(status)) return Response.json({ error: 'Trạng thái không hợp lệ' }, { status: 400 })
     patch.status = status
+    // Mốc hoàn thành để xét đúng hạn / trễ hạn. Kéo lùi khỏi "Hoàn thành" thì xoá mốc.
+    if (before && before.status !== status) {
+      patch.completed_at = status === 'hoan_thanh' ? new Date().toISOString() : null
+    }
   }
   if (cost        !== undefined) patch.cost        = Number(cost) || 0
   if (received_at !== undefined) patch.received_at = received_at || null
   if (expected_at !== undefined) patch.expected_at = expected_at || null
   if (note        !== undefined) patch.note        = note
+  // Sửa lại NGÀY NHẬN (nhập nhầm) thì tính lại hạn theo mẫu — hạn luôn đi theo ngày nhận thật.
+  if (received_at !== undefined && before && received_at !== before.received_at) {
+    const { data: tpl } = await supabase.from('hcns_service_templates').select('sla_days').eq('id', before.template_id).maybeSingle()
+    patch.due_at = hcnsDueDate(received_at, tpl?.sla_days)
+  }
 
   const { error } = await supabase.from('hcns_case_services').update(patch).eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 400 })

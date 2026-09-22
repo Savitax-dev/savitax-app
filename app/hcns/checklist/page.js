@@ -112,6 +112,15 @@ export default function HcnsChecklistPage() {
     await call('PATCH', { taskId: task.id, deadline_day: day })
   }
 
+  // Hạn xử lý của DỊCH VỤ (số ngày, bỏ chủ nhật). Chỉ áp cho hồ sơ thêm dịch vụ sau khi đổi.
+  const saveSla = async (tpl, raw) => {
+    const txt = String(raw || '').trim()
+    const d = txt === '' ? null : Number(txt.replace(/\D/g, ''))
+    if (d === (tpl.sla_days ?? null)) return
+    if (d !== null && (!d || d < 1 || d > 365)) { setErr('Hạn xử lý phải từ 1 đến 365 ngày.'); return }
+    await call('PATCH', { templateId: tpl.id, sla_days: d })
+  }
+
   const renameTask = async (taskId, current) => {
     const name = window.prompt('Sửa tên công việc:', current)
     if (name === null || !name.trim() || name === current) return
@@ -230,6 +239,12 @@ export default function HcnsChecklistPage() {
                     </p>
                     {t.note && <p className="text-[13px] text-slate-500 mt-0.5 truncate">⏱ {t.note}</p>}
                   </div>
+                  {!t.is_recurring && (
+                    <span className={'w-24 text-center text-xs font-semibold px-2 py-1 rounded-md border flex-shrink-0 ' +
+                      (t.sla_days ? 'bg-violet-50 text-violet-800 border-violet-300' : 'bg-red-50 text-red-800 border-red-300')}>
+                      {t.sla_days ? 'Hạn ' + t.sla_days + ' ngày' : 'chưa có hạn'}
+                    </span>
+                  )}
                   <span className={'w-24 text-center text-xs font-semibold px-2 py-1 rounded-md border flex-shrink-0 ' +
                     (tasks.length
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
@@ -252,6 +267,21 @@ export default function HcnsChecklistPage() {
                         <p className="text-[13px] text-amber-900 bg-amber-50 border border-amber-300 rounded-lg px-3 py-2 mb-2 leading-relaxed">
                           ⏱ {t.note}
                         </p>
+                      )}
+                      {!t.is_recurring && (
+                        <div className="flex items-center gap-2 flex-wrap bg-white border border-violet-200 rounded-lg px-3 py-2 mb-2">
+                          <span className="text-sm font-medium text-violet-900">Hạn xử lý</span>
+                          {canEdit ? (
+                            <input key={t.id + '_' + (t.sla_days ?? '')} defaultValue={t.sla_days ?? ''} inputMode="numeric"
+                              onBlur={e => saveSla(t, e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
+                              className="w-16 px-2 py-1 border border-slate-300 rounded-md text-sm text-center" placeholder="—" />
+                          ) : <b className="text-sm">{t.sla_days ?? '—'}</b>}
+                          <span className="text-sm text-slate-700">ngày</span>
+                          <span className="text-xs text-slate-500">
+                            Hạn hồ sơ = ngày nhận + số ngày, bỏ chủ nhật (nhận thứ 3 01/09, 7 ngày → hạn 08/09). Đổi số ở đây chỉ áp cho dịch vụ thêm SAU.
+                          </span>
+                        </div>
                       )}
                       <p className="text-xs text-slate-500 mb-2">
                         {t.is_recurring
