@@ -17,7 +17,7 @@ import { decrypt } from '@/lib/taxCrypto'
 import { chuanHoaKy } from '@/lib/taxDeadline'
 import {
   moPhien, layPhien, xoaPhien, layAnhCaptcha, dangNhap, dangXuat,
-  kiemMaCaptcha, traCuu, chuanHoaTrangThai, RANGE_MAX_DAYS,
+  kiemMaCaptcha, traCuu, chuanHoaTrangThai, chiTietHoSo, RANGE_MAX_DAYS,
 } from '@/lib/dvcPortal'
 
 export const maxDuration = 60
@@ -173,7 +173,7 @@ export async function POST(request) {
       }
       await supabase.from('tax_sync_jobs').update({ captcha_count: 2 }).eq('id', phien.jobId)
 
-      const kq = await ghiHoSo(supabase, phien.clientId, tatCa)
+      const kq = await ghiHoSo(supabase, phien.clientId, tatCa, phien)
 
       await dangXuat(phien)
       await ketThucJob(supabase, phien, 'success', null, kq)
@@ -214,12 +214,12 @@ async function ketThucJob(supabase, phien, result, loi, kq) {
 }
 
 // Ghi hồ sơ lấy được vào tax_filings và gắn vào nghĩa vụ tương ứng.
-async function ghiHoSo(supabase, clientId, ds) {
+async function ghiHoSo(supabase, clientId, ds, phien) {
   if (!ds.length) return { themMoi: 0, capNhat: 0, khopNghiaVu: 0, khongKhop: 0 }
 
   const [{ data: loaiTK }, { data: nghiaVu }, { data: daCo }] = await Promise.all([
     supabase.from('tax_filing_types').select('id, code, ma_tkhai_portal'),
-    supabase.from('tax_obligations').select('id, filing_type_id, period_code, state').eq('client_id', clientId),
+    supabase.from('tax_obligations').select('id, filing_type_id, period_code, state, due_date').eq('client_id', clientId),
     supabase.from('tax_filings').select('id, portal_code, state').eq('client_id', clientId),
   ])
 
@@ -228,7 +228,10 @@ async function ghiHoSo(supabase, clientId, ds) {
   const dangCo = new Map((daCo || []).map(f => [f.portal_code, f]))
 
   let themMoi = 0, capNhat = 0, khopNghiaVu = 0, khongKhop = 0
+  let soLanMoChiTiet = 0, soThongBao = 0
+  const loiChiTiet = []
   const capNhatNghiaVu = []
+  const nghiMotChut = ms => new Promise(r => setTimeout(r, ms))
 
   for (const r of ds) {
     // Khớp loại tờ khai: ưu tiên mã cổng (chắc chắn), không có thì lấy mã in trong tên.
@@ -271,12 +274,49 @@ async function ghiHoSo(supabase, clientId, ds) {
       synced_at: new Date().toISOString(),
     }
 
-    if (dangCo.has(r.maHoSo)) {
-      await supabase.from('tax_filings').update(dong).eq('id', dangCo.get(r.maHoSo).id)
+    // Mở trang chi tiết để lấy NGÀY TIẾP NHẬN và các thông báo. Không tốn captcha, nhưng phải
+    // giãn nhịp vì cổng chặn khi gọi quá dày. Giới hạn 25 hồ sơ mỗi lượt để route không quá giờ.
+    let chiTiet = null
+    if (phien && soLanMoChiTiet < 25) {
+      try {
+        if (soLanMoChiTiet > 0) await nghiMotChut(1200)
+        chiTiet = await chiTietHoSo(phien, r.maHoSo)
+        soLanMoChiTiet++
+      } catch (e) {
+        loiChiTiet.push(`${r.maHoSo}: ${e.message}`)
+      }
+    }
+
+    if (chiTiet?.ngayTiepNhan) {
+      dong.received_at = chiTiet.ngayTiepNhan
+      // Đúng hạn xét theo NGÀY TIẾP NHẬN so với hạn nộp của nghĩa vụ — không phải ngày chấp
+      // nhận, cũng không phải ngày nộp. Chưa gắn được nghĩa vụ thì chưa kết luận được.
+      if (nv?.due_date) dong.on_time = chiTiet.ngayTiepNhan.slice(0, 10) <= nv.due_date
+    }
+
+    let filingId = dangCo.get(r.maHoSo)?.id || null
+    if (filingId) {
+      await supabase.from('tax_filings').update(dong).eq('id', filingId)
       capNhat++
     } else {
-      await supabase.from('tax_filings').insert(dong)
+      const { data: moi } = await supabase.from('tax_filings').insert(dong).select('id').single()
+      filingId = moi?.id || null
       themMoi++
+    }
+
+    // Thông báo thuế đi kèm hồ sơ. Khóa (client_id, portal_id) nên chạy lại không tạo trùng.
+    for (const tb of chiTiet?.thongBao || []) {
+      if (!tb.portalId) continue
+      soThongBao++
+      await supabase.from('tax_notices').upsert({
+        client_id: clientId,
+        filing_id: filingId,
+        portal_id: tb.portalId,
+        notice_kind: tb.loai,
+        title: tb.tieuDe,
+        ngay_tbao: tb.thoiDiem ? tb.thoiDiem.slice(0, 10) : null,
+        issued_at: tb.thoiDiem,
+      }, { onConflict: 'client_id,portal_id' })
     }
 
     // Nghĩa vụ chuyển theo trạng thái hồ sơ. KHÔNG đụng vào nghĩa vụ đã đánh "Không phát sinh".
@@ -290,5 +330,10 @@ async function ghiHoSo(supabase, clientId, ds) {
       .update({ state: n.state, state_changed_at: new Date().toISOString() }).eq('id', n.id)
   }
 
-  return { themMoi, capNhat, khopNghiaVu, khongKhop, doiTrangThaiNghiaVu: capNhatNghiaVu.length }
+  return {
+    themMoi, capNhat, khopNghiaVu, khongKhop,
+    doiTrangThaiNghiaVu: capNhatNghiaVu.length,
+    soThongBao,
+    loiChiTiet: loiChiTiet.slice(0, 3),
+  }
 }

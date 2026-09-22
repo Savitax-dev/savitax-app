@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Savitax — Cầu nối cổng thuế",
+  "version": "1.0.0",
+  "description": "Chuyển tiếp yêu cầu giữa app.savitax.vn và cổng Dịch vụ công thuế. Không thu thập dữ liệu, không chạy nền.",
+  "permissions": ["cookies"],
+  "host_permissions": [
+    "https://dichvucong.gdt.gov.vn/*",
+    "https://thuedientu.gdt.gov.vn/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "externally_connectable": {
+    "matches": [
+      "https://app.savitax.vn/*",
+      "http://localhost/*"
+    ]
+  },
+  "action": { "default_title": "Savitax — Cầu nối cổng thuế", "default_popup": "popup.html" },
+  "icons": { "128": "icon128.png" }
+}

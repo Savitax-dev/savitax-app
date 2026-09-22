@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
+import { kiemTraTienIch } from '@/lib/portalBridge'
 
 export default function TrangKetNoi() {
   const router = useRouter()
@@ -19,6 +20,11 @@ export default function TrangKetNoi() {
   const [loi, setLoi]       = useState('')
   const [timKiem, setTimKiem] = useState('')
   const [mo, setMo]         = useState(null)   // công ty đang mở ô nhập
+  const [tienIch, setTienIch] = useState(null) // { co, phienBan, loi }
+
+  // Cổng thuế chặn máy chủ nước ngoài → production phải đi qua tiện ích Chrome trên máy nhân
+  // viên. Hiện trạng thái ngay đầu trang để biết máy này đã sẵn sàng chưa.
+  useEffect(() => { kiemTraTienIch().then(setTienIch) }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -56,11 +62,18 @@ export default function TrangKetNoi() {
             className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm flex-1 min-w-[220px]" />
         </div>
 
-        <div className="mb-4 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
-          Nút <b>Kiểm tra kết nối</b> chỉ chạy khi mở app bằng <b>localhost trên máy tại Việt Nam</b>.
-          Cổng Dịch vụ công chặn máy chủ nước ngoài nên trên app.savitax.vn sẽ báo lỗi mạng — phần
-          này sẽ dùng được cho mọi nhân viên sau khi có tiện ích Chrome.
-        </div>
+        {tienIch?.co ? (
+          <div className="mb-4 px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-xs text-green-800">
+            ✓ Đã cài <b>tiện ích Savitax — Cầu nối cổng thuế</b> (bản {tienIch.phienBan}). Máy này
+            gọi được cổng thuế kể cả khi mở app.savitax.vn.
+          </div>
+        ) : (
+          <div className="mb-4 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
+            <b>Chưa có tiện ích Chrome</b>{tienIch?.loi ? ` (${tienIch.loi})` : ''}. Khi chưa cài,
+            các nút dưới đây chỉ chạy nếu anh/chị mở app bằng <b>localhost trên máy tại Việt Nam</b> —
+            cổng Dịch vụ công chặn máy chủ nước ngoài nên trên app.savitax.vn sẽ báo lỗi mạng.
+          </div>
+        )}
 
         {loi && <div className="mb-4 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{loi}</div>}
         {dangTai && <p className="text-sm text-gray-400 py-8 text-center">Đang tải…</p>}
@@ -218,7 +231,7 @@ function DongCongTy({ cty, dangMo, onMo, onXong }) {
     if (j.ket_qua === 'ok') {
       setBuocDongBo(null); setCaptcha({ maPhien: null, anh: null, ma: '' })
       setKetQua(j)
-      setThongBao({ loai: 'ok', chu: `✓ Xong ${j.khoangNgay}: ${j.themMoi} hồ sơ mới, ${j.capNhat} cập nhật, ${j.khopNghiaVu} khớp lịch hạn nộp.` })
+      setThongBao({ loai: 'ok', chu: `✓ Xong ${j.khoangNgay}: ${j.themMoi} hồ sơ mới, ${j.capNhat} cập nhật, ${j.soThongBao || 0} thông báo, ${j.khopNghiaVu} khớp lịch hạn nộp.` })
       onXong()
     }
   }
