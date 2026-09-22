@@ -1372,7 +1372,9 @@ function CaseServices({ hcnsClient, canManage, isAdmin, canEditInfo, staffList, 
                 <button onClick={() => setEditDue(null)} className="text-xs px-2 py-1 rounded-md border border-slate-300 bg-white text-slate-600">Hủy</button>
               </span>
             )}
-            {canManage && editSvc?.id !== s.id && (
+            {/* Sửa ngày (việc phát sinh) chỉ Quản trị. Sửa phí (Thời điểm) vẫn cho nhân viên, nhưng
+                ngày nhận bị khoá — đổi ngày nhận là dời hạn hoàn thành. */}
+            {(noFee ? isAdmin : canManage) && editSvc?.id !== s.id && (
               <button onClick={() => openEdit(s)}
                 className="text-xs font-medium px-2 py-1 rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-100">
                 {noFee ? 'Sửa ngày' : 'Sửa phí'}
@@ -1399,10 +1401,12 @@ function CaseServices({ hcnsClient, canManage, isAdmin, canEditInfo, staffList, 
                     className="w-full px-2 py-1.5 border border-sky-300 rounded-lg text-sm bg-white text-slate-800" />
                 </div>
                 <div className="min-w-[140px]">
-                  <label className="text-xs text-slate-600 mb-1 block">Ngày nhận</label>
-                  <input type="date" value={editSvc.received_at || ''}
+                  <label className="text-xs text-slate-600 mb-1 block">
+                    Ngày nhận{!isAdmin && <span className="text-slate-400"> · chỉ Quản trị sửa</span>}
+                  </label>
+                  <input type="date" value={editSvc.received_at || ''} disabled={!isAdmin}
                     onChange={e => setEditSvc(p => ({ ...p, received_at: e.target.value }))}
-                    className="w-full px-2 py-1.5 border border-sky-300 rounded-lg text-sm bg-white text-slate-800" />
+                    className="w-full px-2 py-1.5 border border-sky-300 rounded-lg text-sm bg-white text-slate-800 disabled:bg-slate-100 disabled:text-slate-500" />
                 </div>
                 <div className="min-w-[140px]">
                   <label className="text-xs text-slate-600 mb-1 block">Dự kiến trả</label>

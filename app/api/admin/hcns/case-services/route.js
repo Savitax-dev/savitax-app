@@ -175,6 +175,8 @@ export async function PATCH(request) {
   if (note        !== undefined) patch.note        = note
   // Sửa lại NGÀY NHẬN (nhập nhầm) thì tính lại hạn theo mẫu — hạn luôn đi theo ngày nhận thật.
   if (received_at !== undefined && before && received_at !== before.received_at) {
+    // Đổi ngày nhận = dời hạn hoàn thành -> chỉ Quản trị (trưởng phòng, nhân viên không tự dời hạn).
+    if (!callerIsAdmin) return Response.json({ error: 'Chỉ tài khoản Quản trị được sửa ngày nhận hồ sơ' }, { status: 403 })
     const { data: tpl } = await supabase.from('hcns_service_templates').select('sla_days').eq('id', before.template_id).maybeSingle()
     patch.due_at = hcnsDueDate(received_at, tpl?.sla_days)
   }
