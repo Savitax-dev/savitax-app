@@ -1173,6 +1173,7 @@ function CaseServices({ hcnsClient, canManage, isAdmin, canEditInfo, staffList, 
       cost: String(Number(sv.cost) || ''),
       received_at: sv.received_at || '',
       expected_at: sv.expected_at || '',
+      note: sv.note || '',
     })
   }
 
@@ -1197,6 +1198,7 @@ function CaseServices({ hcnsClient, canManage, isAdmin, canEditInfo, staffList, 
         id: editSvc.id, cost,
         received_at: editSvc.received_at || null,
         expected_at: editSvc.expected_at || null,
+        note: editSvc.note || null,
       }),
     }).then(r => r.json()).catch(() => ({ error: 'Không lưu được, thử lại.' }))
     setSavingSvc(false)
@@ -1334,7 +1336,14 @@ function CaseServices({ hcnsClient, canManage, isAdmin, canEditInfo, staffList, 
       {services.map(s => (
         <div key={s.id} className="bg-white border border-slate-300 rounded-xl overflow-hidden">
           <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-semibold text-slate-900 flex-1 min-w-[160px]">{s.templateName}</p>
+            {/* Ghi chú nhập lúc thêm dịch vụ — hiện ngay dưới tên để phân biệt các dịch vụ trùng
+                tên (VD 2 lần "Điều chỉnh Mức Đóng" cho 2 người lao động khác nhau). */}
+            <div className="flex-1 min-w-[160px]">
+              <p className="text-sm font-semibold text-slate-900">{s.templateName}</p>
+              {s.note && (
+                <p className="text-xs text-slate-600 mt-0.5 whitespace-pre-line">📝 {String(s.note).replace(/^"+|"+$/g, '')}</p>
+              )}
+            </div>
             <p className="text-xs text-slate-600">
               Nhận {fmtDate(s.received_at)}{s.expected_at ? ' · Dự kiến trả ' + fmtDate(s.expected_at) : ''}
               {!noFee && ' · Chi phí ' + fmt(s.cost) + 'đ'}
@@ -1399,6 +1408,12 @@ function CaseServices({ hcnsClient, canManage, isAdmin, canEditInfo, staffList, 
                   <label className="text-xs text-slate-600 mb-1 block">Dự kiến trả</label>
                   <input type="date" value={editSvc.expected_at || ''}
                     onChange={e => setEditSvc(p => ({ ...p, expected_at: e.target.value }))}
+                    className="w-full px-2 py-1.5 border border-sky-300 rounded-lg text-sm bg-white text-slate-800" />
+                </div>
+                <div className="basis-full">
+                  <label className="text-xs text-slate-600 mb-1 block">Ghi chú dịch vụ</label>
+                  <input value={editSvc.note || ''} onChange={e => setEditSvc(p => ({ ...p, note: e.target.value }))}
+                    placeholder="VD: điều chỉnh mức đóng cho NLĐ Nguyễn Văn A"
                     className="w-full px-2 py-1.5 border border-sky-300 rounded-lg text-sm bg-white text-slate-800" />
                 </div>
                 <button onClick={saveSvc} disabled={savingSvc}
