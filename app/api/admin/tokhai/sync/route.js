@@ -135,9 +135,14 @@ export async function POST(request) {
         .update({ status: 'active', last_success_at: new Date().toISOString(), last_error_code: null })
         .eq('id', tk.id)
 
+      const cs = chiaCuaSo(phien.khoang)
       return Response.json({
         buoc: 'tra_cuu', maPhien: body.maPhien, anhCaptcha: await layAnhCaptcha(phien),
-        soCuaSo: chiaCuaSo(phien.khoang).length,
+        soCuaSo: cs.length,
+        // Trả về đúng khoảng ngày SERVER sẽ tra, để màn hình hiện lên cho người gõ nhìn thấy —
+        // tránh cảnh tra nhầm khoảng mặc định mà không ai biết (đã xảy ra 22/09/2026 sau khi
+        // Next nạp lại trang làm ô chọn ngày về mặc định).
+        khoangNgay: cs.length ? `${cs[cs.length - 1].tuNgay} – ${cs[0].denNgay}` : '',
       })
     }
 
@@ -156,8 +161,15 @@ export async function POST(request) {
       for (let i = 0; i < cuaSo.length; i++) {
         // Giãn nhịp giữa các cửa sổ: bắn liền tay là cổng trả 429 (đã gặp thật 21/09/2026).
         if (i > 0) await new Promise(r => setTimeout(r, 2500))
-        const { ds } = await traCuu(phien, { ...cuaSo[i], captcha: ma })
-        tatCa.push(...ds)
+        // Một cửa sổ có thể nhiều hơn 50 hồ sơ (cỡ trang tối đa cổng cho) → lật trang tiếp.
+        let trang = 0
+        for (;;) {
+          const { ds, conTrangSau } = await traCuu(phien, { ...cuaSo[i], captcha: ma, trang })
+          tatCa.push(...ds)
+          if (!conTrangSau || trang >= 9) break
+          trang++
+          await new Promise(r => setTimeout(r, 1500))
+        }
       }
       await supabase.from('tax_sync_jobs').update({ captcha_count: 2 }).eq('id', phien.jobId)
 
@@ -222,10 +234,16 @@ async function ghiHoSo(supabase, clientId, ds) {
     // Khớp loại tờ khai: ưu tiên mã cổng (chắc chắn), không có thì lấy mã in trong tên.
     let loai = r.maToKhaiCong ? theoMaCong.get(r.maToKhaiCong) : null
     if (!loai && r.tenToKhai) {
-      const code = r.tenToKhai.split('-')[0].trim()
+      // Cắt ở ' - ' CÓ KHOẢNG TRẮNG hai bên: mã tờ khai có thể tự chứa gạch ngang
+      // ('04/SS-HĐĐT'), cắt ở gạch ngang trần là mất đuôi mã nên không khớp được danh mục.
+      const code = r.tenToKhai.split(' - ')[0].trim()
       loai = theoMaCode.get(code) || null
     }
-    const ky = chuanHoaKy(r.kyTinhThue, loai?.period_kind || 'quarter')
+
+    let ky = chuanHoaKy(r.kyTinhThue, loai?.period_kind || 'quarter')
+    // Tờ khai theo lần phát sinh (thông báo hóa đơn lập sai…) không có kỳ tính thuế trên cổng —
+    // lấy ngày nộp làm mốc để mỗi lần phát sinh là một dòng riêng, không đè lên nhau.
+    if (!ky && r.ngayNop) ky = 'PS.' + r.ngayNop.slice(0, 10)
     const trangThai = chuanHoaTrangThai(r.trangThaiCong)
 
     // Gắn vào nghĩa vụ bằng bộ đôi (loại tờ khai, kỳ) — MST đã cố định theo công ty.

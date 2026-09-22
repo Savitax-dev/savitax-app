@@ -212,7 +212,7 @@ function DongCongTy({ cty, dangMo, onMo, onXong }) {
     if (j.buoc === 'tra_cuu') {
       setBuocDongBo('tra_cuu')
       setCaptcha({ maPhien: j.maPhien, anh: j.anhCaptcha, ma: '' })
-      setThongBao({ loai: 'cho', chu: `Đăng nhập xong. Mã thứ 2/2 — tra cứu ${j.soCuaSo} cửa sổ 30 ngày bằng đúng mã này.` })
+      setThongBao({ loai: 'cho', chu: `Đăng nhập xong. Mã thứ 2/2 — sẽ tra khoảng ${j.khoangNgay} (${j.soCuaSo} lượt) bằng đúng mã này.` })
       return
     }
     if (j.ket_qua === 'ok') {
@@ -305,6 +305,9 @@ function DongCongTy({ cty, dangMo, onMo, onXong }) {
                   placeholder="Gõ mã trong ảnh rồi Enter"
                   className="w-full px-2 py-1.5 border border-blue-300 rounded-lg text-sm font-mono" />
                 <p className="text-[11px] text-gray-500 mt-1">Dễ nhầm: số 0 ↔ chữ o, số 1 ↔ chữ l</p>
+                {buocDongBo === 'tra_cuu' && (
+                  <p className="text-[11px] text-blue-700 mt-0.5">Khoảng sẽ tra: <b>{tuNgay.split('-').reverse().join('/')} – {denNgay.split('-').reverse().join('/')}</b></p>
+                )}
               </div>
               <button onClick={buocDongBo ? guiMaDongBo : guiCaptcha}
                 className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs">
