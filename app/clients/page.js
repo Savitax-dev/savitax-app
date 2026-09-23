@@ -726,10 +726,9 @@ export default function ClientsPage() {
     })
     const data = await res.json()
     if (data.error) {
-      const msg = data.error.includes('unique') || data.error.includes('23505')
-        ? 'MST này đã tồn tại trong hệ thống — thông tin đã được cập nhật.'
-        : data.error
-      setError(msg)
+      // Trùng MST: server trả thẳng tên công ty đang giữ MST đó và KHÔNG ghi đè nữa (trước đây
+      // nhánh này lặng lẽ cập nhật đè lên công ty cũ — xem app/api/admin/clients/route.js).
+      setError(data.error)
       setSaving(false)
       return
     }
