@@ -27,6 +27,8 @@ const TABLES = [
   'hcns_case_payments', 'hcns_case_notes', 'hcns_case_note_reads', 'hcns_recurring_tasks',
   // Phòng Kinh doanh — cũng chỉ có ở bản Savitax
   'sales_leads', 'sales_quotes', 'sales_lead_activities', 'sales_channels',
+  // Đối soát ngân hàng — giao dịch VPS đẩy lên + dấu vết đã ghi công nợ (post_detail)
+  'bank_transactions',
 ]
 
 // Bảng không tồn tại (bản clone thiếu module HCNS/Kinh doanh) KHÔNG được làm hỏng cả bản backup

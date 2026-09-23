@@ -52,3 +52,6 @@ next-env.d.ts
 # Gói bàn giao Phân hệ Tờ khai (đặc tả + mockup + bản Word/PDF) — kèm ảnh chụp màn hình có
 # dữ liệu công ty thật. Chỉ lưu trên máy nội bộ, không commit.
 /PhanHe-ToKhai-Savitax-BanGiao/
+
+# Goi ban giao VPS ACB -> Zalo OA (co the chua token/mat khau) — KHONG commit
+/ban-giao-acb-zalo/

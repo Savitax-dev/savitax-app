@@ -176,6 +176,8 @@ export default function Sidebar({ onClose }) {
   const canViewAllDebt     = can(role, 'view_all_debt', permData)
   const canManageDatabase  = can(role, 'manage_database', permData)
   const canManageRoles     = can(role, 'manage_roles', permData)
+  // Đối soát ngân hàng — quyền riêng, mặc định chỉ Quản trị (sql/21_bank_transactions.sql).
+  const canBankReconcile   = can(role, 'bank_reconcile', permData)
   const showAdminSection = canManageRooms || canManageStaff || canManageClients || canManageChecklist || canViewAllDebt || canManageDatabase || canManageRoles
   // Khu HCNS tự ẩn với người không có quyền — bản clone không cài module thì quyền này không tồn
   // tại nên can() trả false, khu biến mất mà không phải sửa code.
@@ -252,6 +254,11 @@ export default function Sidebar({ onClose }) {
         {!noAccounting && <SectionLabel>Kế toán</SectionLabel>}
         {!noAccounting && <NavItem href="/checklist"  icon="📋" label="Checklist công việc" pathname={pathname} onClose={onClose} />}
         {!noAccounting && <NavItem href="/my-debt"    icon="💰" label="Quản lý công nợ"     pathname={pathname} onClose={onClose} />}
+        {/* Đối soát ngân hàng nằm trong phân hệ Kế toán: nhân viên/trưởng phòng kế toán được tích
+            thêm quyền `bank_reconcile` để ghép lệnh chuyển khoản vào công ty mình phụ trách. */}
+        {canBankReconcile && !noAccounting && (
+          <NavItem href="/bank" icon="🏦" label="Đối soát ngân hàng" pathname={pathname} onClose={onClose} />
+        )}
         {canViewToKhai && !noAccounting && (
           <NavItem href="/tokhai" icon="🧾" label="Tờ khai & Hạn nộp" pathname={pathname} onClose={onClose} />
         )}
