@@ -36,7 +36,11 @@ const ST = {
   review:  { label: 'Cần xem',      sub: 'lệch · theo tên · kỳ lạ',  icon: '!',  card: 'bg-amber-50 border-amber-200 text-amber-800',     pill: 'bg-amber-50 text-amber-700 border-amber-200',     bar: 'bg-amber-400' },
   unknown: { label: 'Chưa nhận ra', sub: 'chọn công ty tay',          icon: '?',  card: 'bg-rose-50 border-rose-200 text-rose-800',        pill: 'bg-rose-50 text-rose-700 border-rose-200',        bar: 'bg-rose-400' },
 }
-const PILL_LABEL = { posted: 'Đã ghi qua đối soát', ignored: 'Đã bỏ qua', done: 'Đã khớp sổ' }
+// "ignored" gồm 2 việc khác hẳn nhau: xác nhận nhân viên đã ghi tay, và bỏ qua vì không phải phí
+// dịch vụ. Phân biệt bằng ghi chú lưu lúc đóng để người xem sau còn hiểu chuyện gì đã xảy ra.
+const pillLabel = (r) => r.status === 'posted' ? 'Đã ghi qua đối soát'
+  : r.status === 'ignored' ? (/ghi tay|khớp sổ/i.test(r.note || '') ? 'Đã khớp sổ' : 'Đã bỏ qua')
+  : 'Đã khớp sổ'
 const VIA = { code: ['qua Mã KH', 'bg-blue-50 text-blue-700'], mst: ['qua MST', 'bg-violet-50 text-violet-700'],
   name: ['qua Tên', 'bg-amber-50 text-amber-700'], manual: ['chọn tay', 'bg-gray-100 text-gray-600'] }
 const KIND = { ketoan: ['KT', 'bg-emerald-50 text-emerald-700'], hcns: ['HCNS', 'bg-violet-50 text-violet-700'], no_ton: ['Nợ tồn', 'bg-orange-50 text-orange-700'] }
@@ -242,7 +246,7 @@ export default function BankPage() {
 function Row({ r, zebra, open, toggle, busy, act, clients, loadClients }) {
   const g = groupOf(r)
   const st = ST[g]
-  const pill = PILL_LABEL[r.status] || st.label
+  const pill = r.state === "open" ? st.label : pillLabel(r)
   const via = r.via && VIA[r.via]
   const periodTxt = r.period ? 'T' + r.period.month + '/' + r.period.year : null
   const [pick, setPick] = useState('')

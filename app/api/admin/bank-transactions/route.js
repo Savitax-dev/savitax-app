@@ -108,8 +108,21 @@ export async function POST(request) {
   if (!tx) return Response.json({ error: 'Không tìm thấy giao dịch' }, { status: 404 })
 
   if (action === 'ignore') {
+    // Lưu lại công ty + kỳ đã nhận ra TRƯỚC khi đóng giao dịch. Không lưu thì sau đó dòng này chỉ
+    // còn nội dung chuyển khoản, hiện "Không nhận ra công ty" — mất luôn dấu vết tiền của ai
+    // (giao dịch đã đóng không được phân loại lại, xem GET).
+    let keep = {}
+    if (!tx.client_id) {
+      try {
+        const [c] = await classifyTransactions(supabase, [tx])
+        if (c?.client?.id) {
+          keep = { client_id: c.client.id }
+          if (c.period?.year && c.period?.month) keep = { ...keep, period_year: c.period.year, period_month: c.period.month }
+        }
+      } catch (e) { console.error('ignore/classify:', e?.message || e) }
+    }
     const { data, error } = await supabase.from('bank_transactions')
-      .update({ state: 'ignored', posted_at: new Date().toISOString(), posted_by: staffId, note: body.note || null })
+      .update({ ...keep, state: 'ignored', posted_at: new Date().toISOString(), posted_by: staffId, note: body.note || null })
       .eq('id', id).eq('state', 'open').select('id')
     if (error) return Response.json({ error: error.message }, { status: 500 })
     if (!data?.length) return Response.json({ error: 'Giao dịch đã được xử lý bởi người khác — tải lại trang' }, { status: 409 })
@@ -118,8 +131,10 @@ export async function POST(request) {
 
   if (action === 'reopen') {
     // Chỉ mở lại giao dịch BỎ QUA. Giao dịch đã ghi công nợ không tự gỡ được — sửa tay ở công nợ.
+    // Xoá luôn công ty/kỳ đã lưu lúc đóng để giao dịch được đọc lại từ nội dung chuyển khoản
+    // như ban đầu (người dùng vẫn chọn tay lại được).
     const { data, error } = await supabase.from('bank_transactions')
-      .update({ state: 'open', posted_at: null, posted_by: null, note: null })
+      .update({ state: 'open', posted_at: null, posted_by: null, note: null, client_id: null, period_year: null, period_month: null })
       .eq('id', id).eq('state', 'ignored').select('id')
     if (error) return Response.json({ error: error.message }, { status: 500 })
     if (!data?.length) return Response.json({ error: 'Chỉ mở lại được giao dịch đã bỏ qua' }, { status: 409 })
