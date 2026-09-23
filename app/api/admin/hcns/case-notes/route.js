@@ -47,6 +47,9 @@ export async function GET(request) {
   const nameOf = (id) => (staff || []).find(s => s.id === id)?.full_name || null
 
   const me = auth.caller?.staffId || null
+  // Chỉ quản trị mới xoá được ghi chú -> giao diện dựa vào cờ này để ẩn/hiện nút Xoá.
+  const callerRoles = auth.caller?.roles?.length ? auth.caller.roles : [auth.caller?.role]
+  const canDelete = callerRoles.includes('admin')
   const byService = {}
   for (const n of notes || []) {
     const rs = (reads || []).filter(r => r.note_id === n.id)
@@ -64,7 +67,7 @@ export async function GET(request) {
         .sort((a, b) => new Date(a.read_at) - new Date(b.read_at)),
     })
   }
-  return Response.json({ data: byService })
+  return Response.json({ data: byService, canDelete })
 }
 
 // POST — viết 1 lời nhắn, hoặc xác nhận đã đọc.
@@ -108,10 +111,16 @@ export async function POST(request) {
   return Response.json({ data })
 }
 
-// DELETE ?id=... — xoá lời nhắn ghi nhầm. Người viết tự xoá được; ngoài ra cần manage_hcns.
+// DELETE ?id=... — CHỈ quản trị. Ghi chú là dấu vết dặn dò giữa nhân viên và quản lý: người viết
+// tự xoá được thì mất bằng chứng đã dặn, nên khoá lại (đổi 2026-09-23).
 export async function DELETE(request) {
   const auth = await callerHasPermission('view_hcns')
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+
+  const roles = auth.caller?.roles?.length ? auth.caller.roles : [auth.caller?.role]
+  if (!roles.includes('admin')) {
+    return Response.json({ error: 'Chỉ tài khoản Quản trị được xoá ghi chú' }, { status: 403 })
+  }
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
@@ -120,11 +129,6 @@ export async function DELETE(request) {
   const supabase = getAdmin()
   const { data: note } = await supabase.from('hcns_case_notes').select('created_by').eq('id', id).single()
   if (!note) return Response.json({ error: 'Không tìm thấy ghi chú' }, { status: 404 })
-
-  if (note.created_by !== (auth.caller?.staffId || null)) {
-    const can = await callerHasPermission('manage_hcns')
-    if (!can.ok) return Response.json({ error: 'Chỉ người viết ghi chú mới xoá được.' }, { status: 403 })
-  }
 
   const { error } = await supabase.from('hcns_case_notes').delete().eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 400 })

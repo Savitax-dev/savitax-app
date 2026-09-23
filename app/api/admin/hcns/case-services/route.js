@@ -193,11 +193,16 @@ export async function PATCH(request) {
   return Response.json({ ok: true })
 }
 
-// DELETE ?id=... — xoá 1 dịch vụ khỏi hồ sơ (nhập nhầm). Checklist và nhật ký của nó xoá theo
+// DELETE ?id=... — xoá 1 dịch vụ khỏi hồ sơ (nhập trùng/nhầm). Checklist và nhật ký của nó xoá theo
 // (on delete cascade) vì chúng chỉ có nghĩa trong phạm vi dịch vụ đó.
+// CHỈ trưởng phòng HCNS (view_hcns_all_staff) và quản trị — nhân viên nhập trùng thì báo cấp trên.
 export async function DELETE(request) {
-  const auth = await callerHasPermission('manage_hcns')
-  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+  const auth = await callerHasPermission('view_hcns_all_staff')
+  if (!auth.ok) {
+    return Response.json({
+      error: auth.status === 401 ? auth.error : 'Chỉ trưởng phòng HCNS và quản trị được xoá dịch vụ',
+    }, { status: auth.status })
+  }
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')

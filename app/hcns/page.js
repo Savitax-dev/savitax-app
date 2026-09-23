@@ -1014,7 +1014,7 @@ function ClientRow({ c, ri, showCat, stopped, phatSinh, report, expanded, onTogg
           {stopped ? (
             <StoppedSummary c={c} canManage={canManage} onChanged={onChanged} />
           ) : phatSinh ? (
-            <CaseServices hcnsClient={c} canManage={canManage} isAdmin={isAdmin} canEditInfo={canEditInfo} staffList={staffList} templates={templates} onChanged={onChanged} />
+            <CaseServices hcnsClient={c} canManage={canManage} isAdmin={isAdmin} canAssign={canAssign} canEditInfo={canEditInfo} staffList={staffList} templates={templates} onChanged={onChanged} />
           ) : isThoiKy && c.linkedClient ? (
             <ClientChecklist
               client={{ ...c.linkedClient, uses_hcns: true }}
@@ -1031,7 +1031,7 @@ function ClientRow({ c, ri, showCat, stopped, phatSinh, report, expanded, onTogg
               Chưa tìm thấy công ty kế toán gốc — có thể công ty đã bị xoá bên Danh sách công ty.
             </p>
           ) : (
-            <CaseServices hcnsClient={c} canManage={canManage} isAdmin={isAdmin} canEditInfo={canEditInfo} staffList={staffList} templates={templates} onChanged={onChanged} />
+            <CaseServices hcnsClient={c} canManage={canManage} isAdmin={isAdmin} canAssign={canAssign} canEditInfo={canEditInfo} staffList={staffList} templates={templates} onChanged={onChanged} />
           )}
         </div>
       )}
@@ -1271,7 +1271,7 @@ function DebtBadge({ stat }) {
 }
 
 /* ──────────────── Dịch vụ trong hồ sơ Thời điểm / Vãng lai ──────────────── */
-function CaseServices({ hcnsClient, canManage, isAdmin, canEditInfo, staffList, templates, onChanged }) {
+function CaseServices({ hcnsClient, canManage, isAdmin, canAssign, canEditInfo, staffList, templates, onChanged }) {
   // Việc phát sinh của công ty Thời kỳ: không thu phí riêng (phí đã nằm trong phí HCNS tháng) —
   // ẩn chi phí, ĐNTT, công nợ; hồ sơ là chính công ty Thời kỳ nên không sửa/xoá ở đây.
   const noFee = hcnsClient.category === 'thoi_ky'
@@ -1290,6 +1290,8 @@ function CaseServices({ hcnsClient, canManage, isAdmin, canEditInfo, staffList, 
   // sql/10_hcns_case_notes.sql (hoặc bản clone) — cột 3 báo rõ thay vì im lặng hỏng.
   const [notes, setNotes] = useState({})
   const [notesOk, setNotesOk] = useState(true)
+  // Xoá ghi chú: CHỈ quản trị (đổi 2026-09-23) — người viết không tự xoá được nữa.
+  const [notesCanDelete, setNotesCanDelete] = useState(false)
 
   const loadNotes = async (svcs) => {
     const ids = (svcs || services || []).map(s => s.id)
@@ -1298,6 +1300,7 @@ function CaseServices({ hcnsClient, canManage, isAdmin, canEditInfo, staffList, 
       .then(r => r.json()).catch(() => ({}))
     setNotes(r.data || {})
     setNotesOk(!r.notInstalled)
+    setNotesCanDelete(r.canDelete === true)
   }
 
   const load = async () => {
@@ -1389,6 +1392,28 @@ function CaseServices({ hcnsClient, canManage, isAdmin, canEditInfo, staffList, 
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: sv.id, fixOnTime: true }),
     }).then(r => r.json()).catch(() => ({ error: 'Không lưu được, thử lại.' }))
+    if (j.error) { window.alert(j.error); return }
+    load(); onChanged && onChanged()
+  }
+
+  // Xoá 1 dịch vụ nhập trùng — chỉ trưởng phòng HCNS và quản trị (server chặn tương ứng).
+  const removeService = async (sv) => {
+    const done = (sv.tasks || []).filter(t => t.done).length
+    const paid = Number(debt?.perService?.find(x => x.id === sv.id)?.paid) || 0
+    if (paid > 0) {
+      window.alert('Dịch vụ này đã thu ' + fmt(paid) + 'đ — xoá khoản thu ở tab Công nợ trước rồi mới xoá dịch vụ.')
+      return
+    }
+    const ok = window.confirm([
+      'XOÁ DỊCH VỤ: ' + sv.templateName,
+      sv.note ? 'Ghi chú: ' + String(sv.note).replace(/^"+|"+$/g, '') : '',
+      '',
+      'Sẽ xoá luôn ' + done + '/' + (sv.tasks || []).length + ' việc đã tích, ghi chú nội bộ và nhật ký trạng thái của dịch vụ này.',
+      'Thao tác này KHÔNG khôi phục được. Xoá?',
+    ].filter(Boolean).join('\n'))
+    if (!ok) return
+    const j = await fetch('/api/admin/hcns/case-services?id=' + sv.id, { method: 'DELETE' })
+      .then(r => r.json()).catch(() => ({ error: 'Không xoá được, thử lại.' }))
     if (j.error) { window.alert(j.error); return }
     load(); onChanged && onChanged()
   }
@@ -1534,6 +1559,12 @@ function CaseServices({ hcnsClient, canManage, isAdmin, canEditInfo, staffList, 
                 {noFee ? 'Sửa ngày' : 'Sửa phí'}
               </button>
             )}
+            {(isAdmin || canAssign) && (
+              <button onClick={() => removeService(s)} title="Xoá dịch vụ nhập trùng (trưởng phòng HCNS / quản trị)"
+                className="text-xs font-medium px-2 py-1 rounded-md border border-red-300 bg-white text-[#B3261E] hover:bg-red-50">
+                Xoá DV
+              </button>
+            )}
             {s.totalCount > 0 && (
               <span className={'text-xs font-semibold px-2 py-1 rounded-md border border-slate-300 bg-white ' + pctText(s.percent)}>
                 {s.doneCount}/{s.totalCount} việc · {s.percent}%
@@ -1646,7 +1677,7 @@ function CaseServices({ hcnsClient, canManage, isAdmin, canEditInfo, staffList, 
 
             {/* Phần 3 — Ghi chú nội bộ + xác nhận đã đọc */}
             <div className="p-3 lg:col-span-2 bg-slate-50/70">
-              <CaseNotes notes={notes[s.id] || []} installed={notesOk}
+              <CaseNotes notes={notes[s.id] || []} installed={notesOk} canDelete={notesCanDelete}
                 caseServiceId={s.id} onChanged={loadNotes} />
             </div>
           </div>
@@ -1714,7 +1745,7 @@ function StatusSteps({ status }) {
 // Dặn dò giữa nhân viên, trưởng phòng và quản lý trước đây nằm ngoài hệ thống (Zalo, nói miệng)
 // nên người tiếp nhận sau dễ làm sót. Ở đây mỗi lời nhắn có dấu "đã đọc" theo từng người, biết
 // ngay ai đã nắm và ai chưa.
-function CaseNotes({ notes, installed, caseServiceId, onChanged }) {
+function CaseNotes({ notes, installed, canDelete, caseServiceId, onChanged }) {
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -1799,7 +1830,7 @@ function CaseNotes({ notes, installed, caseServiceId, onChanged }) {
                   · {n.readers.length} người đã đọc: {n.readers.map(r => r.name || '—').join(', ')}
                 </span>
               )}
-              {n.isMine && (
+              {canDelete && (
                 <button onClick={() => remove(n.id)} className="text-[11px] text-red-700 hover:text-red-900 ml-auto">
                   Xoá
                 </button>

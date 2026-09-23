@@ -1543,6 +1543,8 @@ function HeadcountForm({ prev, month, busy, onCancel, onSave }) {
 function HcnsClientNotes({ hcnsClientId, year, month }) {
   const [notes, setNotes] = useState([])
   const [installed, setInstalled] = useState(true)
+  // Xoá ghi chú: chỉ quản trị — cờ do API trả về.
+  const [canDelete, setCanDelete] = useState(false)
   const [showAll, setShowAll] = useState(false)
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
@@ -1556,6 +1558,7 @@ function HcnsClientNotes({ hcnsClientId, year, month }) {
     const j = await fetch('/api/admin/hcns/case-notes' + qs).then(r => r.json()).catch(() => ({}))
     setNotes((j.data && j.data[hcnsClientId]) || [])
     setInstalled(!j.notInstalled)
+    setCanDelete(j.canDelete === true)
   }
   useEffect(() => { load() // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hcnsClientId, year, month, showAll])
@@ -1635,7 +1638,7 @@ function HcnsClientNotes({ hcnsClientId, year, month }) {
                   · {n.readers.length} người đã đọc: {n.readers.map(r => r.name || '—').join(', ')}
                 </span>
               )}
-              {n.isMine && (
+              {canDelete && (
                 <button onClick={() => remove(n.id)} className="text-[11px] text-red-700 hover:text-red-900 ml-auto">Xoá</button>
               )}
             </div>

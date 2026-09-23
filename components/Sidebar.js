@@ -87,14 +87,29 @@ export default function Sidebar({ onClose }) {
       // Vai trò KHÔNG được lấy từ cache: quản trị gán/bỏ kiêm nhiệm trong lúc nhân viên đang mở
       // app thì menu phải đổi theo ở lần chuyển trang kế tiếp, không bắt họ tải lại cả trang.
       // Đây là một request rất nhẹ, đổi lại quyền luôn đúng.
+      // Gọi /api/admin/me, thử lại 1 lần nếu hỏng. Phiên đăng nhập đôi khi lỡ nhịp làm request
+      // đầu trả 401 — trước đây menu tụt ngay về "nhân viên thường" và giấu hết Phòng nghiệp vụ /
+      // HCNS / Quản trị, nhìn như bị mất quyền (gặp 2026-09-23).
+      const fetchMe = async () => {
+        for (let i = 0; i < 2; i++) {
+          try {
+            const me = await fetch('/api/admin/me').then(r => r.json())
+            if (me?.roles?.length) return me
+          } catch (_) { /* thử lại */ }
+          if (i === 0) await new Promise(r => setTimeout(r, 1200))
+        }
+        return null
+      }
+
       const freshRoles = async (fallbackRole) => {
-        try {
-          const me = await fetch('/api/admin/me').then(r => r.json())
-          if (!cancelled) setNoAccounting(!!me?.noAccounting)
-          if (_sidebarCache) _sidebarCache.noAccounting = !!me?.noAccounting
-          if (me?.roles?.length) return me.roles
-        } catch (_) {}
-        return [fallbackRole].filter(Boolean)
+        const me = await fetchMe()
+        if (me) {
+          if (!cancelled) setNoAccounting(!!me.noAccounting)
+          if (_sidebarCache) _sidebarCache.noAccounting = !!me.noAccounting
+          return me.roles
+        }
+        // Không đọc được quyền -> GIỮ NGUYÊN vai trò đang có, không hạ quyền.
+        return _sidebarCache?.roles?.length ? _sidebarCache.roles : [fallbackRole].filter(Boolean)
       }
 
       // user + rooms thì dùng lại cache cho nhẹ (ít khi đổi, và đổi thì cũng không ảnh hưởng quyền)
@@ -118,7 +133,7 @@ export default function Sidebar({ onClose }) {
         // Danh sách con của "Phòng nghiệp vụ" — phòng HCNS KHÔNG nằm ở đây vì nó có phân khu
         // riêng bên dưới và không dùng giao diện /room/[roomId].
         supabase.from('rooms').select('*').not('type', 'in', '(hcns,kinhdoanh)').order('type').order('name'),
-        fetch('/api/admin/me').then(r => r.json()).catch(() => ({})),
+        fetchMe(),
       ])
       let staffData = resMe.data
 
@@ -140,6 +155,11 @@ export default function Sidebar({ onClose }) {
       const roomsData = resRooms.data || []
       const myRoles = resMyRoles?.roles?.length ? resMyRoles.roles : [staffData.role].filter(Boolean)
       const myNoAccounting = !!resMyRoles?.noAccounting
+      // Đọc quyền hỏng -> không ghi vào bộ nhớ tạm, để lần chuyển trang sau gọi lại.
+      if (!resMyRoles) {
+        if (!cancelled) { setUser(staffData); setRooms(roomsData); setRoles(myRoles) }
+        return
+      }
       if (!cancelled) setNoAccounting(myNoAccounting)
       // (resMyRoles lấy ở Promise.all bên trên — lần tải đầu tiên đã là dữ liệu mới)
       _sidebarCache = { user: staffData, rooms: roomsData, roles: myRoles, noAccounting: myNoAccounting }
@@ -176,8 +196,6 @@ export default function Sidebar({ onClose }) {
   const canViewAllDebt     = can(role, 'view_all_debt', permData)
   const canManageDatabase  = can(role, 'manage_database', permData)
   const canManageRoles     = can(role, 'manage_roles', permData)
-  // Đối soát ngân hàng — quyền riêng, mặc định chỉ Quản trị (sql/21_bank_transactions.sql).
-  const canBankReconcile   = can(role, 'bank_reconcile', permData)
   const showAdminSection = canManageRooms || canManageStaff || canManageClients || canManageChecklist || canViewAllDebt || canManageDatabase || canManageRoles
   // Khu HCNS tự ẩn với người không có quyền — bản clone không cài module thì quyền này không tồn
   // tại nên can() trả false, khu biến mất mà không phải sửa code.
@@ -254,11 +272,6 @@ export default function Sidebar({ onClose }) {
         {!noAccounting && <SectionLabel>Kế toán</SectionLabel>}
         {!noAccounting && <NavItem href="/checklist"  icon="📋" label="Checklist công việc" pathname={pathname} onClose={onClose} />}
         {!noAccounting && <NavItem href="/my-debt"    icon="💰" label="Quản lý công nợ"     pathname={pathname} onClose={onClose} />}
-        {/* Đối soát ngân hàng nằm trong phân hệ Kế toán: nhân viên/trưởng phòng kế toán được tích
-            thêm quyền `bank_reconcile` để ghép lệnh chuyển khoản vào công ty mình phụ trách. */}
-        {canBankReconcile && !noAccounting && (
-          <NavItem href="/bank" icon="🏦" label="Đối soát ngân hàng" pathname={pathname} onClose={onClose} />
-        )}
         {canViewToKhai && !noAccounting && (
           <NavItem href="/tokhai" icon="🧾" label="Tờ khai & Hạn nộp" pathname={pathname} onClose={onClose} />
         )}
