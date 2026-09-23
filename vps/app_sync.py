@@ -101,25 +101,46 @@ def open_imap(cfg):
     return imap
 
 
+# ── Bo nho UID da doc ────────────────────────────────────────────────────────────────────────
+# Su co 4 cua luong Zalo: vong lap FETCH toan bo noi dung TOI email, roi moi kiem tra da xu ly
+# chua -> hop thu lon dan, thoi gian chay tang dan, den luc vuot `timeout` cua cron thi bi cat
+# NGAY TRUOC BUOC GUI, khong loi khong log. Nho UID da doc de BO QUA TRUOC KHI FETCH.
+# Tach theo tung nguon (acb / tcb) vi hai luong quet hai pham vi khac nhau.
+def load_scan(imap, key):
+    try:
+        uidv = str(imap.response("UIDVALIDITY")[1][0])
+    except Exception:
+        uidv = ""
+    scan = load_json(SCAN_PATH, {})
+    if not isinstance(scan, dict) or scan.get("uidvalidity") != uidv or not isinstance(scan.get("uids"), dict):
+        scan = {"uidvalidity": uidv, "uids": {}}
+    scan["uids"].setdefault(key, [])
+    return scan, set(scan["uids"][key])
+
+
+def make_marker(scan, scanned, key, dry):
+    def mark_scanned(new_uids):
+        if dry or not new_uids:
+            return
+        scanned.update(new_uids)
+        scan["uids"][key] = sorted(scanned, key=lambda x: int(x) if x.isdigit() else 0)[-3000:]
+        save_json(SCAN_PATH, scan)
+    return mark_scanned
+
+
 # ── ACB ──────────────────────────────────────────────────────────────────────────────────────
 def collect_acb(cfg, app_cfg, posted, dry):
     imap = open_imap(cfg)
-    days = int(app_cfg.get("acb_days", 3))
+    # 7 ngay (Zalo dung 3): FETCH da duoc bo qua theo UID nen cua so rong hau nhu khong ton them
+    # thoi gian, doi lai neu VPS/app chet vai ngay thi chay lai van gui bu duoc.
+    days = int(app_cfg.get("acb_days", 7))
     st, data = imap.uid("SEARCH", None, '(FROM "%s" SINCE "%s")' % (cfg["acb_sender"], imap_since(days)))
     if st != "OK":
         imap.logout()
         raise RuntimeError("IMAP SEARCH loi: %s" % data)
     uids = data[0].split()
 
-    try:
-        uidv = str(imap.response("UIDVALIDITY")[1][0])
-    except Exception:
-        uidv = ""
-    scan = load_json(SCAN_PATH, {})
-    if not isinstance(scan, dict) or scan.get("uidvalidity") != uidv:
-        scan = {"uidvalidity": uidv, "uids": []}
-    scanned = set(scan.get("uids", []))
-
+    scan, scanned = load_scan(imap, "acb")
     items, done_uids = [], []
     for uid in uids:
         u = uid.decode() if isinstance(uid, bytes) else str(uid)
@@ -144,15 +165,7 @@ def collect_acb(cfg, app_cfg, posted, dry):
         items.append({"_uid": u, "source": "acb", "ext_id": fp, "tx_time": t,
                       "amount": tx["amount"], "memo": tx["content"]})
     imap.logout()
-
-    def mark_scanned(new_uids):
-        if dry or not new_uids:
-            return
-        scanned.update(new_uids)
-        scan["uids"] = sorted(scanned, key=lambda x: int(x) if x.isdigit() else 0)[-3000:]
-        save_json(SCAN_PATH, scan)
-
-    return items, done_uids, mark_scanned
+    return items, done_uids, make_marker(scan, scanned, "acb", dry)
 
 
 # ── Techcombank ──────────────────────────────────────────────────────────────────────────────
@@ -166,19 +179,26 @@ def tcb_time(date_str):
     return datetime.now(VN_TZ).isoformat()
 
 
-def collect_tcb(cfg, posted):
+def collect_tcb(cfg, posted, dry):
     from tcb_zalo import parse_statement, decode_filename  # can openpyxl — chi nap khi chay --tcb
     imap = open_imap(cfg)
     days = int(cfg.get("tcb_days", 14))
+    # KHONG loc theo nguoi gui: sao ke hay duoc chuyen tiep tay (dung y tcb_zalo.py), nen phai quet
+    # ca hop thu trong N ngay. Bu lai bang bo nho UID de moi email chi tai ve MOT lan.
     st, data = imap.uid("SEARCH", None, '(SINCE "%s")' % imap_since(days))
     if st != "OK":
         imap.logout()
         raise RuntimeError("IMAP SEARCH loi: %s" % data)
-    items, seen = [], set()
-    for u in data[0].split():
-        st, md = imap.uid("FETCH", u, "(RFC822)")
+    scan, scanned = load_scan(imap, "tcb")
+    items, seen, done_uids = [], set(), []
+    for uid in data[0].split():
+        u = uid.decode() if isinstance(uid, bytes) else str(uid)
+        if u in scanned:
+            continue
+        st, md = imap.uid("FETCH", uid, "(RFC822)")
         if st != "OK" or not md or md[0] is None:
             continue
+        had_new = False
         msg = email.message_from_bytes(md[0][1])
         for part in msg.walk():
             fn = decode_filename(part.get_filename())
@@ -201,11 +221,16 @@ def collect_tcb(cfg, posted):
                     if ext in posted or ext in seen:
                         continue
                     seen.add(ext)
-                    items.append({"source": "tcb", "ext_id": ext, "tx_time": tcb_time(it["date"]),
+                    had_new = True
+                    items.append({"_uid": u, "source": "tcb", "ext_id": ext, "tx_time": tcb_time(it["date"]),
                                   "amount": int(round(it["amount"])), "memo": it["desc"],
                                   "account": sh["account"]})
+        # Email khong con giao dich nao can gui -> nho lai de lan sau khoi tai ve. Email CON giao
+        # dich chua gui thi de nguyen, chi danh dau SAU KHI gui thanh cong (bai hoc su co 5).
+        if not had_new:
+            done_uids.append(u)
     imap.logout()
-    return items
+    return items, done_uids, make_marker(scan, scanned, "tcb", dry)
 
 
 def main():
@@ -234,7 +259,7 @@ def main():
 
     try:
         if tcb:
-            items, done_uids, mark_scanned = collect_tcb(cfg, posted), [], (lambda _u: None)
+            items, done_uids, mark_scanned = collect_tcb(cfg, posted, dry)
         else:
             items, done_uids, mark_scanned = collect_acb(cfg, app_cfg, posted, dry)
     except Exception as e:
