@@ -148,7 +148,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     const amt = recordedAmount(debtType)
     if (amt > 0) setDebtAmount(String(amt))
     else if (debtType === 'ketoan') setDebtAmount(String(feeForSelected('ketoan') || ''))
-    else if (debtType === 'hcns') setDebtAmount(String(hcnsClient?.hcns_fee || ''))
+    else if (debtType === 'hcns') setDebtAmount(String(feeForSelected('hcns') || ''))
     else setDebtAmount('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debtHistory, debtType, clientMonth, selYear, panel])
@@ -1186,9 +1186,12 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
               // Phí và số đã thu đều lấy theo THÁNG ĐANG CHỌN trên thẻ công ty, không lấy số
               // của tháng mà trang cha đang xem — trước đây đổi tháng chỉ có tab Công việc đổi
               // theo, còn Công nợ vẫn hiện số của tháng cũ.
-              const fee = debtType === 'hcns'
-                ? Number(hcnsClient?.hcns_fee) || 0
-                : feeForSelected(debtType)
+              // Phí HCNS cũng phải lấy theo THÁNG ĐANG CHỌN (feeForSelected đọc feeByPeriod của
+              // /api/admin/hcns/debt-history), KHÔNG lấy hcns_fee sống: tháng TRƯỚC khi công ty
+              // tách phí HCNS vẫn hiện "còn phải thu" phí HCNS, trong khi phí kế toán tháng đó
+              // còn là mức GỘP — thành ra đòi hai lần cùng một khoản tiền (ca thật 23/09/2026:
+              // ĐẠI QUANG xem T8/2026 trong khi mốc tách phí là T9/2026).
+              const fee = feeForSelected(debtType)
               const already = debtType === 'khach'
                 ? recordedAmount('khach')
                 : recordedAmount(debtType)
@@ -1263,7 +1266,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                   value={debtAmount ? Number(debtAmount.replace(/\D/g,'')||0).toLocaleString('vi-VN') : ''}
                   onChange={e => setDebtAmount(e.target.value.replace(/\D/g,''))}
                   placeholder={debtType === 'ketoan' ? 'Phí tháng: ' + fmt(feeForSelected('ketoan')) + 'đ'
-                    : debtType === 'hcns' ? 'Phí HCNS: ' + fmt(hcnsClient?.hcns_fee) + 'đ'
+                    : debtType === 'hcns' ? 'Phí HCNS: ' + fmt(feeForSelected('hcns')) + 'đ'
                     : 'Nhập số tiền...'}
                   className="w-full px-2.5 py-1.5 border border-green-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
                 {debtAmount && (() => {
