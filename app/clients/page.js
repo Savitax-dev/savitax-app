@@ -21,6 +21,51 @@ const STATUS_OPTS = [
 
 const fmt = (n) => Number(n || 0).toLocaleString('vi-VN')
 
+// Lịch sử SỬA THÔNG TIN công ty (tên, MST, mã KH, nhân viên phụ trách, trạng thái...) — khác hẳn
+// "Lịch sử thay đổi phí" ngay trên nó. Trước 23/09/2026 các thay đổi này không được ghi ở đâu cả;
+// nay mỗi lần sửa ghi 1 dòng vào client_change_log (xem app/api/admin/clients/route.js).
+// Tải khi mở thẻ công ty, không cache — dữ liệu nhỏ, và cache rỗng từng làm lịch sử phí không hiện.
+function InfoHistory({ clientId }) {
+  const [log, setLog] = useState(null)
+  useEffect(() => {
+    let bỏ = false
+    fetch('/api/admin/client-history?clientId=' + clientId)
+      .then(r => r.json())
+      .then(j => { if (!bỏ) setLog((j.log || []).filter(l => l.entity !== 'monthly_fee')) })
+      .catch(() => { if (!bỏ) setLog([]) })
+    return () => { bỏ = true }
+  }, [clientId])
+
+  return (
+    <div className="mt-3 border-t border-gray-100 pt-3">
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Lịch sử sửa thông tin</p>
+      {log === null ? (
+        <p className="text-xs text-gray-400">Đang tải...</p>
+      ) : log.length === 0 ? (
+        <p className="text-xs text-gray-400">Chưa có thay đổi nào được ghi nhận. Nhật ký bắt đầu ghi từ 23/09/2026.</p>
+      ) : (
+        <div className="space-y-1 max-h-56 overflow-y-auto">
+          {log.map(l => (
+            <div key={l.id} className="text-xs">
+              <span className="font-medium text-gray-700">{l.entity_label || l.field}</span>
+              {l.action === 'create' ? <span className="text-green-600"> + {l.new_value}</span>
+                : l.action === 'delete' ? <span className="text-red-500"> − {l.old_value}</span>
+                : <>
+                    {': '}<span className="text-gray-400 line-through">{l.old_value || '(trống)'}</span>
+                    {' → '}<span className="text-gray-700">{l.new_value || '(trống)'}</span>
+                  </>}
+              <span className="text-gray-400">
+                {' · ' + (l.staff?.full_name || '—')}
+                {' · ' + new Date(l.changed_at).toLocaleString('vi-VN')}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Lịch sử ĐỔI MỨC PHÍ (không phải lịch sử thu tiền). Mỗi dòng fee_plan nghĩa là "từ tháng này
 // trở đi phí = X" — đây chính là nguồn resolveFeeForMonth dùng để tính đúng công nợ tháng cũ,
 // nên nhìn được danh sách này giúp phát hiện ngay khi ai đó áp phí nhầm tháng.
@@ -1678,6 +1723,7 @@ export default function ClientsPage() {
                         : <HcnsSplitFee client={client} monthOptions={getFutureMonths(12)} onSaved={loadClients} />}
                     </div>
                     <FeeHistory history={history} />
+                    <InfoHistory clientId={client.id} />
 
                   </div>
                 )}
