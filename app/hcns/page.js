@@ -963,10 +963,13 @@ function ClientRow({ c, ri, showCat, stopped, phatSinh, report, expanded, onTogg
         {/* Khối tiền của hồ sơ — LUÔN ở cùng một vị trí trên mọi dòng để mắt chỉ phải nhìn một
             chỗ khi lướt danh sách. Số tiền luôn đi kèm thanh màu: màu một mình thì người mù màu
             không đọc được, mà số cụ thể mới dùng được để gọi khách. */}
-        {!stopped && !isThoiKy && Number(c.caseCost) > 0 && (
+        {/* Hồ sơ phí 0đ (làm miễn phí) VẪN hiện khối tiền "0 / 0đ" — ẩn đi thì dòng trống trông
+            như lỗi, và không phân biệt được với hồ sơ chưa khai phí. */}
+        {!stopped && !isThoiKy && (
           <span className="w-[196px] flex-shrink-0 text-right">
             <span className="block text-xs">
-              <b className={'font-semibold ' + (c.caseRemain === 0 ? 'text-[#2E6B3A]' : c.casePaid > 0 ? 'text-[#87590B]' : 'text-[#B3261E]')}>
+              <b className={'font-semibold ' + (Number(c.caseCost) === 0 ? 'text-slate-500'
+                : c.caseRemain === 0 ? 'text-[#2E6B3A]' : c.casePaid > 0 ? 'text-[#87590B]' : 'text-[#B3261E]')}>
                 {fmt(c.casePaid)}
               </b>
               <span className="text-slate-400"> / {fmt(c.caseCost)}đ</span>
@@ -974,8 +977,9 @@ function ClientRow({ c, ri, showCat, stopped, phatSinh, report, expanded, onTogg
             <span className="flex items-center gap-1.5 justify-end mt-0.5">
               <span className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
                 <span className={'block h-1.5 rounded-full ' +
-                  (c.caseRemain === 0 ? 'bg-[#2E6B3A]' : c.casePaid > 0 ? 'bg-[#D89614]' : 'bg-[#B3261E]')}
-                  style={{ width: (c.caseCost > 0 ? Math.min(100, Math.round(c.casePaid / c.caseCost * 100)) : 0) + '%' }} />
+                  (Number(c.caseCost) === 0 ? 'bg-slate-300'
+                    : c.caseRemain === 0 ? 'bg-[#2E6B3A]' : c.casePaid > 0 ? 'bg-[#D89614]' : 'bg-[#B3261E]')}
+                  style={{ width: (c.caseCost > 0 ? Math.min(100, Math.round(c.casePaid / c.caseCost * 100)) : 100) + '%' }} />
               </span>
               {doneUnpaid ? (
                 // Xong hết việc mà còn nợ — nhóm dễ bị quên nhất vì hồ sơ đã rời sang thẻ Hoàn thành.
@@ -984,8 +988,10 @@ function ClientRow({ c, ri, showCat, stopped, phatSinh, report, expanded, onTogg
                 </span>
               ) : (
                 <span className={'text-[11px] font-semibold whitespace-nowrap ' +
-                  (c.caseRemain === 0 ? 'text-[#2E6B3A]' : c.casePaid > 0 ? 'text-[#87590B]' : 'text-[#B3261E]')}>
-                  {c.caseRemain === 0 ? 'đã thu đủ' : c.casePaid > 0 ? 'còn ' + fmt(c.caseRemain) + 'đ' : 'chưa thu'}
+                  (Number(c.caseCost) === 0 ? 'text-slate-500'
+                    : c.caseRemain === 0 ? 'text-[#2E6B3A]' : c.casePaid > 0 ? 'text-[#87590B]' : 'text-[#B3261E]')}>
+                  {Number(c.caseCost) === 0 ? 'miễn phí'
+                    : c.caseRemain === 0 ? 'đã thu đủ' : c.casePaid > 0 ? 'còn ' + fmt(c.caseRemain) + 'đ' : 'chưa thu'}
                 </span>
               )}
             </span>
