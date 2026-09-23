@@ -1012,7 +1012,7 @@ function ClientRow({ c, ri, showCat, stopped, phatSinh, report, expanded, onTogg
       {expanded && (
         <div className="bg-slate-50 border-t border-slate-200">
           {stopped ? (
-            <StoppedSummary c={c} />
+            <StoppedSummary c={c} canManage={canManage} onChanged={onChanged} />
           ) : phatSinh ? (
             <CaseServices hcnsClient={c} canManage={canManage} isAdmin={isAdmin} canEditInfo={canEditInfo} staffList={staffList} templates={templates} onChanged={onChanged} />
           ) : isThoiKy && c.linkedClient ? (
@@ -1024,6 +1024,7 @@ function ClientRow({ c, ri, showCat, stopped, phatSinh, report, expanded, onTogg
               clientMonth={clientMonth[c.id] || selMonth}
               onMonthChange={m => setClientMonth(p => ({ ...p, [c.id]: m }))}
               onDebtSaved={onChanged}
+              toolbarExtra={canManage ? <HcnsFeeBar c={c} onChanged={onChanged} /> : null}
             />
           ) : isThoiKy ? (
             <p className="text-xs text-slate-500 px-4 py-4">
@@ -1044,7 +1045,153 @@ function ClientRow({ c, ri, showCat, stopped, phatSinh, report, expanded, onTogg
 // Ngừng dịch vụ KHÔNG xoá gì: mức phí từng tháng, tiền đã thu, checklist đã tích đều còn nguyên.
 // Khối này mở lại phần đó để tra cứu. Cố ý không cho ghi công nợ hay tích việc — muốn làm tiếp
 // thì tick lại "Có sử dụng DV HCNS" bên Danh sách công ty trước.
-function StoppedSummary({ c }) {
+// Phí HCNS + ngưng dịch vụ, thao tác ngay trong Phòng HCNS (người HCNS không sửa được công ty
+// bên Danh sách công ty, trước đây phải nhờ kế toán).
+function HcnsFeeBar({ c, onChanged }) {
+  const [mode, setMode] = useState(null)      // null | 'fee' | 'stop'
+  const [fee, setFee] = useState('')
+  const [month, setMonth] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const per = c.fee_period === 'quarterly' ? 'Quý' : 'Tháng'
+  const now = new Date()
+  const opts = []
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
+    opts.push({ v: d.getFullYear() + '-' + (d.getMonth() + 1), label: 'T' + (d.getMonth() + 1) + '/' + d.getFullYear() })
+  }
+
+  const send = async (body, okMsg) => {
+    setBusy(true); setErr('')
+    const j = await fetch('/api/admin/hcns/clients', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: c.id, ...body }),
+    }).then(r => r.json()).catch(() => ({ error: 'Không lưu được, thử lại.' }))
+    setBusy(false)
+    if (j.error) { setErr(j.error); return }
+    setMode(null)
+    if (okMsg) window.alert(okMsg)
+    onChanged && onChanged()
+  }
+
+  const saveFee = () => {
+    const v = Number(String(fee).replace(/\D/g, ''))
+    if (!Number.isFinite(v)) { setErr('Nhập mức phí.'); return }
+    send({ hcns_fee: v })
+  }
+  const doStop = () => {
+    const [y, m] = (month || opts[0].v).split('-').map(Number)
+    if (!window.confirm('Ngưng DV HCNS của "' + c.name + '" từ T' + m + '/' + y + '?')) return
+    send({ hcns_stop_from: { year: y, month: m } },
+      'Đã ghi ngưng DV HCNS. Nếu chọn tháng sau thì công ty còn ở tag Thời kỳ tới tháng đó.')
+  }
+
+  // Hai nút nằm CÙNG HÀNG với Thông tin / Công việc HCNS / ĐNTT / Công nợ / Tài liệu; bấm vào thì
+  // ô nhập bung ra ngay tại chỗ (dùng position absolute để không đẩy lệch hàng nút).
+  const btnCls = 'text-xs px-2.5 py-1.5 rounded-lg font-medium border leading-none flex-shrink-0 '
+  return (
+    <span className="relative flex items-center gap-2 flex-shrink-0">
+      <button onClick={() => { setMode(mode === 'fee' ? null : 'fee'); setFee(String(Number(c.hcns_fee) || '')); setErr('') }}
+        title={'Phí DV HCNS hiện tại: ' + (Number(c.hcns_fee) > 0 ? fmt(c.hcns_fee) + 'đ/' + per : 'Miễn phí')}
+        className={btnCls + (mode === 'fee'
+          ? 'bg-sky-600 text-white border-sky-600'
+          : 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100')}>
+        🏢 Sửa phí HCNS
+      </button>
+      <button onClick={() => { setMode(mode === 'stop' ? null : 'stop'); setMonth(opts[0].v); setErr('') }}
+        className={btnCls + (mode === 'stop'
+          ? 'bg-[#8B1A1A] text-white border-[#8B1A1A]'
+          : 'bg-red-50 text-[#B3261E] border-red-200 hover:bg-red-100')}>
+        ⏹ Ngưng DV HCNS
+      </button>
+
+      {mode && (
+        <span className="absolute left-0 top-full mt-1 z-20 flex items-center gap-2 flex-wrap bg-white border border-slate-300 rounded-xl shadow-lg px-3 py-2 min-w-[420px]">
+          {mode === 'fee' ? (
+            <>
+              <span className="text-xs text-slate-600">
+                Phí hiện tại <b className="text-slate-800">{Number(c.hcns_fee) > 0 ? fmt(c.hcns_fee) + 'đ' : '0đ'}</b> →
+              </span>
+              <input autoFocus inputMode="numeric"
+                value={fee ? Number(String(fee).replace(/\D/g, '') || 0).toLocaleString('vi-VN') : ''}
+                onChange={e => { setFee(e.target.value.replace(/\D/g, '')); setErr('') }}
+                className="w-32 px-2 py-1 border border-sky-300 rounded-md text-sm" placeholder={'đ/' + per} />
+              <span className="text-xs text-slate-500">đ/{per} · đã gồm VAT</span>
+              <button onClick={saveFee} disabled={busy} className="text-xs px-3 py-1 rounded-md bg-sky-700 text-white disabled:opacity-60">
+                {busy ? 'Đang lưu...' : 'Lưu'}
+              </button>
+              <button onClick={() => setMode(null)} className="text-xs px-2 py-1 rounded-md border border-slate-300 bg-white text-slate-600">Hủy</button>
+              <p className="basis-full text-[11px] text-slate-500">
+                Mức mới áp từ tháng này trở đi, các tháng trước giữ nguyên mức cũ để công nợ cũ không đổi.
+              </p>
+            </>
+          ) : (
+            <>
+              <span className="text-xs text-slate-700">Ngưng DV HCNS từ</span>
+              <select value={month} onChange={e => setMonth(e.target.value)}
+                className="px-2 py-1 border border-red-300 rounded-md text-sm bg-white">
+                {opts.map(o => <option key={o.v} value={o.v}>{o.label}</option>)}
+              </select>
+              <button onClick={doStop} disabled={busy} className="text-xs px-3 py-1 rounded-md bg-[#8B1A1A] text-white disabled:opacity-60">
+                {busy ? 'Đang lưu...' : 'Xác nhận ngưng'}
+              </button>
+              <button onClick={() => setMode(null)} className="text-xs px-2 py-1 rounded-md border border-slate-300 bg-white text-slate-600">Hủy</button>
+              <p className="basis-full text-[11px] text-slate-500">
+                Chọn tháng sau thì công ty còn ở tag Thời kỳ tới tháng đó rồi mới tự gỡ.
+              </p>
+            </>
+          )}
+          {err && <span className="basis-full text-xs text-[#B3261E]">{err}</span>}
+        </span>
+      )}
+    </span>
+  )
+}
+
+// Bật lại DV HCNS cho công ty đã ngưng — dùng ở thẻ "Ngưng DV HCNS".
+function HcnsResume({ c, onChanged }) {
+  const [open, setOpen] = useState(false)
+  const [fee, setFee] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const per = c.fee_period === 'quarterly' ? 'Quý' : 'Tháng'
+  const save = async () => {
+    const v = Number(String(fee).replace(/\D/g, ''))
+    if (!Number.isFinite(v)) { setErr('Nhập mức phí HCNS mới.'); return }
+    setBusy(true); setErr('')
+    const j = await fetch('/api/admin/hcns/clients', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: c.id, hcns_resume: { hcns_fee: v } }),
+    }).then(r => r.json()).catch(() => ({ error: 'Không lưu được, thử lại.' }))
+    setBusy(false)
+    if (j.error) { setErr(j.error); return }
+    setOpen(false); onChanged && onChanged()
+  }
+  if (!open) {
+    return (
+      <button onClick={() => { setOpen(true); setFee(String(Number(c.hcns_fee) || '')) }}
+        className="text-xs px-3 py-1.5 rounded-lg border border-emerald-300 bg-white text-[#2E6B3A] hover:bg-emerald-50">
+        Dùng lại DV HCNS
+      </button>
+    )
+  }
+  return (
+    <span className="flex items-center gap-2 flex-wrap">
+      <input autoFocus inputMode="numeric"
+        value={fee ? Number(String(fee).replace(/\D/g, '') || 0).toLocaleString('vi-VN') : ''}
+        onChange={e => { setFee(e.target.value.replace(/\D/g, '')); setErr('') }}
+        className="w-32 px-2 py-1 border border-emerald-300 rounded-md text-sm" placeholder={'Phí đ/' + per} />
+      <span className="text-xs text-slate-500">đ/{per}</span>
+      <button onClick={save} disabled={busy} className="text-xs px-3 py-1 rounded-md bg-[#2E6B3A] text-white disabled:opacity-60">
+        {busy ? 'Đang lưu...' : 'Bật lại'}
+      </button>
+      <button onClick={() => setOpen(false)} className="text-xs px-2 py-1 rounded-md border border-slate-300 bg-white text-slate-600">Hủy</button>
+      {err && <span className="text-xs text-[#B3261E]">{err}</span>}
+    </span>
+  )
+}
+
+function StoppedSummary({ c, canManage, onChanged }) {
   const [data, setData] = useState(null)
 
   useEffect(() => {
@@ -1060,11 +1207,13 @@ function StoppedSummary({ c }) {
 
   return (
     <div className="px-4 py-3 space-y-3 max-w-3xl">
-      <p className="text-xs text-slate-700 bg-white border border-slate-300 rounded-lg px-3 py-2 leading-relaxed">
-        Công ty đã ngưng dùng DV HCNS. Toàn bộ lịch sử bên dưới được giữ nguyên. Cần dùng lại thì
-        vào <b>Danh sách công ty</b>, tick <b>“Có sử dụng DV HCNS”</b> và nhập mức phí mới —
-        công ty quay về thẻ <b>Thời kỳ</b> với đầy đủ dữ liệu cũ.
-      </p>
+      <div className="text-xs text-slate-700 bg-white border border-slate-300 rounded-lg px-3 py-2 leading-relaxed">
+        <p>
+          Công ty đã ngưng dùng DV HCNS. Toàn bộ lịch sử bên dưới được giữ nguyên. Bật lại là công ty
+          quay về thẻ <b>Thời kỳ</b> với đầy đủ dữ liệu cũ.
+        </p>
+        {canManage && <div className="mt-2"><HcnsResume c={c} onChanged={onChanged} /></div>}
+      </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {[['Số lần đã thu', rows.length], ['Tổng đã thu', fmt(total) + 'đ'],

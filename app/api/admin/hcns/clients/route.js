@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin, callerHasPermission } from '@/lib/serverAuth'
-import { writeHcnsFeePlan, applyScheduledHcnsStops } from '@/lib/hcnsSync'
+import { writeHcnsFeePlan, applyScheduledHcnsStops, stopHcnsForClient, syncHcnsForClient } from '@/lib/hcnsSync'
 import { hcnsDueState } from '@/lib/hcnsDue'
 
 function getAdmin() {
@@ -145,6 +145,34 @@ export async function PATCH(request) {
   const { data: before } = await supabase.from('hcns_clients')
     .select('hcns_fee, category, linked_client_id').eq('id', id).maybeSingle()
   if (!before) return Response.json({ error: 'Không tìm thấy hồ sơ' }, { status: 404 })
+
+  // Ngưng / dùng lại DV HCNS ngay trong Phòng HCNS (trước đây chỉ làm được ở Danh sách công ty,
+  // mà người HCNS không sửa được công ty kế toán). Cần manage_hcns, áp cho công ty Thời kỳ.
+  if (body.hcns_stop_from || body.hcns_resume) {
+    if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+    if (before.category !== 'thoi_ky' || !before.linked_client_id) {
+      return Response.json({ error: 'Chỉ áp dụng cho công ty Thời kỳ' }, { status: 400 })
+    }
+    const who = updatedBy || auth.caller?.staffId || null
+    if (body.hcns_stop_from) {
+      const { year, month } = body.hcns_stop_from
+      if (!year || !month) return Response.json({ error: 'Thiếu tháng ngừng' }, { status: 400 })
+      const r = await stopHcnsForClient(supabase, {
+        clientId: before.linked_client_id, stopAt: { year: Number(year), month: Number(month) }, createdBy: who,
+      })
+      if (!r?.ok) return Response.json({ error: r?.reason || 'Không ngừng được' }, { status: 400 })
+      return Response.json({ ok: true, scheduled: r.scheduled === true })
+    }
+    const fee = Number(body.hcns_resume.hcns_fee)
+    if (!Number.isFinite(fee) || fee < 0) return Response.json({ error: 'Mức phí HCNS không hợp lệ' }, { status: 400 })
+    const r = await syncHcnsForClient(supabase, {
+      clientId: before.linked_client_id, usesHcns: true, hcnsFee: fee, createdBy: who,
+      feeAt: body.hcns_resume.from && body.hcns_resume.from.year ? body.hcns_resume.from : undefined,
+    })
+    if (!r?.ok) return Response.json({ error: r?.reason || 'Không bật lại được' }, { status: 400 })
+    await supabase.from('clients').update({ uses_hcns: true }).eq('id', before.linked_client_id)
+    return Response.json({ ok: true })
+  }
 
   // Chỉ đổi PHÍ HCNS của công ty Thời kỳ: kế toán phụ trách công ty gốc được làm (điều chỉnh phí ở
   // "Danh sách công ty"), không cần quyền manage_hcns — cùng phạm vi được sửa phí kế toán.
