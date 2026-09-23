@@ -81,8 +81,18 @@ export async function GET(request) {
     return Response.json({ entries: [], staffOptions: [], clientOptions: [], roomOptions: [], role })
   }
 
-  // 4. Truy vấn 3 nguồn song song (lọc actor ∈ scope + thời gian trong tháng)
-  const [tasks, fees, changes, { data: rooms }, { data: clients }, { data: taskDefs }] = await Promise.all([
+  // Nhật ký thao tác Đối soát ngân hàng (sql/22_bank_action_log.sql). Bảng chưa tạo (bản clone
+  // không có module này) -> trả rỗng, không làm hỏng cả trang nhật ký.
+  const fetchBankLogs = async () => {
+    try {
+      return await fetchAllRows(() => supabase.from('bank_action_logs')
+        .select('id, tx_id, client_id, action, detail, note, staff_id, created_at')
+        .gte('created_at', start).lt('created_at', end).in('staff_id', scopeStaffIds))
+    } catch (_) { return [] }
+  }
+
+  // 4. Truy vấn 4 nguồn song song (lọc actor ∈ scope + thời gian trong tháng)
+  const [tasks, fees, changes, bankLogs, { data: rooms }, { data: clients }, { data: taskDefs }] = await Promise.all([
     fetchAllRows(() => supabase.from('task_records')
       .select('id, client_id, task_def_id, done_by, done_at, note')
       .eq('is_done', true).gte('done_at', start).lt('done_at', end).in('done_by', scopeStaffIds)),
@@ -92,6 +102,7 @@ export async function GET(request) {
     fetchAllRows(() => supabase.from('client_change_log')
       .select('id, client_id, entity_label, field, old_value, new_value, action, changed_by, changed_at')
       .gte('changed_at', start).lt('changed_at', end).in('changed_by', scopeStaffIds)),
+    fetchBankLogs(),
     supabase.from('rooms').select('id, name'),
     supabase.from('clients').select('id, name, client_code'),
     supabase.from('task_definitions').select('id, name'),
@@ -160,6 +171,27 @@ export async function GET(request) {
       ...clientMeta(ch.client_id),
       title: actionLabel + ' thông tin: ' + (what || 'khách hàng'),
       detail,
+    })
+  }
+
+  // Đối soát ngân hàng — mỗi thao tác trên trang /bank là một dòng nhật ký, để tra lại "ai đã làm
+  // gì với giao dịch nào".
+  const BANK_ACTION_LABEL = {
+    post:   'Đối soát ngân hàng: ghi công nợ',
+    ignore: 'Đối soát ngân hàng: đóng giao dịch',
+    reopen: 'Đối soát ngân hàng: mở lại giao dịch',
+    assign: 'Đối soát ngân hàng: chọn công ty cho giao dịch',
+    note:   'Đối soát ngân hàng: ghi chú',
+  }
+  for (const b of (bankLogs || [])) {
+    entries.push({
+      id: 'bank_' + b.id,
+      type: 'bank_reconcile',
+      happenedAt: b.created_at,
+      ...actorMeta(b.staff_id),
+      ...clientMeta(b.client_id),
+      title: BANK_ACTION_LABEL[b.action] || 'Đối soát ngân hàng',
+      detail: [b.detail, b.note ? '“' + b.note + '”' : ''].filter(Boolean).join(' · '),
     })
   }
 

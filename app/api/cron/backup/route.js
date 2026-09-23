@@ -28,7 +28,7 @@ const TABLES = [
   // Phòng Kinh doanh — cũng chỉ có ở bản Savitax
   'sales_leads', 'sales_quotes', 'sales_lead_activities', 'sales_channels',
   // Đối soát ngân hàng — giao dịch VPS đẩy lên + dấu vết đã ghi công nợ (post_detail)
-  'bank_transactions',
+  'bank_transactions', 'bank_action_logs',
 ]
 
 // Bảng không tồn tại (bản clone thiếu module HCNS/Kinh doanh) KHÔNG được làm hỏng cả bản backup

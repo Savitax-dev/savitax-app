@@ -27,6 +27,18 @@ const fmtDay = (iso) => {
 const vnDayStart = (s) => new Date(s + 'T00:00:00+07:00').toISOString()
 const vnDayEnd = (s) => new Date(s + 'T23:59:59.999+07:00').toISOString()
 
+// Ghi nhật ký TỪNG thao tác (sql/22_bank_action_log.sql). bank_transactions chỉ giữ trạng thái
+// cuối nên không trả lời được "ai đã làm gì với giao dịch này". Lỗi ghi log KHÔNG được làm hỏng
+// thao tác — bảng chưa tạo (chưa chạy SQL) thì bỏ qua trong im lặng.
+async function logAction(supabase, { txId, clientId, action, detail, note, staffId }) {
+  try {
+    await supabase.from('bank_action_logs').insert({
+      tx_id: txId, client_id: clientId || null, action,
+      detail: detail || null, note: note || null, staff_id: staffId || null,
+    })
+  } catch (e) { console.error('logAction:', e?.message || e) }
+}
+
 export async function GET(request) {
   const auth = await callerHasPermission(PERM)
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
@@ -68,7 +80,23 @@ export async function GET(request) {
     const { data } = await supabase.from('clients').select('id, name').in('id', postedIds)
     for (const c of data || []) names.set(c.id, c.name)
   }
-  const staffIds = [...new Set((txs || []).map(t => t.posted_by).filter(Boolean))]
+  // Nhật ký từng thao tác (sql/22_bank_action_log.sql). Chưa chạy SQL thì coi như chưa có nhật ký.
+  let logs = []
+  if (txs?.length) {
+    try {
+      const { data, error } = await supabase.from('bank_action_logs')
+        .select('id, tx_id, action, detail, note, staff_id, created_at')
+        .in('tx_id', txs.map(t => t.id)).order('created_at', { ascending: false })
+      if (!error) logs = data || []
+    } catch (_) { logs = [] }
+  }
+  const logsByTx = new Map()
+  for (const l of logs) {
+    if (!logsByTx.has(l.tx_id)) logsByTx.set(l.tx_id, [])
+    logsByTx.get(l.tx_id).push(l)
+  }
+
+  const staffIds = [...new Set([...(txs || []).map(t => t.posted_by), ...logs.map(l => l.staff_id)].filter(Boolean))]
   const staffNames = new Map()
   if (staffIds.length) {
     const { data } = await supabase.from('staff').select('id, full_name').in('id', staffIds)
@@ -80,6 +108,10 @@ export async function GET(request) {
       id: t.id, source: t.source, tx_time: t.tx_time, amount: Number(t.amount) || 0, memo: t.memo || '',
       account: t.account, state: t.state, note: t.note,
       posted_at: t.posted_at, posted_by_name: staffNames.get(t.posted_by) || null, post_detail: t.post_detail,
+      logs: (logsByTx.get(t.id) || []).map(l => ({
+        id: l.id, action: l.action, detail: l.detail, note: l.note,
+        at: l.created_at, by: staffNames.get(l.staff_id) || '—',
+      })),
     }
     if (t.state !== 'open') {
       return { ...base, status: t.state, client: t.client_id ? { id: t.client_id, name: names.get(t.client_id) || '' } : null }
@@ -126,6 +158,10 @@ export async function POST(request) {
       .eq('id', id).eq('state', 'open').select('id')
     if (error) return Response.json({ error: error.message }, { status: 500 })
     if (!data?.length) return Response.json({ error: 'Giao dịch đã được xử lý bởi người khác — tải lại trang' }, { status: 409 })
+    await logAction(supabase, {
+      txId: id, clientId: keep.client_id || tx.client_id, action: 'ignore',
+      detail: body.note || 'Đóng giao dịch', note: body.userNote, staffId,
+    })
     return Response.json({ ok: true })
   }
 
@@ -138,6 +174,16 @@ export async function POST(request) {
       .eq('id', id).eq('state', 'ignored').select('id')
     if (error) return Response.json({ error: error.message }, { status: 500 })
     if (!data?.length) return Response.json({ error: 'Chỉ mở lại được giao dịch đã bỏ qua' }, { status: 409 })
+    await logAction(supabase, { txId: id, clientId: tx.client_id, action: 'reopen', detail: 'Mở lại giao dịch', note: body.userNote, staffId })
+    return Response.json({ ok: true })
+  }
+
+  // Chỉ thêm ghi chú, không đổi trạng thái — để nhân viên giải thích một giao dịch lạ cho người
+  // xem sau (hiện ngay trong thẻ giao dịch và ở Nhật ký làm việc).
+  if (action === 'note') {
+    const note = String(body.note || '').trim()
+    if (!note) return Response.json({ error: 'Chưa nhập ghi chú' }, { status: 400 })
+    await logAction(supabase, { txId: id, clientId: tx.client_id, action: 'note', detail: 'Ghi chú', note, staffId })
     return Response.json({ ok: true })
   }
 
@@ -150,6 +196,11 @@ export async function POST(request) {
       period_year: y && m ? y : null, period_month: y && m ? m : null,
     }).eq('id', id).eq('state', 'open')
     if (error) return Response.json({ error: error.message }, { status: 500 })
+    await logAction(supabase, {
+      txId: id, clientId: body.clientId || null, action: 'assign',
+      detail: body.clientId ? ('Chọn tay công ty' + (y && m ? ' · kỳ T' + m + '/' + y : '')) : 'Bỏ chọn tay, đọc lại từ nội dung',
+      note: body.userNote, staffId,
+    })
     return Response.json({ ok: true })
   }
 
@@ -182,6 +233,15 @@ export async function POST(request) {
     await supabase.from('bank_transactions').update({
       post_detail: detail, note: res.ok ? null : 'LỖI GHI MỘT PHẦN — kiểm tra tay: ' + res.error,
     }).eq('id', id)
+    const KIND_LABEL = { ketoan: 'Kế toán', hcns: 'HCNS', no_ton: 'Nợ tồn' }
+    await logAction(supabase, {
+      txId: id, clientId: c.client.id, action: 'post',
+      detail: (res.ok ? 'Ghi công nợ: ' : 'Ghi được một phần: ')
+        + res.done.map(l => (KIND_LABEL[l.kind] || l.kind) + (l.month ? ' T' + l.month + '/' + l.year : '')
+          + ' ' + Number(l.amount).toLocaleString('vi-VN') + 'đ').join(' + ')
+        + (res.ok ? '' : ' · LỖI: ' + res.error),
+      note: body.userNote, staffId,
+    })
     if (!res.ok) return Response.json({ error: 'Mới ghi được một phần, phần còn lại lỗi: ' + res.error + '. Kiểm tra tay công nợ công ty này.' }, { status: 500 })
     return Response.json({ ok: true, done: res.done })
   }

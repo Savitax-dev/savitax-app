@@ -43,6 +43,8 @@ const pillLabel = (r) => r.status === 'posted' ? 'Đã ghi qua đối soát'
   : 'Đã khớp sổ'
 const VIA = { code: ['qua Mã KH', 'bg-blue-50 text-blue-700'], mst: ['qua MST', 'bg-violet-50 text-violet-700'],
   name: ['qua Tên', 'bg-amber-50 text-amber-700'], manual: ['chọn tay', 'bg-gray-100 text-gray-600'] }
+// Nhãn thao tác trong nhật ký từng giao dịch (bank_action_logs.action).
+const ACTION_LABEL = { post: 'Ghi công nợ', ignore: 'Đóng giao dịch', reopen: 'Mở lại', assign: 'Chọn công ty', note: 'Ghi chú' }
 const KIND = { ketoan: ['KT', 'bg-emerald-50 text-emerald-700'], hcns: ['HCNS', 'bg-violet-50 text-violet-700'], no_ton: ['Nợ tồn', 'bg-orange-50 text-orange-700'] }
 
 // Tô mã KH (xanh) và kỳ (tím) trên nội dung gốc.
@@ -252,6 +254,7 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients }) {
   const [pick, setPick] = useState('')
   const [pYear, setPYear] = useState(r.period?.year || new Date().getFullYear())
   const [pMonth, setPMonth] = useState(r.period?.month || new Date().getMonth() + 1)
+  const [note, setNote] = useState('')
 
   const pickedClient = clients && pick ? clients.find(c => c.name === pick || c.client_code === pick) : null
   const lines = r.status === 'posted' ? (r.post_detail?.done || []) : (r.plan || [])
@@ -325,7 +328,7 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients }) {
                   {[pYear - 1, pYear, pYear + 1].map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
                 <button disabled={busy || (!pickedClient && !r.client)}
-                  onClick={() => act({ action: 'assign', id: r.id, clientId: pickedClient?.id || r.client?.id, year: pYear, month: pMonth }, 'Đã áp dụng — xem lại đề xuất')}
+                  onClick={() => act({ action: 'assign', id: r.id, clientId: pickedClient?.id || r.client?.id, year: pYear, month: pMonth, userNote: note.trim() || undefined }, 'Đã áp dụng — xem lại đề xuất')}
                   className="px-2.5 py-1 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-40">Áp dụng</button>
                 {(r.manualClient || r.manualPeriod) && (
                   <button disabled={busy} onClick={() => act({ action: 'assign', id: r.id, clientId: null }, 'Đã về lại kết quả tự đọc')}
@@ -334,29 +337,61 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients }) {
               </span>
             </>)}
 
+            {/* Ghi chú đi kèm THAO TÁC: gõ trước rồi bấm nút bên dưới thì ghi chú được lưu cùng
+                việc vừa làm; không bấm nút nào thì bấm "Lưu ghi chú" để lưu riêng. */}
+            <span className="text-gray-500">Ghi chú</span>
+            <span className="flex flex-wrap items-center gap-1.5">
+              <input value={note} onChange={e => setNote(e.target.value)}
+                placeholder="Ghi chú cho giao dịch này (vd: khách báo trả hộ công ty khác)…"
+                className="border border-gray-200 rounded-md px-2 py-1 flex-1 min-w-[16rem]" />
+              <button disabled={busy || !note.trim()}
+                onClick={async () => { if (await act({ action: 'note', id: r.id, note: note.trim() }, 'Đã lưu ghi chú')) setNote('') }}
+                className="px-2.5 py-1 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-40">Lưu ghi chú</button>
+            </span>
+
+            {r.logs?.length > 0 && (<>
+              <span className="text-gray-500">Nhật ký</span>
+              <span className="space-y-0.5">
+                {r.logs.map(l => (
+                  <div key={l.id} className="text-gray-600">
+                    <span className="text-gray-400">{vnTime(l.at)} · {l.by} · </span>
+                    {ACTION_LABEL[l.action] || l.action}
+                    {l.detail ? ': ' + l.detail : ''}
+                    {l.note && <span className="text-gray-700"> — “{l.note}”</span>}
+                  </div>
+                ))}
+              </span>
+            </>)}
+
             <span />
             <span className="flex flex-wrap gap-1.5 mt-1">
               {r.state === 'open' && r.plan && r.signature && (g === 'ready' || g === 'review') && (
-                <button disabled={busy} onClick={() => {
+                <button disabled={busy} onClick={async () => {
                   const txt = r.plan.map(l => KIND[l.kind][0] + (l.month ? ' T' + l.month : '') + ' ' + fmt(l.amount)).join(', ')
-                  if (confirm('Ghi vào công nợ ' + r.client.name + ':\n' + txt)) act({ action: 'post', id: r.id, signature: r.signature }, 'Đã ghi công nợ ' + r.client.name)
+                  if (confirm('Ghi vào công nợ ' + r.client.name + ':\n' + txt)) {
+                    if (await act({ action: 'post', id: r.id, signature: r.signature, userNote: note.trim() || undefined }, 'Đã ghi công nợ ' + r.client.name)) setNote('')
+                  }
                 }}
                   className={'px-3 py-1 rounded-md font-medium border disabled:opacity-40 ' + st.pill}>
                   {busy ? 'Đang ghi...' : g === 'ready' ? 'Ghi công nợ' : 'Ghi theo đề xuất'}
                 </button>
               )}
               {r.state === 'open' && (<>
-                <button disabled={busy} onClick={() => act({ action: 'ignore', id: r.id, note: g === 'done' ? 'Nhân viên đã ghi tay' : 'Đã xử lý tay' }, 'Đã đánh dấu')}
+                <button disabled={busy} onClick={async () => {
+                  if (await act({ action: 'ignore', id: r.id, note: g === 'done' ? 'Nhân viên đã ghi tay' : 'Đã xử lý tay', userNote: note.trim() || undefined }, 'Đã đánh dấu')) setNote('')
+                }}
                   className="px-3 py-1 rounded-md border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40">
                   {g === 'done' ? 'Xác nhận khớp sổ' : 'Đã xử lý tay'}
                 </button>
                 {g !== 'done' && (
-                  <button disabled={busy} onClick={() => act({ action: 'ignore', id: r.id, note: 'Không phải phí dịch vụ' }, 'Đã bỏ qua')}
+                  <button disabled={busy} onClick={async () => {
+                    if (await act({ action: 'ignore', id: r.id, note: 'Không phải phí dịch vụ', userNote: note.trim() || undefined }, 'Đã bỏ qua')) setNote('')
+                  }}
                     className="px-3 py-1 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-40">Bỏ qua</button>
                 )}
               </>)}
               {r.state === 'ignored' && (
-                <button disabled={busy} onClick={() => act({ action: 'reopen', id: r.id }, 'Đã mở lại')}
+                <button disabled={busy} onClick={() => act({ action: 'reopen', id: r.id, userNote: note.trim() || undefined }, 'Đã mở lại')}
                   className="px-3 py-1 rounded-md border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40">Mở lại</button>
               )}
             </span>
