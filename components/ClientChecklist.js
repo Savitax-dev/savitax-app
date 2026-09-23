@@ -1027,7 +1027,8 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
               </span>
             )}
           </div>
-          <div className="p-3">
+          <div className="p-3 grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <div className="lg:col-span-2">
             {hcnsTasksLoading && <p className="text-xs text-gray-400">Đang tải...</p>}
             {!hcnsTasksLoading && (!hcnsTasks || hcnsTasks.totalCount === 0) && (
               <p className="text-xs text-gray-400">
@@ -1118,12 +1119,13 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                     )
                   })}
                 </div>
-                <p className="text-xs text-gray-400 mt-2">
-                  % chỉ tính việc làm <b>đúng hạn</b> — làm muộn vẫn ghi nhận nhưng không cộng vào %.
-                  Đổi hạn ở trang <b>Checklist HCNS</b>.
-                </p>
               </>
             )}
+            </div>
+            {/* Ghi chú nội bộ của công ty theo THÁNG — cùng khung với tag Thời điểm. */}
+            <div className="lg:border-l lg:border-sky-100 lg:pl-3">
+              <HcnsClientNotes hcnsClientId={hcnsClient?.id} year={selYear} month={clientMonth} />
+            </div>
           </div>
         </div>
       )}
@@ -1533,5 +1535,127 @@ function HeadcountForm({ prev, month, busy, onCancel, onSave }) {
         <button type="button" onClick={onCancel} className="px-3 py-1 border border-gray-300 rounded-md text-xs text-gray-600 bg-white">Hủy</button>
       </div>
     </div>
+  )
+}
+
+// Ghi chú nội bộ của công ty Thời kỳ, gắn theo THÁNG đang xem (sql/21). Dùng lại đúng cơ chế
+// "xác nhận đã đọc" của ghi chú hồ sơ Thời điểm, chỉ khác chỗ gắn.
+function HcnsClientNotes({ hcnsClientId, year, month }) {
+  const [notes, setNotes] = useState([])
+  const [installed, setInstalled] = useState(true)
+  const [showAll, setShowAll] = useState(false)
+  const [text, setText] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+
+  const load = async () => {
+    if (!hcnsClientId) return
+    const qs = showAll
+      ? '?hcnsClientId=' + hcnsClientId + '&all=1'
+      : '?hcnsClientId=' + hcnsClientId + '&year=' + year + '&month=' + month
+    const j = await fetch('/api/admin/hcns/case-notes' + qs).then(r => r.json()).catch(() => ({}))
+    setNotes((j.data && j.data[hcnsClientId]) || [])
+    setInstalled(!j.notInstalled)
+  }
+  useEffect(() => { load() // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hcnsClientId, year, month, showAll])
+
+  const post = async (body) => {
+    setErr(''); setBusy(true)
+    const j = await fetch('/api/admin/hcns/case-notes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }).then(r => r.json()).catch(() => ({ error: 'Không gửi được, thử lại.' }))
+    setBusy(false)
+    if (j.error) { setErr(j.error); return false }
+    await load()
+    return true
+  }
+  const add = async () => {
+    if (!text.trim()) { setErr('Nhập nội dung ghi chú trước khi lưu.'); return }
+    if (await post({ hcnsClientId, year, month, content: text.trim() })) setText('')
+  }
+  const remove = async (id) => {
+    if (!window.confirm('Xoá ghi chú này?')) return
+    const j = await fetch('/api/admin/hcns/case-notes?id=' + id, { method: 'DELETE' })
+      .then(r => r.json()).catch(() => ({ error: 'Không xoá được.' }))
+    if (j.error) setErr(j.error)
+    else load()
+  }
+
+  if (!installed) {
+    return (
+      <p className="text-xs text-amber-900 bg-amber-50 border border-amber-300 rounded-lg px-2 py-1.5">
+        Chưa bật ghi chú cho công ty Thời kỳ — cần chạy <b>sql/21_hcns_client_notes.sql</b> trong Supabase.
+      </p>
+    )
+  }
+
+  const unread = notes.filter(n => !n.readByMe).length
+  return (
+    <>
+      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 flex items-center gap-2 flex-wrap">
+        <span>Ghi chú nội bộ</span>
+        {unread > 0 && (
+          <span className="normal-case tracking-normal text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#B3261E] text-white">
+            {unread} chưa đọc
+          </span>
+        )}
+        <button onClick={() => setShowAll(!showAll)}
+          className="normal-case tracking-normal text-[11px] font-medium text-sky-700 hover:underline ml-auto">
+          {showAll ? '← Chỉ tháng ' + month + '/' + year : 'Xem tất cả'}
+        </button>
+      </p>
+
+      {notes.length === 0 && (
+        <p className="text-xs text-gray-400 mb-2">
+          {showAll ? 'Công ty này chưa có ghi chú nào.' : 'Chưa có ghi chú cho tháng ' + month + '/' + year + '.'}
+        </p>
+      )}
+
+      <div className="space-y-2 mb-2 max-h-72 overflow-y-auto">
+        {notes.map(n => (
+          <div key={n.id}
+            className={'rounded-lg border px-2 py-1.5 ' + (n.readByMe ? 'bg-white border-gray-200' : 'bg-amber-50 border-amber-400')}>
+            <p className="text-xs text-gray-800 whitespace-pre-wrap leading-relaxed">{n.content}</p>
+            <p className="text-[11px] text-gray-500 mt-1">
+              {showAll && n.month ? 'T' + n.month + '/' + n.year + ' · ' : ''}
+              {n.createdByName || '—'} · {new Date(n.created_at).toLocaleString('vi-VN')}
+            </p>
+            <div className="flex items-center gap-2 flex-wrap mt-1">
+              {n.readByMe ? (
+                <span className="text-[11px] font-medium text-[#2E6B3A]">✓ Bạn đã đọc</span>
+              ) : (
+                <button onClick={() => post({ noteId: n.id, read: true })} disabled={busy}
+                  className="text-[11px] font-semibold px-2 py-1 rounded-md bg-[#8B1A1A] text-white hover:bg-[#6B1212] disabled:opacity-60">
+                  Xác nhận đã đọc
+                </button>
+              )}
+              {n.readers.length > 0 && (
+                <span className="text-[11px] text-gray-500">
+                  · {n.readers.length} người đã đọc: {n.readers.map(r => r.name || '—').join(', ')}
+                </span>
+              )}
+              {n.isMine && (
+                <button onClick={() => remove(n.id)} className="text-[11px] text-red-700 hover:text-red-900 ml-auto">Xoá</button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {err && <p className="text-[11px] text-red-800 bg-red-100 border border-red-300 rounded-lg px-2 py-1 mb-1">{err}</p>}
+
+      {!showAll && (
+        <>
+          <textarea value={text} onChange={e => { setText(e.target.value); if (err) setErr('') }}
+            rows={2} placeholder={'Ghi chú tháng ' + month + '/' + year + ' (nhân viên, trưởng phòng, quản lý cùng đọc)...'}
+            className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-sky-400/40" />
+          <button onClick={add} disabled={busy}
+            className="mt-1 w-full px-3 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-semibold hover:bg-slate-900 disabled:opacity-60">
+            {busy ? 'Đang lưu...' : 'Lưu ghi chú'}
+          </button>
+        </>
+      )}
+    </>
   )
 }
