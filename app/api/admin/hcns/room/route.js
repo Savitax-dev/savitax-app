@@ -57,7 +57,14 @@ export async function GET(request) {
     staff = staff.filter(s => s.id === auth.caller.staffId)
   }
 
-  const thoiKy = clients.filter(c => c.category === 'thoi_ky')
+  // Bỏ công ty mà bên kế toán đã tắt "Có sử dụng DV HCNS" — nguồn đúng là ô tick đó.
+  const tkLinked = clients.filter(c => c.category === 'thoi_ky').map(c => c.linked_client_id).filter(Boolean)
+  const { data: usesRows } = tkLinked.length
+    ? await supabase.from('clients').select('id, uses_hcns').in('id', tkLinked)
+    : { data: [] }
+  const usesHcns = new Map((usesRows || []).map(c => [c.id, c.uses_hcns === true]))
+  const thoiKy = clients.filter(c => c.category === 'thoi_ky' &&
+    (!c.linked_client_id || usesHcns.get(c.linked_client_id) !== false))
   const cases = clients.filter(c => c.category === 'thoi_diem' || c.category === 'vang_lai')
 
   // ── Khối "Thời kỳ": công nợ + checklist định kỳ ────────────────────────────
@@ -152,6 +159,8 @@ export async function GET(request) {
       assigned_to: c.assigned_to,
       fee_period: c.fee_period,
       dueFee, collected,
+      // Phí HCNS sống = 0 -> công ty được hỗ trợ miễn phí, không phải "chưa tới kỳ thu".
+      freeOfCharge: (Number(c.hcns_fee) || 0) === 0,
       remain: Math.max(0, dueFee - collected),
       opening, periodRemain,
       totalRemain: opening + periodRemain,

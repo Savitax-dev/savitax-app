@@ -36,7 +36,7 @@ export async function GET(request) {
   const [{ data: staffList }, { data: linkedClients }] = await Promise.all([
     staffIds.length ? supabase.from('staff').select('id, full_name').in('id', staffIds) : { data: [] },
     linkedIds.length
-      ? supabase.from('clients').select('id, name, client_code, tax_code, monthly_fee, fee_period, assigned_to').in('id', linkedIds)
+      ? supabase.from('clients').select('id, name, client_code, tax_code, monthly_fee, fee_period, assigned_to, uses_hcns').in('id', linkedIds)
       : { data: [] },
   ])
   const staffMap = new Map((staffList || []).map(s => [s.id, s]))
@@ -71,8 +71,15 @@ export async function GET(request) {
     svcStat.set(sv.hcns_client_id, a)
   }
 
+  // Ô tick "Có sử dụng DV HCNS" bên kế toán là nguồn đúng: công ty đã bỏ tick mà bản ghi HCNS còn
+  // is_active=true (lệch do nạp liệu cũ) thì vẫn phải coi là ĐÃ NGƯNG, nếu không Phòng HCNS hiện
+  // công ty mà bên kế toán đã gỡ — đúng ca 9 công ty phí 0đ ngày 2026-09-23.
+  const stoppedByClient = (r) => r.category === 'thoi_ky' && r.linked_client_id &&
+    clientMap.has(r.linked_client_id) && clientMap.get(r.linked_client_id).uses_hcns !== true
+
   const data = (rows || []).map(r => ({
     ...r,
+    is_active: r.is_active === false || stoppedByClient(r) ? false : r.is_active,
     hcns_fee: Number(r.hcns_fee) || 0,
     other_debt: Number(r.other_debt) || 0,
     serviceCount: svcStat.get(r.id)?.total || 0,

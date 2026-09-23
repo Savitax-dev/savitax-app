@@ -938,7 +938,9 @@ function ClientRow({ c, ri, showCat, stopped, phatSinh, report, expanded, onTogg
           </p>
           <p className="text-xs text-slate-500 mt-0.5">
             {[c.case_code || c.client_code, c.tax_code,
-              isThoiKy ? fmt(c.hcns_fee) + 'đ/' + (c.fee_period === 'quarterly' ? 'Quý' : 'Tháng') : null,
+              isThoiKy ? (Number(c.hcns_fee) > 0
+                ? fmt(c.hcns_fee) + 'đ/' + (c.fee_period === 'quarterly' ? 'Quý' : 'Tháng')
+                : 'Miễn phí') : null,
               c.staff?.full_name].filter(Boolean).join(' · ')}
           </p>
         </div>
@@ -1110,6 +1112,9 @@ function StoppedSummary({ c }) {
 function DebtBadge({ stat }) {
   // Viền cùng tông chữ — badge nền nhạt trơn bị chìm khi dòng có nền sọc xám.
   const cls = 'text-xs font-semibold px-2 py-1 rounded-md border flex-shrink-0 '
+  // Phí HCNS = 0 là công ty được hỗ trợ miễn phí — nói rõ để nhân viên không đi đòi tiền, và để
+  // không lẫn với "Chưa tới kỳ" (công ty thu theo quý, tháng này chưa đến kỳ thu).
+  if (!stat.dueFee && stat.freeOfCharge) return <span className={cls + 'bg-[#E6F1FB] text-[#0C447C] border-[#378ADD]'}>Miễn phí</span>
   if (!stat.dueFee) return <span className={cls + 'bg-slate-100 text-slate-600 border-slate-300'}>Chưa tới kỳ</span>
   if (stat.remain === 0) return <span className={cls + 'bg-[#EBF3EB] text-[#2E6B3A] border-[#2E6B3A]/40'}>Đã thu</span>
   if (stat.collected > 0) return <span className={cls + 'bg-[#FAF1DC] text-[#87590B] border-[#D89614]'}>Thu thiếu {fmt(stat.remain)}đ</span>
