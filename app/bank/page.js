@@ -21,12 +21,18 @@ function vnTime(iso) {
   return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes())
 }
 
+// Chuẩn hoá chuỗi tìm kiếm: bỏ dấu, viết hoa, bỏ mọi ký tự không phải chữ/số (gõ "1620000" hay
+// "1.620.000" đều khớp, gõ "pho giay cu" khớp "PHỐ GIÀY CŨ").
+const searchKey = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .replace(/đ/g, 'd').replace(/Đ/g, 'D').toUpperCase().replace(/[^A-Z0-9]/g, '')
+
 // Nhóm hiển thị: đã ghi qua trang + đã bỏ qua + nhân viên đã ghi tay đều về "Đã khớp sổ".
 const groupOf = (r) => (r.status === 'posted' || r.status === 'ignored' || r.status === 'done') ? 'done' : r.status
 
 const ST = {
   done:    { label: 'Đã khớp sổ',   sub: 'đã có người ghi',          icon: '✓✓', card: 'bg-teal-50 border-teal-200 text-teal-800',       pill: 'bg-teal-50 text-teal-700 border-teal-200',       bar: 'bg-teal-500' },
-  ready:   { label: 'Sẵn sàng ghi', sub: 'bấm 1 lần là ghi',         icon: '✓',  card: 'bg-emerald-50 border-emerald-200 text-emerald-800', pill: 'bg-emerald-50 text-emerald-700 border-emerald-200', bar: 'bg-emerald-500' },
+  // Xanh lá cây cho "Sẵn sàng ghi" — viền đậm hơn để không lẫn với xanh ngọc của "Đã khớp sổ".
+  ready:   { label: 'Sẵn sàng ghi', sub: 'bấm 1 lần là ghi',         icon: '✓',  card: 'bg-green-50 border-green-300 text-green-800',    pill: 'bg-green-50 text-green-700 border-green-300',    bar: 'bg-green-500' },
   review:  { label: 'Cần xem',      sub: 'lệch · theo tên · kỳ lạ',  icon: '!',  card: 'bg-amber-50 border-amber-200 text-amber-800',     pill: 'bg-amber-50 text-amber-700 border-amber-200',     bar: 'bg-amber-400' },
   unknown: { label: 'Chưa nhận ra', sub: 'chọn công ty tay',          icon: '?',  card: 'bg-rose-50 border-rose-200 text-rose-800',        pill: 'bg-rose-50 text-rose-700 border-rose-200',        bar: 'bg-rose-400' },
 }
@@ -63,6 +69,7 @@ export default function BankPage() {
   const [to, setTo] = useState(vnDate(0))
   const [bank, setBank] = useState('all')
   const [filter, setFilter] = useState('all')
+  const [q, setQ] = useState('')
   const [open, setOpen] = useState({})
   const [busy, setBusy] = useState(null)
   const [msg, setMsg] = useState(null)
@@ -112,7 +119,12 @@ export default function BankPage() {
     return true
   }
 
-  const shown = useMemo(() => rows.filter(r => bank === 'all' || r.source === bank), [rows, bank])
+  // Tìm theo nội dung chuyển khoản, tên/mã công ty hoặc số tiền — bỏ dấu để gõ không dấu vẫn ra.
+  const shown = useMemo(() => {
+    const key = searchKey(q)
+    return rows.filter(r => (bank === 'all' || r.source === bank)
+      && (!key || searchKey([r.memo, r.client?.name, r.client?.client_code, r.amount, r.reason].join(' ')).includes(key)))
+  }, [rows, bank, q])
   const count = (g) => shown.filter(r => groupOf(r) === g).length
   const total = shown.reduce((a, r) => a + r.amount, 0)
   const list = shown.filter(r => filter === 'all' || groupOf(r) === filter)
@@ -146,13 +158,19 @@ export default function BankPage() {
 
   return (
     <AppShell>
-      <div className="px-4 md:px-8 py-5 max-w-5xl">
+      <div className="px-4 md:px-8 py-5">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Đối soát ngân hàng</h1>
             <p className="text-sm text-gray-500 mt-1">Tiền vào từ VPS · ACB tức thì · Techcombank theo sao kê sáng hôm sau</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-sm">
+            <div className="relative">
+              <input value={q} onChange={e => setQ(e.target.value)} placeholder="Tìm nội dung, công ty, số tiền…"
+                className="border border-gray-200 rounded-lg pl-8 pr-7 py-1.5 w-64 bg-white" />
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+              {q && <button onClick={() => setQ('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>}
+            </div>
             <select value={bank} onChange={e => setBank(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
               <option value="all">Tất cả ngân hàng</option>
               <option value="acb">ACB</option>
@@ -195,7 +213,7 @@ export default function BankPage() {
         {error && <div className="mb-2 text-sm rounded-lg px-3 py-2 border bg-rose-50 border-rose-200 text-rose-700">{error}</div>}
 
         {!loading && !list.length && (
-          <div className="text-center text-sm text-gray-400 py-10 border border-dashed border-gray-200 rounded-xl">Chưa có giao dịch nào trong khoảng này</div>
+          <div className="text-center text-sm text-gray-400 py-10 border border-dashed border-gray-200 rounded-xl">{q ? 'Không tìm thấy giao dịch nào khớp "' + q + '"' : 'Chưa có giao dịch nào trong khoảng này'}</div>
         )}
 
         <div>
@@ -208,10 +226,10 @@ export default function BankPage() {
         </div>
 
         {readyRows.length > 0 && (
-          <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5">
-            <span className="text-sm text-emerald-700">{readyRows.length} giao dịch khớp chắc chắn đang chờ ghi</span>
+          <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-green-300 bg-green-50 px-3 py-2.5">
+            <span className="text-sm text-green-700">{readyRows.length} giao dịch khớp chắc chắn đang chờ ghi</span>
             <button onClick={postAll} disabled={!!busy}
-              className="text-sm font-medium px-3 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">
+              className="text-sm font-medium px-3 py-1.5 rounded-lg bg-white border border-green-400 text-green-700 hover:bg-green-100 disabled:opacity-50">
               {busy === 'all' ? 'Đang ghi...' : 'Ghi tất cả'}
             </button>
           </div>
@@ -279,7 +297,7 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients }) {
 
             {r.state === 'open' && (<>
               <span className="text-gray-500">Đề xuất</span>
-              <span className={g === 'ready' ? 'text-emerald-700' : g === 'review' ? 'text-amber-700' : g === 'unknown' ? 'text-rose-700' : 'text-teal-700'}>{r.reason}</span>
+              <span className={g === 'ready' ? 'text-green-700' : g === 'review' ? 'text-amber-700' : g === 'unknown' ? 'text-rose-700' : 'text-teal-700'}>{r.reason}</span>
             </>)}
 
             {r.state !== 'open' && (<>
