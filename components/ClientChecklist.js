@@ -74,6 +74,9 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   // chọn trên thẻ công ty, không được dùng monthly_fee sống.
   const [feeByPeriod,  setFeeByPeriod]  = useState({})
   const [hcnsFeeByPeriod, setHcnsFeeByPeriod] = useState({})
+  // Kỳ nào đã chuyển thành "nợ tồn" — { 'ketoan:2026-8': { rolled, remaining } }. Phần chưa thu
+  // của kỳ đó KHÔNG còn nằm ở kỳ gốc nữa, thu tiếp phải thu ở tab "Nợ tồn cũ" (xem AGENTS.md).
+  const [rolloverByPeriod, setRolloverByPeriod] = useState({})
   const [oldDebtAmount, setOldDebtAmount] = useState('')
   const [oldDebtNote,   setOldDebtNote]   = useState('')
   const [savingOldDebt, setSavingOldDebt] = useState(false)
@@ -148,7 +151,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     const amt = recordedAmount(debtType)
     if (amt > 0) setDebtAmount(String(amt))
     else if (debtType === 'ketoan') setDebtAmount(String(feeForSelected('ketoan') || ''))
-    else if (debtType === 'hcns') setDebtAmount(String(hcnsClient?.hcns_fee || ''))
+    else if (debtType === 'hcns') setDebtAmount(String(feeForSelected('hcns') || ''))
     else setDebtAmount('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debtHistory, debtType, clientMonth, selYear, panel])
@@ -204,6 +207,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
       setDebtHistory([...(main.data || []), ...(hcns.data || [])])
       setFeeByPeriod(main.feeByPeriod || {})
       setHcnsFeeByPeriod(hcns.feeByPeriod || {})
+      setRolloverByPeriod(main.rolloverByPeriod || {})
       if (hcns.hcnsClient) setHcnsClient(hcns.hcnsClient)
     } catch (_) {
       setDebtHistory([])
@@ -1138,10 +1142,10 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
           <div className="flex border-b border-gray-100">
             {[
               // Mở từ trang Phòng HCNS thì CHỈ có mục HCNS — 3 mục kế toán ẩn hẳn để không ghi nhầm.
-              ...(hcnsOnly ? [] : [{ key: 'ketoan', label: '📋 Dịch vụ kế toán', hint: fmt(client.monthly_fee) + 'đ' + (client.fee_period === 'quarterly' ? '/Quý' : '/Tháng') }]),
+              ...(hcnsOnly ? [] : [{ key: 'ketoan', label: '📋 Dịch vụ kế toán', hint: fmt(feeForSelected('ketoan')) + 'đ' + (client.fee_period === 'quarterly' ? '/Quý' : '/Tháng') }]),
               // Mục HCNS chỉ hiện với công ty đã tick "Có sử dụng DV HCNS".
               ...(hcnsClient ? [{ key: 'hcns', label: '🏢 Dịch vụ HCNS',
-                hint: fmt(hcnsClient.hcns_fee) + 'đ' + (hcnsClient.fee_period === 'quarterly' ? '/Quý' : '/Tháng') }] : []),
+                hint: feeForSelected('hcns') > 0 ? fmt(feeForSelected('hcns')) + 'đ' + (hcnsClient.fee_period === 'quarterly' ? '/Quý' : '/Tháng') : 'Chưa áp dụng tháng này' }] : []),
               ...(hcnsOnly ? [] : [
                 { key: 'khach',  label: '🗂 Dịch vụ khác', hint: 'Phát sinh khác' },
                 { key: 'no_ton', label: '📦 Nợ tồn cũ',    hint: fmt(client.other_debt) + 'đ còn nợ' },
@@ -1214,13 +1218,20 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
               // Phí và số đã thu đều lấy theo THÁNG ĐANG CHỌN trên thẻ công ty, không lấy số
               // của tháng mà trang cha đang xem — trước đây đổi tháng chỉ có tab Công việc đổi
               // theo, còn Công nợ vẫn hiện số của tháng cũ.
-              const fee = debtType === 'hcns'
-                ? Number(hcnsClient?.hcns_fee) || 0
-                : feeForSelected(debtType)
+              // Phí HCNS cũng lấy theo THÁNG ĐANG CHỌN, không lấy hcns_fee sống: tháng TRƯỚC khi
+              // công ty tách phí HCNS vẫn hiện "còn phải thu" phí HCNS trong khi phí kế toán
+              // tháng đó còn là mức GỘP — đòi hai lần cùng một khoản (ca ĐẠI QUANG 23/09/2026).
+              const fee = feeForSelected(debtType)
               const already = debtType === 'khach'
                 ? recordedAmount('khach')
                 : recordedAmount(debtType)
-              const remain  = isFeeType ? Math.max(0, fee - already) : 0
+              // Kỳ ĐÃ chuyển nợ tồn: phần thiếu đã dời sang "Nợ tồn cũ" nên "còn phải thu" phải
+              // lấy theo remaining_amount, KHÔNG lấy "phí trừ đã thu" — nếu không sẽ báo nợ oan
+              // đúng khoản khách đã trả qua nợ tồn và nhân viên ghi thu lần hai (AGENTS.md).
+              const roll = isFeeType ? rolloverByPeriod[debtType + ':' + selYear + '-' + clientMonth] : null
+              const remain = !isFeeType ? 0
+                : roll ? Math.max(0, roll.remaining)
+                : Math.max(0, fee - already)
               if (isFeeType && fee === 0) return null
               const feePeriodQuarterly = debtType === 'hcns'
                 ? hcnsClient?.fee_period === 'quarterly'
@@ -1243,10 +1254,19 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                           <span className="text-gray-500">Đã thu:</span>
                           <span className={'font-semibold ' + (already > 0 ? 'text-green-600' : 'text-gray-400')}>{fmt(already)}đ</span>
                         </div>
+                        {roll && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Đã chuyển nợ tồn:</span>
+                            <span className="font-semibold text-gray-600">
+                              {fmt(roll.rolled)}đ{roll.remaining < roll.rolled ? ' · đã thu qua nợ tồn ' + fmt(roll.rolled - roll.remaining) + 'đ' : ''}
+                            </span>
+                          </div>
+                        )}
                         <div className="h-px bg-gray-200 my-0.5" />
                         <div className="flex justify-between">
                           <span className={'font-bold ' + (remain === 0 ? 'text-green-700' : 'text-orange-600')}>
-                            {remain === 0 ? '✓ Đã thu đủ' : '⚠ Còn phải thu:'}
+                            {remain === 0 ? (roll ? '✓ Đã thu đủ (gồm thu qua nợ tồn)' : '✓ Đã thu đủ')
+                              : roll ? '⚠ Còn nợ tồn phải thu:' : '⚠ Còn phải thu:'}
                           </span>
                           <span className={'font-bold ' + (remain === 0 ? 'text-green-600' : 'text-orange-600')}>
                             {remain === 0 ? '0đ' : fmt(remain) + 'đ'}
@@ -1260,12 +1280,12 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                             <circle cx="18" cy="18" r="15.9" fill="none"
                               stroke={remain === 0 ? '#16a34a' : already > 0 ? '#f97316' : '#d1d5db'}
                               strokeWidth="3"
-                              strokeDasharray={`${Math.min(100, Math.round(already/fee*100))} 100`}
+                              strokeDasharray={`${Math.min(100, Math.round((fee - remain) / fee * 100))} 100`}
                               strokeLinecap="round" />
                           </svg>
                           <span className={'absolute inset-0 flex items-center justify-center text-xs font-bold ' +
                             (remain === 0 ? 'text-green-600' : already > 0 ? 'text-orange-500' : 'text-gray-400')}>
-                            {Math.min(100, Math.round(already/fee*100))}%
+                            {Math.min(100, Math.round((fee - remain) / fee * 100))}%
                           </span>
                         </div>
                       )}
@@ -1291,7 +1311,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                   value={debtAmount ? Number(debtAmount.replace(/\D/g,'')||0).toLocaleString('vi-VN') : ''}
                   onChange={e => setDebtAmount(e.target.value.replace(/\D/g,''))}
                   placeholder={debtType === 'ketoan' ? 'Phí tháng: ' + fmt(feeForSelected('ketoan')) + 'đ'
-                    : debtType === 'hcns' ? 'Phí HCNS: ' + fmt(hcnsClient?.hcns_fee) + 'đ'
+                    : debtType === 'hcns' ? 'Phí HCNS: ' + fmt(feeForSelected('hcns')) + 'đ'
                     : 'Nhập số tiền...'}
                   className="w-full px-2.5 py-1.5 border border-green-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
                 {debtAmount && (() => {
