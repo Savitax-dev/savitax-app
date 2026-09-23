@@ -74,6 +74,9 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   // chọn trên thẻ công ty, không được dùng monthly_fee sống.
   const [feeByPeriod,  setFeeByPeriod]  = useState({})
   const [hcnsFeeByPeriod, setHcnsFeeByPeriod] = useState({})
+  // Kỳ nào đã chuyển thành "nợ tồn" — { 'ketoan:2026-8': { rolled, remaining } }. Phần chưa thu
+  // của kỳ đó KHÔNG còn nằm ở kỳ gốc nữa, thu tiếp phải thu ở tab "Nợ tồn cũ" (xem AGENTS.md).
+  const [rolloverByPeriod, setRolloverByPeriod] = useState({})
   const [oldDebtAmount, setOldDebtAmount] = useState('')
   const [oldDebtNote,   setOldDebtNote]   = useState('')
   const [savingOldDebt, setSavingOldDebt] = useState(false)
@@ -204,6 +207,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
       setDebtHistory([...(main.data || []), ...(hcns.data || [])])
       setFeeByPeriod(main.feeByPeriod || {})
       setHcnsFeeByPeriod(hcns.feeByPeriod || {})
+      setRolloverByPeriod(main.rolloverByPeriod || {})
       if (hcns.hcnsClient) setHcnsClient(hcns.hcnsClient)
     } catch (_) {
       setDebtHistory([])
@@ -1110,10 +1114,15 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
           <div className="flex border-b border-gray-100">
             {[
               // Mở từ trang Phòng HCNS thì CHỈ có mục HCNS — 3 mục kế toán ẩn hẳn để không ghi nhầm.
-              ...(hcnsOnly ? [] : [{ key: 'ketoan', label: '📋 Dịch vụ kế toán', hint: fmt(client.monthly_fee) + 'đ' + (client.fee_period === 'quarterly' ? '/Quý' : '/Tháng') }]),
+              // Mức phí ghi trên đầu mỗi mục lấy theo THÁNG ĐANG XEM, không lấy phí sống — xem
+              // tháng trước khi công ty tách phí HCNS mà vẫn ghi mức phí HCNS hiện tại thì nhân
+              // viên tưởng tháng đó có phí HCNS (ca thật: ĐẠI QUANG T8/2026, tách phí từ T9).
+              ...(hcnsOnly ? [] : [{ key: 'ketoan', label: '📋 Dịch vụ kế toán', hint: fmt(feeForSelected('ketoan')) + 'đ' + (client.fee_period === 'quarterly' ? '/Quý' : '/Tháng') }]),
               // Mục HCNS chỉ hiện với công ty đã tick "Có sử dụng DV HCNS".
               ...(hcnsClient ? [{ key: 'hcns', label: '🏢 Dịch vụ HCNS',
-                hint: fmt(hcnsClient.hcns_fee) + 'đ' + (hcnsClient.fee_period === 'quarterly' ? '/Quý' : '/Tháng') }] : []),
+                hint: feeForSelected('hcns') > 0
+                  ? fmt(feeForSelected('hcns')) + 'đ' + (hcnsClient.fee_period === 'quarterly' ? '/Quý' : '/Tháng')
+                  : 'Chưa áp dụng tháng này' }] : []),
               ...(hcnsOnly ? [] : [
                 { key: 'khach',  label: '🗂 Dịch vụ khác', hint: 'Phát sinh khác' },
                 { key: 'no_ton', label: '📦 Nợ tồn cũ',    hint: fmt(client.other_debt) + 'đ còn nợ' },
@@ -1195,7 +1204,14 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
               const already = debtType === 'khach'
                 ? recordedAmount('khach')
                 : recordedAmount(debtType)
-              const remain  = isFeeType ? Math.max(0, fee - already) : 0
+              // Kỳ ĐÃ chuyển nợ tồn: phần thiếu đã dời sang "Nợ tồn cũ", nên "còn phải thu" của
+              // kỳ này phải lấy theo remaining_amount của dòng nợ tồn, KHÔNG lấy "phí trừ đã thu"
+              // — nếu không sẽ báo nợ oan đúng khoản khách đã trả qua nợ tồn và nhân viên ghi thu
+              // lần hai (AGENTS.md: đã xảy ra thật).
+              const roll = isFeeType ? rolloverByPeriod[debtType + ':' + selYear + '-' + clientMonth] : null
+              const remain = !isFeeType ? 0
+                : roll ? Math.max(0, roll.remaining)
+                : Math.max(0, fee - already)
               if (isFeeType && fee === 0) return null
               const feePeriodQuarterly = debtType === 'hcns'
                 ? hcnsClient?.fee_period === 'quarterly'
@@ -1218,10 +1234,19 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                           <span className="text-gray-500">Đã thu:</span>
                           <span className={'font-semibold ' + (already > 0 ? 'text-green-600' : 'text-gray-400')}>{fmt(already)}đ</span>
                         </div>
+                        {roll && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Đã chuyển nợ tồn:</span>
+                            <span className="font-semibold text-gray-600">
+                              {fmt(roll.rolled)}đ{roll.remaining < roll.rolled ? ' · đã thu qua nợ tồn ' + fmt(roll.rolled - roll.remaining) + 'đ' : ''}
+                            </span>
+                          </div>
+                        )}
                         <div className="h-px bg-gray-200 my-0.5" />
                         <div className="flex justify-between">
                           <span className={'font-bold ' + (remain === 0 ? 'text-green-700' : 'text-orange-600')}>
-                            {remain === 0 ? '✓ Đã thu đủ' : '⚠ Còn phải thu:'}
+                            {remain === 0 ? (roll ? '✓ Đã thu đủ (gồm thu qua nợ tồn)' : '✓ Đã thu đủ')
+                              : roll ? '⚠ Còn nợ tồn phải thu:' : '⚠ Còn phải thu:'}
                           </span>
                           <span className={'font-bold ' + (remain === 0 ? 'text-green-600' : 'text-orange-600')}>
                             {remain === 0 ? '0đ' : fmt(remain) + 'đ'}
@@ -1235,12 +1260,12 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                             <circle cx="18" cy="18" r="15.9" fill="none"
                               stroke={remain === 0 ? '#16a34a' : already > 0 ? '#f97316' : '#d1d5db'}
                               strokeWidth="3"
-                              strokeDasharray={`${Math.min(100, Math.round(already/fee*100))} 100`}
+                              strokeDasharray={`${Math.min(100, Math.round((fee - remain) / fee * 100))} 100`}
                               strokeLinecap="round" />
                           </svg>
                           <span className={'absolute inset-0 flex items-center justify-center text-xs font-bold ' +
                             (remain === 0 ? 'text-green-600' : already > 0 ? 'text-orange-500' : 'text-gray-400')}>
-                            {Math.min(100, Math.round(already/fee*100))}%
+                            {Math.min(100, Math.round((fee - remain) / fee * 100))}%
                           </span>
                         </div>
                       )}
