@@ -21,51 +21,6 @@ const STATUS_OPTS = [
 
 const fmt = (n) => Number(n || 0).toLocaleString('vi-VN')
 
-// Lịch sử SỬA THÔNG TIN công ty (tên, MST, mã KH, nhân viên phụ trách, trạng thái...) — khác hẳn
-// "Lịch sử thay đổi phí" ngay trên nó. Trước 23/09/2026 các thay đổi này không được ghi ở đâu cả;
-// nay mỗi lần sửa ghi 1 dòng vào client_change_log (xem app/api/admin/clients/route.js).
-// Tải khi mở thẻ công ty, không cache — dữ liệu nhỏ, và cache rỗng từng làm lịch sử phí không hiện.
-function InfoHistory({ clientId }) {
-  const [log, setLog] = useState(null)
-  useEffect(() => {
-    let bỏ = false
-    fetch('/api/admin/client-history?clientId=' + clientId)
-      .then(r => r.json())
-      .then(j => { if (!bỏ) setLog((j.log || []).filter(l => l.entity !== 'monthly_fee')) })
-      .catch(() => { if (!bỏ) setLog([]) })
-    return () => { bỏ = true }
-  }, [clientId])
-
-  return (
-    <div className="mt-3 border-t border-gray-100 pt-3">
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Lịch sử sửa thông tin</p>
-      {log === null ? (
-        <p className="text-xs text-gray-400">Đang tải...</p>
-      ) : log.length === 0 ? (
-        <p className="text-xs text-gray-400">Chưa có thay đổi nào được ghi nhận. Nhật ký bắt đầu ghi từ 23/09/2026.</p>
-      ) : (
-        <div className="space-y-1 max-h-56 overflow-y-auto">
-          {log.map(l => (
-            <div key={l.id} className="text-xs">
-              <span className="font-medium text-gray-700">{l.entity_label || l.field}</span>
-              {l.action === 'create' ? <span className="text-green-600"> + {l.new_value}</span>
-                : l.action === 'delete' ? <span className="text-red-500"> − {l.old_value}</span>
-                : <>
-                    {': '}<span className="text-gray-400 line-through">{l.old_value || '(trống)'}</span>
-                    {' → '}<span className="text-gray-700">{l.new_value || '(trống)'}</span>
-                  </>}
-              <span className="text-gray-400">
-                {' · ' + (l.staff?.full_name || '—')}
-                {' · ' + new Date(l.changed_at).toLocaleString('vi-VN')}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 // Lịch sử ĐỔI MỨC PHÍ (không phải lịch sử thu tiền). Mỗi dòng fee_plan nghĩa là "từ tháng này
 // trở đi phí = X" — đây chính là nguồn resolveFeeForMonth dùng để tính đúng công nợ tháng cũ,
 // nên nhìn được danh sách này giúp phát hiện ngay khi ai đó áp phí nhầm tháng.
@@ -298,8 +253,13 @@ function HcnsSplitFee({ client, monthOptions, onSaved }) {
   const selMonth = fromMonth || defaultMonth
 
   const save = async () => {
-    if (!hcns) { setErr('Nhập mức phí HCNS cần tách.'); return }
-    if (mode === 'split' && hcns >= curFee) {
+    // Cho phép tách với phí 0đ: công ty làm HCNS miễn phí vẫn cần vào tag Thời kỳ để theo dõi
+    // checklist. Chỉ chặn khi BỎ TRỐNG ô nhập (khác hẳn với chủ ý nhập 0).
+    if (String(amount).replace(/\D/g, '') === '') {
+      setErr('Nhập mức phí HCNS cần tách — nhập 0 nếu làm miễn phí.')
+      return
+    }
+    if (hcns > 0 && mode === 'split' && hcns >= curFee) {
       setErr('Phí HCNS phải nhỏ hơn phí kế toán hiện tại (' + fmt(curFee) + 'đ). Nếu phí cũ chưa gồm HCNS thì chọn "cộng thêm".')
       return
     }
@@ -313,7 +273,7 @@ function HcnsSplitFee({ client, monthOptions, onSaved }) {
         hcns_fee: hcns,
         // Hai mốc phí cùng một tháng hiệu lực — tra phí tháng cũ vẫn ra đúng số cũ.
         hcns_from: { year: y, month: m },
-        ...(mode === 'split' ? {
+        ...(mode === 'split' && hcns > 0 ? {
           monthly_fee: newFee,
           fee_history: { year: y, month: m, amount: newFee, note: note || 'Tách phí HCNS khỏi phí kế toán' },
         } : {}),
@@ -377,10 +337,12 @@ function HcnsSplitFee({ client, monthOptions, onSaved }) {
               {resume ? 'Phí HCNS mới' : 'Phí HCNS tách ra'}
               {isQuarter && <b className="text-sky-800"> (cả quý)</b>}
             </span>
+            {/* Hiện theo chuỗi đã gõ, không theo số — gõ "0" (miễn phí) mà lấy theo số thì ô
+                trông như vẫn trống. */}
             <input type="text" inputMode="numeric" autoFocus
-              value={hcns ? hcns.toLocaleString('vi-VN') : ''}
+              value={String(amount).replace(/\D/g, '') === '' ? '' : hcns.toLocaleString('vi-VN')}
               onChange={e => { setAmount(e.target.value.replace(/\D/g, '')); if (err) setErr('') }}
-              placeholder="VD: 2.160.000"
+              placeholder="VD: 2.160.000 — nhập 0 nếu miễn phí"
               className="w-32 text-right px-2 py-1 border border-sky-300 rounded-md text-sm font-semibold text-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-400" />
           </div>
           <div className="border-t border-dashed border-sky-300 my-1.5" />
@@ -771,9 +733,10 @@ export default function ClientsPage() {
     })
     const data = await res.json()
     if (data.error) {
-      // Trùng MST: server trả thẳng tên công ty đang giữ MST đó và KHÔNG ghi đè nữa (trước đây
-      // nhánh này lặng lẽ cập nhật đè lên công ty cũ — xem app/api/admin/clients/route.js).
-      setError(data.error)
+      const msg = data.error.includes('unique') || data.error.includes('23505')
+        ? 'MST này đã tồn tại trong hệ thống — thông tin đã được cập nhật.'
+        : data.error
+      setError(msg)
       setSaving(false)
       return
     }
@@ -1723,7 +1686,6 @@ export default function ClientsPage() {
                         : <HcnsSplitFee client={client} monthOptions={getFutureMonths(12)} onSaved={loadClients} />}
                     </div>
                     <FeeHistory history={history} />
-                    <InfoHistory clientId={client.id} />
 
                   </div>
                 )}
