@@ -68,6 +68,7 @@ function Chip({ cls, children }) {
 export default function BankPage() {
   const router = useRouter()
   const [allowed, setAllowed] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -87,6 +88,9 @@ export default function BankPage() {
       if (!me || me.error) { router.push('/login'); return }
       const ok = await hasPermission(me.roles?.length ? me.roles : me.role, 'bank_reconcile')
       if (!ok) { router.push('/dashboard'); return }
+      // Tổng tiền vào của cả công ty chỉ Quản trị được xem. Nhân viên/trưởng phòng vẫn làm việc
+      // bình thường trên từng giao dịch, chỉ con số TỔNG bị che.
+      setIsAdmin((me.roles || [me.role]).includes('admin'))
       setAllowed(true)
     })()
   }, [router])
@@ -158,7 +162,7 @@ export default function BankPage() {
   )
 
   const cards = [
-    { k: 'all', label: 'Tiền vào', value: fmt(total), sub: shown.length + ' giao dịch', icon: '₫', card: 'bg-blue-50 border-blue-200 text-blue-800' },
+    { k: 'all', label: 'Tiền vào', value: isAdmin ? fmt(total) : '••••••', sub: shown.length + ' giao dịch', icon: '₫', card: 'bg-blue-50 border-blue-200 text-blue-800' },
     ...['done', 'ready', 'review', 'unknown'].map(k => ({ k, label: ST[k].label, value: count(k), sub: ST[k].sub, icon: ST[k].icon, card: ST[k].card })),
   ]
 
