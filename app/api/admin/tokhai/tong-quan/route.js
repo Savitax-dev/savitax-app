@@ -9,6 +9,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { cacKyTrongNam, kyQuyetToanNam, nhanKy } from '@/lib/taxDeadline'
 import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
+import { dungCacO, congO } from '@/lib/tokhaiThongKe'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -31,6 +32,7 @@ function oTrong(id, ten) {
     id, ten,
     soCongTy: 0, daNoiTaiKhoan: 0,
     phaiNop: 0, chapNhan: 0, choKetQua: 0, chuaNop: 0, quaHan: 0, khongPhatSinh: 0, khongChapNhan: 0,
+    ngoaiLich: 0,
     coNgayTiepNhan: 0, dungHan: 0,
     dongBoGanNhat: null,
   }
@@ -105,9 +107,10 @@ export async function GET(request) {
     if (ky && trongPhamVi.size) {
       ;[nghiaVu, hoSo, job] = await Promise.all([
         docHet(() => supabase.from('tax_obligations')
-          .select('client_id, period_code, state, due_date').eq('period_code', ky)),
+          .select('id, client_id, filing_type_id, period_code, state, due_date').eq('period_code', ky)),
         docHet(() => supabase.from('tax_filings')
-          .select('client_id, period_code, state, received_at, on_time, obligation_id').eq('period_code', ky)),
+          .select('client_id, filing_type_id, period_code, state, received_at, on_time, obligation_id')
+          .eq('period_code', ky)),
         docHet(() => supabase.from('tax_sync_jobs')
           .select('client_id, finished_at, result').eq('result', 'success')),
       ])
@@ -153,31 +156,11 @@ export async function GET(request) {
       if (db && (!o.dongBoGanNhat || db > o.dongBoGanNhat)) o.dongBoGanNhat = db
     }
 
-    // Hồ sơ thật gắn với nghĩa vụ nào thì trạng thái lấy theo cổng.
-    const hoSoTheoNghiaVu = new Map()
-    for (const h of hoSo) if (h.obligation_id) hoSoTheoNghiaVu.set(h.obligation_id, h)
-
-    for (const o of nghiaVu) {
-      const k = nhomCuaCty.get(o.client_id)
-      if (!k) continue
-      const cell = oCua(k)
-      const h = hoSoTheoNghiaVu.get(o.id) || null
-      const tt = h ? h.state
-        : (o.state === 'not_filed' && o.due_date && o.due_date < homNayISO) ? 'overdue'
-        : o.state
-
-      cell.phaiNop++
-      if (tt === 'accepted') cell.chapNhan++
-      else if (tt === 'received') cell.choKetQua++
-      else if (tt === 'rejected') cell.khongChapNhan++
-      else if (tt === 'overdue') cell.quaHan++
-      else if (tt === 'no_activity') cell.khongPhatSinh++
-      else cell.chuaNop++
-
-      if (h?.received_at) {
-        cell.coNgayTiepNhan++
-        if (h.on_time) cell.dungHan++
-      }
+    // Đếm bằng hàm thuần ở lib/tokhaiThongKe.js để kiểm được bằng script — xem ghi chú trong đó
+    // về hai lỗi sai âm thầm đã tìm ra ở chính chỗ này.
+    for (const o of dungCacO({ nghiaVu, hoSo, homNayISO })) {
+      const k = nhomCuaCty.get(o.clientId)
+      if (k) congO(oCua(k), o)
     }
 
     const ds = [...nhom.values()].map(chotSo)
@@ -186,7 +169,7 @@ export async function GET(request) {
     // Dòng tổng của toàn bộ phạm vi đang xem.
     const tong = chotSo(ds.reduce((t, o) => {
       for (const k of ['soCongTy', 'daNoiTaiKhoan', 'phaiNop', 'chapNhan', 'choKetQua', 'chuaNop',
-        'quaHan', 'khongPhatSinh', 'khongChapNhan', 'coNgayTiepNhan', 'dungHan']) t[k] += o[k]
+        'quaHan', 'khongPhatSinh', 'khongChapNhan', 'coNgayTiepNhan', 'dungHan', 'ngoaiLich']) t[k] += o[k]
       if (o.dongBoGanNhat && (!t.dongBoGanNhat || o.dongBoGanNhat > t.dongBoGanNhat)) t.dongBoGanNhat = o.dongBoGanNhat
       return t
     }, oTrong('tong', 'Tổng cộng')))

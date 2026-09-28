@@ -145,6 +145,13 @@ export default function TrangBaoCao() {
           <b className="text-gray-500">Hoàn thành</b> = (chấp nhận + chờ kết quả + không phát sinh) / phải nộp.{' '}
           <b className="text-gray-500">Đúng hạn</b> = số tờ khai có ngày tiếp nhận ≤ hạn nộp, tính trên
           số tờ đã có ngày tiếp nhận — tờ chưa nộp thì chưa kết luận được.
+          {dl?.tong?.ngoaiLich > 0 && (
+            <>
+              {' '}Trong <b className="text-gray-500">{dl.tong.phaiNop}</b> tờ phải nộp có{' '}
+              <b className="text-gray-500">{dl.tong.ngoaiLich}</b> tờ lấy từ hồ sơ thật trên cổng mà
+              lịch hạn nộp chưa có — kỳ cũ chưa sinh nghĩa vụ thì vẫn đếm, không bỏ sót.
+            </>
+          )}
         </p>
       </div>
     </AppShell>
