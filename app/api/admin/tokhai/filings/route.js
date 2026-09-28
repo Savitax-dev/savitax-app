@@ -7,7 +7,7 @@
 // một dòng tóm tắt kèm danh sách hồ sơ bên trong, và phân trang theo CÔNG TY.
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
-import { mapPhongCuaCongTy } from '@/lib/clientRoom'
+import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
 
 const CTY_MOI_TRANG = 40
 
@@ -46,19 +46,29 @@ export async function GET(request) {
   const laTruongPhong = roles.includes('leader')
 
   try {
-    const [dsClients, dsLoai, dsRooms, dsStaff, dsPhu] = await Promise.all([
+    // Tất cả đều không phụ thuộc nhau → MỘT vòng chờ. Bảng hồ sơ chỉ lọc theo kỳ, không dính
+    // phạm vi người xem, nên lấy luôn ở đây rồi lọc phạm vi bằng JS.
+    const [dsClients, dsLoai, dsRooms, dsStaff, dsPhu, dsHoSo] = await Promise.all([
       docHet(() => supabase.from('clients').select('id, name, client_code, tax_code, assigned_to, room_id, is_active, status')),
       docHet(() => supabase.from('tax_filing_types').select('id, code, name')),
       docHet(() => supabase.from('rooms').select('id, name')),
-      docHet(() => supabase.from('staff').select('id, full_name')),
+      // room_id lấy luôn: phòng của công ty suy từ nhân viên phụ trách, có sẵn thì khỏi hỏi lần hai.
+      docHet(() => supabase.from('staff').select('id, full_name, room_id')),
       laAdmin ? Promise.resolve([]) : docHet(() => supabase.from('client_secondary_staff')
         .select('client_id').eq('staff_id', caller.staffId)),
+      docHet(() => {
+        let q = supabase.from('tax_filings')
+          .select('id, client_id, portal_code, filing_type_id, period_code, form_kind, amend_no, submitted_at, received_at, portal_status, state, on_time, obligation_id')
+          .order('submitted_at', { ascending: false })
+        if (ky) q = q.eq('period_code', ky)
+        return q
+      }),
     ])
 
     const phu = new Set(dsPhu.map(r => r.client_id))
     const dangPhucVu = dsClients.filter(c => c.is_active !== false && c.status !== 'inactive')
     // Phòng suy từ nhân viên phụ trách — clients.room_id gần như luôn trống, xem lib/clientRoom.js.
-    const phongCuaCty = await mapPhongCuaCongTy(supabase, dangPhucVu)
+    const phongCuaCty = mapPhongTuDanhSachNV(dangPhucVu, dsStaff)
 
     let clients = dangPhucVu.filter(c => laAdmin
       || c.assigned_to === caller.staffId
@@ -76,14 +86,7 @@ export async function GET(request) {
 
     const trongPhamVi = new Set(clients.map(c => c.id))
 
-    let hoSo = await docHet(() => {
-      let q = supabase.from('tax_filings')
-        .select('id, client_id, portal_code, filing_type_id, period_code, form_kind, amend_no, submitted_at, received_at, portal_status, state, on_time, obligation_id')
-        .order('submitted_at', { ascending: false })
-      if (ky) q = q.eq('period_code', ky)
-      return q
-    })
-    hoSo = hoSo.filter(h => trongPhamVi.has(h.client_id))
+    let hoSo = dsHoSo.filter(h => trongPhamVi.has(h.client_id))
     if (trangThai) hoSo = hoSo.filter(h => h.state === trangThai)
 
     // Tìm theo mã hồ sơ: cho gõ thẳng mã trên cổng để dò một hồ sơ cụ thể.

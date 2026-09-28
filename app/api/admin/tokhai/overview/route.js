@@ -7,7 +7,7 @@
 //     không hỏi từng công ty một.
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
-import { mapPhongCuaCongTy } from '@/lib/clientRoom'
+import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
 import { cacKyTrongNam, kyQuyetToanNam, nhanKy } from '@/lib/taxDeadline'
 
 function getAdmin() {
@@ -57,7 +57,9 @@ export async function GET(request) {
         .order('due_date', { ascending: true }).limit(1),
       docHet(() => supabase.from('tax_accounts').select('client_id, portal, status')),
       docHet(() => supabase.from('rooms').select('id, name')),
-      docHet(() => supabase.from('staff').select('id, full_name')),
+      // Lấy luôn room_id ở đây: phòng của công ty suy từ nhân viên phụ trách, có sẵn rồi thì
+      // khỏi hỏi bảng staff lần thứ hai (bớt một vòng chờ ~500ms mỗi lần mở trang).
+      docHet(() => supabase.from('staff').select('id, full_name, room_id')),
       laAdmin ? Promise.resolve([]) : docHet(() => supabase.from('client_secondary_staff')
         .select('client_id, staff_id').eq('staff_id', caller.staffId)),
     ])
@@ -67,7 +69,7 @@ export async function GET(request) {
 
     // Phòng của công ty suy từ NHÂN VIÊN PHỤ TRÁCH (clients.room_id gần như luôn trống) — tính
     // cho MỌI vai trò, vì màn hình Đồng bộ theo lô cần tên phòng kể cả khi người xem là quản trị.
-    const phongCuaCty = await mapPhongCuaCongTy(supabase, clients)
+    const phongCuaCty = mapPhongTuDanhSachNV(clients, dsStaff)
 
     if (!laAdmin) {
       const phu = new Set(dsPhu.map(r => r.client_id))
@@ -95,32 +97,37 @@ export async function GET(request) {
 
     // 4. Nghĩa vụ của đúng kỳ đó.
     //    Quản trị viên xem tất cả → lọc theo kỳ là đủ, không cần liệt kê 293 mã công ty vào URL.
-    let nghiaVu = []
-    if (ky) {
+    const layNghiaVu = async () => {
       if (laAdmin) {
-        nghiaVu = await docHet(() => supabase.from('tax_obligations')
+        return docHet(() => supabase.from('tax_obligations')
           .select('id, client_id, filing_type_id, period_code, due_date, state')
           .eq('period_code', ky))
-      } else {
-        for (let i = 0; i < idCty.length; i += 300) {
-          nghiaVu = nghiaVu.concat(await docHet(() => supabase.from('tax_obligations')
-            .select('id, client_id, filing_type_id, period_code, due_date, state')
-            .eq('period_code', ky).in('client_id', idCty.slice(i, i + 300))))
-        }
       }
-      nghiaVu = nghiaVu.filter(o => trongPhamVi.has(o.client_id))
+      let ra = []
+      for (let i = 0; i < idCty.length; i += 300) {
+        ra = ra.concat(await docHet(() => supabase.from('tax_obligations')
+          .select('id, client_id, filing_type_id, period_code, due_date, state')
+          .eq('period_code', ky).in('client_id', idCty.slice(i, i + 300))))
+      }
+      return ra
     }
 
     // 4b. HỒ SƠ THẬT của kỳ này.
     //     Ma trận phải vẽ theo CẢ HAI nguồn: lịch hạn nộp (app nghĩ phải nộp gì) và hồ sơ lấy từ
     //     cổng (công ty đã nộp gì thật). Chỉ vẽ theo nghĩa vụ thì hồ sơ có thật mà kỳ đó chưa
     //     sinh nghĩa vụ sẽ biến mất khỏi màn hình — đúng cảnh Quý 2/2026 đang gặp.
+    // Nghĩa vụ và hồ sơ không phụ thuộc nhau → lấy SONG SONG, bớt thêm một vòng chờ.
+    let nghiaVu = []
     let hoSo = []
     if (ky) {
-      hoSo = await docHet(() => supabase.from('tax_filings')
-        .select('id, client_id, filing_type_id, period_code, state, portal_status, submitted_at, received_at, on_time, obligation_id')
-        .eq('period_code', ky))
-      hoSo = hoSo.filter(h => trongPhamVi.has(h.client_id))
+      const [nv, hs] = await Promise.all([
+        layNghiaVu(),
+        docHet(() => supabase.from('tax_filings')
+          .select('id, client_id, filing_type_id, period_code, state, portal_status, submitted_at, received_at, on_time, obligation_id')
+          .eq('period_code', ky)),
+      ])
+      nghiaVu = nv.filter(o => trongPhamVi.has(o.client_id))
+      hoSo = hs.filter(h => trongPhamVi.has(h.client_id))
     }
 
     // 5. Công ty nào đã nối tài khoản cổng thuế (đã lấy song song ở trên, lọc tại chỗ)

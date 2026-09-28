@@ -8,7 +8,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { cacKyTrongNam, kyQuyetToanNam, nhanKy } from '@/lib/taxDeadline'
-import { mapPhongCuaCongTy } from '@/lib/clientRoom'
+import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -83,7 +83,7 @@ export async function GET(request) {
     let clients = dsClients.filter(c => c.is_active !== false && c.status !== 'inactive')
 
     // Phòng của công ty suy từ NHÂN VIÊN PHỤ TRÁCH — clients.room_id gần như luôn trống.
-    const phongCuaCty = await mapPhongCuaCongTy(supabase, clients)
+    const phongCuaCty = mapPhongTuDanhSachNV(clients, dsStaff)   // dsStaff đã có room_id ở trên
 
     if (!laAdmin) {
       clients = clients.filter(c =>

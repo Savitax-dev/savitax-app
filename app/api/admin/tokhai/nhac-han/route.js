@@ -8,7 +8,7 @@
 // quá hạn là thứ càng phải nhắc, không được im lặng.
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
-import { mapPhongCuaCongTy } from '@/lib/clientRoom'
+import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
 import { nhanKy } from '@/lib/taxDeadline'
 
 function getAdmin() {
@@ -47,17 +47,26 @@ export async function GET() {
   const denNgay = new Date(Date.now() + NGAY_NHAC_TRUOC * 864e5).toISOString().slice(0, 10)
 
   try {
-    const [dsClients, dsLoai, dsPhu] = await Promise.all([
+    // Dải chữ nhắc hạn nằm ở MỌI trang của phân hệ, nên route này chạy theo mỗi lần mở trang.
+    // Năm thứ dưới đây không phụ thuộc nhau → gọi hết trong MỘT vòng chờ.
+    // Riêng bảng nghĩa vụ: lọc theo trạng thái và hạn nộp, không dính phạm vi người xem, nên lấy
+    // luôn rồi mới lọc phạm vi bằng JS.
+    const [dsClients, dsLoai, dsPhu, dsStaff, dsNghiaVu] = await Promise.all([
       docHet(() => supabase.from('clients').select('id, room_id, assigned_to, is_active, status')),
       docHet(() => supabase.from('tax_filing_types').select('id, code')),
       laAdmin ? Promise.resolve([]) : docHet(() => supabase.from('client_secondary_staff')
         .select('client_id').eq('staff_id', caller.staffId)),
+      laAdmin ? Promise.resolve([]) : docHet(() => supabase.from('staff').select('id, room_id')),
+      docHet(() => supabase.from('tax_obligations')
+        .select('client_id, filing_type_id, period_code, due_date, state')
+        .in('state', ['not_filed', 'rejected', 'overdue'])
+        .lte('due_date', denNgay)),
     ])
 
     const phu = new Set(dsPhu.map(r => r.client_id))
     const dangPhucVu = dsClients.filter(c => c.is_active !== false && c.status !== 'inactive')
     // Phòng của công ty suy từ nhân viên phụ trách — clients.room_id gần như luôn trống.
-    const phongCuaCty = laAdmin ? new Map() : await mapPhongCuaCongTy(supabase, dangPhucVu)
+    const phongCuaCty = laAdmin ? new Map() : mapPhongTuDanhSachNV(dangPhucVu, dsStaff)
 
     const trongPhamVi = new Set(dangPhucVu
       .filter(c => laAdmin
@@ -66,13 +75,7 @@ export async function GET() {
         || (laTruongPhong && rooms.includes(phongCuaCty.get(c.id))))
       .map(c => c.id))
 
-    // Chỉ lấy nghĩa vụ CHƯA XONG. Đã chấp nhận / đã tiếp nhận / không phát sinh thì thôi nhắc.
-    const chuaXong = () => supabase.from('tax_obligations')
-      .select('client_id, filing_type_id, period_code, due_date, state')
-      .in('state', ['not_filed', 'rejected', 'overdue'])
-
-    let nghiaVu = (await docHet(() => chuaXong().lte('due_date', denNgay)))
-      .filter(o => trongPhamVi.has(o.client_id))
+    let nghiaVu = dsNghiaVu.filter(o => trongPhamVi.has(o.client_id))
 
     // Chỉ giữ đúng các mốc đã chốt, và các kỳ ĐÃ QUÁ HẠN (quá hạn thì ngày nào cũng phải nhắc).
     const soNgayConLai = han => Math.round((new Date(han) - new Date(homNay)) / 864e5)
