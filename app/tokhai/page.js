@@ -9,15 +9,9 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
-
-const TRANG_THAI = {
-  accepted:    { nhan: 'Chấp nhận',   o: 'bg-green-50 text-green-700 border-green-200' },
-  received:    { nhan: 'Đã tiếp nhận', o: 'bg-amber-50 text-amber-700 border-amber-200' },
-  rejected:    { nhan: 'Không chấp nhận', o: 'bg-red-50 text-red-700 border-red-200' },
-  overdue:     { nhan: 'Quá hạn',     o: 'bg-red-50 text-red-700 border-red-200' },
-  not_filed:   { nhan: 'Chưa nộp',    o: 'bg-slate-50 text-slate-600 border-slate-200' },
-  no_activity: { nhan: 'Không phát sinh', o: 'bg-slate-50 text-slate-500 border-slate-200' },
-}
+import NhacHanNop from '@/components/NhacHanNop'
+import TabToKhai from '@/components/TabToKhai'
+import { Chip, OTong } from '@/components/tokhaiUI'
 
 const O_TONG = [
   { khoa: 'phaiNop',        nhan: 'Phải nộp trong kỳ', mau: 'text-blue-700 bg-blue-50 border-blue-200' },
@@ -82,6 +76,8 @@ export default function TrangToKhai() {
   return (
     <AppShell>
       <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
+        <TabToKhai />
+        <NhacHanNop />
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <h1 className="text-lg font-bold text-gray-800">Tờ khai &amp; Hạn nộp</h1>
           <select value={kyDangXem} onChange={e => setKyChon(e.target.value)}
@@ -100,12 +96,12 @@ export default function TrangToKhai() {
 
         {dl?.oTong && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
-            {O_TONG.map(o => (
-              <div key={o.khoa} className={'rounded-xl border px-3 py-2.5 ' + o.mau}>
-                <p className="text-xl font-bold leading-tight">{dl.oTong[o.khoa] ?? 0}</p>
-                <p className="text-xs mt-0.5">{o.nhan}</p>
-              </div>
-            ))}
+            <OTong mau="xanhDuong" so={dl.oTong.phaiNop}   nhan="Phải nộp trong kỳ" />
+            <OTong mau="xanhLa"    so={dl.oTong.chapNhan}  nhan="Chấp nhận" />
+            <OTong mau="hoPhach"   so={dl.oTong.choKetQua} nhan="Chờ kết quả" />
+            <OTong mau="xam"       so={dl.oTong.chuaNop}   nhan="Chưa nộp" />
+            <OTong mau="do"        so={dl.oTong.quaHan}    nhan="Quá hạn" />
+            <OTong mau="tim"       so={dl.oTong.chuaNoiTaiKhoan} nhan="Chưa nối tài khoản" />
           </div>
         )}
 
@@ -135,9 +131,11 @@ export default function TrangToKhai() {
                 </tr>
               </thead>
               <tbody>
+                {/* Phân lớp đậm nhạt xen kẽ: bảng dài và nhiều cột thì mắt dễ nhảy nhầm dòng —
+                    với 294 công ty đây là thứ giữ cho bảng còn đọc được. */}
                 {congTy.map(c => (
-                  <tr key={c.id} className="border-b border-gray-100 hover:bg-gray-50/60">
-                    <td className="px-3 py-2 sticky left-0 bg-white">
+                  <tr key={c.id} className="border-b border-gray-100 odd:bg-white even:bg-slate-50/60 hover:bg-red-50/40 transition-colors">
+                    <td className="px-3 py-2">
                       <p className="font-medium text-gray-800 leading-tight">{c.ten}</p>
                       <p className="text-xs text-gray-400">{c.maKH || '— chưa có mã KH —'}</p>
                     </td>
@@ -150,13 +148,18 @@ export default function TrangToKhai() {
                     {loai.map(t => {
                       const o = c.nghiaVu.find(x => x.loaiId === t.id)
                       if (!o) return <td key={t.id} className="px-2 py-2 text-xs text-gray-300">—</td>
-                      const tt = TRANG_THAI[o.trangThai] || TRANG_THAI.not_filed
                       return (
                         <td key={t.id} className="px-2 py-2 whitespace-nowrap">
-                          <span className={'inline-block rounded-md border px-1.5 py-0.5 text-xs ' + tt.o}>
-                            {tt.nhan}
+                          <Chip trangThai={o.trangThai}
+                            title={o.trangThaiCong ? 'Cổng thuế: ' + o.trangThaiCong : ''} />
+                          <span className="block text-[11px] text-gray-400 mt-0.5">
+                            {/* Ô sinh từ hồ sơ thật (kỳ chưa có trong lịch hạn nộp) thì không có hạn để so. */}
+                            {o.khongCoNghiaVu
+                              ? 'ngoài lịch hạn nộp'
+                              : 'hạn ' + ngayVN(o.hanNop)}
+                            {o.dungHan === true && ' · đúng hạn'}
+                            {o.dungHan === false && ' · TRỄ HẠN'}
                           </span>
-                          <span className="block text-[11px] text-gray-400 mt-0.5">hạn {ngayVN(o.hanNop)}</span>
                         </td>
                       )
                     })}

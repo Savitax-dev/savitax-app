@@ -11,6 +11,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
+import NhacHanNop from '@/components/NhacHanNop'
+import TabToKhai from '@/components/TabToKhai'
 import { kiemTraTienIch, goiCong, donPhienCu } from '@/lib/portalBridge'
 
 export default function TrangKetNoi() {
@@ -53,7 +55,9 @@ export default function TrangKetNoi() {
 
   return (
     <AppShell>
-      <div className="p-4 md:p-6 max-w-[1100px] mx-auto">
+      <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
+        <TabToKhai />
+        <NhacHanNop />
         <div className="flex flex-wrap items-center gap-3 mb-2">
           <h1 className="text-lg font-bold text-gray-800">Kết nối cổng thuế</h1>
           <span className="text-sm text-gray-500">{daNoi}/{dsCty.length} công ty đã kết nối</span>

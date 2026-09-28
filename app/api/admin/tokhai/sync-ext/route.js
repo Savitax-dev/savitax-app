@@ -110,6 +110,21 @@ const yeuCauDangXuat = csrf => ({
   headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': csrf || '', Referer: BASE + 'tchs', Origin: ORIGIN },
 })
 
+// Mọi lượt gọi cổng đều cách nhau ít nhất chừng này, không chỉ giữa các cửa sổ tra cứu — chính
+// chuỗi lệnh đăng nhập/chi tiết dồn dập cũng là gọi dày. Có thêm chút ngẫu nhiên để nhịp không
+// đều tăm tắp như máy.
+// Ưu tiên ỔN ĐỊNH, không phải nhanh: bị cổng chặn giữa giờ làm còn tốn thời gian hơn nhiều so
+// với việc đồng bộ lâu thêm vài phút. Nhịp nền 2–3 giây, có chút ngẫu nhiên cho khỏi đều như máy.
+const NHIP_NEN = () => 2000 + Math.floor(Math.random() * 1000)
+
+// Sau khi đã bị 429 một lần trong lượt này thì CHẬM HẲN LẠI tới cuối lượt — cổng đã khó chịu
+// thì đừng tiếp tục gõ cửa với nhịp cũ.
+function traYeuCau(p, data) {
+  if (data.yeuCau) p.yeuCauCuoi = data.yeuCau
+  const heSo = p.so429 ? 2.5 : 1
+  return Response.json({ ...data, nghi: Math.round(Math.max(data.nghi || 0, NHIP_NEN()) * heSo) })
+}
+
 export async function POST(request) {
   const auth = await requireLogin()
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
@@ -135,11 +150,14 @@ export async function POST(request) {
       const { data: dangChay } = await supabase.from('tax_sync_jobs')
         .select('id, started_at').eq('client_id', clientId).is('finished_at', null).maybeSingle()
       if (dangChay) {
-        const treo = Date.now() - new Date(dangChay.started_at).getTime() > 10 * 60 * 1000
+        // Không còn phiên nào sống trong bộ nhớ cho công ty này → lượt đó đã chết (người dùng
+        // đóng tab, bấm hủy, hoặc máy chủ khởi động lại). Đóng ngay, không bắt chờ hết 10 phút.
+        const conSong = [...phienTam.values()].some(x => x.clientId === clientId)
+        const treo = !conSong || Date.now() - new Date(dangChay.started_at).getTime() > 10 * 60 * 1000
         if (treo) {
           await supabase.from('tax_sync_jobs').update({
             finished_at: new Date().toISOString(), result: 'captcha_timeout',
-            error_detail: 'Bỏ dở quá 10 phút, tự đóng',
+            error_detail: 'Lượt cũ đã chết (đóng tab / bấm hủy / hết giờ), tự đóng',
           }).eq('id', dangChay.id)
         } else {
           return Response.json({ error: 'Công ty này đang có một lượt đồng bộ khác chạy dở' }, { status: 409 })
@@ -160,11 +178,18 @@ export async function POST(request) {
       })
 
       const p = phienTam.get(maPhien)
-      return Response.json({
+      return traYeuCau(p, {
         maPhien, viec: 'goi', buoc: p.buoc, yeuCau: yeuCauTrangDangNhap(),
         khoangNgay: `${p.cuaSo[p.cuaSo.length - 1].tuNgay} – ${p.cuaSo[0].denNgay}`,
         soCuaSo: p.cuaSo.length,
       })
+    }
+
+    // Người dùng bấm Dừng / Bỏ qua → đóng lượt ngay, đừng để dòng "đang chạy" treo lại.
+    if (body.huy) {
+      const pHuy = phienTam.get(body.maPhien)
+      if (pHuy) return await ketThuc(supabase, pHuy, body.maPhien, 'skipped', 'Người dùng dừng giữa chừng')
+      return Response.json({ viec: 'loi', moTa: 'Phiên đã đóng' })
     }
 
     const p = phienTam.get(body.maPhien)
@@ -186,7 +211,7 @@ export async function POST(request) {
           .select('username, password_enc').eq('client_id', p.clientId).eq('portal', 'dvc').maybeSingle()
         if (!tk) return Response.json({ error: 'Không tìm thấy tài khoản cổng thuế' }, { status: 400 })
         p.buoc = 'dang_nhap'
-        return Response.json({
+        return traYeuCau(p, {
           viec: 'goi', buoc: p.buoc,
           yeuCau: yeuCauDangNhap(p.csrf, tk.username, decrypt(tk.password_enc), ma),
         })
@@ -194,7 +219,7 @@ export async function POST(request) {
       if (p.buoc === 'cho_captcha_tc') {
         p.maCaptchaTraCuu = ma
         p.buoc = 'kiem_captcha'
-        return Response.json({ viec: 'goi', buoc: p.buoc, yeuCau: yeuCauKiemCaptcha(p.csrf, ma) })
+        return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yeuCauKiemCaptcha(p.csrf, ma) })
       }
       return Response.json({ error: 'Chưa tới lúc nhập mã' }, { status: 400 })
     }
@@ -204,6 +229,24 @@ export async function POST(request) {
     if (!ph) return Response.json({ error: 'Thiếu phản hồi' }, { status: 400 })
     if (!ph.ok) return await ketThuc(supabase, p, body.maPhien, 'portal_error', ph.loi || 'Tiện ích gọi cổng thất bại')
 
+    // ── Cổng kêu "quá dày" (429): LÙI LẠI rồi gửi lại ĐÚNG yêu cầu vừa rồi ──
+    //
+    // Giới hạn thật của cổng mình KHÔNG biết, và cũng không đi dò bằng cách tăng dần tốc độ —
+    // làm vậy trên cổng Nhà nước bằng tài khoản thật của khách là dại. Thay vào đó: gặp 429 thì
+    // chờ lâu dần (20s → 60s → 120s), tối đa 3 lần; vẫn bị thì dừng hẳn lượt này.
+    if (ph.status === 429 && p.yeuCauCuoi) {
+      p.so429 = (p.so429 || 0) + 1
+      if (p.so429 > 3) {
+        return await ketThuc(supabase, p, body.maPhien, 'portal_error',
+          'Cổng chặn vì gọi quá dày (429) sau 3 lần chờ. Nghỉ 10–15 phút rồi đồng bộ lại, và chia nhỏ khoảng ngày.')
+      }
+      const cho = [20000, 60000, 120000][p.so429 - 1]
+      return traYeuCau(p, {
+        viec: 'goi', buoc: p.buoc, yeuCau: p.yeuCauCuoi, nghi: cho,
+        tienDo: `Cổng báo quá dày — chờ ${Math.round(cho / 1000)} giây rồi thử lại (lần ${p.so429}/3)`,
+      })
+    }
+
     const noiDung = ph.noiDung || ''
 
     switch (p.buoc) {
@@ -211,7 +254,7 @@ export async function POST(request) {
         p.csrf = docCsrf(noiDung)
         if (!p.csrf) return await ketThuc(supabase, p, body.maPhien, 'portal_error', 'Không đọc được mã bảo vệ — cổng có thể đã đổi giao diện')
         p.buoc = 'anh_captcha_dn'
-        return Response.json({ viec: 'goi', buoc: p.buoc, yeuCau: yeuCauAnhCaptcha() })
+        return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yeuCauAnhCaptcha() })
       }
 
       case 'anh_captcha_dn': {
@@ -228,14 +271,14 @@ export async function POST(request) {
             .update({ status: 'active', last_success_at: new Date().toISOString(), last_error_code: null })
             .eq('client_id', p.clientId).eq('portal', 'dvc')
           p.buoc = 'trang_tra_cuu'
-          return Response.json({ viec: 'goi', buoc: p.buoc, yeuCau: yeuCauTrangTraCuu() })
+          return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yeuCauTrangTraCuu() })
         }
         let moTa = ''
         try { moTa = JSON.parse(noiDung).desc || '' } catch { moTa = noiDung.slice(0, 200) }
         // Sai captcha: cổng CHƯA kiểm mật khẩu → cho gõ lại, không đụng trạng thái tài khoản.
         if (/captcha/i.test(moTa) || /captcha/i.test(noiDung)) {
           p.buoc = 'anh_captcha_dn'
-          return Response.json({ viec: 'goi', buoc: p.buoc, yeuCau: yeuCauAnhCaptcha(), moTa: 'Mã captcha chưa đúng, lấy ảnh mới' })
+          return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yeuCauAnhCaptcha(), moTa: 'Mã captcha chưa đúng, lấy ảnh mới' })
         }
         // Sai mật khẩu: DỪNG, không thử lại — thử nhiều lần là khóa tài khoản của khách.
         await supabase.from('tax_accounts')
@@ -248,7 +291,7 @@ export async function POST(request) {
         // Token ĐỔI sau khi đăng nhập — phải đọc lại, nếu không mọi lệnh sau bị 403.
         p.csrf = docCsrf(noiDung) || p.csrf
         p.buoc = 'anh_captcha_tc'
-        return Response.json({ viec: 'goi', buoc: p.buoc, yeuCau: yeuCauAnhCaptcha() })
+        return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yeuCauAnhCaptcha() })
       }
 
       case 'anh_captcha_tc': {
@@ -262,11 +305,11 @@ export async function POST(request) {
       case 'kiem_captcha': {
         if (noiDung.trim() !== 'success') {
           p.buoc = 'anh_captcha_tc'
-          return Response.json({ viec: 'goi', buoc: p.buoc, yeuCau: yeuCauAnhCaptcha(), moTa: 'Mã captcha chưa đúng, lấy ảnh mới' })
+          return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yeuCauAnhCaptcha(), moTa: 'Mã captcha chưa đúng, lấy ảnh mới' })
         }
         p.viCuaSo = 0; p.trang = 0
         p.buoc = 'tra_cuu'
-        return Response.json({
+        return traYeuCau(p, {
           viec: 'goi', buoc: p.buoc,
           yeuCau: yeuCauTraCuu(p.csrf, p.cuaSo[0], p.maCaptchaTraCuu, 0),
           tienDo: `Tra cửa sổ 1/${p.cuaSo.length}`,
@@ -283,8 +326,8 @@ export async function POST(request) {
 
         if (conTrangSau && p.trang < 9) {
           p.trang++
-          return Response.json({
-            viec: 'goi', buoc: 'tra_cuu', nghi: 1500,
+          return traYeuCau(p, {
+            viec: 'goi', buoc: 'tra_cuu', nghi: 3000,
             yeuCau: yeuCauTraCuu(p.csrf, p.cuaSo[p.viCuaSo], p.maCaptchaTraCuu, p.trang),
             tienDo: `Tra cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length}, trang ${p.trang + 1}`,
           })
@@ -292,12 +335,16 @@ export async function POST(request) {
         p.viCuaSo++; p.trang = 0
         if (p.viCuaSo < p.cuaSo.length) {
           // Giãn nhịp giữa các cửa sổ — bắn liền tay là cổng trả 429.
-          return Response.json({
-            viec: 'goi', buoc: 'tra_cuu', nghi: 2500,
+          return traYeuCau(p, {
+            viec: 'goi', buoc: 'tra_cuu', nghi: 5000,
             yeuCau: yeuCauTraCuu(p.csrf, p.cuaSo[p.viCuaSo], p.maCaptchaTraCuu, 0),
             tienDo: `Tra cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length}`,
           })
         }
+        // Trước khi mở trang chi tiết, hỏi DB xem hồ sơ nào đã có ngày tiếp nhận rồi.
+        const { data: daCo } = await supabase.from('tax_filings')
+          .select('portal_code, received_at').eq('client_id', p.clientId).not('received_at', 'is', null)
+        p.daCoChiTiet = new Set((daCo || []).map(f => f.portal_code))
         return buocChiTietKeTiep(p)
       }
 
@@ -323,17 +370,26 @@ export async function POST(request) {
 // giãn nhịp. Hết hồ sơ thì ghi dữ liệu rồi đăng xuất.
 function buocChiTietKeTiep(p) {
   const GIOI_HAN = 25       // đủ cho một lượt; còn nữa thì lượt sau lấy tiếp
+
+  // BỎ QUA hồ sơ đã có ngày tiếp nhận từ lần đồng bộ trước: trang chi tiết chỉ dùng để lấy ngày
+  // tiếp nhận và danh sách thông báo, lấy rồi thì mở lại chẳng thêm gì. Cách giảm nguy cơ bị cổng
+  // chặn tốt nhất là GỌI ÍT ĐI, chứ không phải gọi chậm hơn.
+  while (p.viChiTiet < p.dong.length && p.daCoChiTiet?.has(p.dong[p.viChiTiet].maHoSo)) {
+    p.boQuaChiTiet = (p.boQuaChiTiet || 0) + 1
+    p.viChiTiet++
+  }
+
   if (p.viChiTiet < p.dong.length && p.viChiTiet < GIOI_HAN) {
     p.buoc = 'chi_tiet'
-    return Response.json({
-      viec: 'goi', buoc: p.buoc, nghi: 1200,
+    return traYeuCau(p, {
+      viec: 'goi', buoc: p.buoc, nghi: 2500,
       yeuCau: yeuCauChiTiet(p.dong[p.viChiTiet].maHoSo),
       tienDo: `Đọc chi tiết ${p.viChiTiet + 1}/${Math.min(p.dong.length, GIOI_HAN)}`,
     })
   }
   // Tên bước phải khớp với nhánh trong switch ở trên, nếu không lượt cuối sẽ rơi vào default.
   p.buoc = 'dang_xuat'
-  return Response.json({
+  return traYeuCau(p, {
     viec: 'goi', buoc: p.buoc, yeuCau: yeuCauDangXuat(p.csrf),
     tienDo: 'Đang ghi dữ liệu và đăng xuất',
   })

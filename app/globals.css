@@ -24,3 +24,20 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Dải nhắc hạn nộp tờ khai (Phân hệ Tờ khai) — chữ chạy ngang.
+   Dừng khi rê chuột để đọc kịp, và đứng yên hẳn với người đã bật "giảm chuyển động"
+   trong hệ điều hành (chữ chạy gây khó chịu, có người bị chóng mặt). */
+@keyframes chay-ngang {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.chay-ngang {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: chay-ngang 32s linear infinite;
+}
+.chay-ngang:hover { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .chay-ngang { animation: none; }
+}

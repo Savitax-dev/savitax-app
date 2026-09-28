@@ -1,0 +1,71 @@
+// Kiểm quy tắc đặt tên và cây thư mục file tờ khai.
+//   node scripts/test-tokhai-thumuc.mjs
+//
+// Chỉ kiểm phần TÍNH TÊN (thuần), không đụng đĩa — phần ghi đĩa phải thử trên trình duyệt thật.
+import {
+  chuanHoaTen, laCungThuMuc, tachKy, tenFileToKhai, tenFileThongBao,
+  duongDanToKhai, duongDanThongBao,
+} from '../lib/tokhaiThuMuc.js'
+
+let hong = 0
+const kiem = (ten, thucTe, mongDoi) => {
+  const a = JSON.stringify(thucTe), b = JSON.stringify(mongDoi)
+  const dat = a === b
+  console.log(`  ${dat ? 'OK   ' : 'HỎNG '}${ten}${dat ? '' : `\n         ra ${a}\n         đáng lẽ ${b}`}`)
+  if (!dat) hong++
+}
+
+console.log('So tên thư mục (bỏ dấu, bỏ khoảng trắng, không phân biệt hoa thường):')
+kiem('TB CHẤP NHẬN ≡ THÔNG BÁO CHẤP NHẬN', laCungThuMuc('THÔNG BÁO CHẤP NHẬN', 'TB CHẤP NHẬN'), true)
+kiem('BẢNG KÊ ≡ BẢNG KÊ MUA VÀO BÁN RA', laCungThuMuc('BẢNG KÊ MUA VÀO BÁN RA', 'BẢNG KÊ'), true)
+kiem('TỜ KHAI THUẾ ≡ to khai thue', laCungThuMuc('to khai thue', 'TỜ KHAI THUẾ'), true)
+kiem('đ và d coi như một', chuanHoaTen('Đơn') === chuanHoaTen('Don'), true)
+kiem('không nhận nhầm hai thư mục khác nghĩa', laCungThuMuc('TỜ KHAI THUẾ', 'TB CHẤP NHẬN'), false)
+
+console.log('')
+console.log('Tách kỳ:')
+kiem('Q2.2026', tachKy('Q2.2026'), { ky: 'Q2', nam: '2026', laNam: false })
+kiem('T09.2026', tachKy('T09.2026'), { ky: 'T09', nam: '2026', laNam: false })
+kiem('NAM.2026', tachKy('NAM.2026'), { ky: 'NAM', nam: '2026', laNam: true })
+kiem('PS.2026-07-13', tachKy('PS.2026-07-13'), { ky: 'PS0713', nam: '2026', laNam: false, laPhatSinh: true })
+kiem('chuỗi lạ → null', tachKy('linh tinh'), null)
+
+console.log('')
+console.log('Tên file:')
+kiem('tờ khai GTGT quý 2',
+  tenFileToKhai({ sacThue: 'GTGT', periodCode: 'Q2.2026', maKH: 'PAPERARTVIET' }),
+  'TK_GTGT_Q2.2026_PAPERARTVIET.xml')
+kiem('tờ khai TNCN tháng 9',
+  tenFileToKhai({ sacThue: 'TNCN', periodCode: 'T09.2026', maKH: 'ZENIS' }),
+  'TK_TNCN_T09.2026_ZENIS.xml')
+kiem('thông báo TIẾP NHẬN → TBTN',
+  tenFileThongBao({ loaiThongBao: 'tiep_nhan', sacThue: 'GTGT', periodCode: 'Q2.2026', maKH: 'ZENIS' }),
+  'TBTN_GTGT_Q2.2026_ZENIS.xml')
+kiem('thông báo CHẤP NHẬN → TBCN',
+  tenFileThongBao({ loaiThongBao: 'xac_nhan_nop', sacThue: 'GTGT', periodCode: 'Q2.2026', maKH: 'ZENIS' }),
+  'TBCN_GTGT_Q2.2026_ZENIS.xml')
+
+let batLoi = false
+try { tenFileToKhai({ sacThue: 'GTGT', periodCode: 'Q2.2026', maKH: null }) } catch { batLoi = true }
+kiem('THIẾU MÃ KH thì báo lỗi, không tự bịa tên', batLoi, true)
+
+console.log('')
+console.log('Đường dẫn thư mục:')
+kiem('tờ khai quý',
+  duongDanToKhai({ periodCode: 'Q2.2026', maKH: 'ZENIS' }),
+  ['BỘ BÁO CÁO THUẾ QUÝ_THÁNG', 'BAOCAOTHUE -Q2.2026_ZENIS', 'TỜ KHAI THUẾ'])
+kiem('thông báo quý',
+  duongDanThongBao({ periodCode: 'Q2.2026', maKH: 'ZENIS' }),
+  ['BỘ BÁO CÁO THUẾ QUÝ_THÁNG', 'BAOCAOTHUE -Q2.2026_ZENIS', 'TB CHẤP NHẬN'])
+kiem('quyết toán TNDN năm',
+  duongDanToKhai({ periodCode: 'NAM.2026', maKH: 'ZENIS', maToKhai: '03/TNDN' }),
+  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'TỜ KHAI', '03TNDN QUYẾT TOÁN THUẾ TNDN'])
+kiem('BCTC năm',
+  duongDanToKhai({ periodCode: 'NAM.2026', maKH: 'ZENIS', maToKhai: 'BCTC' }),
+  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'TỜ KHAI', 'BÁO CÁO TÀI CHÍNH'])
+kiem('thông báo quyết toán TNCN năm',
+  duongDanThongBao({ periodCode: 'NAM.2026', maKH: 'ZENIS', maToKhai: '05/QTT-TNCN' }),
+  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'TB CHẤP NHẬN', '05QTT TNCN'])
+
+console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : `\nCÓ ${hong} MỤC HỎNG.`)
+process.exit(hong === 0 ? 0 : 1)

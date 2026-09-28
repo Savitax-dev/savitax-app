@@ -7,6 +7,7 @@
 //     không hỏi từng công ty một.
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
+import { mapPhongCuaCongTy } from '@/lib/clientRoom'
 import { cacKyTrongNam, kyQuyetToanNam, nhanKy } from '@/lib/taxDeadline'
 
 function getAdmin() {
@@ -46,7 +47,7 @@ export async function GET(request) {
   try {
     // Mỗi lượt gọi Supabase từ Việt Nam mất 300-600ms, nên 5 lượt NỐI TIẾP là hơn 3 giây.
     // Bốn thứ dưới đây không phụ thuộc nhau → gọi SONG SONG, chỉ còn 2 vòng chờ.
-    const [dsClients, dsLoai, kySapToi, dsTaiKhoan, dsPhu] = await Promise.all([
+    const [dsClients, dsLoai, kySapToi, dsTaiKhoan, dsRooms, dsStaff, dsPhu] = await Promise.all([
       docHet(() => supabase.from('clients')
         .select('id, name, client_code, tax_code, report_type, room_id, assigned_to, is_active, status')),
       docHet(() => supabase.from('tax_filing_types')
@@ -55,18 +56,25 @@ export async function GET(request) {
         .select('period_code, due_date').gte('due_date', homNayISO)
         .order('due_date', { ascending: true }).limit(1),
       docHet(() => supabase.from('tax_accounts').select('client_id, portal, status')),
+      docHet(() => supabase.from('rooms').select('id, name')),
+      docHet(() => supabase.from('staff').select('id, full_name')),
       laAdmin ? Promise.resolve([]) : docHet(() => supabase.from('client_secondary_staff')
         .select('client_id, staff_id').eq('staff_id', caller.staffId)),
     ])
 
     // 1. Công ty trong phạm vi
     let clients = dsClients.filter(c => c.is_active !== false && c.status !== 'inactive')
+
+    // Phòng của công ty suy từ NHÂN VIÊN PHỤ TRÁCH (clients.room_id gần như luôn trống) — tính
+    // cho MỌI vai trò, vì màn hình Đồng bộ theo lô cần tên phòng kể cả khi người xem là quản trị.
+    const phongCuaCty = await mapPhongCuaCongTy(supabase, clients)
+
     if (!laAdmin) {
       const phu = new Set(dsPhu.map(r => r.client_id))
       clients = clients.filter(c =>
         c.assigned_to === caller.staffId
         || phu.has(c.id)
-        || (laTruongPhong && c.room_id && rooms.includes(c.room_id)))
+        || (laTruongPhong && rooms.includes(phongCuaCty.get(c.id))))
     }
 
     if (!clients.length) {
@@ -103,12 +111,50 @@ export async function GET(request) {
       nghiaVu = nghiaVu.filter(o => trongPhamVi.has(o.client_id))
     }
 
+    // 4b. HỒ SƠ THẬT của kỳ này.
+    //     Ma trận phải vẽ theo CẢ HAI nguồn: lịch hạn nộp (app nghĩ phải nộp gì) và hồ sơ lấy từ
+    //     cổng (công ty đã nộp gì thật). Chỉ vẽ theo nghĩa vụ thì hồ sơ có thật mà kỳ đó chưa
+    //     sinh nghĩa vụ sẽ biến mất khỏi màn hình — đúng cảnh Quý 2/2026 đang gặp.
+    let hoSo = []
+    if (ky) {
+      hoSo = await docHet(() => supabase.from('tax_filings')
+        .select('id, client_id, filing_type_id, period_code, state, portal_status, submitted_at, received_at, on_time, obligation_id')
+        .eq('period_code', ky))
+      hoSo = hoSo.filter(h => trongPhamVi.has(h.client_id))
+    }
+
     // 5. Công ty nào đã nối tài khoản cổng thuế (đã lấy song song ở trên, lọc tại chỗ)
     const daNoi = new Map(dsTaiKhoan.filter(t => trongPhamVi.has(t.client_id)).map(t => [t.client_id, t.status]))
 
-    // 4. Gom theo công ty
+    // 6. Gom theo công ty: nghĩa vụ trước, rồi đắp hồ sơ thật lên.
     const theoCty = new Map(clients.map(c => [c.id, []]))
     for (const o of nghiaVu) theoCty.get(o.client_id)?.push(o)
+
+    // Hồ sơ đã gắn nghĩa vụ thì chỉ đắp trạng thái; hồ sơ KHÔNG gắn được nghĩa vụ nào thì thêm
+    // hẳn một ô mới, có cờ khongCoNghiaVu để giao diện nói rõ "đã nộp, ngoài lịch hạn nộp".
+    const hoSoTheoNghiaVu = new Map()
+    for (const h of hoSo) {
+      if (h.obligation_id) { hoSoTheoNghiaVu.set(h.obligation_id, h); continue }
+      const ds = theoCty.get(h.client_id)
+      if (!ds) continue
+      if (ds.some(o => o.filing_type_id === h.filing_type_id)) continue   // đã có ô cùng loại
+      ds.push({
+        id: 'hs-' + h.id,
+        client_id: h.client_id,
+        filing_type_id: h.filing_type_id,
+        period_code: h.period_code,
+        due_date: null,
+        state: h.state,
+        khongCoNghiaVu: true,
+        portal_status: h.portal_status,
+        received_at: h.received_at,
+        on_time: h.on_time,
+      })
+    }
+
+    // Tên phòng và tên người phụ trách — màn hình Đồng bộ theo lô lọc theo hai thứ này.
+    const tenPhong = new Map(dsRooms.map(r => [r.id, r.name]))
+    const tenNV = new Map(dsStaff.map(s2 => [s2.id, s2.full_name]))
 
     const congTy = clients.map(c => {
       const ds = theoCty.get(c.id) || []
@@ -118,18 +164,30 @@ export async function GET(request) {
         maKH: c.client_code || null,
         mst: c.tax_code || null,
         kyKhai: c.report_type === 'monthly' ? 'Tháng' : 'Quý',
-        roomId: c.room_id,
-        assignedTo: c.assigned_to,
+        roomId: phongCuaCty.get(c.id) || null,
+        phong: tenPhong.get(phongCuaCty.get(c.id)) || '(chưa xếp phòng)',
+        assignedTo: c.assigned_to || null,
+        nhanVien: tenNV.get(c.assigned_to) || '(chưa giao)',
         trangThaiTaiKhoan: daNoi.get(c.id) || 'not_connected',
-        nghiaVu: ds.map(o => ({
-          id: o.id,
-          loaiId: o.filing_type_id,
-          ky: o.period_code,
-          hanNop: o.due_date,
-          // Quá hạn tính TẠI CHỖ để khỏi phụ thuộc một công việc chạy nền: qua HẾT ngày hạn mới
-          // là quá hạn, giống quy ước của Checklist công việc.
-          trangThai: (o.state === 'not_filed' && o.due_date < homNayISO) ? 'overdue' : o.state,
-        })),
+        nghiaVu: ds.map(o => {
+          const h = hoSoTheoNghiaVu.get(o.id) || null
+          // Có hồ sơ thật thì trạng thái LẤY THEO CỔNG, không lấy theo trạng thái app tự suy.
+          const trangThai = h ? h.state
+            : (o.state === 'not_filed' && o.due_date && o.due_date < homNayISO) ? 'overdue'
+            : o.state
+          return {
+            id: o.id,
+            loaiId: o.filing_type_id,
+            ky: o.period_code,
+            hanNop: o.due_date,
+            trangThai,
+            khongCoNghiaVu: !!o.khongCoNghiaVu,
+            trangThaiCong: h?.portal_status || o.portal_status || null,
+            ngayNop: h?.submitted_at || null,
+            ngayTiepNhan: h?.received_at || o.received_at || null,
+            dungHan: h ? h.on_time : (o.on_time ?? null),
+          }
+        }),
       }
     })
 
