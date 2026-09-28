@@ -78,6 +78,31 @@ backup. Quyền không tồn tại thì mục menu tự ẩn, backup tự bỏ q
   chống trùng riêng `app_posted.json`): lần chạy đầu của MỖI nguồn tự seed — đánh dấu giao dịch cũ,
   không gửi lên app. `--dry` xem trước, `--tcb` cho sao kê Techcombank.
 
+## Module HCNS (`/hcns`)
+
+Khách HCNS/BHXH: **Thời kỳ** (thu phí đều hằng tháng, gắn 1 công ty kế toán), **Thời kỳ – Phát
+sinh** (việc thời điểm của chính công ty Thời kỳ, KHÔNG thu phí riêng), **Thời điểm** (hồ sơ theo
+vụ việc, có phí). Vãng lai đã ẩn (2026-09-21), code server vẫn giữ. SQL `sql/06,07,10,11,12,17-21`.
+
+- **`clients.uses_hcns` là NGUỒN ĐÚNG**: công ty bỏ tick bên kế toán thì Phòng HCNS coi như đã
+  ngưng, kể cả khi `hcns_clients.is_active` còn true (từng lệch 9 công ty phí 0đ). Phí HCNS 0đ =
+  "Miễn phí", vẫn ở tag Thời kỳ và vẫn làm checklist.
+- **Hạn hoàn thành dịch vụ** (`lib/hcnsDue.js`) = ngày nhận + `hcns_service_templates.sla_days`,
+  **bỏ chủ nhật**, ngày nhận tính là ngày 1; chốt vào `hcns_case_services.due_at` LÚC THÊM dịch vụ —
+  đổi `sla_days` không kéo hạn hồ sơ cũ. Đổi `received_at` (chỉ admin) thì tính lại hạn.
+  %-công việc Thời điểm chỉ tính việc tích trong hạn; thẻ "Hoàn thành đúng hạn" lấy mẫu số = đã
+  xong + đang trễ (bỏ dịch vụ chưa tới hạn).
+- **Công nợ hồ sơ Thời điểm**: `hcns_case_payments.paid_at` = ngày khách trả THẬT (ghi muộn khoản
+  của tháng trước mà lấy ngày ghi sẽ thổi phồng "Tồn đầu kỳ" — ca DT. GROUP). Tiền "thu chung cho
+  cả hồ sơ" được chia lần lượt vào từng dịch vụ, dịch vụ nhận trước trừ trước (`allocatePayments`).
+- **Phân quyền**: `manage_hcns` sửa phí/ngưng/dùng lại DV HCNS ngay trong Phòng HCNS và ghi chú;
+  `edit_hcns_case_info` sửa thông tin hồ sơ; `view_hcns_all_staff` (TP HCNS) + admin xoá dịch vụ;
+  **chỉ admin** xoá hồ sơ, xoá ghi chú, sửa hạn/ngày nhận. Kế toán phụ trách công ty được đổi phí
+  HCNS của công ty mình (PATCH `hcns/clients` chỉ gửi `hcns_fee`).
+- Việc "Cập nhật số lượng nhân sự" (`requires_headcount`) bắt buộc nhập số người hoặc tick "Không
+  thay đổi" → lưu `hcns_headcount`, dùng cho sheet Excel "Biến động nhân sự" (phí đề xuất = số
+  người × `HCNS_PER_HEAD`).
+
 ## Module Phòng Kinh doanh (`/sales`)
 
 Khách tiềm năng + báo giá SVT.MB03 + báo cáo, dựng 2026-09-11 (commit `78c529d`), tách rời như HCNS: SQL
