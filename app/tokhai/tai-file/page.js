@@ -1,16 +1,15 @@
 'use client'
-// Tải file tờ khai + thông báo về thư mục trên ổ chung — Phân hệ Tờ khai, GĐ 6.
+// Tải file tờ khai + thông báo về thư mục từng công ty — Phân hệ Tờ khai, GĐ 6.
 //
 // TÁCH RIÊNG khỏi màn Đồng bộ theo lô vì hai việc có nhịp khác nhau: đồng bộ trạng thái chạy nhiều
 // lần trong kỳ cho cả lô; tải file chạy ít, thường cho MỘT công ty nhiều kỳ, và nặng hơn nhiều lần.
 //
-// Nhân viên chọn MỘT LẦN thư mục của mình trên ổ chung, ví dụ:
-//   G:\Shared drives\12. SAVITAX - PHÒNG NGHIỆP VỤ GRAND\Huỳnh Thị Mỹ Lệ
-// App tự dò xuống '3.THỊNH PHÁT\2. HỒ SƠ KẾ TOÁN\Năm 2026\7. BỘ BÁO CÁO' rồi ghi file vào đó.
-// Trưởng phòng chọn thư mục PHÒNG thì lo được cả phòng.
+// Nhân viên trỏ thẳng vào thư mục CỦA TỪNG CÔNG TY, ví dụ:
+//   G:\Shared drives\12. SAVITAX - PHÒNG NGHIỆP VỤ GRAND\Huỳnh Thị Mỹ Lệ\3.THỊNH PHÁT
+// Chọn một lần, trình duyệt nhớ luôn. App tự đi tiếp xuống '2. HỒ SƠ KẾ TOÁN\Năm <năm>\7. BỘ BÁO CÁO'.
 //
-// MÀN HÌNH HIỆN ĐƯỜNG DẪN DÒ RA CHO NGƯỜI XEM TRƯỚC KHI CHẠY. Ghi tờ khai công ty này vào thư mục
-// công ty kia là hỏng việc thật, nên chỗ nào dò không chắc thì bắt chọn tay, không đoán bừa.
+// CỐ Ý KHÔNG DÒ THƯ MỤC TỰ ĐỘNG (anh chốt 28/09): một nhân viên không phụ trách nhiều công ty tới
+// mức phải dò, mà dò thì vừa chậm vừa có ngày khớp nhầm công ty. Người chọn thì không bao giờ nhầm.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
@@ -21,8 +20,7 @@ import { OTong } from '@/components/tokhaiUI'
 import { kiemTraTienIch } from '@/lib/portalBridge'
 import { chayTaiFile } from '@/lib/tokhaiTaiFileClient'
 import {
-  coHoTro, chonThuMucGoc, layThuMucGoc, quenThuMucGoc,
-  chonThuMucCongTy, layThuMucCongTy, quenThuMucCongTy, doThuMucCongTy,
+  coHoTro, chonThuMucCongTy, layThuMucCongTy, quenThuMucCongTy, soatThuMucCongTy,
 } from '@/lib/tokhaiLuuDia'
 
 const ngayChu = d => d.toISOString().slice(0, 10)
@@ -40,14 +38,6 @@ function cacMocNhanh() {
   ]
 }
 
-function moTaLoiDo(kq) {
-  if (kq.ly_do === 'khong_thay') return 'Không dò ra thư mục công ty trong thư mục đã chọn'
-  if (kq.ly_do === 'nhieu_lua_chon') return 'Dò ra nhiều thư mục giống nhau: ' + (kq.ungVien || []).join(' · ')
-  if (kq.ly_do === 'loi_doc') return 'Không đọc được thư mục: ' + (kq.moTa || '')
-  if (kq.ly_do === 'chua_chon_goc') return 'Chưa chọn thư mục gốc'
-  return 'Không dò ra thư mục công ty'
-}
-
 export default function TrangTaiFile() {
   const router = useRouter()
   const [dsCty, setDsCty] = useState([])
@@ -57,10 +47,10 @@ export default function TrangTaiFile() {
   const [tienIch, setTienIch] = useState(null)
   const [dangTai, setDangTai] = useState(true)
   const [loi, setLoi] = useState('')
+  const [hoTro, setHoTro] = useState(true)
 
-  const [thuMuc, setThuMuc] = useState({ tay: null, trangThai: 'dang_do', ten: '' })
-  const [thuMucCty, setThuMucCty] = useState({})   // clientId → { tay, hien, nguon, loi }
-  const [dangDoThuMuc, setDangDoThuMuc] = useState(false)
+  // clientId → { tay, ten, trangThai, soat }
+  const [thuMucCty, setThuMucCty] = useState({})
 
   const homNay = ngayChu(new Date())
   const [tuNgay, setTuNgay] = useState(ngayChu(new Date(Date.now() - 89 * 864e5)))
@@ -80,8 +70,7 @@ export default function TrangTaiFile() {
     const supabase = createClient()
     supabase.auth.getSession().then(({ data }) => { if (!data.session) router.replace('/login') })
     kiemTraTienIch().then(setTienIch)
-    if (!coHoTro()) setThuMuc({ tay: null, trangThai: 'khong_ho_tro', ten: '' })
-    else layThuMucGoc().then(setThuMuc).catch(() => setThuMuc({ tay: null, trangThai: 'chua_chon', ten: '' }))
+    setHoTro(coHoTro())
   }, [router])
 
   useEffect(() => {
@@ -109,72 +98,43 @@ export default function TrangTaiFile() {
   const dsChon = dsHien.filter(c => chon[c.id])
   const thieuMaKH = dsChon.filter(c => !c.maKH)
   const soCuaSo = Math.max(1, Math.ceil((new Date(denNgay) - new Date(tuNgay)) / 864e5 / 30))
-  const sanSang = thuMuc.trangThai === 'san_sang'
-  const chuaCoThuMuc = dsChon.filter(c => !thuMucCty[c.id]?.tay)
+  const sanSangCuaCty = c => thuMucCty[c.id]?.trangThai === 'san_sang' && thuMucCty[c.id]?.soat?.ok
+  const chuaCoThuMuc = dsChon.filter(c => !sanSangCuaCty(c))
 
-  // Dò thư mục cho một công ty: ưu tiên thư mục nhân viên đã chọn tay, không có mới dò tự động.
-  const giaiQuyetMotCty = useCallback(async (cty, gocTay) => {
-    const rieng = await layThuMucCongTy(cty.id)
-    if (rieng.trangThai === 'san_sang') {
-      return { tay: rieng.tay, hien: rieng.ten, nguon: 'tay' }
-    }
-    if (rieng.trangThai === 'can_xin_lai') {
-      return { hien: rieng.ten, nguon: 'tay', loi: 'Cần cấp lại quyền cho thư mục đã chọn tay' }
-    }
-    if (!gocTay) return { loi: 'Chưa chọn thư mục gốc' }
-    const kq = await doThuMucCongTy(gocTay, { maKH: cty.maKH, tenCty: cty.ten })
-    if (kq.tay) return { tay: kq.tay, hien: kq.duongDan.join(' \\ '), nguon: 'do', diem: kq.diem }
-    return { loi: moTaLoiDo(kq) }
-  }, [])
-
-  // Dò lại mỗi khi đổi thư mục gốc hoặc đổi danh sách công ty đã chọn.
-  const dsChonId = dsChon.map(c => c.id).join(',')
+  // Đọc lại thư mục đã nhớ của các công ty đang hiện — chỉ đọc IndexedDB dưới máy, không gọi mạng.
+  const dsHienId = dsHien.map(c => c.id).join(',')
   useEffect(() => {
-    if (!sanSang || !dsChonId || dangChay) return
+    if (!hoTro || !dsHienId) return
     let huy = false
-    setDangDoThuMuc(true)
     ;(async () => {
       const ra = {}
-      for (const c of dsChon) {
+      for (const id of dsHienId.split(',')) {
         if (huy) return
-        ra[c.id] = await giaiQuyetMotCty(c, thuMuc.tay)
+        const kq = await layThuMucCongTy(id)
+        if (kq.trangThai === 'chua_chon') continue
+        ra[id] = { ...kq, soat: kq.trangThai === 'san_sang' ? await soatThuMucCongTy(kq.tay) : null }
       }
-      if (!huy) { setThuMucCty(p => ({ ...p, ...ra })); setDangDoThuMuc(false) }
-    })().catch(() => setDangDoThuMuc(false))
+      if (!huy && Object.keys(ra).length) setThuMucCty(p => ({ ...ra, ...p }))
+    })()
     return () => { huy = true }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dsChonId, sanSang, thuMuc.tay, dangChay, giaiQuyetMotCty])
+  }, [dsHienId, hoTro])
 
-  async function bamChonThuMucGoc() {
-    try {
-      const tay = await chonThuMucGoc()
-      setThuMucCty({})
-      setThuMuc({ tay, trangThai: 'san_sang', ten: tay.name })
-    } catch (e) {
-      if (e?.name !== 'AbortError') setLoi(e.message)
-    }
-  }
+  const capNhatThuMuc = useCallback(async (clientId, { xinQuyen = false } = {}) => {
+    const kq = await layThuMucCongTy(clientId, { xinQuyen })
+    const soat = kq.trangThai === 'san_sang' ? await soatThuMucCongTy(kq.tay) : null
+    setThuMucCty(p => ({ ...p, [clientId]: { ...kq, soat } }))
+    return { ...kq, soat }
+  }, [])
 
-  async function bamXinLaiQuyen() {
-    const kq = await layThuMucGoc({ xinQuyen: true })
-    setThuMuc(kq)
-    if (kq.trangThai === 'bi_tu_choi') setLoi('Trình duyệt chưa được cấp quyền ghi vào thư mục đó.')
-  }
-
-  async function bamChonTay(cty) {
+  async function bamChonThuMuc(cty) {
     try {
       await chonThuMucCongTy(cty.id)
-      const kq = await giaiQuyetMotCty(cty, thuMuc.tay)
-      setThuMucCty(p => ({ ...p, [cty.id]: kq }))
+      const kq = await capNhatThuMuc(cty.id)
+      // Trỏ nhầm thì quên luôn, đừng để nhân viên tưởng đã xong.
+      if (!kq.soat?.ok) await quenThuMucCongTy(cty.id)
     } catch (e) {
       if (e?.name !== 'AbortError') setLoi(e.message)
     }
-  }
-
-  async function bamBoChonTay(cty) {
-    await quenThuMucCongTy(cty.id)
-    const kq = await giaiQuyetMotCty(cty, thuMuc.tay)
-    setThuMucCty(p => ({ ...p, [cty.id]: kq }))
   }
 
   const hoiCaptcha = ({ anhCaptcha, nhan }) => new Promise(giaiQuyet => {
@@ -225,6 +185,55 @@ export default function TrangTaiFile() {
   const tongLoiGhi = Object.values(ketQua).reduce((t, k) => t + (k.loiGhi?.length || 0), 0)
   const dem = tt => Object.values(ketQua).filter(k => k.ket_qua === tt).length
 
+  // Ô "Thư mục" của một dòng công ty.
+  function OThuMuc({ c }) {
+    const tm = thuMucCty[c.id]
+    const nut = (nhan, onClick, dam) => (
+      <button disabled={dangChay} onClick={onClick}
+        className={'px-2 py-1 rounded-lg text-[11px] ' + (dam
+          ? 'bg-[#8B1A1A] text-white font-medium'
+          : 'border border-gray-200 text-gray-600 hover:bg-gray-50')}>
+        {nhan}
+      </button>
+    )
+
+    if (!tm || tm.trangThai === 'chua_chon') {
+      return (
+        <div className="space-y-1">
+          <p className="text-gray-400">chưa chọn</p>
+          {nut('Chọn thư mục', () => bamChonThuMuc(c), true)}
+        </div>
+      )
+    }
+    if (tm.trangThai === 'can_xin_lai' || tm.trangThai === 'bi_tu_choi') {
+      return (
+        <div className="space-y-1">
+          <p className="font-mono text-gray-700 break-all leading-tight">{tm.ten}</p>
+          <p className="text-amber-700">cần cấp lại quyền ghi</p>
+          {nut('Cấp lại quyền', () => capNhatThuMuc(c.id, { xinQuyen: true }), true)}
+        </div>
+      )
+    }
+    if (!tm.soat?.ok) {
+      return (
+        <div className="space-y-1">
+          <p className="font-mono text-gray-700 break-all leading-tight">{tm.ten}</p>
+          <p className="text-amber-700 leading-tight">{tm.soat?.loi}</p>
+          {nut('Chọn lại', () => bamChonThuMuc(c))}
+        </div>
+      )
+    }
+    return (
+      <div className="space-y-1">
+        <p className="text-green-700 font-mono break-all leading-tight">✓ {tm.ten}</p>
+        <p className="text-[11px] text-gray-400">
+          {tm.soat.cacNam?.length ? `có ${tm.soat.cacNam.map(n => 'Năm ' + n).join(', ')}` : 'chưa có thư mục năm nào'}
+        </p>
+        {nut('Đổi', () => bamChonThuMuc(c))}
+      </div>
+    )
+  }
+
   return (
     <AppShell>
       <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
@@ -242,65 +251,13 @@ export default function TrangTaiFile() {
             <b>Chưa có tiện ích Chrome</b> — cần tiện ích <b>Savitax — Cầu nối cổng thuế</b> để gọi cổng thuế.
           </div>
         )}
+        {!hoTro && (
+          <div className="mb-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
+            Trình duyệt này không ghi được vào thư mục. Dùng <b>Chrome</b> hoặc <b>Edge</b> trên máy tính.
+          </div>
+        )}
         {loi && <div className="mb-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">{loi}</div>}
 
-        {/* Thư mục gốc — chọn một lần, trình duyệt nhớ */}
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-3 mb-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm font-semibold text-gray-700">Thư mục của anh/chị trên ổ chung</span>
-
-            {thuMuc.trangThai === 'khong_ho_tro' && (
-              <span className="text-sm text-red-700">
-                Trình duyệt này không ghi được vào thư mục. Dùng <b>Chrome</b> hoặc <b>Edge</b> trên máy tính.
-              </span>
-            )}
-            {thuMuc.trangThai === 'dang_do' && <span className="text-sm text-gray-400">đang kiểm…</span>}
-
-            {thuMuc.trangThai === 'chua_chon' && (
-              <>
-                <span className="text-sm text-gray-500">chưa chọn</span>
-                <button onClick={bamChonThuMucGoc}
-                  className="px-3 py-1.5 rounded-lg bg-[#8B1A1A] text-white text-sm font-medium shadow-sm">
-                  Chọn thư mục
-                </button>
-              </>
-            )}
-
-            {(thuMuc.trangThai === 'can_xin_lai' || thuMuc.trangThai === 'bi_tu_choi') && (
-              <>
-                <span className="text-sm text-gray-700"><b>{thuMuc.ten}</b> — cần cấp lại quyền ghi</span>
-                <button onClick={bamXinLaiQuyen}
-                  className="px-3 py-1.5 rounded-lg bg-[#8B1A1A] text-white text-sm font-medium shadow-sm">
-                  Cấp lại quyền
-                </button>
-              </>
-            )}
-
-            {sanSang && (
-              <>
-                <span className="text-sm text-green-700">✓ <b>{thuMuc.ten}</b></span>
-                <button disabled={dangChay} onClick={bamChonThuMucGoc}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">
-                  Đổi
-                </button>
-                <button disabled={dangChay}
-                  onClick={async () => { await quenThuMucGoc(); setThuMucCty({}); setThuMuc({ tay: null, trangThai: 'chua_chon', ten: '' }) }}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">
-                  Quên
-                </button>
-              </>
-            )}
-          </div>
-          <p className="text-xs text-gray-400 mt-2">
-            Chọn thư mục <b>mang tên anh/chị</b> trên ổ chung — ví dụ
-            {' '}<span className="font-mono">…\12. SAVITAX - PHÒNG NGHIỆP VỤ GRAND\Huỳnh Thị Mỹ Lệ</span>.
-            Trưởng phòng chọn thư mục <b>phòng</b> thì lo được cả phòng. App tự đi tiếp xuống
-            {' '}<span className="font-mono">&lt;công ty&gt;\2. HỒ SƠ KẾ TOÁN\Năm &lt;năm&gt;\7. BỘ BÁO CÁO</span>.
-            {' '}App <b>không bao giờ tạo thư mục công ty mới</b> — dò không ra thì báo để chọn tay.
-          </p>
-        </div>
-
-        {/* Phạm vi + khoảng ngày */}
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-3 mb-4">
           <div className="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b border-gray-100">
             <span className="text-sm text-gray-500">Phòng</span>
@@ -356,8 +313,7 @@ export default function TrangTaiFile() {
             <div className="flex-1" />
             {!dangChay ? (
               <button onClick={chay}
-                disabled={!dsChon.length || !tienIch?.co || !sanSang || thieuMaKH.length > 0
-                  || chuaCoThuMuc.length > 0 || dangDoThuMuc}
+                disabled={!dsChon.length || !tienIch?.co || thieuMaKH.length > 0 || chuaCoThuMuc.length > 0}
                 className="px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-medium disabled:opacity-40 shadow-sm">
                 Bắt đầu tải file
               </button>
@@ -377,12 +333,11 @@ export default function TrangTaiFile() {
             )}
           </p>
 
-          {dangDoThuMuc && <p className="text-xs text-blue-700 mt-1.5">Đang dò thư mục các công ty đã chọn…</p>}
-
-          {!dangDoThuMuc && chuaCoThuMuc.length > 0 && (
+          {chuaCoThuMuc.length > 0 && (
             <p className="text-xs text-amber-700 mt-1.5">
-              <b>{chuaCoThuMuc.length}</b> công ty chưa xác định được thư mục — bấm <b>Chọn tay</b> ở cột
-              Thư mục rồi trỏ vào thư mục công ty (ví dụ <span className="font-mono">3.THỊNH PHÁT</span>).
+              <b>{chuaCoThuMuc.length}</b> công ty chưa có thư mục — bấm <b>Chọn thư mục</b> ở cột Thư mục
+              rồi trỏ vào thư mục công ty trên ổ chung (ví dụ <span className="font-mono">3.THỊNH PHÁT</span>).
+              Chọn một lần, lần sau app nhớ.
             </p>
           )}
 
@@ -455,21 +410,19 @@ export default function TrangTaiFile() {
                           ? Object.fromEntries(dsHien.map(c => [c.id, true])) : {})} />
                     </th>
                     <th className="text-left px-2 py-2.5 font-semibold uppercase text-[11px] tracking-wide">Công ty</th>
-                    <th className="text-left px-2 py-2.5 font-semibold uppercase text-[11px] tracking-wide">Thư mục</th>
+                    <th className="text-left px-2 py-2.5 font-semibold uppercase text-[11px] tracking-wide w-64">Thư mục</th>
                     <th className="text-left px-2 py-2.5 font-semibold uppercase text-[11px] tracking-wide">Kết quả</th>
                   </tr>
                 </thead>
                 <tbody>
                   {dsHien.map(c => {
                     const kq = ketQua[c.id]
-                    const tm = thuMucCty[c.id]
-                    const daChon = !!chon[c.id]
                     const dangLam = dangChay && dsChon[viTri]?.id === c.id
                     return (
                       <tr key={c.id} className={'border-b border-gray-100 odd:bg-white even:bg-slate-50/60 '
                         + (dangLam ? 'ring-2 ring-inset ring-blue-300' : '')}>
                         <td className="px-3 py-2.5 align-top">
-                          <input type="checkbox" disabled={dangChay} checked={daChon}
+                          <input type="checkbox" disabled={dangChay} checked={!!chon[c.id]}
                             onChange={e => setChon(p => ({ ...p, [c.id]: e.target.checked }))} />
                         </td>
                         <td className="px-2 py-2.5 align-top">
@@ -479,41 +432,7 @@ export default function TrangTaiFile() {
                           </p>
                         </td>
                         <td className="px-2 py-2.5 align-top text-xs">
-                          {!daChon && <span className="text-gray-300">—</span>}
-                          {daChon && !tm && <span className="text-gray-400">đang dò…</span>}
-                          {daChon && tm?.tay && (
-                            <>
-                              <p className="font-mono text-gray-700 leading-tight break-all">{tm.hien}</p>
-                              <p className="text-[11px] mt-0.5">
-                                {tm.nguon === 'tay'
-                                  ? <span className="text-blue-700">đã chọn tay</span>
-                                  : tm.diem === 3
-                                    ? <span className="text-green-700">khớp Mã khách hàng</span>
-                                    : tm.diem === 2
-                                      ? <span className="text-green-700">khớp tên công ty</span>
-                                      : <span className="text-amber-700">khớp gần đúng — soát lại giúp em</span>}
-                                {' · '}
-                                <button disabled={dangChay} onClick={() => bamChonTay(c)}
-                                  className="underline text-gray-500 hover:text-gray-700">Chọn tay</button>
-                                {tm.nguon === 'tay' && (
-                                  <>
-                                    {' · '}
-                                    <button disabled={dangChay} onClick={() => bamBoChonTay(c)}
-                                      className="underline text-gray-500 hover:text-gray-700">Dò lại</button>
-                                  </>
-                                )}
-                              </p>
-                            </>
-                          )}
-                          {daChon && tm && !tm.tay && (
-                            <>
-                              <p className="text-amber-700 leading-tight">{tm.loi}</p>
-                              <button disabled={dangChay} onClick={() => bamChonTay(c)}
-                                className="mt-1 px-2 py-1 rounded-lg border border-gray-200 text-[11px] text-gray-600 hover:bg-gray-50">
-                                Chọn tay thư mục công ty
-                              </button>
-                            </>
-                          )}
+                          <OThuMuc c={c} />
                         </td>
                         <td className="px-2 py-2.5 align-top text-xs">
                           {dangLam && <span className="text-blue-700 font-medium">đang chạy…</span>}
