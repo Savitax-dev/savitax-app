@@ -259,9 +259,13 @@ export default function TrangTaiFile() {
         <NhacHanNop />
 
         <h1 className="text-xl font-bold text-gray-900 mb-1">Tải file về thư mục</h1>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-500 mb-1">
           Tải tờ khai và thông báo từ cổng Dịch vụ công, xếp thẳng vào thư mục từng công ty trên ổ
-          chung, kèm bản PDF app tự dựng.
+          chung.
+        </p>
+        <p className="text-xs text-gray-400 mb-4">
+          Đang lưu <b>file XML gốc</b> của cơ quan thuế. Phần app tự dựng PDF <b>tạm tắt</b> để soát
+          lại cho đúng mẫu — kế toán vẫn in tay từ HTKK như trước.
         </p>
 
         {!tienIch?.co && (
@@ -409,7 +413,7 @@ export default function TrangTaiFile() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
             <OTong mau="xanhLa" so={dem('xong')} nhan="Công ty xong" />
             <OTong mau="do" so={dem('loi')} nhan="Lỗi" />
-            <OTong mau="xanhDuong" so={tongFile} nhan="File đã ghi" phu="gồm cả bản PDF" />
+            <OTong mau="xanhDuong" so={tongFile} nhan="File đã ghi" />
             <OTong mau="xam" so={tongLoiGhi} nhan="File ghi không được" />
           </div>
         )}
