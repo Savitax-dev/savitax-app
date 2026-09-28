@@ -200,13 +200,22 @@ let kq = await soatThuMucCongTy(C.nv.con.get('3.THỊNH PHÁT'))
 kiem('trỏ đúng thư mục công ty → nhận', { ok: kq.ok, kieu: kq.kieu, nam: kq.cacNam },
   { ok: true, kieu: 'cong_ty', nam: ['2026'] })
 
+kiem('hiện trước đường dẫn file sẽ rơi vào', kq.duongDanMau,
+  ['3.THỊNH PHÁT', '2. HỒ SƠ KẾ TOÁN', 'Năm <năm>', '7. BỘ BÁO CÁO'])
+kiem('thư mục đúng chuẩn thì KHÔNG cảnh báo', kq.canhBao || null, null)
+
 kq = await soatThuMucCongTy(C.nv.con.get('3.THỊNH PHÁT').con.get('2. HỒ SƠ KẾ TOÁN'))
 kiem('trỏ thẳng vào "2. HỒ SƠ KẾ TOÁN" → vẫn nhận', { ok: kq.ok, kieu: kq.kieu },
-  { ok: true, kieu: 'ho_so' })
+  { ok: true, kieu: 'tu_chon' })
+kiem('bên trong đã có thư mục năm → khỏi cảnh báo', kq.canhBao || null, null)
 
-kq = await soatThuMucCongTy(C.nv)
-kiem('trỏ nhầm vào thư mục nhân viên → TỪ CHỐI', kq.ok, false)
-kiem('nói rõ phải trỏ vào đâu', /trỏ vào thư mục công ty/.test(kq.loi || ''), true)
+// NHÂN VIÊN TỰ TAY TRỎ thì không chặn, chỉ báo cho biết — anh gặp đúng cảnh này khi thử bằng một
+// thư mục trống (28/09). Chặn là chặn nhầm cả công ty mới chưa dựng sẵn cấu trúc.
+kq = await soatThuMucCongTy(thuMucGia('Test tải tờ khai'))
+kiem('thư mục trống VẪN DÙNG ĐƯỢC, không chặn', kq.ok, true)
+kiem('nhưng có cảnh báo', /chưa có "2\. HỒ SƠ KẾ TOÁN"/.test(kq.canhBao || ''), true)
+kiem('và nói rõ file sẽ rơi vào đâu', kq.duongDanMau,
+  ['Test tải tờ khai', 'Năm <năm>', '7. BỘ BÁO CÁO'])
 
 kq = await soatThuMucCongTy(null)
 kiem('chưa chọn gì → từ chối, không nổ', kq.ok, false)
@@ -225,13 +234,17 @@ kiem('sang năm mới thì TẠO "Năm 2027"', liet(tayCty).filter(x => x.includ
 ])
 kiem('năm 2026 KHÔNG bị đụng vào', liet(tayCty).includes('2. HỒ SƠ KẾ TOÁN/Năm 2026/7. BỘ BÁO CÁO/'), true)
 
-// Trỏ vào thư mục không phải thư mục công ty thì PHẢI TỪ CHỐI ngay, không tạo thư mục nào —
-// đây là chỗ duy nhất thật sự ghi lên ổ chung của cả phòng.
-const layNham = thuMucGia('Tài liệu linh tinh')
+// Thư mục trống (nhân viên tự trỏ vào, ví dụ để chạy thử): tạo thẳng cây bên trong, ĐÚNG như
+// đường dẫn mẫu màn hình đã hiện trước đó — không được làm khác lời đã báo.
+const thuMucThu = thuMucGia('Test tải tờ khai')
+kiem('thư mục trống → tạo được, ra đúng BỘ BÁO CÁO',
+  (await moBoBaoCao(thuMucThu, '2026')).name, '7. BỘ BÁO CÁO')
+kiem('cây tạo ra khớp đường dẫn mẫu đã hiện', liet(thuMucThu),
+  ['Năm 2026/', 'Năm 2026/7. BỘ BÁO CÁO/'])
+
 let loiBo = ''
-try { await moBoBaoCao(layNham, '2026') } catch (e) { loiBo = e.message }
-kiem('thư mục lạ thì BÁO, không tạo bừa', /trỏ vào thư mục công ty/.test(loiBo), true)
-kiem('và KHÔNG để lại thư mục nào trong đó', liet(layNham), [])
+try { await moBoBaoCao(null, '2026') } catch (e) { loiBo = e.message }
+kiem('chưa chọn thư mục thì BÁO LỖI', loiBo, 'Chưa chọn thư mục lưu')
 
 // Trỏ thẳng vào '2. HỒ SƠ KẾ TOÁN' vẫn chạy được (miễn là bên trong đã có thư mục năm).
 const hoSoTay = cayThat().nv.con.get('3.THỊNH PHÁT').con.get('2. HỒ SƠ KẾ TOÁN')

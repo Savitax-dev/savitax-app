@@ -98,7 +98,9 @@ export default function TrangTaiFile() {
   const dsChon = dsHien.filter(c => chon[c.id])
   const thieuMaKH = dsChon.filter(c => !c.maKH)
   const soCuaSo = Math.max(1, Math.ceil((new Date(denNgay) - new Date(tuNgay)) / 864e5 / 30))
-  const sanSangCuaCty = c => thuMucCty[c.id]?.trangThai === 'san_sang' && thuMucCty[c.id]?.soat?.ok
+  // Chỉ cần có thư mục và còn quyền ghi. Thư mục trông lạ thì CẢNH BÁO chứ không chặn — nhân viên
+  // tự tay trỏ vào thì họ biết họ đang làm gì.
+  const sanSangCuaCty = c => thuMucCty[c.id]?.trangThai === 'san_sang'
   const chuaCoThuMuc = dsChon.filter(c => !sanSangCuaCty(c))
 
   // Đọc lại thư mục đã nhớ của các công ty đang hiện — chỉ đọc IndexedDB dưới máy, không gọi mạng.
@@ -129,12 +131,15 @@ export default function TrangTaiFile() {
   async function bamChonThuMuc(cty) {
     try {
       await chonThuMucCongTy(cty.id)
-      const kq = await capNhatThuMuc(cty.id)
-      // Trỏ nhầm thì quên luôn, đừng để nhân viên tưởng đã xong.
-      if (!kq.soat?.ok) await quenThuMucCongTy(cty.id)
+      await capNhatThuMuc(cty.id)
     } catch (e) {
       if (e?.name !== 'AbortError') setLoi(e.message)
     }
+  }
+
+  async function bamBoThuMuc(cty) {
+    await quenThuMucCongTy(cty.id)
+    setThuMucCty(p => ({ ...p, [cty.id]: { tay: null, trangThai: 'chua_chon' } }))
   }
 
   const hoiCaptcha = ({ anhCaptcha, nhan }) => new Promise(giaiQuyet => {
@@ -218,7 +223,7 @@ export default function TrangTaiFile() {
       return (
         <div className="space-y-1">
           <p className="font-mono text-gray-700 break-all leading-tight">{tm.ten}</p>
-          <p className="text-amber-700 leading-tight">{tm.soat?.loi}</p>
+          <p className="text-red-700 leading-tight">{tm.soat?.loi}</p>
           {nut('Chọn lại', () => bamChonThuMuc(c))}
         </div>
       )
@@ -226,10 +231,23 @@ export default function TrangTaiFile() {
     return (
       <div className="space-y-1">
         <p className="text-green-700 font-mono break-all leading-tight">✓ {tm.ten}</p>
-        <p className="text-[11px] text-gray-400">
-          {tm.soat.cacNam?.length ? `có ${tm.soat.cacNam.map(n => 'Năm ' + n).join(', ')}` : 'chưa có thư mục năm nào'}
+        {/* Hiện thẳng chỗ file sẽ rơi vào — nhìn là biết đúng hay sai, khỏi phải tin lời app. */}
+        <p className="text-[11px] text-gray-500 font-mono break-all leading-tight">
+          → {tm.soat.duongDanMau?.join(' \\ ')}
         </p>
-        {nut('Đổi', () => bamChonThuMuc(c))}
+        {tm.soat.canhBao
+          ? <p className="text-[11px] text-amber-700 leading-tight">{tm.soat.canhBao}</p>
+          : (
+            <p className="text-[11px] text-gray-400">
+              {tm.soat.cacNam?.length
+                ? `có ${tm.soat.cacNam.map(n => 'Năm ' + n).join(', ')}`
+                : 'chưa có thư mục năm nào'}
+            </p>
+          )}
+        <div className="flex gap-1">
+          {nut('Đổi', () => bamChonThuMuc(c))}
+          {nut('Bỏ', () => bamBoThuMuc(c))}
+        </div>
       </div>
     )
   }
