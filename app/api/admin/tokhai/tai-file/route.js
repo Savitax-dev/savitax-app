@@ -18,7 +18,7 @@ import { decrypt } from '@/lib/taxCrypto'
 import { docBangKetQua, docChiTiet, RANGE_MAX_DAYS } from '@/lib/dvcPortal'
 import { chuanHoaKy } from '@/lib/taxDeadline'
 import {
-  duongDanToKhai, duongDanThongBao, tenFileToKhai, tenFileThongBao, macSacThue,
+  duongDanToKhai, duongDanThongBao, tenFileToKhai, tenFileThongBao, macSacThue, tachKy,
 } from '@/lib/tokhaiThuMuc'
 
 export const maxDuration = 60
@@ -366,6 +366,9 @@ function duongDanFileToKhai(p, hs, noiDungJson) {
     return {
       duongDan: duongDanToKhai({ periodCode: ky, maKH: p.maKH, maToKhai: loai?.code }),
       tenFile: tenFileToKhai({ sacThue: macSacThue(loai), periodCode: ky, maKH: p.maKH, duoi: duoiTheoKieu(j.fileType) }),
+      // Năm để trình duyệt biết đi vào thư mục 'Năm <nam>' nào — lấy theo KỲ TÍNH THUẾ, không phải
+      // năm hiện tại: tờ khai quý 4/2025 nộp tháng 1/2026 vẫn nằm ở 'Năm 2025'.
+      nam: tachKy(ky)?.nam || null,
       maHoSo: hs.maHoSo,
     }
   } catch (e) {
@@ -384,6 +387,7 @@ function duongDanFileThongBao(p, hs, tb, noiDungJson) {
     return {
       duongDan: duongDanThongBao({ periodCode: ky, maKH: p.maKH, maToKhai: loai?.code }),
       tenFile: tenFileThongBao({ loaiThongBao: tb.loai, sacThue: macSacThue(loai), periodCode: ky, maKH: p.maKH, duoi: duoiTheoKieu(j.fileType) }),
+      nam: tachKy(ky)?.nam || null,
       maHoSo: hs.maHoSo,
       laThongBao: true,
     }

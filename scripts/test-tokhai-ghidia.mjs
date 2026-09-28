@@ -10,8 +10,10 @@
 //   2. Đẻ thêm thư mục trùng ý nghĩa ('TB CHẤP NHẬN' bên cạnh 'THÔNG BÁO CHẤP NHẬN') làm kế toán
 //      tìm không ra file.
 
-import { ghiVaoDia, base64ThanhByte, byteThanhChu } from '../lib/tokhaiLuuDia.js'
-import { duongDanToKhai, duongDanThongBao } from '../lib/tokhaiThuMuc.js'
+import {
+  ghiVaoDia, base64ThanhByte, byteThanhChu, doThuMucCongTy, moBoBaoCao, diemKhopThuMuc,
+} from '../lib/tokhaiLuuDia.js'
+import { duongDanToKhai, duongDanThongBao, boSoThuTu } from '../lib/tokhaiThuMuc.js'
 
 let hong = 0
 const kiem = (ten, thucTe, mongDoi) => {
@@ -158,6 +160,103 @@ let batLoi = ''
 try { await ghiVaoDia({ goc: null, duongDan: ddTK, tenFile: 'a.xml', duLieu: chu('x') }) }
 catch (e) { batLoi = e.message }
 kiem('chưa chọn thư mục thì BÁO LỖI', batLoi, 'Chưa chọn thư mục lưu')
+
+// ── Dò thư mục công ty trên ổ chung ──────────────────────────────────────────
+//
+// Dựng lại đúng cây thật của Savitax:
+//   12. SAVITAX - PHÒNG NGHIỆP VỤ GRAND\Huỳnh Thị Mỹ Lệ\3.THỊNH PHÁT\2. HỒ SƠ KẾ TOÁN\Năm 2026\7. BỘ BÁO CÁO
+
+console.log('')
+console.log('Bỏ số thứ tự đầu tên thư mục:')
+kiem("'3.THỊNH PHÁT'", boSoThuTu('3.THỊNH PHÁT'), 'THỊNH PHÁT')
+kiem("'7. BỘ BÁO CÁO'", boSoThuTu('7. BỘ BÁO CÁO'), 'BỘ BÁO CÁO')
+kiem("'12. SAVITAX - PHÒNG NGHIỆP VỤ GRAND'", boSoThuTu('12. SAVITAX - PHÒNG NGHIỆP VỤ GRAND'), 'SAVITAX - PHÒNG NGHIỆP VỤ GRAND')
+kiem("'10 PAPER ART VIỆT' (cách trắng)", boSoThuTu('10 PAPER ART VIỆT'), 'PAPER ART VIỆT')
+kiem("'3M VIỆT NAM' KHÔNG bị cắt mất số 3", boSoThuTu('3M VIỆT NAM'), '3M VIỆT NAM')
+kiem('tên không có số giữ nguyên', boSoThuTu('THỊNH PHÁT'), 'THỊNH PHÁT')
+
+console.log('')
+console.log('Điểm khớp tên thư mục với công ty:')
+const TP = { maKH: 'THINHPHAT', tenCty: 'CÔNG TY TNHH BVTV THỊNH PHÁT' }
+kiem("'3.THỊNH PHÁT' khớp Mã KH → 3", diemKhopThuMuc('3.THỊNH PHÁT', TP), 3)
+kiem('khớp trọn tên công ty → 2', diemKhopThuMuc('CÔNG TY TNHH BVTV THỊNH PHÁT', TP), 2)
+kiem("'BVTV THỊNH PHÁT' (tên đã bỏ loại hình) cũng là khớp chắc → 2",
+  diemKhopThuMuc('BVTV THỊNH PHÁT', TP), 2)
+// Mã khách hàng không dính dáng tên thư mục → chỉ còn khớp gần đúng, màn hình sẽ nhắc soát lại.
+kiem("'THỊNH PHÁT' khi Mã KH là 'TP001' → khớp gần đúng 1",
+  diemKhopThuMuc('THỊNH PHÁT', { maKH: 'TP001', tenCty: 'CÔNG TY TNHH BVTV THỊNH PHÁT' }), 1)
+kiem('công ty khác → 0', diemKhopThuMuc('5.CAPULL', TP), 0)
+kiem('tên quá ngắn KHÔNG khớp bừa', diemKhopThuMuc('2. HỒ SƠ', TP), 0)
+
+function cayThat() {
+  const goc = thuMucGia('G:')
+  const phong = thuMucGia('12. SAVITAX - PHÒNG NGHIỆP VỤ GRAND')
+  goc.con.set(phong.name, phong)
+  const nv = thuMucGia('Huỳnh Thị Mỹ Lệ')
+  phong.con.set(nv.name, nv)
+  for (const ten of ['1.CAPULL', '3.THỊNH PHÁT', '7.PAPER ART VIỆT']) {
+    const cty = thuMucGia(ten)
+    nv.con.set(ten, cty)
+    const hs = thuMucGia('2. HỒ SƠ KẾ TOÁN')
+    cty.con.set(hs.name, hs)
+    const nam = thuMucGia('Năm 2026')
+    hs.con.set(nam.name, nam)
+    nam.con.set('7. BỘ BÁO CÁO', thuMucGia('7. BỘ BÁO CÁO'))
+  }
+  return { goc, phong, nv }
+}
+
+console.log('')
+console.log('Dò thư mục công ty:')
+let C = cayThat()
+let kq = await doThuMucCongTy(C.nv, TP)
+kiem('gốc = thư mục NHÂN VIÊN → thấy ở tầng 1', kq.duongDan, ['3.THỊNH PHÁT'])
+kiem('khớp bằng Mã khách hàng', kq.diem, 3)
+
+kq = await doThuMucCongTy(C.phong, TP)
+kiem('gốc = thư mục PHÒNG → thấy ở tầng 2', kq.duongDan, ['Huỳnh Thị Mỹ Lệ', '3.THỊNH PHÁT'])
+
+kq = await doThuMucCongTy(C.nv, { maKH: 'KHONGCO', tenCty: 'CÔNG TY KHÔNG TỒN TẠI' })
+kiem('không có thì báo không thấy, KHÔNG tạo bừa', kq.ly_do, 'khong_thay')
+
+// Hai thư mục cùng khớp → phải bắt chọn tay, tuyệt đối không tự chọn một cái.
+C = cayThat()
+C.nv.con.set('9.THINHPHAT', thuMucGia('9.THINHPHAT'))
+kq = await doThuMucCongTy(C.nv, TP)
+kiem('hai thư mục cùng khớp → bắt chọn tay', kq.ly_do, 'nhieu_lua_chon')
+kiem('nêu rõ hai thư mục nào', (kq.ungVien || []).sort(), ['3.THỊNH PHÁT', '9.THINHPHAT'])
+
+console.log('')
+console.log('Đi từ thư mục công ty xuống BỘ BÁO CÁO:')
+C = cayThat()
+const tayCty = C.nv.con.get('3.THỊNH PHÁT')
+const bo2026 = await moBoBaoCao(tayCty, '2026')
+kiem('tìm đúng thư mục có sẵn', bo2026.name, '7. BỘ BÁO CÁO')
+
+const bo2027 = await moBoBaoCao(tayCty, '2027')
+kiem('sang năm mới thì TẠO "Năm 2027"', liet(tayCty).filter(x => x.includes('2027')).sort(), [
+  '2. HỒ SƠ KẾ TOÁN/Năm 2027/',
+  '2. HỒ SƠ KẾ TOÁN/Năm 2027/7. BỘ BÁO CÁO/',
+])
+kiem('năm 2026 KHÔNG bị đụng vào', liet(tayCty).includes('2. HỒ SƠ KẾ TOÁN/Năm 2026/7. BỘ BÁO CÁO/'), true)
+
+// Thư mục công ty dò ra mà thiếu 'HỒ SƠ KẾ TOÁN' thì nhiều khả năng dò nhầm → phải báo.
+let loiBo = ''
+try { await moBoBaoCao(thuMucGia('3.THỊNH PHÁT'), '2026') } catch (e) { loiBo = e.message }
+kiem('thiếu "2. HỒ SƠ KẾ TOÁN" thì BÁO, không tạo bừa',
+  /không có "2\. HỒ SƠ KẾ TOÁN"/.test(loiBo), true)
+
+console.log('')
+console.log('Ghi trọn một file theo cây thật:')
+C = cayThat()
+const bo = await moBoBaoCao(C.nv.con.get('3.THỊNH PHÁT'), '2026')
+await ghiVaoDia({ goc: bo, duongDan: ddTK, tenFile: 'TK_GTGT_Q1.2026_THINHPHAT.xml', duLieu: chu('tk') })
+kiem('file nằm đúng chỗ', liet(C.goc).filter(x => x.endsWith('.xml')), [
+  '12. SAVITAX - PHÒNG NGHIỆP VỤ GRAND/Huỳnh Thị Mỹ Lệ/3.THỊNH PHÁT/2. HỒ SƠ KẾ TOÁN/Năm 2026/'
+  + '7. BỘ BÁO CÁO/BAOCAOTHUE_Q1_2026_THINHPHAT/TỜ KHAI THUẾ/TK_GTGT_Q1.2026_THINHPHAT.xml',
+])
+kiem('KHÔNG đụng vào thư mục công ty khác',
+  liet(C.nv.con.get('1.CAPULL')), ['2. HỒ SƠ KẾ TOÁN/', '2. HỒ SƠ KẾ TOÁN/Năm 2026/', '2. HỒ SƠ KẾ TOÁN/Năm 2026/7. BỘ BÁO CÁO/'])
 
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)
