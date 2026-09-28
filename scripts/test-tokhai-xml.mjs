@@ -8,7 +8,8 @@
 // chỉ có con số là sai — mà kế toán đã gửi khách rồi mới biết.
 
 import { the, cacKhoi, giaiMaThucThe, tachNgay, ngayChu, gioNgayChu, ngaySo, docThongBaoXml, docToKhaiXml, nhanKyToKhai } from '../lib/tokhaiXml.js'
-import { soTien } from '../lib/tokhaiPdf.js'
+import { soTien, MAU_THONG_BAO } from '../lib/tokhaiPdf.js'
+import { laFileNen, moFileNen } from '../lib/tokhaiTaiFileClient.js'
 import { tenChiTieu, laSoNguoi } from '../lib/tokhaiChiTieu.js'
 
 let hong = 0
@@ -182,6 +183,84 @@ kiem('mã chưa gán tên → rỗng, KHÔNG bịa tên', tenChiTieu('864', '29'
 kiem('mẫu tờ khai chưa có bảng → rỗng', tenChiTieu('999', '21'), '')
 kiem('[15] của TNCN là số người', laSoNguoi('864', '15'), true)
 kiem('[26] của TNCN là số tiền', laSoNguoi('864', '26'), false)
+
+// ── Thông báo TIẾP NHẬN khác hẳn thông báo CHẤP NHẬN ────────────────────────
+//
+// Bản đầu in thông báo TIẾP NHẬN bằng lời văn của thông báo CHẤP NHẬN — tờ giấy khẳng định cơ quan
+// thuế "đã chấp nhận" trong khi mới chỉ tiếp nhận (anh phát hiện 28/09). XML tiếp nhận cũng KHÔNG
+// có ngayChapNhan lẫn ngayNopThucTe, nên câu văn bị đứt và hiện ra dấu gạch trống.
+
+const XML_TIEP_NHAN = `<?xml version="1.0" encoding="UTF-8"?>
+<TBaoThueDTu xmlns="http://kekhaithue.gdt.gov.vn/TBaoThue" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+ <TBaoThue Id="_NODE_TO_SIGN">
+  <TTinChung>
+   <CQT><maCQT>99999</maCQT><tenCQT>Thuế cơ sở thử nghiệm</tenCQT></CQT>
+   <NNhanTBaoThue><maNNhan>0000000000</maNNhan><tenNNhan>CÔNG TY THỬ NGHIỆM</tenNNhan></NNhanTBaoThue>
+   <TTinTBaoThue><maTBao>843</maTBao><tenTBao>V/v: Tiếp nhận hồ sơ thuế điện tử TT19</tenTBao>
+    <soTBao>1607163409958/2026</soTBao><ngayTBao>2026-07-16</ngayTBao></TTinTBaoThue>
+  </TTinChung>
+  <NDungTBao>
+   <trangThai>Y</trangThai>
+   <HoSoThue><CTietHoSoThue id="1">
+    <tokhai-phuluc>01/GTGT-TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG Mẫu số 01/GTGT (TT80/2021)</tokhai-phuluc>
+    <loaiToKhai>Chính thức</loaiToKhai><kyTinhThue>2/2026</kyTinhThue><lanNop>1</lanNop>
+   </CTietHoSoThue></HoSoThue>
+   <maGiaoDichDTu>10820260028131888</maGiaoDichDTu>
+   <ngayChapNhan xsi:nil="true"/>
+   <ngayHoanThanh xsi:nil="true"/>
+  </NDungTBao>
+ </TBaoThue>
+</TBaoThueDTu>`
+
+console.log('')
+console.log('Thông báo TIẾP NHẬN (khác thông báo chấp nhận):')
+const tn = docThongBaoXml(XML_TIEP_NHAN)
+kiem('mã thông báo 843', tn.maTBao, '843')
+kiem('KHÔNG có ngày chấp nhận', tn.ngayChapNhan, '')
+kiem('KHÔNG có ngày nộp thực tế', tn.ngayNopThucTe, '')
+kiem('vẫn có mã giao dịch', tn.maGiaoDichDTu, '10820260028131888')
+kiem('843 dùng Mẫu 01-1, KHÔNG dùng lời văn chấp nhận',
+  { mau: MAU_THONG_BAO['843'].mau, kieu: MAU_THONG_BAO['843'].kieu },
+  { mau: '01-1/TB-TĐT', kieu: 'tiep_nhan' })
+kiem('844 mới là mẫu chấp nhận',
+  { mau: MAU_THONG_BAO['844'].mau, kieu: MAU_THONG_BAO['844'].kieu },
+  { mau: '01-2/TB-TĐT', kieu: 'chap_nhan' })
+kiem('mã lạ thì không có mẫu, in dạng bảng', MAU_THONG_BAO['999'] || null, null)
+
+// ── Tờ khai cổng trả về dưới dạng .zip ──────────────────────────────────────
+//
+// Cổng trả TỜ KHAI trong file nén chỉ chứa đúng một XML, tên bên trong là tên máy vô nghĩa
+// ('files_G12.18-260716-00198606_0.xml'). Bản đầu để nguyên .zip nên tờ khai không có PDF nào.
+
+console.log('')
+console.log('Mở file nén cổng trả về:')
+const { default: PizZip } = await import('pizzip')
+const zipThu = new PizZip()
+zipThu.file('files_G12.18-260716-00198606_0.xml', XML_TKHAI)
+const byteZip = zipThu.generate({ type: 'uint8array' })
+
+kiem('nhận ra file nén qua 2 byte đầu (PK)', laFileNen(byteZip), true)
+kiem('không nhầm XML là file nén', laFileNen(new TextEncoder().encode('<?xml')), false)
+
+const phan = await moFileNen(byteZip, 'TK_GTGT_Q2.2026_THINHPHAT.zip')
+kiem('mở ra đúng 1 file', phan.length, 1)
+kiem('ĐỔI tên máy sang tên chuẩn Savitax, đuôi .xml', phan[0].ten, 'TK_GTGT_Q2.2026_THINHPHAT.xml')
+kiem('đánh dấu là file chính để còn dựng PDF', phan[0].laChinh, true)
+kiem('nội dung nguyên vẹn', new TextDecoder().decode(phan[0].du).includes('<HSoThueDTu'), true)
+
+// Nhiều file: file chứa hồ sơ thuế mới là file chính, file kèm giữ tên gốc.
+const zip2 = new PizZip()
+zip2.file('kem_theo.txt', 'ghi chú')
+zip2.file('files_G12_0.xml', XML_TKHAI)
+const phan2 = await moFileNen(zip2.generate({ type: 'uint8array' }), 'TK_GTGT_Q2.2026_THINHPHAT.zip')
+kiem('chọn đúng file chính theo NỘI DUNG, không theo thứ tự',
+  phan2.find(p => p.laChinh).ten, 'TK_GTGT_Q2.2026_THINHPHAT.xml')
+kiem('file kèm giữ tên gốc để khỏi lẫn',
+  phan2.find(p => !p.laChinh).ten, 'TK_GTGT_Q2.2026_THINHPHAT_kem_theo.txt')
+
+let loiNen = ''
+try { await moFileNen(new PizZip().generate({ type: 'uint8array' }), 'a.zip') } catch (e) { loiNen = e.message }
+kiem('file nén rỗng thì báo lỗi', loiNen, 'file nén rỗng')
 
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)
