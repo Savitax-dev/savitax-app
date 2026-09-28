@@ -11,6 +11,7 @@ const MUC = [
   { href: '/tokhai/bao-cao',  nhan: 'Báo cáo',       mo: 'Theo phòng và theo nhân viên' },
   { href: '/tokhai/ho-so',    nhan: 'Hồ sơ đã nộp',  mo: 'Hồ sơ thật lấy từ cổng thuế' },
   { href: '/tokhai/dong-bo-lo', nhan: 'Đồng bộ theo lô', mo: 'Gõ captcha liên tục cho nhiều công ty' },
+  { href: '/tokhai/tai-file', nhan: 'Tải file',      mo: 'Tải tờ khai + thông báo về thư mục trên máy' },
   { href: '/tokhai/ket-noi',  nhan: 'Kết nối cổng',  mo: 'Tài khoản cổng thuế của từng công ty' },
 ]
 

@@ -16,7 +16,7 @@ const kiem = (ten, thucTe, mongDoi) => {
 }
 
 console.log('So tên thư mục (bỏ dấu, bỏ khoảng trắng, không phân biệt hoa thường):')
-kiem('TB CHẤP NHẬN ≡ THÔNG BÁO CHẤP NHẬN', laCungThuMuc('THÔNG BÁO CHẤP NHẬN', 'TB CHẤP NHẬN'), true)
+kiem('THÔNG BÁO CHẤP NHẬN ≡ TB CHẤP NHẬN', laCungThuMuc('TB CHẤP NHẬN', 'THÔNG BÁO CHẤP NHẬN'), true)
 kiem('BẢNG KÊ ≡ BẢNG KÊ MUA VÀO BÁN RA', laCungThuMuc('BẢNG KÊ MUA VÀO BÁN RA', 'BẢNG KÊ'), true)
 kiem('TỜ KHAI THUẾ ≡ to khai thue', laCungThuMuc('to khai thue', 'TỜ KHAI THUẾ'), true)
 kiem('đ và d coi như một', chuanHoaTen('Đơn') === chuanHoaTen('Don'), true)
@@ -53,10 +53,10 @@ console.log('')
 console.log('Đường dẫn thư mục:')
 kiem('tờ khai quý',
   duongDanToKhai({ periodCode: 'Q2.2026', maKH: 'ZENIS' }),
-  ['BỘ BÁO CÁO THUẾ QUÝ_THÁNG', 'BAOCAOTHUE -Q2.2026_ZENIS', 'TỜ KHAI THUẾ'])
+  ['BAOCAOTHUE_Q2_2026_ZENIS', 'TỜ KHAI THUẾ'])
 kiem('thông báo quý',
   duongDanThongBao({ periodCode: 'Q2.2026', maKH: 'ZENIS' }),
-  ['BỘ BÁO CÁO THUẾ QUÝ_THÁNG', 'BAOCAOTHUE -Q2.2026_ZENIS', 'TB CHẤP NHẬN'])
+  ['BAOCAOTHUE_Q2_2026_ZENIS', 'THÔNG BÁO CHẤP NHẬN'])
 kiem('quyết toán TNDN năm',
   duongDanToKhai({ periodCode: 'NAM.2026', maKH: 'ZENIS', maToKhai: '03/TNDN' }),
   ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'TỜ KHAI', '03TNDN QUYẾT TOÁN THUẾ TNDN'])
@@ -65,7 +65,22 @@ kiem('BCTC năm',
   ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'TỜ KHAI', 'BÁO CÁO TÀI CHÍNH'])
 kiem('thông báo quyết toán TNCN năm',
   duongDanThongBao({ periodCode: 'NAM.2026', maKH: 'ZENIS', maToKhai: '05/QTT-TNCN' }),
-  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'TB CHẤP NHẬN', '05QTT TNCN'])
+  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'THÔNG BÁO CHẤP NHẬN', '05QTT TNCN'])
+
+console.log('')
+console.log('Đối chiếu với BỘ FILE THẬT anh gửi (THỊNH PHÁT quý 1/2026):')
+kiem('thư mục tờ khai',
+  duongDanToKhai({ periodCode: 'Q1.2026', maKH: 'THINHPHAT' }),
+  ['BAOCAOTHUE_Q1_2026_THINHPHAT', 'TỜ KHAI THUẾ'])
+kiem('thư mục thông báo',
+  duongDanThongBao({ periodCode: 'Q1.2026', maKH: 'THINHPHAT' }),
+  ['BAOCAOTHUE_Q1_2026_THINHPHAT', 'THÔNG BÁO CHẤP NHẬN'])
+kiem('tên file tờ khai GTGT',
+  tenFileToKhai({ sacThue: 'GTGT', periodCode: 'Q1.2026', maKH: 'THINHPHAT' }),
+  'TK_GTGT_Q1.2026_THINHPHAT.xml')
+kiem('tên file thông báo chấp nhận TNCN',
+  tenFileThongBao({ loaiThongBao: 'xac_nhan_nop', sacThue: 'TNCN', periodCode: 'Q1.2026', maKH: 'THINHPHAT' }),
+  'TBCN_TNCN_Q1.2026_THINHPHAT.xml')
 
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)
