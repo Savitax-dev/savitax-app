@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
-import { kiemTraTienIch } from '@/lib/portalBridge'
+import { kiemTraTienIch, goiCong, donPhienCu } from '@/lib/portalBridge'
 
 export default function TrangKetNoi() {
   const router = useRouter()
@@ -80,7 +80,7 @@ export default function TrangKetNoi() {
 
         <div className="space-y-2">
           {!dangTai && loc.slice(0, 60).map(c => (
-            <DongCongTy key={c.id} cty={c} dangMo={mo === c.id}
+            <DongCongTy key={c.id} cty={c} dangMo={mo === c.id} coTienIch={!!tienIch?.co}
               onMo={() => setMo(mo === c.id ? null : c.id)} onXong={taiDs} />
           ))}
           {!dangTai && loc.length > 60 && (
@@ -94,7 +94,7 @@ export default function TrangKetNoi() {
   )
 }
 
-function DongCongTy({ cty, dangMo, onMo, onXong }) {
+function DongCongTy({ cty, dangMo, onMo, onXong, coTienIch }) {
   const [tenDN, setTenDN]     = useState('')
   const [matKhau, setMatKhau] = useState('')
   const [dangLuu, setDangLuu] = useState(false)
@@ -188,8 +188,65 @@ function DongCongTy({ cty, dangMo, onMo, onXong }) {
     return r.json()
   }
 
+  // ── Đường QUA TIỆN ÍCH: máy chủ dựng yêu cầu, tiện ích gọi hộ bằng mạng máy nhân viên ──
+  //
+  // Vòng lặp: máy chủ bảo "gọi giúp yêu cầu này" → tiện ích gọi → gửi phản hồi nguyên văn về
+  // → máy chủ đọc, bảo bước kế tiếp. Trang web KHÔNG tự đọc hiểu gì, chỉ chuyển thư.
+  async function chayQuaTienIch(khoiDau) {
+    let buoc = khoiDau
+    for (let vong = 0; vong < 400; vong++) {      // chặn vòng lặp vô tận nếu máy chủ trả sai
+      if (buoc.viec === 'go_captcha') {
+        setBuocDongBo('ext:' + buoc.buoc)
+        setCaptcha({ maPhien: khoiDau.maPhien, anh: buoc.anhCaptcha, ma: '' })
+        setThongBao({ loai: 'cho', chu: `Gõ mã captcha ${buoc.nhan} rồi Enter.` })
+        return          // dừng chờ người gõ; guiMaDongBo sẽ gọi tiếp
+      }
+      if (buoc.viec === 'xong') {
+        setBuocDongBo(null); setCaptcha({ maPhien: null, anh: null, ma: '' })
+        setKetQua(buoc)
+        setThongBao({ loai: 'ok', chu: `✓ Xong ${buoc.khoangNgay}: ${buoc.themMoi} hồ sơ mới, ${buoc.capNhat} cập nhật, ${buoc.soThongBao} thông báo, ${buoc.khopNghiaVu} khớp lịch hạn nộp. Tốn ${buoc.soMaCaptcha} mã captcha.` })
+        onXong()
+        return
+      }
+      if (buoc.viec === 'loi' || buoc.error) {
+        setBuocDongBo(null); setCaptcha({ maPhien: null, anh: null, ma: '' })
+        setThongBao({ loai: 'loi', chu: buoc.moTa || buoc.error })
+        onXong()
+        return
+      }
+
+      // viec === 'goi'
+      if (buoc.tienDo) setThongBao({ loai: 'cho', chu: buoc.tienDo + '…' })
+      if (buoc.nghi) await new Promise(r => setTimeout(r, buoc.nghi))
+
+      const phanHoi = await goiCong(buoc.yeuCau)
+      buoc = await fetch('/api/admin/tokhai/sync-ext', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ maPhien: khoiDau.maPhien, phanHoi }),
+      }).then(r => r.json())
+    }
+    setThongBao({ loai: 'loi', chu: 'Chạy quá nhiều vòng, đã dừng để an toàn.' })
+  }
+
   async function batDauDongBo() {
-    setKetQua(null); setThongBao({ loai: 'cho', chu: 'Đang mở phiên với cổng thuế…' })
+    setKetQua(null)
+
+    if (coTienIch) {
+      setThongBao({ loai: 'cho', chu: 'Đang mở phiên qua tiện ích Chrome…' })
+      // Xóa cookie cổng trước: cổng khóa mỗi tài khoản vào một phiên, dính phiên cũ của công ty
+      // khác là bị đá ra giữa chừng.
+      await donPhienCu()
+      const kd = await fetch('/api/admin/tokhai/sync-ext', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: cty.id, tuNgay, denNgay }),
+      }).then(r => r.json())
+      if (kd.error) { setThongBao({ loai: 'loi', chu: kd.error }); return }
+      setCaptcha({ maPhien: kd.maPhien, anh: null, ma: '' })
+      await chayQuaTienIch(kd)
+      return
+    }
+
+    setThongBao({ loai: 'cho', chu: 'Đang mở phiên với cổng thuế…' })
     const j = await goiDongBo({ clientId: cty.id, tuNgay, denNgay })
     if (j.error) { setThongBao({ loai: 'loi', chu: j.error }); return }
     setBuocDongBo('dang_nhap')
@@ -199,6 +256,19 @@ function DongCongTy({ cty, dangMo, onMo, onXong }) {
 
   async function guiMaDongBo() {
     if (!captcha.ma.trim()) return
+
+    // Đường qua tiện ích: gửi mã lên máy chủ rồi chạy tiếp vòng lặp chuyển thư.
+    if (String(buocDongBo || '').startsWith('ext:')) {
+      setThongBao({ loai: 'cho', chu: 'Đang gửi mã…' })
+      const tiep = await fetch('/api/admin/tokhai/sync-ext', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ maPhien: captcha.maPhien, captcha: captcha.ma }),
+      }).then(r => r.json())
+      if (tiep.error) { setThongBao({ loai: 'loi', chu: tiep.error }); setBuocDongBo(null); return }
+      await chayQuaTienIch({ ...tiep, maPhien: captcha.maPhien })
+      return
+    }
+
     const dangODangNhap = buocDongBo === 'dang_nhap'
     setThongBao({ loai: 'cho', chu: dangODangNhap ? 'Đang đăng nhập cổng…' : 'Đang tra cứu hồ sơ…' })
 

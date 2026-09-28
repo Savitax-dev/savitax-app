@@ -51,6 +51,33 @@ công việc hàng tháng/quý, công nợ dịch vụ, KPI nhân viên/phòng b
   2 → ngày 28/29) và task chỉ "Quá hạn" sau khi qua HẾT ngày hạn (0h ngày kế), không phải ngay
   khi vừa tới ngày hạn.
 
+## Module Đối soát ngân hàng (`/bank`)
+
+Tiền vào ngân hàng → tự nhận ra công ty + kỳ phí → người dùng bấm mới ghi công nợ. Dựng 2026-09-22,
+SQL `sql/21_bank_transactions.sql`. **KHÔNG đưa vào bản clone** (ABS, NYD, Linh Phong): module rời như
+HCNS/Kinh doanh — bỏ `sql/21`, `app/bank`, `app/api/bank`, `app/api/admin/bank-transactions`,
+`lib/bank*.js`, `vps/`, mục menu trong `components/Sidebar.js` và `'bank_transactions'` trong danh sách
+backup. Quyền không tồn tại thì mục menu tự ẩn, backup tự bỏ qua bảng thiếu.
+
+- **Không có gì tự ghi công nợ.** VPS chỉ đẩy giao dịch vào bảng `bank_transactions` qua
+  `/api/bank/incoming` (header `Authorization: Bearer $BANK_WEBHOOK_SECRET`, chống trùng bằng `ext_id`).
+  Phân loại tính LẠI mỗi lần mở trang (không lưu) nên luôn khớp công nợ hiện tại; server tính lại đề
+  xuất + so `planSignature` ngay trước khi ghi, lệch là từ chối, và `update ... eq('state','open')` làm
+  chốt chống 2 người bấm cùng lúc.
+- **Ghi tiền theo đúng luật đang có**: `lib/bankPost.js` CỘNG THÊM vào số đã thu của kỳ (khác nút ghi
+  tay — nhập tổng mới), kỳ đã có `debt_rollovers`/quá hạn 10 ngày thì tiền vào nợ tồn (không ghi lại
+  tháng gốc), trả gộp nhiều kỳ chỉ khi `other_debt = 0`.
+- **Đọc nội dung chuyển khoản** (`lib/bankMatch.js`): mốc `TTPHIDICHVU`/`THANHTOANPHIDICHVU`… → mã KH
+  hoặc MST đứng NGAY TRƯỚC mốc, kỳ đứng ngay sau (`T09`, `T9.2026`, `Q3`). Chỉ `ready` khi nhận bằng mã
+  KH/MST + có kỳ + phí đáng tin + khớp đúng phần còn phải thu; nhận theo TÊN luôn là "Cần xem".
+  Kiểm bằng `node --env-file=.env.local scripts/test-bank-match.mjs <mau.json>` (file mẫu để ngoài repo).
+- **Quyền `bank_reconcile`** nằm nhóm "Công nợ", mặc định KHÔNG gán vai trò nào (Quản trị luôn có). Mục
+  menu ở phân hệ Kế toán để tích thêm cho kế toán / trưởng phòng kế toán; người có quyền xem TOÀN BỘ
+  giao dịch (không giới hạn theo phòng) để ghép lệnh chuyển khoản vào đúng công ty.
+- **VPS** `vps/app_sync.py` chạy độc lập với `acb_zalo.py`/`tcb_zalo.py` (import hàm của chúng, file
+  chống trùng riêng `app_posted.json`): lần chạy đầu của MỖI nguồn tự seed — đánh dấu giao dịch cũ,
+  không gửi lên app. `--dry` xem trước, `--tcb` cho sao kê Techcombank.
+
 ## Module Phòng Kinh doanh (`/sales`)
 
 Khách tiềm năng + báo giá SVT.MB03 + báo cáo, dựng 2026-09-11 (commit `78c529d`), tách rời như HCNS: SQL
