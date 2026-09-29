@@ -381,7 +381,7 @@ function duongDanFileToKhai(p, hs, noiDungJson) {
     const boSung = soLanBoSung(hs)
     p.soFile++
     return {
-      duongDan: duongDanToKhai({ periodCode: ky, maKH: p.maKH, maToKhai: loai?.code, boSung }),
+      duongDan: duongDanToKhai({ periodCode: ky, maKH: p.maKH, boSung }),
       tenFile: tenFileToKhai({ sacThue: macSacThue(loai), periodCode: ky, maKH: p.maKH, duoi: duoiTheoKieu(j.fileType), boSung }),
       // Năm để trình duyệt biết đi vào thư mục 'Năm <nam>' nào — lấy theo KỲ TÍNH THUẾ, không phải
       // năm hiện tại: tờ khai quý 4/2025 nộp tháng 1/2026 vẫn nằm ở 'Năm 2025'.
@@ -403,7 +403,7 @@ function duongDanFileThongBao(p, hs, tb, noiDungJson) {
     const boSung = soLanBoSung(hs)
     p.soFile++
     return {
-      duongDan: duongDanThongBao({ periodCode: ky, maKH: p.maKH, maToKhai: loai?.code, boSung }),
+      duongDan: duongDanThongBao({ periodCode: ky, maKH: p.maKH, boSung }),
       tenFile: tenFileThongBao({ loaiThongBao: tb.loai, sacThue: macSacThue(loai), periodCode: ky, maKH: p.maKH, duoi: duoiTheoKieu(j.fileType), boSung }),
       nam: tachKy(ky)?.nam || null,
       maHoSo: hs.maHoSo,

@@ -57,15 +57,20 @@ kiem('tờ khai quý',
 kiem('thông báo quý',
   duongDanThongBao({ periodCode: 'Q2.2026', maKH: 'ZENIS' }),
   ['BAOCAOTHUE_Q2_2026_ZENIS', 'THÔNG BÁO CHẤP NHẬN'])
-kiem('quyết toán TNDN năm',
-  duongDanToKhai({ periodCode: 'NAM.2026', maKH: 'ZENIS', maToKhai: '03/TNDN' }),
-  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'TỜ KHAI', '03TNDN QUYẾT TOÁN THUẾ TNDN'])
-kiem('BCTC năm',
-  duongDanToKhai({ periodCode: 'NAM.2026', maKH: 'ZENIS', maToKhai: 'BCTC' }),
-  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'TỜ KHAI', 'BÁO CÁO TÀI CHÍNH'])
-kiem('thông báo quyết toán TNCN năm',
-  duongDanThongBao({ periodCode: 'NAM.2026', maKH: 'ZENIS', maToKhai: '05/QTT-TNCN' }),
-  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'THÔNG BÁO CHẤP NHẬN', '05QTT TNCN'])
+// Kỳ NĂM cũng là một thư mục kỳ ngang hàng, bên trong đúng hai thư mục con như mọi kỳ khác.
+// Bỏ hẳn tầng chia theo loại tờ khai: tên file đã mang sẵn sắc thuế nên không đụng nhau.
+kiem('quyết toán năm',
+  duongDanToKhai({ periodCode: 'NAM.2026', maKH: 'ZENIS' }),
+  ['BỘ BÁO CÁO TÀI CHÍNH_2026_ZENIS', 'TỜ KHAI THUẾ'])
+kiem('thông báo của kỳ năm',
+  duongDanThongBao({ periodCode: 'NAM.2026', maKH: 'ZENIS' }),
+  ['BỘ BÁO CÁO TÀI CHÍNH_2026_ZENIS', 'THÔNG BÁO CHẤP NHẬN'])
+kiem('kỳ năm có CÙNG SỐ TẦNG với kỳ quý',
+  duongDanToKhai({ periodCode: 'NAM.2026', maKH: 'ZENIS' }).length
+    === duongDanToKhai({ periodCode: 'Q2.2026', maKH: 'ZENIS' }).length, true)
+kiem('hai sắc thuế khác nhau của cùng kỳ năm KHÔNG đụng tên',
+  tenFileToKhai({ sacThue: 'TNDN', periodCode: 'NAM.2026', maKH: 'ZENIS' })
+    === tenFileToKhai({ sacThue: 'TNCN', periodCode: 'NAM.2026', maKH: 'ZENIS' }), false)
 
 console.log('')
 console.log('Đối chiếu với BỘ FILE THẬT anh gửi (THỊNH PHÁT quý 1/2026):')
@@ -139,14 +144,12 @@ kiem('bản chính thức và bản bổ sung KHÔNG còn đụng nhau', chinh =
 
 console.log('')
 console.log('Quyết toán năm bổ sung:')
-// Cây năm không có thư mục kỳ → gắn hậu tố vào thư mục loại tờ khai, vẫn là CÙNG CẤP với bản
-// chính thức đúng như nguyên tắc ở thư mục kỳ.
-kiem('03/TNDN bổ sung lần 1',
-  duongDanToKhai({ periodCode: 'NAM.2025', maKH: 'VANLANG', maToKhai: '03/TNDN', boSung: 1 }),
-  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'TỜ KHAI', '03TNDN QUYẾT TOÁN THUẾ TNDN_BSL1'])
-kiem('thông báo 03/TNDN bổ sung lần 1',
-  duongDanThongBao({ periodCode: 'NAM.2025', maKH: 'VANLANG', maToKhai: '03/TNDN', boSung: 1 }),
-  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'THÔNG BÁO CHẤP NHẬN', '03 TNDN_BSL1'])
+kiem('kỳ năm bổ sung lần 1',
+  duongDanToKhai({ periodCode: 'NAM.2025', maKH: 'VANLANG', boSung: 1 }),
+  ['BỘ BÁO CÁO TÀI CHÍNH_2025_VANLANG_BSL1', 'TỜ KHAI THUẾ'])
+kiem('thông báo của kỳ năm bổ sung lần 1',
+  duongDanThongBao({ periodCode: 'NAM.2025', maKH: 'VANLANG', boSung: 1 }),
+  ['BỘ BÁO CÁO TÀI CHÍNH_2025_VANLANG_BSL1', 'THÔNG BÁO CHẤP NHẬN'])
 
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)

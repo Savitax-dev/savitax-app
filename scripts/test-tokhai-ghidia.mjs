@@ -140,17 +140,17 @@ kiem('dùng lại "TB CHẤP NHẬN", KHÔNG đẻ thêm "THÔNG BÁO CHẤP NH�
   'BAOCAOTHUE_Q1_2026_THINHPHAT/TB CHẤP NHẬN/TBCN_GTGT_Q1.2026_THINHPHAT.xml',
 ].sort())
 
-// ── Quyết toán năm đi vào cây riêng ──────────────────────────────────────────
+// ── Kỳ năm cũng là một thư mục kỳ ngang hàng ────────────────────────────────
 
 console.log('')
-console.log('Quyết toán năm đi vào cây riêng:')
+console.log('Kỳ năm cũng là một thư mục kỳ ngang hàng:')
 G = thuMucGia()
 await ghiVaoDia({
-  goc: G, duongDan: duongDanToKhai({ periodCode: 'NAM.2026', maKH: 'THINHPHAT', maToKhai: '03/TNDN' }),
+  goc: G, duongDan: duongDanToKhai({ periodCode: 'NAM.2026', maKH: 'THINHPHAT' }),
   tenFile: 'TK_TNDN_NAM.2026_THINHPHAT.xml', duLieu: chu('qttndn'),
 })
 kiem('đường dẫn quyết toán TNDN', liet(G).filter(x => x.endsWith('.xml')),
-  ['BỘ BÁO CÁO TÀI CHÍNH NĂM/TỜ KHAI/03TNDN QUYẾT TOÁN THUẾ TNDN/TK_TNDN_NAM.2026_THINHPHAT.xml'])
+  ['BỘ BÁO CÁO TÀI CHÍNH_2026_THINHPHAT/TỜ KHAI THUẾ/TK_TNDN_NAM.2026_THINHPHAT.xml'])
 
 // ── Thiếu thư mục gốc thì phải báo lỗi, không im lặng ────────────────────────
 
