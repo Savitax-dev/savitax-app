@@ -41,7 +41,7 @@ export async function GET(request) {
   if (!tpl) return Response.json({ tasks: [], doneCount: 0, totalCount: 0, percent: 0, templateName: null })
 
   const [{ data: tplTasks }, { data: records }, { data: staff }] = await Promise.all([
-    supabase.from('hcns_service_template_tasks').select('id, name, sort_order, deadline_day')
+    supabase.from('hcns_service_template_tasks').select('*')
       .eq('template_id', tpl.id).eq('is_active', true).order('sort_order').order('created_at'),
     supabase.from('hcns_recurring_tasks').select('template_task_id, done, done_by, done_at')
       .eq('hcns_client_id', hcnsClientId).eq('year', year).eq('month', month),
@@ -49,6 +49,20 @@ export async function GET(request) {
   ])
 
   const recByTask = new Map((records || []).map(r => [r.template_task_id, r]))
+
+  // Số nhân sự: tháng đang xem + số gần nhất TRƯỚC đó (để hiện +/- và cho chọn "Không thay đổi").
+  // Thiếu bảng (chưa chạy sql/19) -> bỏ qua im lặng.
+  let headcount = null, prevHeadcount = null
+  if ((tplTasks || []).some(t => t.requires_headcount)) {
+    const { data: hc } = await supabase.from('hcns_headcount').select('year, month, headcount, unchanged')
+      .eq('hcns_client_id', hcnsClientId)
+      .or('year.lt.' + year + ',and(year.eq.' + year + ',month.lte.' + month + ')')
+      .order('year', { ascending: false }).order('month', { ascending: false }).limit(2)
+    for (const r of hc || []) {
+      if (r.year === year && r.month === month) headcount = r
+      else if (!prevHeadcount) prevHeadcount = r
+    }
+  }
   const staffById = new Map((staff || []).map(s => [s.id, s]))
 
   // Trạng thái theo hạn — dùng ĐÚNG luật của checklist kế toán để hai phòng không lệch nhau:
@@ -72,6 +86,7 @@ export async function GET(request) {
       templateTaskId: t.id,
       name: t.name,
       deadlineDay: t.deadline_day || null,
+      requiresHeadcount: t.requires_headcount === true,
       status: statusOf(rec, t.deadline_day),
       done: rec?.done === true,
       doneBy: rec?.done_by || null,
@@ -88,5 +103,6 @@ export async function GET(request) {
     percent: tasks.length ? Math.round(ontimeCount / tasks.length * 100) : 0,
     templateName: tpl.name,
     hcnsClientId,
+    headcount, prevHeadcount,
   })
 }

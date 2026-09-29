@@ -92,13 +92,15 @@ export async function PATCH(request) {
   const auth = await callerHasPermission('manage_hcns_template')
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
-  const { templateId, taskId, name, sort_order, group_name, deadline_day } = await request.json()
+  const { templateId, taskId, name, sort_order, group_name, deadline_day, sla_days, requires_headcount } = await request.json()
   const supabase = getAdmin()
 
   if (taskId) {
     const patch = {}
     if (name !== undefined) patch.name = name
     if (sort_order !== undefined) patch.sort_order = Number(sort_order)
+    // Việc bắt buộc nhập số nhân sự khi tích (sql/19).
+    if (requires_headcount !== undefined) patch.requires_headcount = requires_headcount === true
     if (deadline_day !== undefined) {
       const d = deadline_day === null || deadline_day === '' ? null : Number(deadline_day)
       if (d !== null && (!Number.isFinite(d) || d < 1 || d > 31)) {
@@ -118,6 +120,14 @@ export async function PATCH(request) {
   // Chuyển dịch vụ giữa 2 nhóm BHXH / HCNS — dịch vụ tự tạo tay ban đầu chưa có nhóm nên phải
   // gán được, nếu không nó nằm ngoài cả 2 tag và dễ bị bỏ quên.
   if (group_name !== undefined) patch.group_name = group_name || null
+  // Hạn xử lý (ngày, bỏ chủ nhật) — chỉ áp cho hồ sơ thêm dịch vụ SAU khi đổi (lib/hcnsDue.js).
+  if (sla_days !== undefined) {
+    const d = sla_days === null || sla_days === '' ? null : Number(sla_days)
+    if (d !== null && (!Number.isInteger(d) || d < 1 || d > 365)) {
+      return Response.json({ error: 'Hạn xử lý phải là số ngày từ 1 đến 365.' }, { status: 400 })
+    }
+    patch.sla_days = d
+  }
   const { error } = await supabase.from('hcns_service_templates').update(patch).eq('id', templateId)
   if (error) return Response.json({ error: error.message }, { status: 400 })
   return Response.json({ ok: true })

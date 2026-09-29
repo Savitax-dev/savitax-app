@@ -8,6 +8,7 @@ const TYPE_META = {
   task_done:   { icon: '✅', label: 'Hoàn thành việc', dot: 'bg-green-500',  chip: 'bg-green-50 text-green-700 border-green-200' },
   debt_update: { icon: '💰', label: 'Công nợ',         dot: 'bg-amber-500',  chip: 'bg-amber-50 text-amber-700 border-amber-200' },
   info_change: { icon: '✏️', label: 'Sửa thông tin',   dot: 'bg-blue-500',   chip: 'bg-blue-50 text-blue-700 border-blue-200' },
+  bank_reconcile: { icon: '🏦', label: 'Đối soát ngân hàng', dot: 'bg-teal-500', chip: 'bg-teal-50 text-teal-700 border-teal-200' },
 }
 
 const TYPE_CHIPS = [
@@ -15,6 +16,7 @@ const TYPE_CHIPS = [
   { v: 'task_done',   l: '✅ Hoàn thành việc' },
   { v: 'debt_update', l: '💰 Công nợ' },
   { v: 'info_change', l: '✏️ Sửa thông tin' },
+  { v: 'bank_reconcile', l: '🏦 Đối soát ngân hàng' },
 ]
 
 export default function WorkLogPage() {
@@ -133,11 +135,12 @@ export default function WorkLogPage() {
         </div>
 
         {/* Tóm tắt */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           {[
             { type: 'task_done',   label: 'Hoàn thành việc' },
             { type: 'debt_update', label: 'Cập nhật công nợ' },
             { type: 'info_change', label: 'Sửa thông tin' },
+            { type: 'bank_reconcile', label: 'Đối soát ngân hàng' },
           ].map(c => (
             <div key={c.type} className="bg-white border border-gray-100 rounded-2xl px-4 py-3">
               <p className="text-xs text-gray-400 mb-1">{TYPE_META[c.type].icon} {c.label}</p>

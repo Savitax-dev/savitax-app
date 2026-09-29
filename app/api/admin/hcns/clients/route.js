@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin, callerHasPermission } from '@/lib/serverAuth'
-import { writeHcnsFeePlan, applyScheduledHcnsStops } from '@/lib/hcnsSync'
+import { writeHcnsFeePlan, applyScheduledHcnsStops, stopHcnsForClient, syncHcnsForClient } from '@/lib/hcnsSync'
+import { hcnsDueState } from '@/lib/hcnsDue'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -35,7 +36,7 @@ export async function GET(request) {
   const [{ data: staffList }, { data: linkedClients }] = await Promise.all([
     staffIds.length ? supabase.from('staff').select('id, full_name').in('id', staffIds) : { data: [] },
     linkedIds.length
-      ? supabase.from('clients').select('id, name, client_code, tax_code, monthly_fee, fee_period, assigned_to').in('id', linkedIds)
+      ? supabase.from('clients').select('id, name, client_code, tax_code, monthly_fee, fee_period, assigned_to, uses_hcns').in('id', linkedIds)
       : { data: [] },
   ])
   const staffMap = new Map((staffList || []).map(s => [s.id, s]))
@@ -44,9 +45,11 @@ export async function GET(request) {
   // Tiến độ dịch vụ của hồ sơ Thời điểm/Vãng lai — để danh sách biết hồ sơ nào đã xong hết mà
   // chuyển sang thẻ "Hoàn thành". Không có phần này thì trạng thái chỉ biết được sau khi bấm mở
   // từng hồ sơ, không dựng được thẻ.
-  const caseIds = (rows || []).filter(r => r.category !== 'thoi_ky').map(r => r.id)
+  // Gồm cả công ty Thời kỳ: dịch vụ gắn vào bản ghi Thời kỳ là "việc phát sinh" (không phí) —
+  // trang Thời kỳ – Phát sinh đọc serviceCount/doneServiceCount của chúng.
+  const caseIds = (rows || []).map(r => r.id)
   const { data: svcs } = caseIds.length
-    ? await supabase.from('hcns_case_services').select('hcns_client_id, status, cost').in('hcns_client_id', caseIds)
+    ? await supabase.from('hcns_case_services').select('hcns_client_id, status, cost, due_at, completed_at').in('hcns_client_id', caseIds)
     : { data: [] }
   // Tiền của hồ sơ — để danh sách đánh dấu được hồ sơ đã xong việc mà chưa thu đủ. Thiếu bảng
   // (chưa chạy sql/07) thì coi như chưa thu đồng nào, không phải lỗi.
@@ -59,19 +62,29 @@ export async function GET(request) {
   }
   const svcStat = new Map()
   for (const sv of svcs || []) {
-    const a = svcStat.get(sv.hcns_client_id) || { total: 0, done: 0, cost: 0 }
+    const a = svcStat.get(sv.hcns_client_id) || { total: 0, done: 0, cost: 0, late: 0 }
     a.total += 1
+    // Đang làm mà đã quá hạn hoàn thành — nhãn "Trễ hạn" ở dòng công ty.
+    if (hcnsDueState(sv).kind === 'late') a.late += 1
     a.cost += Number(sv.cost) || 0
     if (sv.status === 'hoan_thanh') a.done += 1
     svcStat.set(sv.hcns_client_id, a)
   }
 
+  // Ô tick "Có sử dụng DV HCNS" bên kế toán là nguồn đúng: công ty đã bỏ tick mà bản ghi HCNS còn
+  // is_active=true (lệch do nạp liệu cũ) thì vẫn phải coi là ĐÃ NGƯNG, nếu không Phòng HCNS hiện
+  // công ty mà bên kế toán đã gỡ — đúng ca 9 công ty phí 0đ ngày 2026-09-23.
+  const stoppedByClient = (r) => r.category === 'thoi_ky' && r.linked_client_id &&
+    clientMap.has(r.linked_client_id) && clientMap.get(r.linked_client_id).uses_hcns !== true
+
   const data = (rows || []).map(r => ({
     ...r,
+    is_active: r.is_active === false || stoppedByClient(r) ? false : r.is_active,
     hcns_fee: Number(r.hcns_fee) || 0,
     other_debt: Number(r.other_debt) || 0,
     serviceCount: svcStat.get(r.id)?.total || 0,
     doneServiceCount: svcStat.get(r.id)?.done || 0,
+    lateServiceCount: svcStat.get(r.id)?.late || 0,
     // Hồ sơ CHƯA khai dịch vụ nào thì chưa gọi là xong — vẫn còn việc phải làm.
     allDone: (svcStat.get(r.id)?.total || 0) > 0
       && svcStat.get(r.id).done === svcStat.get(r.id).total,
@@ -132,6 +145,34 @@ export async function PATCH(request) {
   const { data: before } = await supabase.from('hcns_clients')
     .select('hcns_fee, category, linked_client_id').eq('id', id).maybeSingle()
   if (!before) return Response.json({ error: 'Không tìm thấy hồ sơ' }, { status: 404 })
+
+  // Ngưng / dùng lại DV HCNS ngay trong Phòng HCNS (trước đây chỉ làm được ở Danh sách công ty,
+  // mà người HCNS không sửa được công ty kế toán). Cần manage_hcns, áp cho công ty Thời kỳ.
+  if (body.hcns_stop_from || body.hcns_resume) {
+    if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+    if (before.category !== 'thoi_ky' || !before.linked_client_id) {
+      return Response.json({ error: 'Chỉ áp dụng cho công ty Thời kỳ' }, { status: 400 })
+    }
+    const who = updatedBy || auth.caller?.staffId || null
+    if (body.hcns_stop_from) {
+      const { year, month } = body.hcns_stop_from
+      if (!year || !month) return Response.json({ error: 'Thiếu tháng ngừng' }, { status: 400 })
+      const r = await stopHcnsForClient(supabase, {
+        clientId: before.linked_client_id, stopAt: { year: Number(year), month: Number(month) }, createdBy: who,
+      })
+      if (!r?.ok) return Response.json({ error: r?.reason || 'Không ngừng được' }, { status: 400 })
+      return Response.json({ ok: true, scheduled: r.scheduled === true })
+    }
+    const fee = Number(body.hcns_resume.hcns_fee)
+    if (!Number.isFinite(fee) || fee < 0) return Response.json({ error: 'Mức phí HCNS không hợp lệ' }, { status: 400 })
+    const r = await syncHcnsForClient(supabase, {
+      clientId: before.linked_client_id, usesHcns: true, hcnsFee: fee, createdBy: who,
+      feeAt: body.hcns_resume.from && body.hcns_resume.from.year ? body.hcns_resume.from : undefined,
+    })
+    if (!r?.ok) return Response.json({ error: r?.reason || 'Không bật lại được' }, { status: 400 })
+    await supabase.from('clients').update({ uses_hcns: true }).eq('id', before.linked_client_id)
+    return Response.json({ ok: true })
+  }
 
   // Chỉ đổi PHÍ HCNS của công ty Thời kỳ: kế toán phụ trách công ty gốc được làm (điều chỉnh phí ở
   // "Danh sách công ty"), không cần quyền manage_hcns — cùng phạm vi được sửa phí kế toán.

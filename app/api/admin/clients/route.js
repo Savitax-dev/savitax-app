@@ -11,6 +11,76 @@ function getAdmin() {
   )
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// NHẬT KÝ SỬA THÔNG TIN CÔNG TY (2026-09-23)
+//
+// Trước đây client_change_log chỉ ghi 2 thứ: phí dịch vụ và tài khoản/mật khẩu. Đổi tên công ty,
+// MST, mã KH, nhân viên phụ trách... đều sửa IM LẶNG, không để lại dấu vết — ca thật: người dùng
+// hỏi vì sao một công ty bị đổi tên, phải dò 8 bản backup hằng tuần mới trả lời được, và nếu thay
+// đổi xảy ra rồi sửa lại trong cùng tuần thì không cách nào biết.
+//
+// Mỗi trường đổi = 1 dòng log, để lịch sử của công ty đọc được từng thay đổi một.
+const TRACKED = {
+  name:           'Tên công ty',
+  tax_code:       'Mã số thuế',
+  client_code:    'Mã khách hàng',
+  representative: 'Người đại diện / Giám đốc',
+  address:        'Địa chỉ thuế',
+  tax_status:     'Tình trạng thuế',
+  assigned_to:    'Nhân viên phụ trách',
+  status:         'Trạng thái',
+  fee_period:     'Kỳ thu phí',
+  report_type:    'Loại báo cáo',
+  contract_start: 'Ngày bắt đầu hợp đồng',
+  other_debt:     'Nợ tồn cũ',
+  uses_hcns:      'Có dùng dịch vụ HCNS',
+}
+const STATUS_LABEL = { pending: 'Trình ký', active: 'Đang sử dụng', inactive: 'Ngưng dịch vụ', transferred: 'Chuyển NV' }
+const PERIOD_LABEL = { monthly: 'Tháng', quarterly: 'Quý' }
+
+// Đổi giá trị thô thành chữ người đọc hiểu (id nhân viên -> tên, 'active' -> 'Đang sử dụng'...).
+function readable(field, value, staffNames) {
+  if (value === null || value === undefined || value === '') return ''
+  if (field === 'assigned_to') return staffNames.get(value) || String(value)
+  if (field === 'status') return STATUS_LABEL[value] || String(value)
+  if (field === 'fee_period' || field === 'report_type') return PERIOD_LABEL[value] || String(value)
+  if (field === 'other_debt') return Number(value).toLocaleString('vi-VN') + 'đ'
+  if (field === 'uses_hcns') return value === true ? 'Có' : 'Không'
+  return String(value)
+}
+
+// So `before` với `updateData`, ghi 1 dòng log cho mỗi trường thật sự đổi. Lỗi ghi log KHÔNG được
+// làm hỏng thao tác sửa (dữ liệu đã lưu xong rồi) — chỉ ghi ra console.
+async function logClientChanges(supabase, { clientId, before, updateData, changedBy }) {
+  try {
+    const fields = Object.keys(TRACKED).filter(f => updateData[f] !== undefined
+      && String(before?.[f] ?? '') !== String(updateData[f] ?? ''))
+    if (!fields.length) return
+
+    const staffNames = new Map()
+    if (fields.includes('assigned_to')) {
+      const ids = [before?.assigned_to, updateData.assigned_to].filter(Boolean)
+      if (ids.length) {
+        const { data } = await supabase.from('staff').select('id, full_name').in('id', ids)
+        for (const s of data || []) staffNames.set(s.id, s.full_name)
+      }
+    }
+
+    await supabase.from('client_change_log').insert(fields.map(f => ({
+      client_id: clientId,
+      entity: 'client_info',
+      entity_label: TRACKED[f],
+      field: f,
+      old_value: readable(f, before?.[f], staffNames),
+      new_value: readable(f, updateData[f], staffNames),
+      action: 'update',
+      changed_by: changedBy || null,
+    })))
+  } catch (e) {
+    console.error('logClientChanges:', e?.message || e)
+  }
+}
+
 // Mọi nhân viên đều xem/thêm được công ty (chủ động thêm khi được giao phụ trách) — chỉ riêng
 // PATCH mới cần phân biệt: nhân viên thường chỉ sửa được công ty mình phụ trách (xem trong PATCH).
 export async function GET() {
@@ -86,17 +156,20 @@ export async function POST(request) {
 
   let { data, error } = await supabase.from('clients').insert(insertData).select().single()
 
-  // Handle duplicate MST — update existing record instead
+  // MST đã tồn tại -> BÁO LỖI, tuyệt đối không ghi đè.
+  //
+  // Trước đây nhánh này lặng lẽ `update` đè lên công ty cũ: tên, phí, nhân viên phụ trách, trạng
+  // thái đều bị thay bằng số liệu vừa nhập, không một dòng nhật ký nào. Nhập nhầm 1 chữ số trong
+  // MST là đủ để một công ty đang phục vụ "tự nhiên đổi tên" và đổi cả phí — không ai truy được.
   if (error && (error.code === '23505' || (error.message && error.message.includes('unique')))) {
     const { data: existing } = await supabase
-      .from('clients').select('id').eq('tax_code', tax_code).single()
-    if (existing) {
-      const updatePayload = { ...insertData }
-      delete updatePayload.tax_code // don't re-set the unique key
-      const res = await supabase.from('clients').update(updatePayload).eq('id', existing.id).select().single()
-      data = res.data
-      error = res.error
-    }
+      .from('clients').select('id, name, client_code, status').eq('tax_code', tax_code).maybeSingle()
+    return Response.json({
+      error: 'MST ' + tax_code + ' đã có trong hệ thống: ' + (existing?.name || '(không đọc được tên)')
+        + (existing?.client_code ? ' (mã ' + existing.client_code + ')' : '')
+        + '. Mở đúng công ty đó để sửa, hoặc kiểm tra lại MST vừa nhập.',
+      duplicate: existing || null,
+    }, { status: 409 })
   }
 
   // Retry with progressively fewer columns if schema is missing optional fields
@@ -158,8 +231,10 @@ export async function PATCH(request) {
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })
   const supabase = getAdmin()
 
-  // Lấy giá trị cũ để ghi lịch sử thay đổi phí dịch vụ + kiểm tra quyền sở hữu
-  const { data: before } = await supabase.from('clients').select('monthly_fee, assigned_to').eq('id', id).single()
+  // Lấy giá trị cũ để ghi lịch sử thay đổi + kiểm tra quyền sở hữu. Phải đọc ĐỦ các trường có ghi
+  // nhật ký (xem TRACKED) — thiếu trường nào thì thay đổi của trường đó không được ghi lại.
+  const { data: before } = await supabase.from('clients')
+    .select('monthly_fee, ' + Object.keys(TRACKED).join(', ')).eq('id', id).single()
   const prevFee = before ? Number(before.monthly_fee) || 0 : null
 
   // Nhân viên thường (không có manage_clients) chỉ sửa được công ty mình đang phụ trách chính.
@@ -210,6 +285,13 @@ export async function PATCH(request) {
 
   const { error } = await supabase.from('clients').update(updateData).eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 400 })
+
+  // Ghi nhật ký mọi thay đổi thông tin công ty (tên, MST, mã KH, nhân viên phụ trách...). Phí dịch
+  // vụ có đường ghi riêng bên dưới nên không nằm trong TRACKED, tránh ghi 2 dòng cho cùng 1 việc.
+  await logClientChanges(supabase, {
+    clientId: id, before, updateData,
+    changedBy: permCheck.caller?.staffId || updatedBy || null,
+  })
 
   // Ngừng dùng DV HCNS kể từ một tháng: ghi mốc phí 0 tại tháng đó + gỡ khỏi tag Thời kỳ.
   // Đi đường riêng vì cần THÁNG ngừng, khác hẳn việc chỉ bật/tắt cờ uses_hcns.
