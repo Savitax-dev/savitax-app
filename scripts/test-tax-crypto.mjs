@@ -7,10 +7,12 @@
 
 import crypto from 'node:crypto'
 
-if (!process.env.TAX_ENC_KEY) {
-  process.env.TAX_ENC_KEY = crypto.randomBytes(32).toString('base64')
-  console.log('(chưa có TAX_ENC_KEY, dùng khóa tạm để chạy thử)\n')
-}
+// Bộ kiểm này kiểm THUẬT TOÁN, không kiểm khóa đang cấu hình — nên khóa nào cũng được. Dùng khóa
+// tạm luôn cho khỏi phụ thuộc .env.local, và cũng để không đứng lại khi khóa thật đang hỏng
+// (29/09/2026: TAX_ENC_KEY thật đang là chuỗi mẫu, encrypt cố ý chặn — xem test-tax-crypto-xoay.mjs).
+process.env.TAX_ENC_KEY = crypto.randomBytes(32).toString('base64')
+delete process.env.TAX_ENC_KEY_OLD
+console.log('(dùng khóa tạm để kiểm thuật toán)\n')
 
 const { encrypt, decrypt, isEncrypted, maskPassword } = await import('../lib/taxCrypto.js')
 
