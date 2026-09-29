@@ -1,15 +1,17 @@
 'use client'
 // Tải file tờ khai + thông báo về thư mục từng công ty — Phân hệ Tờ khai, GĐ 6.
 //
-// TÁCH RIÊNG khỏi màn Đồng bộ theo lô vì hai việc có nhịp khác nhau: đồng bộ trạng thái chạy nhiều
-// lần trong kỳ cho cả lô; tải file chạy ít, thường cho MỘT công ty nhiều kỳ, và nặng hơn nhiều lần.
+// Nhân viên trỏ thẳng vào thư mục CỦA TỪNG CÔNG TY, chọn một lần, trình duyệt nhớ luôn. App tự đi
+// tiếp xuống '2. HỒ SƠ KẾ TOÁN\Năm <năm>\7. BỘ BÁO CÁO'.
 //
-// Nhân viên trỏ thẳng vào thư mục CỦA TỪNG CÔNG TY, ví dụ:
-//   G:\Shared drives\12. SAVITAX - PHÒNG NGHIỆP VỤ GRAND\Huỳnh Thị Mỹ Lệ\3.THỊNH PHÁT
-// Chọn một lần, trình duyệt nhớ luôn. App tự đi tiếp xuống '2. HỒ SƠ KẾ TOÁN\Năm <năm>\7. BỘ BÁO CÁO'.
+// CHẠY NHIỀU CÔNG TY CÙNG LÚC (anh chốt 29/09). Trước đây phải chờ công ty này tải xong mới gõ
+// được mã cho công ty sau, nên nhân viên ngồi canh suốt cả tiếng. Nay tiện ích giữ nhiều phiên cổng
+// tách nhau, nhờ vậy trong lúc công ty A tải file thì app đã xin mã cho công ty B — nhân viên gõ
+// liên tục rồi rảnh hẳn, máy tự tải nền.
 //
-// CỐ Ý KHÔNG DÒ THƯ MỤC TỰ ĐỘNG (anh chốt 28/09): một nhân viên không phụ trách nhiều công ty tới
-// mức phải dò, mà dò thì vừa chậm vừa có ngày khớp nhầm công ty. Người chọn thì không bao giờ nhầm.
+// ⚠ CHẠY SONG SONG KHÔNG PHẢI ĐỂ NHANH HƠN. Tiện ích có một hàng đợi chung giữ nhịp gọi cổng, nên
+// bao nhiêu công ty thì cổng vẫn nhận đúng một lượt gọi mỗi ~2,2 giây. Mở nhiều chỉ để NGƯỜI khỏi
+// phải chờ, còn máy vẫn chậm rãi như cũ — đúng thứ tự ưu tiên anh dặn: ổn định trước, nhanh sau.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
@@ -24,6 +26,11 @@ import {
 } from '@/lib/tokhaiLuuDia'
 
 const ngayChu = d => d.toISOString().slice(0, 10)
+
+// Mở càng nhiều thì nhân viên gõ được càng xa, nhưng mỗi công ty đang mở là một phiên sống bên
+// cổng, để lâu quá có thể hết phiên. 2 là mức an toàn: gõ xong công ty này là có ngay công ty sau.
+const SO_CUNG_LUC_MAC_DINH = 2
+const CAC_MUC_CUNG_LUC = [1, 2, 3, 4]
 
 // Cổng tra theo NGÀY TIẾP NHẬN hồ sơ, không tra theo kỳ tính thuế. Tờ khai quý 1 nộp vào tháng 4,
 // nên mốc nhanh phải tính theo ngày nộp — chọn sai khoảng là tra ra rỗng mà không hiểu vì sao.
@@ -49,22 +56,30 @@ export default function TrangTaiFile() {
   const [loi, setLoi] = useState('')
   const [hoTro, setHoTro] = useState(true)
 
-  // clientId → { tay, ten, trangThai, soat }
-  const [thuMucCty, setThuMucCty] = useState({})
+  const [thuMucCty, setThuMucCty] = useState({})   // clientId → { tay, ten, trangThai, soat }
 
   const homNay = ngayChu(new Date())
   const [tuNgay, setTuNgay] = useState(ngayChu(new Date(Date.now() - 89 * 864e5)))
   const [denNgay, setDenNgay] = useState(homNay)
   const [taiLai, setTaiLai] = useState(false)
+  const [soCungLuc, setSoCungLuc] = useState(SO_CUNG_LUC_MAC_DINH)
 
   const [dangChay, setDangChay] = useState(false)
-  const [viTri, setViTri] = useState(0)
+  const [dangLamIds, setDangLamIds] = useState([])
+  const [soXong, setSoXong] = useState(0)
+  const [tongViec, setTongViec] = useState(0)
   const [ketQua, setKetQua] = useState({})
-  const [tienDo, setTienDo] = useState('')
+  const [tienDoCty, setTienDoCty] = useState({})
   const [dsFileMoi, setDsFileMoi] = useState([])
-  const [captcha, setCaptcha] = useState(null)
+  const [hangCaptcha, setHangCaptcha] = useState([])
   const [maGo, setMaGo] = useState('')
+  const [canhBaoLo, setCanhBaoLo] = useState('')
   const dungLai = useRef(false)
+  const dungCaLo = useRef(false)
+
+  // Tiện ích cũ (trước 1.1) không có phiên ảo → buộc chạy một công ty một lúc như trước.
+  const coPhienAo = !!tienIch?.coPhienAo
+  const soCungLucThat = coPhienAo ? soCungLuc : 1
 
   useEffect(() => {
     const supabase = createClient()
@@ -98,8 +113,6 @@ export default function TrangTaiFile() {
   const dsChon = dsHien.filter(c => chon[c.id])
   const thieuMaKH = dsChon.filter(c => !c.maKH)
   const soCuaSo = Math.max(1, Math.ceil((new Date(denNgay) - new Date(tuNgay)) / 864e5 / 30))
-  // Chỉ cần có thư mục và còn quyền ghi. Thư mục trông lạ thì CẢNH BÁO chứ không chặn — nhân viên
-  // tự tay trỏ vào thì họ biết họ đang làm gì.
   const sanSangCuaCty = c => thuMucCty[c.id]?.trangThai === 'san_sang'
   const chuaCoThuMuc = dsChon.filter(c => !sanSangCuaCty(c))
 
@@ -142,53 +155,95 @@ export default function TrangTaiFile() {
     setThuMucCty(p => ({ ...p, [cty.id]: { tay: null, trangThai: 'chua_chon' } }))
   }
 
-  const hoiCaptcha = ({ anhCaptcha, nhan }) => new Promise(giaiQuyet => {
-    setMaGo('')
-    setCaptcha({ anh: anhCaptcha, nhan, giaiQuyet })
+  // ── Hàng chờ gõ mã ────────────────────────────────────────────────────────
+  //
+  // Nhiều công ty chạy song song nên có lúc hai công ty cùng cần mã. Xếp hàng rồi hiện từng cái
+  // một theo đúng thứ tự tới, để nhân viên gõ liên tục chứ không phải nhìn hai ô cùng lúc.
+  const themCaptcha = (cty, { anhCaptcha, nhan }) => new Promise(giaiQuyet => {
+    setHangCaptcha(h => [...h, {
+      khoa: `${cty.id}-${h.length}-${Date.now()}`, cty, anh: anhCaptcha, nhan, giaiQuyet,
+    }])
   })
 
   const traLoiCaptcha = (ma) => {
-    captcha?.giaiQuyet(ma)
-    setCaptcha(null)
+    setHangCaptcha(h => {
+      const [dau, ...con] = h
+      if (dau) dau.giaiQuyet(ma)
+      return con
+    })
     setMaGo('')
   }
 
+  // Bỏ hết mã đang chờ (khi bấm Dừng) — không bỏ thì các công ty kia treo mãi.
+  const boHetCaptcha = () => {
+    setHangCaptcha(h => { for (const x of h) x.giaiQuyet(null); return [] })
+    setMaGo('')
+  }
+
+  // ── Chạy ──────────────────────────────────────────────────────────────────
+
   async function chay() {
     dungLai.current = false
-    setDangChay(true); setKetQua({}); setViTri(0); setDsFileMoi([])
+    dungCaLo.current = false
+    setDangChay(true)
+    setKetQua({}); setDsFileMoi([]); setTienDoCty({}); setHangCaptcha([])
+    setSoXong(0); setTongViec(dsChon.length); setCanhBaoLo('')
 
-    for (let i = 0; i < dsChon.length; i++) {
-      if (dungLai.current) break
-      const c = dsChon[i]
-      setViTri(i)
-      setTienDo(`Đang mở phiên cho ${c.ten}…`)
+    const hangCho = [...dsChon]
+    const dangLam = new Set()
+    const capNhatDangLam = () => setDangLamIds([...dangLam])
 
-      const kq = await chayTaiFile({
-        clientId: c.id, tuNgay, denNgay, taiLai, tayCty: thuMucCty[c.id]?.tay,
-        onCaptcha: hoiCaptcha,
-        onTienDo: setTienDo,
-        onFile: ({ ten }) => setDsFileMoi(p => [...ten.map(t => ({ ten: t, cty: c.ten })), ...p].slice(0, 200)),
-      })
-      setKetQua(p => ({ ...p, [c.id]: kq }))
+    const chayMot = async (c) => {
+      dangLam.add(c.id); capNhatDangLam()
+      try {
+        const kq = await chayTaiFile({
+          clientId: c.id, tuNgay, denNgay, taiLai, tayCty: thuMucCty[c.id]?.tay,
+          onCaptcha: th => themCaptcha(c, th),
+          onTienDo: chu => setTienDoCty(p => ({ ...p, [c.id]: chu })),
+          onFile: ({ ten }) => setDsFileMoi(p => [...ten.map(t => ({ ten: t, cty: c.ten })), ...p].slice(0, 200)),
+        })
+        setKetQua(p => ({ ...p, [c.id]: kq }))
 
-      // Cổng chặn vì gọi dày thì DỪNG CẢ LÔ — chạy tiếp chỉ kéo dài thời gian bị chặn.
-      if (kq.ket_qua === 'loi' && /429|quá dày/i.test(kq.moTa || '')) {
-        setTienDo('⚠ Cổng thuế đang chặn vì gọi quá dày — đã DỪNG cả lô. Nghỉ 10–15 phút rồi chạy lại, và chia nhỏ khoảng ngày.')
-        break
-      }
-
-      if (i < dsChon.length - 1 && !dungLai.current) {
-        setTienDo('Nghỉ 8 giây trước công ty kế tiếp…')
-        await new Promise(r => setTimeout(r, 8000))
+        // Cổng chặn vì gọi dày thì DỪNG CẢ LÔ — chạy tiếp chỉ kéo dài thời gian bị chặn.
+        if (kq.ket_qua === 'loi' && /429|quá dày/i.test(kq.moTa || '')) {
+          dungCaLo.current = true
+          setCanhBaoLo('⚠ Cổng thuế đang chặn vì gọi quá dày — đã DỪNG nhận công ty mới. '
+            + 'Nghỉ 10–15 phút rồi chạy lại, và chia nhỏ khoảng ngày.')
+          boHetCaptcha()
+        }
+      } catch (e) {
+        setKetQua(p => ({ ...p, [c.id]: { ket_qua: 'loi', moTa: e.message } }))
+      } finally {
+        dangLam.delete(c.id); capNhatDangLam()
+        setTienDoCty(p => ({ ...p, [c.id]: '' }))
+        setSoXong(n => n + 1)
       }
     }
 
-    setDangChay(false); setTienDo(''); setCaptcha(null)
+    const dangCho = new Set()
+    for (;;) {
+      while (hangCho.length && dangCho.size < soCungLucThat && !dungLai.current && !dungCaLo.current) {
+        const c = hangCho.shift()
+        let p
+        p = chayMot(c).finally(() => dangCho.delete(p))
+        dangCho.add(p)
+      }
+      if (!dangCho.size) break
+      await Promise.race([...dangCho])
+    }
+
+    setDangChay(false); setHangCaptcha([]); setDangLamIds([])
+  }
+
+  function bamDung() {
+    dungLai.current = true
+    boHetCaptcha()
   }
 
   const tongFile = Object.values(ketQua).reduce((t, k) => t + (k.dsFile?.length || 0), 0)
   const tongLoiGhi = Object.values(ketQua).reduce((t, k) => t + (k.loiGhi?.length || 0), 0)
   const dem = tt => Object.values(ketQua).filter(k => k.ket_qua === tt).length
+  const captchaDau = hangCaptcha[0] || null
 
   // Ô "Thư mục" của một dòng công ty.
   function OThuMuc({ c }) {
@@ -273,12 +328,22 @@ export default function TrangTaiFile() {
             <b>Chưa có tiện ích Chrome</b> — cần tiện ích <b>Savitax — Cầu nối cổng thuế</b> để gọi cổng thuế.
           </div>
         )}
+        {tienIch?.co && !coPhienAo && (
+          <div className="mb-3 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
+            Tiện ích đang là bản <b>{tienIch.phienBan}</b> — bản này chỉ chạy được <b>một công ty một
+            lúc</b>, nên vẫn phải chờ từng công ty tải xong mới gõ mã tiếp. Cập nhật lên <b>1.1</b> để
+            gõ mã cho công ty kế tiếp ngay trong lúc công ty này đang tải.
+          </div>
+        )}
         {!hoTro && (
           <div className="mb-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
             Trình duyệt này không ghi được vào thư mục. Dùng <b>Chrome</b> hoặc <b>Edge</b> trên máy tính.
           </div>
         )}
         {loi && <div className="mb-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">{loi}</div>}
+        {canhBaoLo && (
+          <div className="mb-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">{canhBaoLo}</div>
+        )}
 
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-3 mb-4">
           <div className="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b border-gray-100">
@@ -332,6 +397,13 @@ export default function TrangTaiFile() {
               Tải lại cả hồ sơ đã có file
             </label>
 
+            <span className="text-sm text-gray-500 ml-2">Mở cùng lúc</span>
+            <select value={soCungLuc} disabled={dangChay || !coPhienAo}
+              onChange={e => setSoCungLuc(+e.target.value)}
+              className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm bg-white">
+              {CAC_MUC_CUNG_LUC.map(n => <option key={n} value={n}>{n} công ty</option>)}
+            </select>
+
             <div className="flex-1" />
             {!dangChay ? (
               <button onClick={chay}
@@ -340,9 +412,9 @@ export default function TrangTaiFile() {
                 Bắt đầu tải file
               </button>
             ) : (
-              <button onClick={() => { dungLai.current = true; setCaptcha(null); captcha?.giaiQuyet(null) }}
+              <button onClick={bamDung}
                 className="px-4 py-2 rounded-xl bg-gray-700 text-white text-sm font-medium shadow-sm">
-                Dừng sau công ty này
+                Dừng nhận công ty mới
               </button>
             )}
           </div>
@@ -354,6 +426,13 @@ export default function TrangTaiFile() {
               <span className="text-amber-700"> {' '}Khoảng ngày dài thì chạy lâu — nên chia nhỏ để đỡ bị cổng chặn.</span>
             )}
           </p>
+          {coPhienAo && (
+            <p className="text-xs text-gray-400 mt-1">
+              Mở <b>{soCungLuc}</b> công ty cùng lúc: trong khi công ty này tải file, app đã xin mã cho
+              công ty kế tiếp nên anh/chị gõ liên tục rồi rảnh hẳn. <b>Không nhanh hơn</b> — tiện ích
+              vẫn giữ đúng một lượt gọi cổng mỗi ~2,2 giây dù mở bao nhiêu công ty.
+            </p>
+          )}
 
           {chuaCoThuMuc.length > 0 && (
             <p className="text-xs text-amber-700 mt-1.5">
@@ -376,23 +455,29 @@ export default function TrangTaiFile() {
                 <div className="flex-1">
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-green-500 rounded-full transition-all"
-                      style={{ width: (dsChon.length ? (viTri / dsChon.length) * 100 : 0) + '%' }} />
+                      style={{ width: (tongViec ? (soXong / tongViec) * 100 : 0) + '%' }} />
                   </div>
                 </div>
-                <span className="text-sm font-medium text-gray-700 tabular-nums">{viTri + 1}/{dsChon.length}</span>
+                <span className="text-sm font-medium text-gray-700 tabular-nums">
+                  xong {soXong}/{tongViec} · đang chạy {dangLamIds.length}
+                </span>
               </div>
-              <p className="text-xs text-gray-500 mt-1.5">{tienDo}</p>
             </div>
           )}
         </div>
 
-        {captcha && (
+        {captchaDau && (
           <div className="rounded-2xl border-2 border-blue-300 bg-blue-50/60 p-4 mb-4 shadow-sm">
             <p className="text-sm font-semibold text-blue-900 mb-2">
-              {dsChon[viTri]?.ten} — mã captcha {captcha.nhan}
+              {captchaDau.cty.ten} — mã captcha {captchaDau.nhan}
+              {hangCaptcha.length > 1 && (
+                <span className="ml-2 font-normal text-blue-700">
+                  (còn {hangCaptcha.length - 1} mã đang chờ)
+                </span>
+              )}
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <img src={captcha.anh} alt="Mã captcha"
+              <img key={captchaDau.khoa} src={captchaDau.anh} alt="Mã captcha"
                 className="bg-white rounded-lg border border-blue-200" style={{ height: 80 }} />
               <input value={maGo} autoFocus onChange={e => setMaGo(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && maGo.trim() && traLoiCaptcha(maGo.trim())}
@@ -439,7 +524,7 @@ export default function TrangTaiFile() {
                 <tbody>
                   {dsHien.map(c => {
                     const kq = ketQua[c.id]
-                    const dangLam = dangChay && dsChon[viTri]?.id === c.id
+                    const dangLam = dangLamIds.includes(c.id)
                     return (
                       <tr key={c.id} className={'border-b border-gray-100 odd:bg-white even:bg-slate-50/60 '
                         + (dangLam ? 'ring-2 ring-inset ring-blue-300' : '')}>
@@ -457,7 +542,14 @@ export default function TrangTaiFile() {
                           <OThuMuc c={c} />
                         </td>
                         <td className="px-2 py-2.5 align-top text-xs">
-                          {dangLam && <span className="text-blue-700 font-medium">đang chạy…</span>}
+                          {dangLam && (
+                            <>
+                              <span className="text-blue-700 font-medium">đang chạy…</span>
+                              {tienDoCty[c.id] && (
+                                <span className="block text-gray-500 mt-0.5 leading-tight">{tienDoCty[c.id]}</span>
+                              )}
+                            </>
+                          )}
                           {!dangLam && kq?.ket_qua === 'xong' && (
                             <span className="text-green-700">
                               ✓ {kq.dsFile?.length || 0} file

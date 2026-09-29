@@ -1,4 +1,4 @@
-// Cầu nối giữa app.savitax.vn và cổng thuế — Phân hệ Tờ khai, nhịp B.
+// Cầu nối giữa app.savitax.vn và cổng thuế — Phân hệ Tờ khai.
 //
 // VÌ SAO CẦN: cổng dichvucong.gdt.gov.vn chặn máy chủ nước ngoài (đo thật 21/09/2026 — Vercel ở
 // Singapore bị nuốt gói tin). Máy nhân viên ở Việt Nam thì vào bình thường, nên tiện ích này gọi
@@ -8,8 +8,16 @@
 // đã dựng sẵn. Mọi việc đọc bảng, khớp danh mục, tính đúng hạn đều nằm trong web app — nhờ vậy
 // sửa nghiệp vụ chỉ cần deploy app, không phải đi cài lại tiện ích trên từng máy.
 //
-// Cookie phiên cổng thuế do chính trình duyệt giữ (fetch có credentials: 'include'), máy chủ
-// không lưu cookie nào.
+// BẢN 1.1: thêm PHIÊN ẢO. Yêu cầu nào kèm `phien` thì tiện ích nạp đúng bộ cookie của phiên đó
+// trước khi gọi, gọi xong cất lại. Nhờ vậy nhiều công ty sống song song trên cùng một trình duyệt,
+// và nhân viên gõ được mã cho công ty kế tiếp NGAY TRONG LÚC công ty này đang tải file, thay vì
+// ngồi chờ từng công ty một. Xem chrome-extension/phien.js.
+//
+// Cookie phiên cổng chỉ nằm trong bộ nhớ (chrome.storage.session), không ghi ra đĩa.
+
+import {
+  docCookieCong, xoaCookieCong, datCookieCong, khoPhien, taoHangDoi,
+} from './phien.js'
 
 // Chỉ cho gọi đúng 2 tên miền của cơ quan thuế. Thiếu chặn này thì bất kỳ trang nào trên
 // app.savitax.vn (kể cả trang bị chèn mã độc) cũng biến tiện ích thành máy chủ trung chuyển
@@ -21,9 +29,15 @@ const MIEN_CHO_PHEP = [
 
 const duocPhep = url => MIEN_CHO_PHEP.some(m => typeof url === 'string' && url.startsWith(m))
 
-async function goiCong(req) {
-  if (!duocPhep(req?.url)) {
-    return { ok: false, loi: 'Địa chỉ không nằm trong danh sách cho phép: ' + (req?.url || '(trống)') }
+const kho = khoPhien(chrome.storage.session)
+// MỘT hàng đợi cho cả tiện ích: mỗi lúc đúng một lượt gọi cổng, và giữ khoảng cách giữa các lượt.
+const xepHang = taoHangDoi()
+
+async function goiMotLuot(req, phien) {
+  // Phiên ảo: dọn cookie đang có rồi nạp cookie của đúng phiên này.
+  if (phien) {
+    await xoaCookieCong(chrome.cookies)
+    await datCookieCong(chrome.cookies, await kho.doc(phien))
   }
 
   const kiemSoat = new AbortController()
@@ -60,21 +74,41 @@ async function goiCong(req) {
     return { ok: false, loi: e.name === 'AbortError' ? 'Cổng thuế không phản hồi kịp' : String(e.message || e) }
   } finally {
     clearTimeout(henGio)
+    // Cất cookie SAU MỌI TRƯỜNG HỢP, kể cả khi gọi lỗi: cổng có thể đã đổi mã phiên trước khi hỏng,
+    // mất bước này là phiên đó coi như chết.
+    if (phien) {
+      try { await kho.ghi(phien, await docCookieCong(chrome.cookies)) } catch { /* bỏ qua */ }
+    }
   }
 }
 
-// Xóa sạch cookie của cổng thuế. Gọi khi bắt đầu một lượt mới để không dính phiên cũ của công ty
-// khác — cổng khóa mỗi tài khoản vào một phiên duy nhất.
-async function xoaCookieCong() {
-  let daXoa = 0
-  for (const mien of ['dichvucong.gdt.gov.vn', 'thuedientu.gdt.gov.vn']) {
-    const ds = await chrome.cookies.getAll({ domain: mien })
-    for (const c of ds) {
-      const url = (c.secure ? 'https://' : 'http://') + c.domain.replace(/^\./, '') + c.path
-      try { await chrome.cookies.remove({ url, name: c.name }); daXoa++ } catch { /* bỏ qua */ }
-    }
+function goiCong(tin) {
+  const req = tin?.yeuCau
+  if (!duocPhep(req?.url)) {
+    return Promise.resolve({ ok: false, loi: 'Địa chỉ không nằm trong danh sách cho phép: ' + (req?.url || '(trống)') })
   }
+  return xepHang(() => goiMotLuot(req, tin.phien || null), tin.nhip)
+}
+
+// Xoá sạch cookie cổng đang có trên trình duyệt. Giữ lại cho các màn hình chạy một phiên như cũ.
+async function donCookie() {
+  const daXoa = await xepHang(() => xoaCookieCong(chrome.cookies))
   return { ok: true, daXoa }
+}
+
+// Mở một phiên ảo rỗng (bắt đầu lượt mới cho một công ty).
+async function moPhien(phien) {
+  if (!phien) return { ok: false, loi: 'Thiếu mã phiên' }
+  await kho.ghi(phien, [])
+  return { ok: true }
+}
+
+// Đóng phiên ảo: bỏ cookie đã cất, và nếu cookie của nó đang nằm trên trình duyệt thì dọn luôn.
+async function dongPhien(phien) {
+  if (!phien) return { ok: false, loi: 'Thiếu mã phiên' }
+  await kho.xoa(phien)
+  await xepHang(() => xoaCookieCong(chrome.cookies))
+  return { ok: true }
 }
 
 chrome.runtime.onMessageExternal.addListener((tin, nguoiGui, traLoi) => {
@@ -86,17 +120,13 @@ chrome.runtime.onMessageExternal.addListener((tin, nguoiGui, traLoi) => {
   }
 
   if (tin?.viec === 'ping') {
-    traLoi({ ok: true, phienBan: chrome.runtime.getManifest().version })
+    traLoi({ ok: true, phienBan: chrome.runtime.getManifest().version, coPhienAo: true })
     return false
   }
-  if (tin?.viec === 'xoaCookie') {
-    xoaCookieCong().then(traLoi)
-    return true
-  }
-  if (tin?.viec === 'goiCong') {
-    goiCong(tin.yeuCau).then(traLoi)
-    return true      // giữ kênh mở để trả lời bất đồng bộ
-  }
+  if (tin?.viec === 'xoaCookie') { donCookie().then(traLoi); return true }
+  if (tin?.viec === 'moPhien') { moPhien(tin.phien).then(traLoi); return true }
+  if (tin?.viec === 'dongPhien') { dongPhien(tin.phien).then(traLoi); return true }
+  if (tin?.viec === 'goiCong') { goiCong(tin).then(traLoi); return true }
 
   traLoi({ ok: false, loi: 'Không hiểu yêu cầu' })
   return false
