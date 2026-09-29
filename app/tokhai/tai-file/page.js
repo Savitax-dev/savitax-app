@@ -134,6 +134,30 @@ export default function TrangTaiFile() {
     return () => { huy = true }
   }, [dsHienId, hoTro])
 
+  // Cột Thư mục chỉ hiện được TÊN thư mục, không hiện đường dẫn đầy đủ (trình duyệt không cho
+  // biết). Hai công ty cùng trỏ vào một chỗ thì nhìn y hệt nhau — nên phải tự dò và nói ra.
+  const [trungThuMuc, setTrungThuMuc] = useState([])
+  useEffect(() => {
+    const ds = dsHien.filter(c => chon[c.id] && thuMucCty[c.id]?.tay)
+    if (ds.length < 2 || ds.length > 40) { setTrungThuMuc([]); return }
+    let huy = false
+    ;(async () => {
+      const trung = []
+      for (let i = 0; i < ds.length; i++) {
+        for (let j = i + 1; j < ds.length; j++) {
+          try {
+            if (await thuMucCty[ds[i].id].tay.isSameEntry(thuMucCty[ds[j].id].tay)) {
+              trung.push(`${ds[i].ten} và ${ds[j].ten}`)
+            }
+          } catch { /* trình duyệt không so được thì thôi */ }
+        }
+      }
+      if (!huy) setTrungThuMuc(trung)
+    })()
+    return () => { huy = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dsHienId, chon, thuMucCty])
+
   const capNhatThuMuc = useCallback(async (clientId, { xinQuyen = false } = {}) => {
     const kq = await layThuMucCongTy(clientId, { xinQuyen })
     const soat = kq.trangThai === 'san_sang' ? await soatThuMucCongTy(kq.tay) : null
@@ -439,6 +463,14 @@ export default function TrangTaiFile() {
               <b>{chuaCoThuMuc.length}</b> công ty chưa có thư mục — bấm <b>Chọn thư mục</b> ở cột Thư mục
               rồi trỏ vào thư mục công ty trên ổ chung (ví dụ <span className="font-mono">3.THỊNH PHÁT</span>).
               Chọn một lần, lần sau app nhớ.
+            </p>
+          )}
+
+          {trungThuMuc.length > 0 && (
+            <p className="text-xs text-amber-700 mt-1.5">
+              <b>Trỏ trùng thư mục:</b> {trungThuMuc.join('; ')} đang dùng chung một thư mục. File
+              vẫn vào đúng thư mục con theo Mã khách hàng nên không lẫn nội dung, nhưng anh/chị soát
+              lại xem có chọn nhầm không — cột Thư mục chỉ hiện được tên, không hiện đường dẫn đầy đủ.
             </p>
           )}
 

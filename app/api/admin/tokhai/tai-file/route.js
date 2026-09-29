@@ -179,6 +179,21 @@ export async function POST(request) {
       return Response.json({ error: 'Không có quyền tải file của công ty này' }, { status: 403 })
     }
 
+    // ── Trình duyệt báo đã ghi được file xuống đĩa ─────────────────────────
+    //
+    // Máy chủ không ghi file, nên chỉ trình duyệt mới biết hồ sơ nào đã nằm trên đĩa thật. Ghi lại
+    // vào tax_filings.file_path để lần chạy sau BỎ QUA hồ sơ đó.
+    //
+    // ⚠ Đoạn đọc cột này (khi mở phiên) có từ đầu, nhưng KHÔNG CHỖ NÀO GHI vào — nên chức năng
+    // "bỏ qua hồ sơ đã tải" chưa bao giờ chạy: lần nào cũng tải lại từ đầu, đẻ ra file _v2, _v3 và
+    // gõ cửa cổng thêm mấy chục lượt vô ích. Phát hiện 29/09/2026 khi soi thư mục sau lượt chạy thật.
+    if (body.daGhi?.maHoSo) {
+      await supabase.from('tax_filings')
+        .update({ file_path: String(body.daGhi.duongDan || '').slice(0, 500) })
+        .eq('client_id', p.clientId).eq('portal_code', body.daGhi.maHoSo)
+      p.daTai.add(body.daGhi.maHoSo)
+    }
+
     // ── Người vừa gõ captcha ───────────────────────────────────────────────
     if (body.captcha) {
       const ma = String(body.captcha).trim()
