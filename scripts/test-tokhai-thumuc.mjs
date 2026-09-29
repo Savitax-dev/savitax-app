@@ -4,7 +4,7 @@
 // Chỉ kiểm phần TÍNH TÊN (thuần), không đụng đĩa — phần ghi đĩa phải thử trên trình duyệt thật.
 import {
   chuanHoaTen, laCungThuMuc, tachKy, tenFileToKhai, tenFileThongBao,
-  duongDanToKhai, duongDanThongBao,
+  duongDanToKhai, duongDanThongBao, soLanBoSung, tenThuMucBoSung,
 } from '../lib/tokhaiThuMuc.js'
 
 let hong = 0
@@ -81,6 +81,65 @@ kiem('tên file tờ khai GTGT',
 kiem('tên file thông báo chấp nhận TNCN',
   tenFileThongBao({ loaiThongBao: 'xac_nhan_nop', sacThue: 'TNCN', periodCode: 'Q1.2026', maKH: 'THINHPHAT' }),
   'TBCN_TNCN_Q1.2026_THINHPHAT.xml')
+
+// ── Tờ khai bổ sung ─────────────────────────────────────────────────────────
+//
+// Cùng kỳ, cùng sắc thuế, tờ khai BỔ SUNG trùng tên y hệt tờ khai chính thức. Trước đây nó rơi
+// thành '_v2' — nhìn không biết là bản bổ sung hay bản tải trùng, mà đây là hai thứ khác hẳn nhau
+// về nghiệp vụ. Anh chốt 29/09: mỗi lần bổ sung một thư mục BSL<n>.
+
+console.log('')
+console.log('Đọc số lần bổ sung từ bảng của cổng:')
+kiem('Chính thức → 0', soLanBoSung({ loaiToKhai: 'Chính thức', lanBoSung: 0 }), 0)
+kiem('Bổ sung lần 1', soLanBoSung({ loaiToKhai: 'Bổ sung', lanBoSung: 1 }), 1)
+kiem('Bổ sung lần 2', soLanBoSung({ loaiToKhai: 'Bổ sung', lanBoSung: 2 }), 2)
+// Cổng có dòng ghi 'Bổ sung' mà ô số lần để trống — không được rơi về chính thức, vì như vậy là
+// bản bổ sung ghi đè lên bản chính thức.
+kiem('Bổ sung mà số lần TRỐNG → coi là lần 1', soLanBoSung({ loaiToKhai: 'Bổ sung', lanBoSung: 0 }), 1)
+kiem('không dấu vẫn nhận ra', soLanBoSung({ loaiToKhai: 'Bo sung', lanBoSung: 1 }), 1)
+kiem('không có gì → 0', soLanBoSung(null), 0)
+kiem('tên thư mục', tenThuMucBoSung(2), 'BSL2')
+
+console.log('')
+console.log('Tờ khai bổ sung tách khỏi tờ khai chính thức:')
+kiem('thư mục tờ khai bổ sung lần 1',
+  duongDanToKhai({ periodCode: 'Q2.2026', maKH: 'VANLANG', boSung: 1 }),
+  ['BAOCAOTHUE_Q2_2026_VANLANG', 'BSL1'])
+kiem('thông báo của bản bổ sung nằm CÙNG thư mục BSL1',
+  duongDanThongBao({ periodCode: 'Q2.2026', maKH: 'VANLANG', boSung: 1 }),
+  ['BAOCAOTHUE_Q2_2026_VANLANG', 'BSL1'])
+kiem('bổ sung lần 2 sang thư mục khác',
+  duongDanToKhai({ periodCode: 'Q4.2025', maKH: 'VANLANG', boSung: 2 }),
+  ['BAOCAOTHUE_Q4_2025_VANLANG', 'BSL2'])
+kiem('chính thức KHÔNG đổi chỗ',
+  duongDanToKhai({ periodCode: 'Q2.2026', maKH: 'VANLANG', boSung: 0 }),
+  ['BAOCAOTHUE_Q2_2026_VANLANG', 'TỜ KHAI THUẾ'])
+
+kiem('tên file bổ sung mang _BSL1',
+  tenFileToKhai({ sacThue: 'GTGT', periodCode: 'Q2.2026', maKH: 'VANLANG', boSung: 1 }),
+  'TK_GTGT_Q2.2026_VANLANG_BSL1.xml')
+kiem('thông báo bổ sung cũng mang _BSL1',
+  tenFileThongBao({ loaiThongBao: 'xac_nhan_nop', sacThue: 'GTGT', periodCode: 'Q2.2026', maKH: 'VANLANG', boSung: 1 }),
+  'TBCN_GTGT_Q2.2026_VANLANG_BSL1.xml')
+kiem('tên file chính thức KHÔNG đổi',
+  tenFileToKhai({ sacThue: 'GTGT', periodCode: 'Q2.2026', maKH: 'VANLANG' }),
+  'TK_GTGT_Q2.2026_VANLANG.xml')
+
+// Đây chính là thứ phải chặn: hai tờ khai khác nhau mà cùng đường dẫn + cùng tên.
+const chinh = duongDanToKhai({ periodCode: 'Q2.2026', maKH: 'VANLANG' }).join('/')
+  + '/' + tenFileToKhai({ sacThue: 'GTGT', periodCode: 'Q2.2026', maKH: 'VANLANG' })
+const bs1 = duongDanToKhai({ periodCode: 'Q2.2026', maKH: 'VANLANG', boSung: 1 }).join('/')
+  + '/' + tenFileToKhai({ sacThue: 'GTGT', periodCode: 'Q2.2026', maKH: 'VANLANG', boSung: 1 })
+kiem('bản chính thức và bản bổ sung KHÔNG còn đụng nhau', chinh === bs1, false)
+
+console.log('')
+console.log('Quyết toán năm bổ sung:')
+kiem('03/TNDN bổ sung lần 1',
+  duongDanToKhai({ periodCode: 'NAM.2025', maKH: 'VANLANG', maToKhai: '03/TNDN', boSung: 1 }),
+  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'TỜ KHAI', '03TNDN QUYẾT TOÁN THUẾ TNDN', 'BSL1'])
+kiem('thông báo 03/TNDN bổ sung lần 1',
+  duongDanThongBao({ periodCode: 'NAM.2025', maKH: 'VANLANG', maToKhai: '03/TNDN', boSung: 1 }),
+  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'THÔNG BÁO CHẤP NHẬN', '03 TNDN', 'BSL1'])
 
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)

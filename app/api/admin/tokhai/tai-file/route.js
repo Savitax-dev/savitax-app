@@ -19,6 +19,7 @@ import { docBangKetQua, docChiTiet, RANGE_MAX_DAYS } from '@/lib/dvcPortal'
 import { chuanHoaKy } from '@/lib/taxDeadline'
 import {
   duongDanToKhai, duongDanThongBao, tenFileToKhai, tenFileThongBao, macSacThue, tachKy,
+  soLanBoSung,
 } from '@/lib/tokhaiThuMuc'
 
 export const maxDuration = 60
@@ -377,10 +378,11 @@ function duongDanFileToKhai(p, hs, noiDungJson) {
     if (!j?.content) { p.loi.push(`${hs.maHoSo}: cổng không trả nội dung tờ khai`); return null }
     const loai = timLoai(p, hs)
     const ky = chuanHoaKy(hs.kyTinhThue, loai?.period_kind || 'quarter') || 'PS.' + (hs.ngayNop || '').slice(0, 10)
+    const boSung = soLanBoSung(hs)
     p.soFile++
     return {
-      duongDan: duongDanToKhai({ periodCode: ky, maKH: p.maKH, maToKhai: loai?.code }),
-      tenFile: tenFileToKhai({ sacThue: macSacThue(loai), periodCode: ky, maKH: p.maKH, duoi: duoiTheoKieu(j.fileType) }),
+      duongDan: duongDanToKhai({ periodCode: ky, maKH: p.maKH, maToKhai: loai?.code, boSung }),
+      tenFile: tenFileToKhai({ sacThue: macSacThue(loai), periodCode: ky, maKH: p.maKH, duoi: duoiTheoKieu(j.fileType), boSung }),
       // Năm để trình duyệt biết đi vào thư mục 'Năm <nam>' nào — lấy theo KỲ TÍNH THUẾ, không phải
       // năm hiện tại: tờ khai quý 4/2025 nộp tháng 1/2026 vẫn nằm ở 'Năm 2025'.
       nam: tachKy(ky)?.nam || null,
@@ -398,10 +400,11 @@ function duongDanFileThongBao(p, hs, tb, noiDungJson) {
     if (!j?.content) return null
     const loai = timLoai(p, hs)
     const ky = chuanHoaKy(hs.kyTinhThue, loai?.period_kind || 'quarter') || 'PS.' + (hs.ngayNop || '').slice(0, 10)
+    const boSung = soLanBoSung(hs)
     p.soFile++
     return {
-      duongDan: duongDanThongBao({ periodCode: ky, maKH: p.maKH, maToKhai: loai?.code }),
-      tenFile: tenFileThongBao({ loaiThongBao: tb.loai, sacThue: macSacThue(loai), periodCode: ky, maKH: p.maKH, duoi: duoiTheoKieu(j.fileType) }),
+      duongDan: duongDanThongBao({ periodCode: ky, maKH: p.maKH, maToKhai: loai?.code, boSung }),
+      tenFile: tenFileThongBao({ loaiThongBao: tb.loai, sacThue: macSacThue(loai), periodCode: ky, maKH: p.maKH, duoi: duoiTheoKieu(j.fileType), boSung }),
       nam: tachKy(ky)?.nam || null,
       maHoSo: hs.maHoSo,
       laThongBao: true,
