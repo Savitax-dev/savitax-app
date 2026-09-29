@@ -4,7 +4,7 @@
 // Chỉ kiểm phần TÍNH TÊN (thuần), không đụng đĩa — phần ghi đĩa phải thử trên trình duyệt thật.
 import {
   chuanHoaTen, laCungThuMuc, tachKy, tenFileToKhai, tenFileThongBao,
-  duongDanToKhai, duongDanThongBao, soLanBoSung, tenThuMucBoSung,
+  duongDanToKhai, duongDanThongBao, soLanBoSung, hauToBoSung,
 } from '../lib/tokhaiThuMuc.js'
 
 let hong = 0
@@ -98,19 +98,24 @@ kiem('Bổ sung lần 2', soLanBoSung({ loaiToKhai: 'Bổ sung', lanBoSung: 2 })
 kiem('Bổ sung mà số lần TRỐNG → coi là lần 1', soLanBoSung({ loaiToKhai: 'Bổ sung', lanBoSung: 0 }), 1)
 kiem('không dấu vẫn nhận ra', soLanBoSung({ loaiToKhai: 'Bo sung', lanBoSung: 1 }), 1)
 kiem('không có gì → 0', soLanBoSung(null), 0)
-kiem('tên thư mục', tenThuMucBoSung(2), 'BSL2')
+kiem('hậu tố', hauToBoSung(2), '_BSL2')
+kiem('chính thức không có hậu tố', hauToBoSung(0), '')
 
 console.log('')
 console.log('Tờ khai bổ sung tách khỏi tờ khai chính thức:')
+// Thư mục kỳ RIÊNG, cùng cấp với thư mục kỳ chính thức; bên trong vẫn đủ 3 thư mục con như mọi kỳ.
 kiem('thư mục tờ khai bổ sung lần 1',
   duongDanToKhai({ periodCode: 'Q2.2026', maKH: 'VANLANG', boSung: 1 }),
-  ['BAOCAOTHUE_Q2_2026_VANLANG', 'BSL1'])
-kiem('thông báo của bản bổ sung nằm CÙNG thư mục BSL1',
+  ['BAOCAOTHUE_Q2_2026_VANLANG_BSL1', 'TỜ KHAI THUẾ'])
+kiem('thông báo của bản bổ sung nằm trong CHÍNH thư mục kỳ bổ sung',
   duongDanThongBao({ periodCode: 'Q2.2026', maKH: 'VANLANG', boSung: 1 }),
-  ['BAOCAOTHUE_Q2_2026_VANLANG', 'BSL1'])
-kiem('bổ sung lần 2 sang thư mục khác',
+  ['BAOCAOTHUE_Q2_2026_VANLANG_BSL1', 'THÔNG BÁO CHẤP NHẬN'])
+kiem('bổ sung lần 2 sang thư mục kỳ khác',
   duongDanToKhai({ periodCode: 'Q4.2025', maKH: 'VANLANG', boSung: 2 }),
-  ['BAOCAOTHUE_Q4_2025_VANLANG', 'BSL2'])
+  ['BAOCAOTHUE_Q4_2025_VANLANG_BSL2', 'TỜ KHAI THUẾ'])
+kiem('thư mục bổ sung CÙNG CẤP với thư mục chính thức (cùng số tầng)',
+  duongDanToKhai({ periodCode: 'Q2.2026', maKH: 'VANLANG', boSung: 1 }).length
+    === duongDanToKhai({ periodCode: 'Q2.2026', maKH: 'VANLANG' }).length, true)
 kiem('chính thức KHÔNG đổi chỗ',
   duongDanToKhai({ periodCode: 'Q2.2026', maKH: 'VANLANG', boSung: 0 }),
   ['BAOCAOTHUE_Q2_2026_VANLANG', 'TỜ KHAI THUẾ'])
@@ -134,12 +139,14 @@ kiem('bản chính thức và bản bổ sung KHÔNG còn đụng nhau', chinh =
 
 console.log('')
 console.log('Quyết toán năm bổ sung:')
+// Cây năm không có thư mục kỳ → gắn hậu tố vào thư mục loại tờ khai, vẫn là CÙNG CẤP với bản
+// chính thức đúng như nguyên tắc ở thư mục kỳ.
 kiem('03/TNDN bổ sung lần 1',
   duongDanToKhai({ periodCode: 'NAM.2025', maKH: 'VANLANG', maToKhai: '03/TNDN', boSung: 1 }),
-  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'TỜ KHAI', '03TNDN QUYẾT TOÁN THUẾ TNDN', 'BSL1'])
+  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'TỜ KHAI', '03TNDN QUYẾT TOÁN THUẾ TNDN_BSL1'])
 kiem('thông báo 03/TNDN bổ sung lần 1',
   duongDanThongBao({ periodCode: 'NAM.2025', maKH: 'VANLANG', maToKhai: '03/TNDN', boSung: 1 }),
-  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'THÔNG BÁO CHẤP NHẬN', '03 TNDN', 'BSL1'])
+  ['BỘ BÁO CÁO TÀI CHÍNH NĂM', 'THÔNG BÁO CHẤP NHẬN', '03 TNDN_BSL1'])
 
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)
