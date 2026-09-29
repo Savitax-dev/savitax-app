@@ -19,6 +19,8 @@ import { createClient } from '@supabase/supabase-js'
 import XLSX from 'xlsx'
 
 const APPLY = process.argv.includes('--apply')
+// Gộp luôn nhóm 'đáng ngờ' (MST 12 chữ số) — chỉ dùng khi đã soát bằng mắt.
+const CA_DANG_NGO = process.argv.includes('--ca-dang-ngo')
 // Xuất danh sách ra Excel để người soát tick tay:  --xuat "D:\\duong-dan.xlsx"
 const iXuat = process.argv.indexOf('--xuat')
 const FILE_XUAT = iXuat > 0 && process.argv[iXuat + 1] ? process.argv[iXuat + 1] : null
@@ -56,7 +58,20 @@ const dangPhucVu = clients.filter(c => c.is_active !== false && c.status !== 'in
 
 const daDanhDau = dangPhucVu.filter(c => c.is_hkd)
 const theoTenChuaDanh = dangPhucVu.filter(c => !c.is_hkd && theoTen(c))
-const laHKD = new Set([...daDanhDau, ...theoTenChuaDanh].map(c => c.id))
+
+// Mã số thuế 12 chữ số là mã cá nhân — hộ kinh doanh gần như luôn dùng loại này. Nhưng CÓ doanh
+// nghiệp thật cũng dùng MST 12 số (chi nhánh, đơn vị phụ thuộc), nên KHÔNG tự đánh dấu nhóm này.
+//
+// Anh soát ngày 29/09/2026 và xác nhận cả 11 công ty đều là hộ kinh doanh → chạy kèm --ca-dang-ngo.
+// Cố ý để thành MỘT LỰA CHỌN RÕ RÀNG thay vì nới luật nhận dạng: lần chạy sau danh sách "đáng ngờ"
+// sẽ khác, và người chạy phải nhìn lại danh sách đó chứ không được nhắm mắt gộp.
+const daBiet = new Set([...daDanhDau, ...theoTenChuaDanh].map(c => c.id))
+const ngoLo = dangPhucVu.filter(c =>
+  !daBiet.has(c.id) && (c.tax_code || '').replace(/\D/g, '').length === 12)
+
+const themVaoNhom = CA_DANG_NGO ? ngoLo : []
+const seDanhDau = [...theoTenChuaDanh, ...themVaoNhom]
+const laHKD = new Set([...daDanhDau, ...seDanhDau].map(c => c.id))
 
 console.log(`Công ty đang phục vụ: ${dangPhucVu.length}`)
 console.log(`  đã đánh dấu is_hkd : ${daDanhDau.length}`)
@@ -64,21 +79,18 @@ console.log(`  nhận ra qua TÊN, chưa đánh dấu: ${theoTenChuaDanh.length}
 
 if (theoTenChuaDanh.length) {
   console.log('')
-  console.log('Sẽ đánh dấu là hộ kinh doanh:')
+  console.log('Sẽ đánh dấu là hộ kinh doanh (tên ghi rõ):')
   for (const c of theoTenChuaDanh) {
     console.log(`  ${(c.client_code || '—').padEnd(16)} ${(c.tax_code || '—').padEnd(14)} ${c.name}`)
   }
 }
 
-// Mã số thuế 12 chữ số là mã cá nhân — hộ kinh doanh gần như luôn dùng loại này. Công ty nào có
-// MST 12 số mà tên không ghi "hộ kinh doanh" thì đáng ngờ, nhưng KHÔNG tự đánh dấu: có doanh
-// nghiệp thật cũng dùng MST 12 số (chi nhánh, đơn vị phụ thuộc).
-const ngoLo = dangPhucVu.filter(c =>
-  !laHKD.has(c.id) && (c.tax_code || '').replace(/\D/g, '').length === 12)
 if (ngoLo.length) {
   console.log('')
-  console.log(`⚠ ${ngoLo.length} công ty có MST 12 chữ số (dạng mã cá nhân) mà tên không ghi "hộ kinh doanh".`)
-  console.log('  KHÔNG tự đánh dấu — anh soát bằng mắt, đúng thì tick HKD trong hồ sơ công ty:')
+  console.log(`${CA_DANG_NGO ? '' : '⚠ '}${ngoLo.length} công ty có MST 12 chữ số (dạng mã cá nhân) mà tên không ghi "hộ kinh doanh".`)
+  console.log(CA_DANG_NGO
+    ? '  --ca-dang-ngo: SẼ đánh dấu luôn nhóm này.'
+    : '  KHÔNG tự đánh dấu — soát bằng mắt, đúng thì chạy kèm --ca-dang-ngo:')
   for (const c of ngoLo) {
     // Tên có chữ HKD ở giữa thì gần như chắc chắn là hộ kinh doanh, chỉ là viết tắt nên lọt lưới.
     const manh = /\bHKD\b/i.test(c.name || '') ? '   ← tên có chữ HKD, gần như chắc' : ''
@@ -131,30 +143,43 @@ if (FILE_XUAT) {
   const demNV = {}
   for (const o of cuaHKD) demNV[o.client_id] = (demNV[o.client_id] || 0) + 1
 
-  const dong = (c, ghiChu) => ({
+  // MỘT danh sách duy nhất, không tách trang: tách ra thì người soát dễ chỉ xem trang đầu rồi
+  // tưởng đã hết. Cột 'Nhóm' phân biệt, cột cuối để người soát tự điền.
+  const dong = (c, nhom, ghiChu) => ({
+    'Nhóm': nhom,
     'Mã KH': c.client_code || '',
     'Mã số thuế': c.tax_code || '',
     'Tên công ty': c.name || '',
     'Nhân viên phụ trách': tenNV.get(c.assigned_to) || '',
     'Số nghĩa vụ đang gắn sai': demNV[c.id] || 0,
-    'Là hộ kinh doanh?': ghiChu,
+    'Gợi ý của app': ghiChu,
+    'Sẽ đánh dấu là HKD': laHKD.has(c.id) ? 'CÓ' : 'không',
   })
 
-  const wb = XLSX.utils.book_new()
-  const s1 = XLSX.utils.json_to_sheet([...daDanhDau, ...theoTenChuaDanh].map(c => dong(c, 'ĐÚNG')))
-  s1['!cols'] = [{ wch: 18 }, { wch: 15 }, { wch: 52 }, { wch: 22 }, { wch: 24 }, { wch: 20 }]
-  XLSX.utils.book_append_sheet(wb, s1, 'Ho kinh doanh')
+  const hang = [
+    ...[...daDanhDau, ...theoTenChuaDanh].map(c =>
+      dong(c, '1. Tên ghi rõ hộ kinh doanh', 'nhận ra qua tên')),
+    ...ngoLo.map(c => dong(c,
+      CA_DANG_NGO ? '2. MST cá nhân — anh đã xác nhận là HKD' : '2. Đáng ngờ — cần soát',
+      /\bHKD\b/i.test(c.name || '')
+        ? 'tên có chữ HKD — gần như chắc'
+        : 'MST 12 chữ số (dạng mã cá nhân)')),
+  ]
 
-  const s2 = XLSX.utils.json_to_sheet(ngoLo.map(c =>
-    dong(c, /\bHKD\b/i.test(c.name || '') ? 'tên có chữ HKD — gần như chắc' : '')))
-  s2['!cols'] = [{ wch: 18 }, { wch: 15 }, { wch: 52 }, { wch: 22 }, { wch: 24 }, { wch: 32 }]
-  XLSX.utils.book_append_sheet(wb, s2, 'Dang ngo - can soat')
+  const wb = XLSX.utils.book_new()
+  const st = XLSX.utils.json_to_sheet(hang)
+  st['!cols'] = [{ wch: 28 }, { wch: 18 }, { wch: 15 }, { wch: 52 }, { wch: 22 },
+    { wch: 24 }, { wch: 32 }, { wch: 30 }]
+  st['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: hang.length, c: 7 } }) }
+  st['!freeze'] = { xSplit: 0, ySplit: 1 }
+  XLSX.utils.book_append_sheet(wb, st, 'Soat ho kinh doanh')
 
   XLSX.writeFile(wb, FILE_XUAT)
   console.log('')
   console.log(`Đã xuất: ${FILE_XUAT}`)
-  console.log(`  Trang 1 "Ho kinh doanh"        — ${daDanhDau.length + theoTenChuaDanh.length} công ty`)
-  console.log(`  Trang 2 "Dang ngo - can soat"  — ${ngoLo.length} công ty, cột cuối để anh điền`)
+  console.log(`  ${hang.length} dòng trong MỘT trang:`)
+  console.log(`    nhóm 1 — tên ghi rõ hộ kinh doanh : ${daDanhDau.length + theoTenChuaDanh.length}`)
+  console.log(`    nhóm 2 — đáng ngờ, cần soát      : ${ngoLo.length}`)
 }
 
 if (!APPLY) {
@@ -173,13 +198,13 @@ if (!coCotHKD) {
 console.log('')
 console.log('Đang ghi…')
 
-if (theoTenChuaDanh.length) {
-  for (let i = 0; i < theoTenChuaDanh.length; i += 100) {
-    const lo = theoTenChuaDanh.slice(i, i + 100).map(c => c.id)
+if (seDanhDau.length) {
+  for (let i = 0; i < seDanhDau.length; i += 100) {
+    const lo = seDanhDau.slice(i, i + 100).map(c => c.id)
     const { error } = await s.from('clients').update({ is_hkd: true }).in('id', lo)
     if (error) { console.error('  Lỗi đánh dấu:', error.message); process.exit(1) }
   }
-  console.log(`  đã đánh dấu is_hkd cho ${theoTenChuaDanh.length} công ty`)
+  console.log(`  đã đánh dấu is_hkd cho ${seDanhDau.length} công ty`)
 }
 
 if (xoaDuoc.length) {
@@ -194,5 +219,5 @@ if (xoaDuoc.length) {
 }
 
 console.log('')
-console.log(`Xong: ${theoTenChuaDanh.length} công ty được đánh dấu, ${xoaDuoc.length} nghĩa vụ sai đã xoá,`)
+console.log(`Xong: ${seDanhDau.length} công ty được đánh dấu, ${xoaDuoc.length} nghĩa vụ sai đã xoá,`)
 console.log(`      ${giuLai.length} dòng giữ lại để soát tay.`)
