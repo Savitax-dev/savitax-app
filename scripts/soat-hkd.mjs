@@ -17,6 +17,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import XLSX from 'xlsx'
+import { writeFileSync } from 'node:fs'
 
 const APPLY = process.argv.includes('--apply')
 // Gộp luôn nhóm 'đáng ngờ' (MST 12 chữ số) — chỉ dùng khi đã soát bằng mắt.
@@ -208,13 +209,30 @@ if (seDanhDau.length) {
 }
 
 if (xoaDuoc.length) {
+  // CHÉP RA FILE TRƯỚC KHI XOÁ. Xoá 400+ dòng dữ liệu thật mà không có đường lùi thì sai một cái
+  // là mất hẳn. Lấy nguyên bản đầy đủ từ máy chủ (không dùng bản đã lọc cột ở trên) để dán ngược
+  // vào được nếu cần.
+  const id = xoaDuoc.map(o => o.id)
+  const nguyenBan = []
+  for (let i = 0; i < id.length; i += 200) {
+    const { data, error } = await s.from('tax_obligations').select('*').in('id', id.slice(i, i + 200))
+    if (error) { console.error('  Lỗi đọc bản gốc:', error.message); process.exit(1) }
+    nguyenBan.push(...data)
+  }
+  if (nguyenBan.length !== id.length) {
+    console.error(`  DỪNG: đọc được ${nguyenBan.length}/${id.length} dòng, không đủ để sao lưu.`)
+    process.exit(1)
+  }
+  const tenSaoLuu = `sao-luu-nghia-vu-hkd-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.json`
+  writeFileSync(tenSaoLuu, JSON.stringify(nguyenBan, null, 2), 'utf8')
+  console.log(`  đã sao lưu ${nguyenBan.length} dòng vào ${tenSaoLuu}`)
+
   let xong = 0
-  for (let i = 0; i < xoaDuoc.length; i += 200) {
-    const lo = xoaDuoc.slice(i, i + 200).map(o => o.id)
-    const { error } = await s.from('tax_obligations').delete().in('id', lo)
+  for (let i = 0; i < id.length; i += 200) {
+    const { error } = await s.from('tax_obligations').delete().in('id', id.slice(i, i + 200))
     if (error) { console.error('  Lỗi xoá:', error.message); process.exit(1) }
-    xong += lo.length
-    console.log(`  đã xoá ${xong}/${xoaDuoc.length} nghĩa vụ`)
+    xong += Math.min(200, id.length - i)
+    console.log(`  đã xoá ${xong}/${id.length} nghĩa vụ`)
   }
 }
 
