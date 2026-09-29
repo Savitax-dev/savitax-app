@@ -14,6 +14,7 @@ import AppShell from '@/components/AppShell'
 import NhacHanNop from '@/components/NhacHanNop'
 import TabToKhai from '@/components/TabToKhai'
 import { kiemTraTienIch, goiCong, donPhienCu } from '@/lib/portalBridge'
+import { kiemTraKetNoi } from '@/lib/tokhaiKetNoiClient'
 
 export default function TrangKetNoi() {
   const router = useRouter()
@@ -73,9 +74,10 @@ export default function TrangKetNoi() {
           </div>
         ) : (
           <div className="mb-4 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
-            <b>Chưa có tiện ích Chrome</b>{tienIch?.loi ? ` (${tienIch.loi})` : ''}. Khi chưa cài,
-            các nút dưới đây chỉ chạy nếu anh/chị mở app bằng <b>localhost trên máy tại Việt Nam</b> —
-            cổng Dịch vụ công chặn máy chủ nước ngoài nên trên app.savitax.vn sẽ báo lỗi mạng.
+            <b>Chưa có tiện ích Chrome</b>{tienIch?.loi ? ` (${tienIch.loi})` : ''}. Hai nút
+            <b> Kiểm tra kết nối</b> và <b>Đồng bộ tờ khai</b> cần tiện ích
+            <b> Savitax — Cầu nối cổng thuế</b> mới chạy được. Cổng Dịch vụ công chặn máy chủ nước
+            ngoài, nên mọi lượt gọi cổng đều phải đi qua tiện ích trên máy nhân viên.
           </div>
         )}
 
@@ -146,50 +148,44 @@ function DongCongTy({ cty, dangMo, onMo, onXong, coTienIch }) {
     setDangLuu(false)
   }
 
+  // Kiểm tra kết nối ĐI QUA TIỆN ÍCH. Bản cũ để máy chủ tự gọi cổng nên chỉ chạy được ở máy tại
+  // Việt Nam — trên app thật (Vercel, IP Singapore) cổng nuốt gói tin, nhân viên bấm là chờ 15
+  // giây rồi nhận lỗi. Nay đi cùng đường với Đồng bộ và Tải file.
   async function batDauKiem() {
-    setThongBao({ loai: 'cho', chu: 'Đang mở phiên với cổng thuế…' })
+    if (!coTienIch) {
+      setThongBao({ loai: 'loi', chu: 'Cần tiện ích Chrome "Savitax — Cầu nối cổng thuế" mới kiểm tra được.' })
+      return
+    }
+    setThongBao({ loai: 'cho', chu: 'Đang mở phiên qua tiện ích Chrome…' })
     setCaptcha({ maPhien: null, anh: null, ma: '' })
-    try {
-      const r = await fetch('/api/admin/tokhai/connect', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId: cty.id }),
-      })
-      const j = await r.json()
-      if (j.error) { setThongBao({ loai: 'loi', chu: j.error }); return }
-      setCaptcha({ maPhien: j.maPhien, anh: j.anhCaptcha, ma: '' })
-      setThongBao({ loai: 'cho', chu: 'Nhìn ảnh, gõ mã rồi bấm Xác nhận. Phiên sống 3 phút.' })
-    } catch (e) { setThongBao({ loai: 'loi', chu: e.message }) }
-  }
 
-  async function guiCaptcha() {
-    if (!captcha.ma.trim()) return
-    setThongBao({ loai: 'cho', chu: 'Đang đăng nhập cổng…' })
-    try {
-      const r = await fetch('/api/admin/tokhai/connect', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ maPhien: captcha.maPhien, captcha: captcha.ma }),
-      })
-      const j = await r.json()
-      if (j.error) { setThongBao({ loai: 'loi', chu: j.error }); setCaptcha({ maPhien: null, anh: null, ma: '' }); return }
-
-      if (j.ket_qua === 'sai_captcha') {
-        // Gõ sai mã KHÔNG tính là sai mật khẩu — cổng kiểm captcha trước. Cho gõ lại ngay.
-        setCaptcha({ maPhien: j.maPhien, anh: j.anhCaptcha, ma: '' })
-        setThongBao({ loai: 'loi', chu: 'Mã captcha chưa đúng — ảnh mới đã hiện, gõ lại giúp em. Dễ nhầm số 0 với chữ o.' })
-        return
-      }
-      setCaptcha({ maPhien: null, anh: null, ma: '' })
-      if (j.ket_qua === 'ok') { setThongBao({ loai: 'ok', chu: '✓ ' + j.moTa }); onXong() }
-      else setThongBao({ loai: 'loi', chu: 'Sai mật khẩu: ' + (j.moTa || '') + ' — đã dừng, KHÔNG thử lại để tránh khóa tài khoản của khách.' })
-    } catch (e) { setThongBao({ loai: 'loi', chu: e.message }) }
-  }
-
-  // ── Đồng bộ: bước 1 mở phiên, bước 2 đăng nhập, bước 3 tra cứu + ghi dữ liệu ──
-  async function goiDongBo(payload) {
-    const r = await fetch('/api/admin/tokhai/sync', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    const kq = await kiemTraKetNoi({
+      clientId: cty.id,
+      onTienDo: chu => setThongBao({ loai: 'cho', chu }),
+      // Trả về Promise; ô nhập mã bên dưới gọi giaiQuyet khi người dùng bấm Xác nhận.
+      onCaptcha: ({ anhCaptcha }) => new Promise(giaiQuyet => {
+        setCaptcha({ maPhien: 'ext', anh: anhCaptcha, ma: '', giaiQuyet })
+        setThongBao({ loai: 'cho', chu: 'Nhìn ảnh, gõ mã rồi bấm Xác nhận.' })
+      }),
     })
-    return r.json()
+
+    setCaptcha({ maPhien: null, anh: null, ma: '' })
+    if (kq.ket_qua === 'ok') { setThongBao({ loai: 'ok', chu: '✓ ' + kq.moTa }); onXong() }
+    else if (kq.ket_qua === 'sai_mat_khau') {
+      setThongBao({ loai: 'loi', chu: 'Sai mật khẩu: ' + (kq.moTa || '') + ' — đã dừng, KHÔNG thử lại để tránh khóa tài khoản của khách.' })
+      onXong()
+    } else if (kq.ket_qua === 'bo_qua') setThongBao(null)
+    else setThongBao({ loai: 'loi', chu: kq.moTa || 'Không kiểm tra được' })
+  }
+
+  // Người bấm Xác nhận ở ô mã: nếu đang chờ mã cho lượt KIỂM TRA thì trả mã vào Promise kia.
+  function guiCaptcha() {
+    if (!captcha.ma.trim() || !captcha.giaiQuyet) return
+    const ma = captcha.ma.trim()
+    const giaiQuyet = captcha.giaiQuyet
+    setCaptcha(c => ({ ...c, ma: '', giaiQuyet: null }))
+    setThongBao({ loai: 'cho', chu: 'Đang đăng nhập cổng…' })
+    giaiQuyet(ma)
   }
 
   // ── Đường QUA TIỆN ÍCH: máy chủ dựng yêu cầu, tiện ích gọi hộ bằng mạng máy nhân viên ──
@@ -250,64 +246,20 @@ function DongCongTy({ cty, dangMo, onMo, onXong, coTienIch }) {
       return
     }
 
-    setThongBao({ loai: 'cho', chu: 'Đang mở phiên với cổng thuế…' })
-    const j = await goiDongBo({ clientId: cty.id, tuNgay, denNgay })
-    if (j.error) { setThongBao({ loai: 'loi', chu: j.error }); return }
-    setBuocDongBo('dang_nhap')
-    setCaptcha({ maPhien: j.maPhien, anh: j.anhCaptcha, ma: '' })
-    setThongBao({ loai: 'cho', chu: 'Mã thứ 1/2 — đăng nhập. Gõ mã trong ảnh rồi Enter.' })
+    setThongBao({ loai: 'loi', chu: 'Cần tiện ích Chrome "Savitax — Cầu nối cổng thuế" mới đồng bộ được.' })
   }
 
+  // Đồng bộ CHỈ còn đường qua tiện ích — đường máy chủ tự gọi cổng đã bỏ vì không chạy được trên
+  // app thật (Vercel bị cổng chặn theo vùng).
   async function guiMaDongBo() {
     if (!captcha.ma.trim()) return
-
-    // Đường qua tiện ích: gửi mã lên máy chủ rồi chạy tiếp vòng lặp chuyển thư.
-    if (String(buocDongBo || '').startsWith('ext:')) {
-      setThongBao({ loai: 'cho', chu: 'Đang gửi mã…' })
-      const tiep = await fetch('/api/admin/tokhai/sync-ext', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ maPhien: captcha.maPhien, captcha: captcha.ma }),
-      }).then(r => r.json())
-      if (tiep.error) { setThongBao({ loai: 'loi', chu: tiep.error }); setBuocDongBo(null); return }
-      await chayQuaTienIch({ ...tiep, maPhien: captcha.maPhien })
-      return
-    }
-
-    const dangODangNhap = buocDongBo === 'dang_nhap'
-    setThongBao({ loai: 'cho', chu: dangODangNhap ? 'Đang đăng nhập cổng…' : 'Đang tra cứu hồ sơ…' })
-
-    const j = await goiDongBo(dangODangNhap
-      ? { maPhien: captcha.maPhien, captcha: captcha.ma }
-      : { maPhien: captcha.maPhien, captchaTraCuu: captcha.ma })
-
-    if (j.error) {
-      setThongBao({ loai: 'loi', chu: j.error })
-      setBuocDongBo(null); setCaptcha({ maPhien: null, anh: null, ma: '' })
-      return
-    }
-    if (j.ket_qua === 'sai_captcha') {
-      setCaptcha({ maPhien: j.maPhien, anh: j.anhCaptcha, ma: '' })
-      setThongBao({ loai: 'loi', chu: 'Mã chưa đúng — ảnh mới đã hiện. Dễ nhầm số 0 với chữ o.' })
-      return
-    }
-    if (j.ket_qua === 'sai_mat_khau') {
-      setBuocDongBo(null); setCaptcha({ maPhien: null, anh: null, ma: '' })
-      setThongBao({ loai: 'loi', chu: 'Sai mật khẩu: ' + (j.moTa || '') + ' — đã dừng, KHÔNG thử lại.' })
-      onXong()
-      return
-    }
-    if (j.buoc === 'tra_cuu') {
-      setBuocDongBo('tra_cuu')
-      setCaptcha({ maPhien: j.maPhien, anh: j.anhCaptcha, ma: '' })
-      setThongBao({ loai: 'cho', chu: `Đăng nhập xong. Mã thứ 2/2 — sẽ tra khoảng ${j.khoangNgay} (${j.soCuaSo} lượt) bằng đúng mã này.` })
-      return
-    }
-    if (j.ket_qua === 'ok') {
-      setBuocDongBo(null); setCaptcha({ maPhien: null, anh: null, ma: '' })
-      setKetQua(j)
-      setThongBao({ loai: 'ok', chu: `✓ Xong ${j.khoangNgay}: ${j.themMoi} hồ sơ mới, ${j.capNhat} cập nhật, ${j.soThongBao || 0} thông báo, ${j.khopNghiaVu} khớp lịch hạn nộp.` })
-      onXong()
-    }
+    setThongBao({ loai: 'cho', chu: 'Đang gửi mã…' })
+    const tiep = await fetch('/api/admin/tokhai/sync-ext', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ maPhien: captcha.maPhien, captcha: captcha.ma }),
+    }).then(r => r.json())
+    if (tiep.error) { setThongBao({ loai: 'loi', chu: tiep.error }); setBuocDongBo(null); return }
+    await chayQuaTienIch({ ...tiep, maPhien: captcha.maPhien })
   }
 
   const mauTrangThai = cty.trangThaiTaiKhoan === 'active' ? 'text-green-700 bg-green-50 border-green-200'
@@ -400,6 +352,14 @@ function DongCongTy({ cty, dangMo, onMo, onXong, coTienIch }) {
                 className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs">
                 Xác nhận
               </button>
+              {/* Bỏ giữa chừng phải báo máy chủ đóng phiên, nếu không nó treo tới lúc hết giờ. */}
+              {captcha.giaiQuyet && (
+                <button
+                  onClick={() => { const g = captcha.giaiQuyet; setCaptcha({ maPhien: null, anh: null, ma: '' }); g(null) }}
+                  className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs text-gray-600">
+                  Bỏ
+                </button>
+              )}
             </div>
           )}
 
