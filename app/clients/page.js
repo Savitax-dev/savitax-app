@@ -569,7 +569,7 @@ export default function ClientsPage() {
   const [expanded, setExpanded] = useState(null)
   const [feeHistory, setFeeHistory] = useState({})
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '', uses_hcns: false, hcns_fee: '' })
+  const [form, setForm] = useState({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '', uses_hcns: false, hcns_fee: '', is_hkd: false })
   const [editClientId, setEditClientId] = useState(null)
   const [editClientForm, setEditClientForm] = useState({})
   const [formRoom, setFormRoom] = useState('')
@@ -784,7 +784,7 @@ export default function ClientsPage() {
       setSaving(false)
       return
     }
-    setForm({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '', uses_hcns: false, hcns_fee: '' })
+    setForm({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '', uses_hcns: false, hcns_fee: '', is_hkd: false })
     setLookupError('')
     setFormRoom('')
     setShowForm(false)
@@ -886,6 +886,7 @@ export default function ClientsPage() {
         client_code:    editClientForm.client_code,
         representative: editClientForm.representative,
         contract_start: editClientForm.contract_start || null,
+        is_hkd:         editClientForm.is_hkd === true,
       }),
     })
     setEditClientId(null)
@@ -1097,6 +1098,24 @@ export default function ClientsPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+              {/* Hộ kinh doanh — chỉ ảnh hưởng Phân hệ Tờ khai, KHÔNG đụng checklist hay công nợ.
+                  Hộ kinh doanh nộp 01/CNKD (TT40/2021), không nộp 01/GTGT, 05/KK-TNCN, 03/TNDN,
+                  BCTC — nên lịch hạn nộp bỏ qua nhóm này. Tick sai thì công ty mất lịch hạn nộp,
+                  bỏ sót thì lãnh nguyên bộ nghĩa vụ không có thật. */}
+              <div className="border border-amber-200 bg-amber-50 rounded-lg p-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={form.is_hkd}
+                    onChange={e => setForm(f => ({ ...f, is_hkd: e.target.checked }))}
+                    className="w-4 h-4 accent-amber-600" />
+                  <span className="text-sm font-semibold text-amber-900">Là hộ kinh doanh</span>
+                </label>
+                <p className="text-[11px] text-amber-800 mt-1.5 leading-relaxed">
+                  Hộ kinh doanh nộp <b>01/CNKD</b> (TT40/2021), không nộp 01/GTGT, 05/KK-TNCN,
+                  03/TNDN, BCTC. Tick ô này thì <b>Tờ khai &amp; Hạn nộp</b> bỏ qua công ty,
+                  không sinh lịch hạn nộp của doanh nghiệp. Checklist công việc và công nợ
+                  <b> không đổi gì</b>.
+                </p>
               </div>
               {/* Dịch vụ HCNS — tick thì mới cho nhập phí. Bật ô này sẽ tự sinh công ty tương ứng
                   bên trang Phòng HCNS và thêm mục công nợ "Dịch vụ HCNS" cho công ty này. */}
@@ -1423,6 +1442,20 @@ export default function ClientsPage() {
                             <p className="text-xs text-gray-400 mt-0.5">Dùng cho hợp đồng + mốc bắt đầu tính tỉ lệ.</p>
                           </div>
                         )}
+                        {/* Hộ kinh doanh: chỉ ảnh hưởng Phân hệ Tờ khai, không đụng checklist
+                            hay công nợ. Xem chú thích ở form thêm công ty phía trên. */}
+                        <label className="flex items-start gap-2 cursor-pointer border border-amber-200 bg-amber-50 rounded-lg p-2.5">
+                          <input type="checkbox" checked={editClientForm.is_hkd === true}
+                            onChange={e => setEditClientForm(f => ({ ...f, is_hkd: e.target.checked }))}
+                            className="w-4 h-4 accent-amber-600 mt-0.5" />
+                          <span>
+                            <span className="text-sm font-semibold text-amber-900">Là hộ kinh doanh</span>
+                            <span className="block text-[11px] text-amber-800 leading-relaxed">
+                              Nộp 01/CNKD (TT40/2021) — <b>Tờ khai &amp; Hạn nộp</b> sẽ bỏ qua công ty
+                              này. Checklist công việc và công nợ không đổi.
+                            </span>
+                          </span>
+                        </label>
                         <div className="flex gap-2 pt-1">
                           <button onClick={saveEditClient} disabled={saving}
                             className="flex-1 bg-blue-600 text-white py-2 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
@@ -1442,11 +1475,18 @@ export default function ClientsPage() {
                               {client.client_code}
                             </span>
                           )}
+                          {/* Nhìn thẻ công ty là biết ngay công ty nào KHÔNG có lịch hạn nộp. */}
+                          {client.is_hkd && (
+                            <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2 py-1 rounded-lg font-semibold"
+                              title="Hộ kinh doanh — nộp 01/CNKD, Tờ khai & Hạn nộp bỏ qua công ty này">
+                              Hộ kinh doanh
+                            </span>
+                          )}
                           <span className="text-xs text-gray-500">{client.name}</span>
                         </div>
                         {canEditThis && (
                           <button
-                            onClick={() => { setEditClientId(client.id); setEditClientForm({ name: client.name, tax_code: client.tax_code, address: client.address || '', tax_status: client.tax_status || '', client_code: client.client_code || '', representative: client.representative || '', contract_start: client.contract_start ? String(client.contract_start).slice(0,10) : '' }) }}
+                            onClick={() => { setEditClientId(client.id); setEditClientForm({ name: client.name, tax_code: client.tax_code, address: client.address || '', tax_status: client.tax_status || '', client_code: client.client_code || '', representative: client.representative || '', contract_start: client.contract_start ? String(client.contract_start).slice(0,10) : '', is_hkd: client.is_hkd === true }) }}
                             className="text-xs text-blue-600 hover:underline font-medium bg-blue-50 px-3 py-1.5 rounded-lg flex-shrink-0">
                             ✏️ Sửa thông tin
                           </button>
