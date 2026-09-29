@@ -47,9 +47,18 @@ if (!dangDung.length) {
 const ngayLe = new Set((await docHet('tax_holidays', 'day')).map(h => h.day))
 console.log(`Ngày lễ đang có: ${ngayLe.size} ngày`)
 
-const clients = await docHet('clients', 'id, name, client_code, report_type, is_active, status, contract_start')
-const dangPhucVu = clients.filter(c => c.is_active !== false && c.status !== 'inactive')
-console.log(`Công ty đang phục vụ: ${dangPhucVu.length}`)
+const clients = await docHet('clients', 'id, name, client_code, report_type, is_active, status, contract_start, is_hkd')
+const conPhucVu = clients.filter(c => c.is_active !== false && c.status !== 'inactive')
+
+// HỘ KINH DOANH KHÔNG nộp danh mục tờ khai của doanh nghiệp (01/GTGT, 05/KK-TNCN, 03/TNDN,
+// 05/QTT-TNCN, BCTC) — họ nộp 01/CNKD theo TT40/2021. Sinh cho họ là đẻ ra việc không có thật, tới
+// hạn là màn hình báo "Quá hạn" đỏ cho cả nhóm. Bỏ qua tới khi có danh mục tờ khai riêng.
+// Dọn nhóm đã lỡ sinh: scripts/soat-hkd.mjs
+const hkd = conPhucVu.filter(c => c.is_hkd)
+const dangPhucVu = conPhucVu.filter(c => !c.is_hkd)
+console.log(`Công ty đang phục vụ: ${conPhucVu.length}`)
+console.log(`  bỏ qua hộ kinh doanh: ${hkd.length} (chưa có danh mục tờ khai riêng)`)
+console.log(`  sẽ sinh lịch cho     : ${dangPhucVu.length}`)
 
 // Tờ khai định kỳ (GTGT, TNCN khấu trừ) đi theo kỳ khai của công ty; quyết toán năm đi theo năm.
 const dinhKy = dangDung.filter(t => ['month', 'quarter'].includes(t.period_kind))
