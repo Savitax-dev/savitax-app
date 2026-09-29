@@ -16,8 +16,12 @@
 // Chạy sql/22_tokhai_hkd.sql trước để có cột clients.is_hkd.
 
 import { createClient } from '@supabase/supabase-js'
+import XLSX from 'xlsx'
 
 const APPLY = process.argv.includes('--apply')
+// Xuất danh sách ra Excel để người soát tick tay:  --xuat "D:\\duong-dan.xlsx"
+const iXuat = process.argv.indexOf('--xuat')
+const FILE_XUAT = iXuat > 0 && process.argv[iXuat + 1] ? process.argv[iXuat + 1] : null
 const s = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 
 // PostgREST cắt ở 1000 dòng mà không báo — mọi truy vấn không giới hạn đều phải phân trang.
@@ -39,11 +43,11 @@ const theoTen = c => /H[ỘO]\s*KINH\s*DOANH|^HKD[\s_.-]|C[ÁA] NH[ÂA]N KINH DO
 let coCotHKD = true
 let clients
 try {
-  clients = await docHet('clients', 'id, name, tax_code, client_code, is_hkd, is_active, status')
+  clients = await docHet('clients', 'id, name, tax_code, client_code, assigned_to, is_hkd, is_active, status')
 } catch (e) {
   if (!/is_hkd/.test(e.message)) throw e
   coCotHKD = false
-  clients = await docHet('clients', 'id, name, tax_code, client_code, is_active, status')
+  clients = await docHet('clients', 'id, name, tax_code, client_code, assigned_to, is_active, status')
   console.log('⚠ Chưa có cột clients.is_hkd (chưa chạy sql/22_tokhai_hkd.sql).')
   console.log('  Lần này chỉ nhận hộ kinh doanh QUA TÊN, và không đánh dấu được.')
   console.log('')
@@ -119,6 +123,39 @@ if (giuLai.length) {
 console.log('')
 console.log('Hộ kinh doanh nộp 01/CNKD (TT40/2021) — danh mục tờ khai riêng chưa có, nên sau khi dọn')
 console.log('nhóm này sẽ KHÔNG có lịch hạn nộp nào. Thà trống còn hơn báo động giả.')
+
+// ── Xuất ra Excel để người soát tick tay ────────────────────────────────────
+if (FILE_XUAT) {
+  const nv = await docHet('staff', 'id, full_name')
+  const tenNV = new Map(nv.map(x => [x.id, x.full_name]))
+  const demNV = {}
+  for (const o of cuaHKD) demNV[o.client_id] = (demNV[o.client_id] || 0) + 1
+
+  const dong = (c, ghiChu) => ({
+    'Mã KH': c.client_code || '',
+    'Mã số thuế': c.tax_code || '',
+    'Tên công ty': c.name || '',
+    'Nhân viên phụ trách': tenNV.get(c.assigned_to) || '',
+    'Số nghĩa vụ đang gắn sai': demNV[c.id] || 0,
+    'Là hộ kinh doanh?': ghiChu,
+  })
+
+  const wb = XLSX.utils.book_new()
+  const s1 = XLSX.utils.json_to_sheet([...daDanhDau, ...theoTenChuaDanh].map(c => dong(c, 'ĐÚNG')))
+  s1['!cols'] = [{ wch: 18 }, { wch: 15 }, { wch: 52 }, { wch: 22 }, { wch: 24 }, { wch: 20 }]
+  XLSX.utils.book_append_sheet(wb, s1, 'Ho kinh doanh')
+
+  const s2 = XLSX.utils.json_to_sheet(ngoLo.map(c =>
+    dong(c, /\bHKD\b/i.test(c.name || '') ? 'tên có chữ HKD — gần như chắc' : '')))
+  s2['!cols'] = [{ wch: 18 }, { wch: 15 }, { wch: 52 }, { wch: 22 }, { wch: 24 }, { wch: 32 }]
+  XLSX.utils.book_append_sheet(wb, s2, 'Dang ngo - can soat')
+
+  XLSX.writeFile(wb, FILE_XUAT)
+  console.log('')
+  console.log(`Đã xuất: ${FILE_XUAT}`)
+  console.log(`  Trang 1 "Ho kinh doanh"        — ${daDanhDau.length + theoTenChuaDanh.length} công ty`)
+  console.log(`  Trang 2 "Dang ngo - can soat"  — ${ngoLo.length} công ty, cột cuối để anh điền`)
+}
 
 if (!APPLY) {
   console.log('')
