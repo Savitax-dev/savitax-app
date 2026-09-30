@@ -69,11 +69,15 @@ là thứ cần soi.
 
 Làm một lần cho mỗi công ty.
 
+![Tab Kết nối cổng: mỗi công ty một dòng, bên phải là trạng thái kết nối](img/02-ket-noi-cong.png)
+
 1. Tìm công ty → bấm vào dòng công ty để mở ra.
 2. **Tên đăng nhập cổng Dịch vụ công**: dạng `0312180502-QL` (mã số thuế kèm đuôi `-QL`).
 3. **Mật khẩu**: mật khẩu cổng thuế của công ty. Sửa lại sau này thì **để trống = giữ nguyên**.
 4. Bấm **Lưu tài khoản**.
 5. Bấm **Kiểm tra kết nối** → app hiện ảnh captcha phóng to → gõ mã → Enter.
+
+![Bấm vào dòng công ty để mở ô khai tài khoản](img/03-khai-tai-khoan.png)
 
 Trạng thái sau khi kiểm:
 
@@ -88,6 +92,8 @@ Mật khẩu được mã hoá trước khi lưu vào cơ sở dữ liệu. Khô
 **Một công ty:** ở tab Kết nối cổng, chọn khoảng **Từ … đến …** rồi bấm **Đồng bộ tờ khai**.
 
 **Nhiều công ty:** dùng tab **Đồng bộ theo lô** — đây là cách nên dùng.
+
+![Tab Đồng bộ theo lô: chọn phòng, chọn công ty, app báo trước số mã captcha phải gõ](img/04-dong-bo-theo-lo.png)
 
 1. Chọn **Phòng** và **Nhân viên** (để trống = cả phòng).
 2. Tick các công ty, hoặc bấm **Chọn hết … công ty**.
@@ -113,6 +119,8 @@ lượt. Khoảng quá 12 lượt (trên ~1 năm) thì màn hình cảnh báo �
 **Tab Hồ sơ đã nộp** — mỗi công ty một dòng tóm tắt, bấm để bung ra từng hồ sơ. Có lọc và phân trang.
 
 **Tab Lịch hạn nộp** — ma trận công ty × loại tờ khai, kèm 6 ô tổng:
+
+![Tab Lịch hạn nộp: 6 ô tổng ở trên, bên dưới là ma trận công ty × loại tờ khai](img/01-lich-han-nop.png)
 
 | Ô | Nghĩa |
 |---|---|
@@ -149,10 +157,14 @@ Không có tầng `2. HỒ SƠ KẾ TOÁN` thì app tạo `Năm <năm>` ngay tro
 để mình biết mà chọn lại. Màn hình luôn **hiện trước đường dẫn file sẽ rơi vào** — nhìn dòng đó
 trước khi bấm chạy.
 
+![Cột Thư mục hiện trước đường dẫn file sẽ rơi vào](img/06-tai-file-thu-muc.png)
+
 Trình duyệt nhớ thư mục, lần sau không phải chọn lại. Thỉnh thoảng nó hỏi lại quyền ghi — lúc đó ô
 thư mục hiện nút **Cấp lại quyền**, bấm một cái là xong.
 
 #### Chạy tải
+
+![Thanh điều khiển của tab Tải file](img/05-tai-file-dieu-khien.png)
 
 1. Chọn phòng / nhân viên, tick công ty.
 2. Chọn khoảng **Ngày cổng tiếp nhận hồ sơ** — có nút nhanh: 3 tháng, 6 tháng, từ đầu năm, cả năm ngoái.
