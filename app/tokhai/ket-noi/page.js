@@ -4,9 +4,11 @@
 // Trang riêng, KHÔNG đụng vào các màn hình đang chạy, để hỏng gì cũng không ảnh hưởng nghiệp vụ
 // kế toán hằng ngày.
 //
-// ⚠ Nút "Kiểm tra kết nối" chỉ chạy khi mở app ở máy tại Việt Nam (localhost): cổng Dịch vụ công
-//   chặn IP nước ngoài nên trên app.savitax.vn (Vercel đặt ở Singapore) sẽ báo lỗi mạng.
-//   Nhịp B sẽ làm tiện ích Chrome để production dùng được.
+// ⚠ Hai nút "Kiểm tra kết nối" và "Đồng bộ tờ khai" đi QUA TIỆN ÍCH CHROME trên máy nhân viên,
+//   không qua máy chủ: cổng Dịch vụ công chặn IP nước ngoài, mà Vercel đặt ở Singapore. Máy chưa
+//   cài tiện ích thì màn hình hiện dải vàng và hai nút đó không chạy — xem
+//   chrome-extension/CAI-DAT.md. (Ghi chú cũ ở đây nói "chỉ chạy trên localhost"; sai từ
+//   29/09/2026, lúc bỏ hẳn đường máy chủ tự gọi cổng.)
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
