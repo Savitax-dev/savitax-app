@@ -58,3 +58,9 @@ next-env.d.ts
 
 # Bản sao lưu nghĩa vụ trước khi xoá (scripts/soat-hkd.mjs) — chứa dữ liệu khách, không đưa lên git
 sao-luu-nghia-vu-hkd-*.json
+
+# File khoá tạm của Word khi đang mở tài liệu trong docs/
+~$*
+
+# Thư mục thử nghiệm, có thể chứa dữ liệu thật của khách — đừng commit
+tmp-*/
