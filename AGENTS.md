@@ -143,6 +143,69 @@ Khách tiềm năng + báo giá SVT.MB03 + báo cáo, dựng 2026-09-11 (commit 
 - Script: `verify-sales-schema`, `seed-sales-channels` (thứ tự kênh), `refile-sales-quote <số>`,
   `cleanup-sales-test --quote <số> | --all` (xem trước trước khi `--apply`), `probe-sales-quotes`.
 
+## Module Tờ khai (`/tokhai`)
+
+Tự lấy tờ khai + thông báo từ cổng Dịch vụ công thuế (`dichvucong.gdt.gov.vn`), đối chiếu với lịch
+hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công ty trên ổ chung. Lên production
+30/09/2026 (`b93d320`), **mở cho mọi nhân viên**. SQL `sql/15_tokhai_module.sql` + `sql/22_tokhai_hkd.sql`
+(đã chạy). 6 màn hình con gom trong `components/TabToKhai.js`. Tài liệu người dùng:
+`docs/huong-dan-phan-he-to-khai.md` (+ `.docx` + ảnh ở `docs/img/`).
+
+- ⚠ **BẤT BIẾN: MÁY CHỦ KHÔNG BAO GIỜ GỌI CỔNG THUẾ.** Vercel ở Singapore bị cổng chặn theo vùng
+  (đo thật 21/09: TCP 443 hết giờ chờ, gói tin bị nuốt im lặng). Mọi lượt gọi đi qua **tiện ích
+  Chrome** trên máy nhân viên; máy chủ chỉ dựng sẵn yêu cầu HTTP rồi đọc phản hồi nguyên văn.
+  Đã xoá 666 dòng đường máy chủ tự gọi — **đừng nối lại**. Kiểm: `grep -rn "fetch(" app/api | grep
+  gdt.gov.vn` phải ra rỗng. Luồng 11 bước của cổng ghi ở **đầu `lib/dvcPortal.js`** (nguồn tra cứu chính).
+- **Mã tiện ích cố định `affcgkipcpdjoiednghajbahjanhlnnn`** nhờ trường `key` trong
+  `chrome-extension/manifest.json`. Không có nó thì Chrome băm ĐƯỜNG DẪN thư mục → mỗi máy một mã,
+  mà `NEXT_PUBLIC_TOKHAI_EXT_ID` chỉ giữ được một giá trị (nướng lúc build) → mọi máy trừ một máy
+  mất kết nối. Khóa riêng ở `C:\Users\win\.savitax-keys\`, ngoài git, CỐ Ý. Giữ bất biến:
+  `node scripts/test-tokhai-tienich.mjs`. Cách cài: `chrome-extension/CAI-DAT.md`.
+- **Nhịp gọi cổng**: tiện ích có MỘT hàng đợi chung, sàn 2.200 ms/lượt (`chrome-extension/phien.js`).
+  Từ bản 1.1 có **phiên ảo** — tráo cookie trước mỗi lượt nên nhiều công ty sống song song, nhân
+  viên gõ captcha liên tục. **Song song là để NGƯỜI khỏi chờ, không phải để nhanh hơn**: bị cổng
+  chặn thì cả phòng đứng việc.
+- **Bẫy của cổng** (đã trả giá): token `_csrf` đổi sau đăng nhập, phải đọc lại; đăng xuất là POST
+  (GET trả 500, để lại phiên treo); tra theo cửa sổ **30 ngày**, và **chỉ tải được file của lần tra
+  GẦN NHẤT** (tra cửa sổ mới là mất quyền tải cửa sổ cũ); tải tờ khai phải `validateIdTkhai` trước;
+  cổng kiểm captcha TRƯỚC mật khẩu nên **sai captcha vô hại, sai mật khẩu phải DỪNG HẲN** (thử lại
+  là khoá tài khoản thuế của khách); gọi dồn quá nhanh → 429. Hồ sơ nộp trước 01/07/2025 nằm ở cổng
+  Thuế điện tử cũ, cổng này không có.
+- **Cây thư mục** (`lib/tokhaiThuMuc.js`): mỗi kỳ là MỘT thư mục NGANG HÀNG trong
+  `<cty>\2. HỒ SƠ KẾ TOÁN\Năm <năm>\7. BỘ BÁO CÁO\`, bên trong luôn `TỜ KHAI THUẾ` /
+  `THÔNG BÁO CHẤP NHẬN` / `BẢNG KÊ`. Bổ sung lần n = thư mục kỳ riêng đuôi `_BSLn`, **cùng cấp**
+  với kỳ chính thức. Tên file `TK_` / `TBTN_` (tiếp nhận) / `TBCN_` (chấp nhận) + sắc thuế + kỳ +
+  mã KH + `_BSLn`. Nhân viên **tự trỏ thư mục từng công ty** (File System Access API, tay lưu trong
+  IndexedDB) — không dò tự động; app cảnh báo khi hai công ty trỏ trùng nhưng **không chặn**.
+- **Cổng trả TỜ KHAI dạng .zip** chứa XML tên máy (mở nén bằng `pizzip` rồi đổi tên), **thông báo
+  dạng .xml**. ⛔ **Phần dựng PDF ĐANG TẮT** (cờ `DUNG_PDF` ở `lib/tokhaiTaiFileClient.js`): bản in
+  còn sai, và chưa từng có bản gốc cơ quan thuế phát để đối chiếu. Đừng bật lại khi chưa có bản gốc.
+- **Hộ kinh doanh**: `clients.is_hkd` (ô tick ở hồ sơ công ty) — nhóm này nộp 01/CNKD (TT40/2021),
+  KHÔNG nộp 01/GTGT/05/KK-TNCN/03/TNDN/BCTC. Lịch hạn nộp **bỏ qua** nhóm này cho tới khi có danh
+  mục riêng — CỐ Ý, thà trống còn hơn báo "Quá hạn" cho việc không tồn tại (đã dọn 421 nghĩa vụ ảo
+  của 59 hộ, `scripts/soat-hkd.mjs`).
+- **Phạm vi xem**: 8 route đều có `requireLogin` **và** lọc theo vai trò. Nhân viên chỉ thấy công ty
+  mình phụ trách chính/phụ; trưởng phòng thấy cả phòng; admin thấy hết. Route đụng mật khẩu kiểm
+  từng công ty qua `lib/credentialScope.js`, kiểm cả trong vòng lặp nên chọn hàng loạt không lọt.
+- Mọi câu truy vấn không giới hạn phải lật trang (`docHet`) — **PostgREST cắt im lặng ở 1000 dòng**.
+- Bộ kiểm: `test-tokhai-xml | -thumuc | -ghidia | -thongke | -tienich | -pdf`.
+- ⏸ **Đang chờ người dùng, đừng tự làm**: GĐ 5 Checklist + KPI (hoãn tới sau khi chạy demo), danh
+  mục tờ khai 01/CNKD, và bản PDF thật do cổng xuất.
+
+## Mật khẩu khách & khóa mã hóa
+
+- Mật khẩu khách (thuế, hóa đơn, CKS, ngân hàng, BHXH) nằm ở `client_credentials.password_enc` và
+  `tax_accounts.password_enc`, mã hóa AES-256-GCM (`lib/taxCrypto.js`), khóa ở `TAX_ENC_KEY`.
+- **Đừng in lệnh sinh khóa vào mã nguồn làm mẫu.** Chỗ đó từng ghi sẵn câu `node -e "...randomBytes
+  (32)..."` và ngày 29/09/2026 soát ra `TAX_ENC_KEY` thật CHÍNH LÀ câu lệnh đó — 66 mật khẩu khách
+  khóa bằng một chuỗi công khai trên GitHub. Guard "ít nhất 32 ký tự" không bắt được vì nó dài 70.
+- Xoay khóa: `scripts/xoay-tax-enc-key.mjs` (mặc định chỉ soát, `--apply` mới ghi). `TAX_ENC_KEY_OLD`
+  là khóa giải mã dự phòng → đặt cả hai lên Vercel **trước** khi deploy, mã hóa lại, rồi mới bỏ khóa
+  cũ; làm đúng thứ tự thì production không gãy giây nào. Đã xoay 66/66 dòng ngày 30/09.
+- Cột `client_credentials.password` chữ rõ đã xoá sạch (`scripts/xoa-mat-khau-chu-ro.mjs`).
+  **Còn một việc tay**: `alter table client_credentials drop column password;` — giữ cột rỗng thì có
+  ngày mã nào đó lại ghi chữ rõ vào đấy mà không ai biết.
+
 ## Quy trình làm việc
 
 - Sửa code tại đây → `git push` lên `main` → Vercel tự build & deploy `app.savitax.vn` (~1-2
