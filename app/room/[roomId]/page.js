@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import ClientChecklist from '@/components/ClientChecklist'
+import { hasPermission } from '@/lib/permissions'
 import * as XLSX from 'xlsx'
 import { feeCountsForMonth } from '@/lib/feeDue'
 import { isSharedRoom } from '@/lib/specialRooms'
@@ -48,6 +49,7 @@ export default function RoomPage({ params }) {
   const [forbidden, setForbidden] = useState(false)
   const [isAdmin,   setIsAdmin]   = useState(false)
   const [isTrueAdmin, setIsTrueAdmin] = useState(false)
+  const [canUncheck, setCanUncheck] = useState(false)
   const [openStaff,   setOpenStaff]   = useState({})  // staffId → bool
   const [openClient,  setOpenClient]  = useState({})  // clientId → bool
   const [clientMonth, setClientMonth] = useState({})  // clientId → month number
@@ -85,6 +87,7 @@ export default function RoomPage({ params }) {
       if (!canEnter) setForbidden(true)
       setIsAdmin(['admin', 'leader', 'manager'].includes(role))
       setIsTrueAdmin(role === 'admin')
+      setCanUncheck(await hasPermission(role, 'uncheck_task'))
       setReady(true)
     }
     check()
@@ -436,6 +439,7 @@ export default function RoomPage({ params }) {
                                 onDebtSaved={refreshDebtFees}
                                 isAdmin={isAdmin}
                                 isTrueAdmin={isTrueAdmin}
+                                canUncheck={canUncheck}
                               />
                             )}
                           </div>

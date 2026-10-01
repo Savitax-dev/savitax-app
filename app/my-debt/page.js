@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import ClientChecklist from '@/components/ClientChecklist'
+import { hasPermission } from '@/lib/permissions'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
 const pctClr = (v) => v >= 90 ? 'text-green-600' : v >= 70 ? 'text-yellow-500' : 'text-red-500'
@@ -48,6 +49,7 @@ export default function MyDebtPage() {
   const [userId, setUserId] = useState(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isTrueAdmin, setIsTrueAdmin] = useState(false)
+  const [canUncheck, setCanUncheck] = useState(false)
 
   const monthOpts = []
   let y = now.getFullYear(), m = now.getMonth() + 1
@@ -70,6 +72,7 @@ export default function MyDebtPage() {
       const { data: me } = await supabase.from('staff').select('role').eq('id', sd.session.user.id).single()
       setIsAdmin(['admin', 'leader', 'manager'].includes(me?.role))
       setIsTrueAdmin(me?.role === 'admin')
+      setCanUncheck(await hasPermission(me?.role, 'uncheck_task'))
     }
     init()
   }, [router])
@@ -324,6 +327,7 @@ export default function MyDebtPage() {
                           onDebtSaved={loadMyData}
                           isAdmin={isAdmin}
                           isTrueAdmin={isTrueAdmin}
+                          canUncheck={canUncheck}
                         />
                       )}
                     </div>

@@ -1,23 +1,34 @@
 import { createClient } from '@supabase/supabase-js'
-import { requireLogin, requireAdmin } from '@/lib/serverAuth'
+import { requireLogin } from '@/lib/serverAuth'
+import { canUncheckTask } from '@/lib/checklistScope'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 }
 
 // POST { clientId, taskDefId, year, month, isDone, userId }
+//
 // isDone = trạng thái HIỆN TẠI trước khi toggle — isDone=true nghĩa là request này đang xin BỎ
-// TICK (chuyển đã làm -> chưa làm), chỉ admin thật được phép (nhân viên chỉ được tick MỚI, chưa
-// từng được bỏ tick lại — xem ClientChecklist.js `toggleTask`). Chặn cả ở đây để không bị qua mặt
-// bằng cách gọi thẳng API nếu lỡ có lỗi UI.
+// TICK (chuyển đã làm -> chưa làm).
+//
+// TICK MỚI: mọi nhân viên đăng nhập đều được.
+// BỎ TICK: phải có quyền `uncheck_task` VÀ công ty phải trong phạm vi của người đó
+// (lib/checklistScope.js). Trước 01/10/2026 chỗ này là `requireAdmin()` cứng; anh chốt mở cho
+// trưởng phòng nhưng "không đụng lẫn nhau" nên quyền thôi chưa đủ, còn phải đúng phạm vi.
+// Chặn ở đây là lớp THẬT — giao diện chỉ làm mờ nút, gọi thẳng API vẫn phải qua cửa này.
 export async function POST(request) {
   const { clientId, taskDefId, year, month, isDone, userId, recordId } = await request.json()
   if (!clientId || !taskDefId) return Response.json({ error: 'Missing params' }, { status: 400 })
 
-  const authCheck = isDone ? await requireAdmin() : await requireLogin()
+  const authCheck = await requireLogin()
   if (!authCheck.ok) return Response.json({ error: authCheck.error }, { status: authCheck.status })
 
   const supabase = getAdmin()
+
+  if (isDone && !(await canUncheckTask(supabase, authCheck.caller, clientId))) {
+    return Response.json(
+      { error: 'Không có quyền bỏ tick việc đã hoàn thành của công ty này' }, { status: 403 })
+  }
   const now = new Date().toISOString()
 
   if (recordId) {

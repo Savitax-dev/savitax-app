@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import ClientChecklist from '@/components/ClientChecklist'
+import { hasPermission } from '@/lib/permissions'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
 const pctClr = (v) => v >= 90 ? 'text-green-600' : v >= 70 ? 'text-yellow-500' : 'text-red-500'
@@ -49,6 +50,7 @@ export default function ChecklistPage() {
   const [userId, setUserId] = useState(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isTrueAdmin, setIsTrueAdmin] = useState(false)
+  const [canUncheck, setCanUncheck] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -59,6 +61,9 @@ export default function ChecklistPage() {
       const { data: me } = await supabase.from('staff').select('role').eq('id', sd.session.user.id).single()
       setIsAdmin(['admin', 'leader', 'manager'].includes(me?.role))
       setIsTrueAdmin(me?.role === 'admin')
+      // Bỏ tick việc đã hoàn thành — server còn xét thêm phạm vi công ty (lib/checklistScope.js),
+      // ở đây chỉ để khỏi hiện nút bấm vào lại báo lỗi.
+      setCanUncheck(await hasPermission(me?.role, 'uncheck_task'))
     }
     init()
   }, [router])
@@ -225,6 +230,7 @@ export default function ChecklistPage() {
                           onDebtSaved={loadMyData}
                           isAdmin={isAdmin}
                           isTrueAdmin={isTrueAdmin}
+                          canUncheck={canUncheck}
                         />
                       )}
                     </div>

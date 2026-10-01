@@ -39,7 +39,10 @@ const CRED_CATS = [
 // context='hcns' — component đang được mở TỪ trang Phòng HCNS. Khi đó ẩn hẳn phần nghiệp vụ kế
 // toán (tab "Công việc" và 3 mục công nợ kế toán) để nhân viên HCNS không tick/ghi nhầm. Server
 // vẫn chặn độc lập ở lib/debtScope.js — đây chỉ là lớp giao diện cho đỡ nhầm.
-export default function ClientChecklist({ client, clientMonth, onMonthChange, onDebtSaved, defaultPanel = 'work', isAdmin = false, isTrueAdmin = false, hcnsClient: hcnsClientProp = null, context = 'ketoan', toolbarExtra = null }) {
+// `canUncheck` = được bỏ tick việc đã hoàn thành (quyền `uncheck_task`, xem lib/checklistScope.js).
+// Tách khỏi `isTrueAdmin` vì từ 01/10/2026 trưởng phòng cũng có thể được cấp quyền này; còn
+// `isTrueAdmin` vẫn giữ riêng cho việc nặng hơn là sửa "trễ hạn" thành "đúng hạn".
+export default function ClientChecklist({ client, clientMonth, onMonthChange, onDebtSaved, defaultPanel = 'work', isAdmin = false, isTrueAdmin = false, canUncheck = false, hcnsClient: hcnsClientProp = null, context = 'ketoan', toolbarExtra = null }) {
   const hcnsOnly = context === 'hcns'
   // Tab "Công việc HCNS" chỉ dành cho người làm HCNS. Kế toán mở hồ sơ công ty có tick DV HCNS
   // mà thấy tab này thì rất dễ tick nhầm việc của phòng khác.
@@ -565,11 +568,11 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
 
   const toggleTask = async (task) => {
     const isDone = task.status.startsWith('done')
-    // Nhân viên/trưởng phòng không được bỏ check khi đã check rồi (tránh mất dấu hoàn thành
-    // đúng hạn gốc) — chỉ admin thật mới được bỏ tick khi nhân viên tick nhầm (có xác nhận riêng
-    // để tránh bấm nhầm), qua đúng API task-toggle (server cũng tự chặn không phải admin).
+    // Bỏ tick làm MẤT DẤU "hoàn thành đúng hạn" gốc mà KPI chấm theo, nên phải có quyền
+    // `uncheck_task` và công ty phải trong phạm vi của mình. Hỏi lại một câu để khỏi bấm nhầm.
+    // Server chặn độc lập ở lib/checklistScope.js — đây chỉ là lớp giao diện.
     if (isDone) {
-      if (!isTrueAdmin) return
+      if (!canUncheck) return
       if (!confirm('Bỏ đánh dấu hoàn thành việc này?')) return
     }
 
@@ -1460,7 +1463,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                       <div key={t.id}
                         className={'w-full flex items-start gap-2.5 px-3 py-2 text-left transition-colors hover:bg-gray-50 flex-wrap ' +
                           (isDone ? 'bg-white' : '')}>
-                        <button onClick={() => toggleTask(t)} disabled={isBusy || (isDone && !isTrueAdmin)}
+                        <button onClick={() => toggleTask(t)} disabled={isBusy || (isDone && !canUncheck)}
                           className="flex items-start gap-2.5 flex-1 min-w-[140px] text-left disabled:cursor-default">
                           {isBusy ? (
                             <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
