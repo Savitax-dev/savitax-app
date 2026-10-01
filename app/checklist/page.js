@@ -35,6 +35,8 @@ export default function ChecklistPage() {
   const [selMonth,   setSelMonth]   = useState(now.getMonth() + 1)
   const [me,         setMe]         = useState(null)
   const [myClients,  setMyClients]  = useState([])
+  // %-công nợ + tổng phí/đã thu do máy chủ tính, để khớp đúng trang Phòng và Báo cáo KPI.
+  const [kpi,        setKpi]        = useState({ debtPct: 0, totalFee: 0, totalCol: 0 })
   const [loading,    setLoading]    = useState(true)
   const [search,     setSearch]     = useState('')
   const [openClient, setOpenClient] = useState({})      // clientId → bool
@@ -89,9 +91,15 @@ export default function ChecklistPage() {
           collectedKhach: Number(c.collectedKhach) || 0,
         }))
         setMyClients(clients)
+        setKpi({
+          debtPct:  Number(json.debtPct)  || 0,
+          totalFee: Number(json.totalFee) || 0,
+          totalCol: Number(json.totalCol) || 0,
+        })
       } else {
         setMe(null)
         setMyClients([])
+        setKpi({ debtPct: 0, totalFee: 0, totalCol: 0 })
       }
     } catch (_) {}
     setLoading(false)
@@ -101,11 +109,16 @@ export default function ChecklistPage() {
   const totalTasks = myClients.reduce((a, c) => a + c.tasks.length, 0)
   const doneTasks  = myClients.reduce((a, c) => a + c.tasks.filter(t => t.status === 'done_ontime').length, 0)
   const taskPct    = totalTasks === 0 ? 100 : Math.round(doneTasks / totalTasks * 100)
-  // Doanh thu/công nợ chỉ tính các công ty mình là nhân viên chính — công ty phụ trách phụ không cộng vào đây
-  const ownedClients = myClients.filter(c => !c.isSecondary)
-  const totalFee   = ownedClients.reduce((a, c) => a + (Number(c.monthly_fee) || 0), 0)
-  const collected  = ownedClients.reduce((a, c) => a + c.collected, 0)
-  const debtPct    = totalFee === 0 ? 0 : Math.round(collected / totalFee * 100)
+  // %-công nợ LẤY THẲNG số máy chủ đã tính (/api/admin/my-room), KHÔNG tự cộng lại ở đây.
+  //
+  // Trang này trước đây cộng monthly_fee của MỌI công ty phụ trách chính, bỏ qua luật "công ty thu
+  // phí theo QUÝ chỉ tính vào tháng cuối quý và còn được khoan 2 ngày sang kỳ sau"
+  // (feeCountsForMonth / dueFeeMonthsCount) mà trang Phòng và Báo cáo KPI đều áp dụng. Hậu quả:
+  // cùng một nhân viên, cùng một tháng, người đó tự xem ra số khác hẳn quản trị xem — ca thật
+  // 01/10/2026 (Nguyễn Thị Trung Anh): T8 trang này 58% trong khi đúng là 100%, T9 63% / 49%.
+  const totalFee  = Number(kpi.totalFee) || 0
+  const collected = Number(kpi.totalCol) || 0
+  const debtPct   = Number(kpi.debtPct) || 0
 
   const filtered = myClients.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||

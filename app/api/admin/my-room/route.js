@@ -167,6 +167,11 @@ export async function GET(request) {
       // Công ty quý: chỉ tính phí vào các kỳ (tháng cuối quý) đã đến hạn VÀ đã qua hạn khoan —
       // không nhân theo số tháng thô như công ty tháng (tránh nhân sai x3/x12 theo quý/năm).
       periodFee:      feeAtPeriod * dueFeeMonthsCount(c, year, months),
+      // Kỳ này công ty có ĐẾN HẠN thu không. Phải chặn CẢ tử số lẫn mẫu số bằng cờ này: trước đây
+      // mẫu số bỏ công ty quý chưa tới hạn nhưng tử số vẫn cộng tiền họ đã trả nên %-công nợ vọt
+      // lên trên 100% (ca thật 01/10/2026: Nguyễn Thị Trung Anh T9/2026 ra 104%). Trang Phòng
+      // (app/api/admin/room) chặn cả hai từ đầu — giữ hai nơi cùng một luật.
+      feeCounted:     dueFeeMonthsCount(c, year, months) > 0,
       collected:      feeMap[c.id] || 0,
       collectedKhach: feeKhachMap[c.id] || 0,
     }
@@ -176,8 +181,9 @@ export async function GET(request) {
   const ownedClients = clientsWithTasks.filter(c => !c.isSecondary)
   const totalTasks = clientsWithTasks.reduce((a, c) => a + c.tasks.length, 0)
   const doneTasks  = clientsWithTasks.reduce((a, c) => a + c.tasks.filter(t => t.status === 'done_ontime').length, 0)
-  const totalFee   = ownedClients.reduce((a, c) => a + c.periodFee, 0)
-  const totalCol   = ownedClients.reduce((a, c) => a + c.collected, 0)
+  const dueClients = ownedClients.filter(c => c.feeCounted)
+  const totalFee   = dueClients.reduce((a, c) => a + c.periodFee, 0)
+  const totalCol   = dueClients.reduce((a, c) => a + c.collected, 0)
 
   return Response.json({
     staff:   staffRecord,
