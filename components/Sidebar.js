@@ -80,9 +80,15 @@ export default function Sidebar({ onClose }) {
   useEffect(() => {
     let cancelled = false
     const load = async () => {
-      // Permission data đã có cache riêng trong lib/permissions
-      const pd = await loadPermissionData()
-      if (!cancelled) setPermData(pd)
+      // ⚡ BA VIỆC DƯỚI ĐÂY KHÔNG PHỤ THUỘC NHAU → CHẠY SONG SONG.
+      //
+      // Trước 01/10/2026 chúng xếp hàng một: tải bảng quyền (~215ms) → lấy phiên đăng nhập
+      // (~100ms) → hỏi staff/rooms/me (~300ms). Từng cái đều nhanh, cộng lại mới chậm: đo trên
+      // production thấy khung trang hiện ở 108ms mà menu đầy đủ phải tới 1,66 GIÂY — suốt 1,5
+      // giây đó menu trông như bị thiếu mục, nhân viên tưởng mất quyền.
+      //
+      // Đừng gộp lại thành `await` nối tiếp nữa khi sửa chỗ này.
+      const supabase = createClient()
 
       // Vai trò KHÔNG được lấy từ cache: quản trị gán/bỏ kiêm nhiệm trong lúc nhân viên đang mở
       // app thì menu phải đổi theo ở lần chuyển trang kế tiếp, không bắt họ tải lại cả trang.
@@ -101,8 +107,10 @@ export default function Sidebar({ onClose }) {
         return null
       }
 
-      const freshRoles = async (fallbackRole) => {
-        const me = await fetchMe()
+      // Nhận SẴN lời hứa /api/admin/me đã khởi chạy từ đầu, không tự gọi lại — gọi lại là mất
+      // thêm một vòng chờ nữa.
+      const freshRoles = async (fallbackRole, hua) => {
+        const me = await hua
         if (me) {
           if (!cancelled) setNoAccounting(!!me.noAccounting)
           if (_sidebarCache) _sidebarCache.noAccounting = !!me.noAccounting
@@ -112,9 +120,21 @@ export default function Sidebar({ onClose }) {
         return _sidebarCache?.roles?.length ? _sidebarCache.roles : [fallbackRole].filter(Boolean)
       }
 
+      // Khởi chạy cả ba NGAY, rồi mới chờ từng cái khi thật sự cần.
+      const huaQuyen  = loadPermissionData()
+      const huaPhien  = supabase.auth.getSession()
+      // /api/admin/me đọc cookie phía máy chủ nên không phải chờ getSession() xong. Hiếm khi
+      // cookie lỡ nhịp thì lượt đầu trả 401, nhưng `fetchMe` đã tự thử lại sau 1,2 giây — lúc đó
+      // phiên chắc chắn đã sẵn sàng, nên trường hợp xấu nhất cũng chỉ bằng cách cũ.
+      const huaMe     = fetchMe()
+
+      // Bắt lỗi tại chỗ: nếu bảng quyền hỏng thì menu chỉ còn mục ai cũng thấy, chứ không ném
+      // lỗi lạc ra ngoài làm chết cả hàm nạp (user/rooms vẫn phải hiện).
+      huaQuyen.then(pd => { if (!cancelled) setPermData(pd) }).catch(() => {})
+
       // user + rooms thì dùng lại cache cho nhẹ (ít khi đổi, và đổi thì cũng không ảnh hưởng quyền)
       if (_sidebarCache) {
-        const r = await freshRoles(_sidebarCache.user?.role)
+        const r = await freshRoles(_sidebarCache.user?.role, huaMe)
         if (!cancelled) {
           setUser(_sidebarCache.user); setRooms(_sidebarCache.rooms); setRoles(r)
           _sidebarCache.roles = r
@@ -122,8 +142,7 @@ export default function Sidebar({ onClose }) {
         return
       }
 
-      const supabase = createClient()
-      const { data: sessionData } = await supabase.auth.getSession()
+      const { data: sessionData } = await huaPhien
       const session = sessionData.session
       if (!session) return
       // Lấy kèm vai trò KIÊM NHIỆM — nhân viên có thể vừa là kế toán phòng nghiệp vụ vừa là
@@ -133,7 +152,7 @@ export default function Sidebar({ onClose }) {
         // Danh sách con của "Phòng nghiệp vụ" — phòng HCNS KHÔNG nằm ở đây vì nó có phân khu
         // riêng bên dưới và không dùng giao diện /room/[roomId].
         supabase.from('rooms').select('*').not('type', 'in', '(hcns,kinhdoanh)').order('type').order('name'),
-        fetchMe(),
+        huaMe,
       ])
       let staffData = resMe.data
 
