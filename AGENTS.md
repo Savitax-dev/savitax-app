@@ -44,6 +44,14 @@ công việc hàng tháng/quý, công nợ dịch vụ, KPI nhân viên/phòng b
   checklist mẫu tự áp dụng cho mọi công ty cùng `report_type`, không cần đụng dữ liệu công ty.
 - Soft-delete cho `task_definitions` (`is_active=false`) khi seed lại — KHÔNG hard-delete vì
   `task_records` cũ tham chiếu tới, xóa cứng sẽ vi phạm foreign key.
+- **Tick thì ai cũng tick, BỎ TICK thì không**: bỏ tick xoá mất dấu "hoàn thành đúng hạn" gốc mà
+  KPI chấm theo. Cần quyền `uncheck_task` (bật/tắt ở Vai trò & phân quyền, `sql/23`, cố ý KHÔNG gán
+  sẵn cho vai trò nào) **và** đúng phạm vi công ty — `lib/checklistScope.js`: nhân viên chỉ công ty
+  mình phụ trách chính/phụ, trưởng phòng chỉ trong phòng mình, "không đụng lẫn nhau" (anh chốt
+  01/10/2026). Nút sửa "trễ hạn → đúng hạn" vẫn CHỈ admin — đó là sửa thẳng số liệu KPI.
+- ⚠ Xét phòng của một công ty thì **suy từ nhân viên phụ trách** (`lib/clientRoom.js`), đừng đọc
+  `clients.room_id` — cột đó 0/294 công ty có giá trị, tin vào nó là trưởng phòng mất quyền trên
+  chính công ty phòng mình. `lib/debtScope.js` còn đọc thẳng cột này, là chỗ nên soát lại.
 - File đính kèm công ty: Supabase Storage bucket `client-files`, key phải encode bằng
   base64url (không dùng `encodeURIComponent` thường — SDK tự decode lại trước khi validate nên
   ký tự tiếng Việt/khoảng trắng vẫn bị từ chối).
