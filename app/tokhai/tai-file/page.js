@@ -314,8 +314,12 @@ export default function TrangTaiFile() {
         <p className="text-[11px] text-gray-500 font-mono break-all leading-tight">
           → {tm.soat.duongDanMau?.join(' \\ ')}
         </p>
+        {/* Trỏ thẳng vào BỘ BÁO CÁO hay thư mục năm là cách chọn ĐÚNG, không phải lỗi — nên để
+            màu trung tính, đừng bôi vàng làm nhân viên tưởng mình chọn sai. */}
         {tm.soat.canhBao
-          ? <p className="text-[11px] text-amber-700 leading-tight">{tm.soat.canhBao}</p>
+          ? <p className={'text-[11px] leading-tight '
+              + (tm.soat.kieu === 'bo_bao_cao' || tm.soat.kieu === 'nam'
+                ? 'text-slate-500' : 'text-amber-700')}>{tm.soat.canhBao}</p>
           : (
             <p className="text-[11px] text-gray-400">
               {tm.soat.cacNam?.length

@@ -251,6 +251,39 @@ const hoSoTay = cayThat().nv.con.get('3.THỊNH PHÁT').con.get('2. HỒ SƠ K�
 kiem('trỏ vào "2. HỒ SƠ KẾ TOÁN" vẫn ra đúng BỘ BÁO CÁO',
   (await moBoBaoCao(hoSoTay, '2026')).name, '7. BỘ BÁO CÁO')
 
+// ── Trỏ SÂU SẴN: ca anh gặp thật 01/10/2026 ─────────────────────────────────
+//
+// Anh trỏ thẳng vào '…/Năm 2026/7. BỘ BÁO CÁO' và app đẻ thêm 'Năm 2026/7. BỘ BÁO CÁO' bên trong.
+// File vẫn ghi được nên không ai thấy lỗi ngay — chỉ thấy khi mở thư mục ra tìm.
+console.log('')
+console.log('Nhân viên trỏ SÂU SẴN (đừng đẻ thêm tầng):')
+
+const boTay = cayThat().nv.con.get('3.THỊNH PHÁT')
+  .con.get('2. HỒ SƠ KẾ TOÁN').con.get('Năm 2026').con.get('7. BỘ BÁO CÁO')
+const raBo = await moBoBaoCao(boTay, '2026')
+kiem('trỏ thẳng vào "7. BỘ BÁO CÁO" → chính nó là đích', raBo === boTay, true)
+kiem('KHÔNG tạo thêm thư mục nào bên trong', liet(boTay), [])
+
+const namTay = cayThat().nv.con.get('3.THỊNH PHÁT').con.get('2. HỒ SƠ KẾ TOÁN').con.get('Năm 2026')
+kiem('trỏ vào "Năm 2026" → đi xuống đúng BỘ BÁO CÁO có sẵn',
+  (await moBoBaoCao(namTay, '2026')).name, '7. BỘ BÁO CÁO')
+kiem('và KHÔNG đẻ thêm thư mục năm lồng nhau', liet(namTay), ['7. BỘ BÁO CÁO/'])
+
+// Thư mục năm chưa có BỘ BÁO CÁO thì tạo đúng MỘT tầng.
+const namTrong = thuMucGia('Năm 2027')
+kiem('"Năm 2027" trống → tạo đúng một tầng BỘ BÁO CÁO',
+  (await moBoBaoCao(namTrong, '2027')).name, '7. BỘ BÁO CÁO')
+kiem('đúng một tầng, không hơn', liet(namTrong), ['7. BỘ BÁO CÁO/'])
+
+kq = await soatThuMucCongTy(boTay)
+kiem('soát: nhận ra đang ở BỘ BÁO CÁO', kq.kieu, 'bo_bao_cao')
+kiem('soát: đường dẫn mẫu chỉ còn chính nó', kq.duongDanMau, ['7. BỘ BÁO CÁO'])
+kiem('soát: có nói rõ KHÔNG tự chia theo năm', /KHÔNG tự chia theo năm/.test(kq.canhBao || ''), true)
+
+kq = await soatThuMucCongTy(namTay)
+kiem('soát: nhận ra đang ở thư mục năm', kq.kieu, 'nam')
+kiem('soát: đường dẫn mẫu thêm đúng một tầng', kq.duongDanMau, ['Năm 2026', '7. BỘ BÁO CÁO'])
+
 console.log('')
 console.log('Ghi trọn một file theo cây thật:')
 C = cayThat()
