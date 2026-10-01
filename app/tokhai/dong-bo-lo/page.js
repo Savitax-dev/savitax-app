@@ -2,10 +2,16 @@
 // Đồng bộ theo lô — Phân hệ Tờ khai.
 //
 // Nhân viên gõ captcha liên tục cho nhiều công ty trong một lượt ngồi, thay vì mở từng công ty
-// bấm từng nút. Mỗi công ty tốn 2 mã; app tự chuyển sang công ty kế tiếp ngay sau khi xong.
+// bấm từng nút. Mỗi công ty tốn 2 mã.
 //
-// CHẠY TUẦN TỰ, không song song: cổng khoá mỗi tài khoản vào một phiên, và bắn nhiều lượt cùng
-// lúc là dính 429 (đã gặp thật 21/09/2026).
+// CHẠY NHIỀU CÔNG TY CÙNG LÚC (anh chốt 01/10/2026, giống hệt màn hình Tải file). Trước đây chạy
+// TUẦN TỰ: gõ xong mã công ty này phải ngồi chờ nó chạy hết mới tới công ty sau, cộng thêm 8 giây
+// nghỉ giữa hai công ty. Nay tiện ích giữ nhiều phiên cổng tách nhau (phiên ảo, bản 1.1) nên
+// trong lúc công ty A đang tra, app đã xin mã cho công ty B — nhân viên gõ liên tục rồi rảnh hẳn.
+//
+// ⚠ SONG SONG KHÔNG PHẢI ĐỂ NHANH HƠN. Tiện ích có một hàng đợi chung giữ nhịp, nên bao nhiêu
+// công ty thì cổng vẫn nhận đúng một lượt gọi mỗi ~2,2 giây. Mở nhiều chỉ để NGƯỜI khỏi phải chờ.
+// Lần dính 429 ngày 21/09/2026 là do bắn thẳng nhiều lượt khi chưa có hàng đợi này.
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
@@ -15,6 +21,11 @@ import NhacHanNop from '@/components/NhacHanNop'
 import { OTong, Chip } from '@/components/tokhaiUI'
 import { kiemTraTienIch } from '@/lib/portalBridge'
 import { chayDongBo } from '@/lib/tokhaiSyncClient'
+
+// Mở càng nhiều thì nhân viên gõ được càng xa, nhưng mỗi công ty đang mở là một phiên sống bên
+// cổng, để lâu quá có thể hết phiên. 2 là mức an toàn: gõ xong công ty này là có ngay công ty sau.
+const SO_CUNG_LUC_MAC_DINH = 2
+const CAC_MUC_CUNG_LUC = [1, 2, 3, 4]
 
 export default function TrangDongBoLo() {
   const router = useRouter()
@@ -35,12 +46,16 @@ export default function TrangDongBoLo() {
 
   // Trạng thái lượt chạy
   const [dangChay, setDangChay] = useState(false)
-  const [viTri, setViTri] = useState(0)
+  const [soXong, setSoXong] = useState(0)
   const [ketQua, setKetQua] = useState({})       // id → { ket_qua, moTa, themMoi, capNhat }
-  const [tienDo, setTienDo] = useState('')
-  const [captcha, setCaptcha] = useState(null)   // { anh, nhan, giaiQuyet }
+  const [tienDoCty, setTienDoCty] = useState({}) // id → chữ tiến độ của riêng công ty đó
+  const [dangLamIds, setDangLamIds] = useState([])
+  const [hangCaptcha, setHangCaptcha] = useState([])  // [{ khoa, cty, anh, nhan, giaiQuyet }]
   const [maGo, setMaGo] = useState('')
-  const dungLai = useRef(false)
+  const [soCungLuc, setSoCungLuc] = useState(SO_CUNG_LUC_MAC_DINH)
+  const [canhBaoLo, setCanhBaoLo] = useState('')
+  const dungLai = useRef(false)      // không nhận công ty mới, công ty đang dở vẫn chạy nốt
+  const dungCaLo = useRef(false)     // cổng chặn → dừng hẳn
 
   useEffect(() => {
     const supabase = createClient()
@@ -75,52 +90,98 @@ export default function TrangDongBoLo() {
 
   const dsChon = dsHien.filter(c => chon[c.id])
 
-  // Chờ người gõ captcha: trả về Promise, màn hình cung cấp mã qua nút Xác nhận.
-  const hoiCaptcha = ({ anhCaptcha, nhan }) => new Promise(giaiQuyet => {
-    setMaGo('')
-    setCaptcha({ anh: anhCaptcha, nhan, giaiQuyet })
+  // Tiện ích bản cũ (chưa có phiên ảo) thì BẮT BUỘC chạy một công ty một lúc — tráo cookie không
+  // được thì hai công ty sẽ đá nhau ra khỏi cổng giữa chừng.
+  const coPhienAo = !!tienIch?.coPhienAo
+  const soCungLucThat = coPhienAo ? soCungLuc : 1
+
+  // ── Hàng chờ gõ mã ────────────────────────────────────────────────────────
+  //
+  // Nhiều công ty chạy song song nên có lúc hai công ty cùng cần mã. Xếp hàng rồi hiện từng cái
+  // một theo đúng thứ tự tới, để nhân viên gõ liên tục chứ không phải nhìn hai ô cùng lúc.
+  const themCaptcha = (cty, { anhCaptcha, nhan }) => new Promise(giaiQuyet => {
+    setHangCaptcha(h => [...h, {
+      khoa: `${cty.id}-${h.length}-${Date.now()}`, cty, anh: anhCaptcha, nhan, giaiQuyet,
+    }])
   })
 
   const traLoiCaptcha = (ma) => {
-    captcha?.giaiQuyet(ma)
-    setCaptcha(null)
+    setHangCaptcha(h => {
+      const [dau, ...con] = h
+      if (dau) dau.giaiQuyet(ma)
+      return con
+    })
     setMaGo('')
   }
 
+  // Bỏ hết mã đang chờ (khi bấm Dừng) — không bỏ thì các công ty kia treo mãi.
+  const boHetCaptcha = () => {
+    setHangCaptcha(h => { for (const x of h) x.giaiQuyet(null); return [] })
+    setMaGo('')
+  }
+
+  // ── Chạy ──────────────────────────────────────────────────────────────────
+
   async function chay() {
     dungLai.current = false
-    setDangChay(true); setKetQua({}); setViTri(0)
+    dungCaLo.current = false
+    setDangChay(true)
+    setKetQua({}); setTienDoCty({}); setHangCaptcha([])
+    setSoXong(0); setCanhBaoLo('')
 
-    for (let i = 0; i < dsChon.length; i++) {
-      if (dungLai.current) break
-      const c = dsChon[i]
-      setViTri(i)
-      setTienDo(`Đang mở phiên cho ${c.ten}…`)
+    const hangCho = [...dsChon]
+    const dangLam = new Set()
+    const capNhatDangLam = () => setDangLamIds([...dangLam])
 
-      const kq = await chayDongBo({
-        clientId: c.id, tuNgay, denNgay,
-        onCaptcha: hoiCaptcha,
-        onTienDo: setTienDo,
-      })
-      setKetQua(p => ({ ...p, [c.id]: kq }))
+    const chayMot = async (c) => {
+      dangLam.add(c.id); capNhatDangLam()
+      try {
+        const kq = await chayDongBo({
+          clientId: c.id, tuNgay, denNgay,
+          onCaptcha: th => themCaptcha(c, th),
+          onTienDo: chu => setTienDoCty(p => ({ ...p, [c.id]: chu })),
+        })
+        setKetQua(p => ({ ...p, [c.id]: kq }))
 
-      // Cổng đã chặn vì gọi dày thì DỪNG CẢ LÔ. Chạy tiếp công ty sau chỉ làm cổng khó chịu
-      // thêm và có thể kéo dài thời gian bị chặn — thà dừng, nghỉ, rồi chạy lại.
-      if (kq.ket_qua === 'loi' && /429|quá dày/i.test(kq.moTa || '')) {
-        setTienDo('⚠ Cổng thuế đang chặn vì gọi quá dày — đã DỪNG cả lô. Nghỉ 10–15 phút rồi chạy lại, và chia nhỏ khoảng ngày.')
-        break
-      }
-
-      // Nghỉ giữa hai công ty: đăng xuất công ty trước còn chưa kịp có hiệu lực bên cổng, và
-      // bắn liên tục dễ bị chặn.
-      if (i < dsChon.length - 1 && !dungLai.current) {
-        setTienDo('Nghỉ 8 giây trước công ty kế tiếp…')
-        await new Promise(r => setTimeout(r, 8000))
+        // Cổng chặn vì gọi dày thì DỪNG CẢ LÔ — chạy tiếp chỉ kéo dài thời gian bị chặn.
+        if (kq.ket_qua === 'loi' && /429|quá dày/i.test(kq.moTa || '')) {
+          dungCaLo.current = true
+          setCanhBaoLo('⚠ Cổng thuế đang chặn vì gọi quá dày — đã DỪNG nhận công ty mới. '
+            + 'Nghỉ 10–15 phút rồi chạy lại, và chia nhỏ khoảng ngày.')
+          boHetCaptcha()
+        }
+      } catch (e) {
+        setKetQua(p => ({ ...p, [c.id]: { ket_qua: 'loi', moTa: e.message } }))
+      } finally {
+        dangLam.delete(c.id); capNhatDangLam()
+        setTienDoCty(p => ({ ...p, [c.id]: '' }))
+        setSoXong(n => n + 1)
       }
     }
 
-    setDangChay(false); setTienDo(''); setCaptcha(null)
+    const dangCho = new Set()
+    for (;;) {
+      while (hangCho.length && dangCho.size < soCungLucThat && !dungLai.current && !dungCaLo.current) {
+        const c = hangCho.shift()
+        let p
+        p = chayMot(c).finally(() => dangCho.delete(p))
+        dangCho.add(p)
+      }
+      if (!dangCho.size) break
+      await Promise.race([...dangCho])
+    }
+
+    setDangChay(false); setHangCaptcha([]); setDangLamIds([])
   }
+
+  function bamDung() {
+    dungLai.current = true
+    boHetCaptcha()
+  }
+
+  // Mã đang hiện = cái đầu hàng. Đổi `key` của ảnh theo `khoa` để React thay ảnh mới chứ không
+  // dùng lại ảnh cũ khi sang công ty kế tiếp.
+  const captchaDau = hangCaptcha[0] || null
 
   const dem = tt => Object.values(ketQua).filter(k => k.ket_qua === tt).length
   const tongMoi = Object.values(ketQua).reduce((t, k) => t + (k.themMoi || 0), 0)
@@ -182,6 +243,13 @@ export default function TrangDongBoLo() {
               cần gõ khoảng <b>{dsChon.length * 2}</b> mã captcha
             </span>
 
+            <span className="text-sm text-gray-500 ml-2">Mở cùng lúc</span>
+            <select value={soCungLuc} disabled={dangChay || !coPhienAo}
+              onChange={e => setSoCungLuc(+e.target.value)}
+              className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm bg-white">
+              {CAC_MUC_CUNG_LUC.map(n => <option key={n} value={n}>{n} công ty</option>)}
+            </select>
+
             <div className="flex-1" />
             {!dangChay ? (
               <button onClick={chay} disabled={!dsChon.length || !tienIch?.co}
@@ -189,9 +257,9 @@ export default function TrangDongBoLo() {
                 Bắt đầu đồng bộ
               </button>
             ) : (
-              <button onClick={() => { dungLai.current = true; setCaptcha(null); captcha?.giaiQuyet(null) }}
+              <button onClick={bamDung}
                 className="px-4 py-2 rounded-xl bg-gray-700 text-white text-sm font-medium shadow-sm">
-                Dừng sau công ty này
+                Dừng nhận công ty mới
               </button>
             )}
           </div>
@@ -202,26 +270,53 @@ export default function TrangDongBoLo() {
                 <div className="flex-1">
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-green-500 rounded-full transition-all"
-                      style={{ width: (dsChon.length ? (viTri / dsChon.length) * 100 : 0) + '%' }} />
+                      style={{ width: (dsChon.length ? (soXong / dsChon.length) * 100 : 0) + '%' }} />
                   </div>
                 </div>
                 <span className="text-sm font-medium text-gray-700 tabular-nums">
-                  {viTri + 1}/{dsChon.length}
+                  {soXong}/{dsChon.length}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 mt-1.5">{tienDo}</p>
+              {dangLamIds.map(id => {
+                const c = dsChon.find(x => x.id === id)
+                if (!c) return null
+                return (
+                  <p key={id} className="text-xs text-gray-500 mt-1.5">
+                    <b className="text-gray-700">{c.ten}</b> — {tienDoCty[id] || 'đang chạy…'}
+                  </p>
+                )
+              })}
             </div>
+          )}
+
+          {canhBaoLo && (
+            <div className="mt-3 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+              {canhBaoLo}
+            </div>
+          )}
+
+          {!coPhienAo && tienIch?.co && (
+            <p className="mt-2 text-xs text-amber-700">
+              Tiện ích Chrome trên máy này là bản cũ (chưa có phiên ảo) nên chỉ chạy được MỘT công ty
+              một lúc. Cập nhật lên bản 1.1 để gõ mã liên tục.
+            </p>
           )}
         </div>
 
-        {/* Khung gõ captcha — nằm cố định giữa màn hình để nhân viên gõ liên tục không phải đưa mắt đi tìm */}
-        {captcha && (
+        {/* Khung gõ captcha — nằm cố định giữa màn hình để nhân viên gõ liên tục không phải đưa
+            mắt đi tìm. Nhiều công ty chạy song song nên hiện TỪNG mã một theo thứ tự tới. */}
+        {captchaDau && (
           <div className="rounded-2xl border-2 border-blue-300 bg-blue-50/60 p-4 mb-4 shadow-sm">
             <p className="text-sm font-semibold text-blue-900 mb-2">
-              {dsChon[viTri]?.ten} — mã captcha {captcha.nhan}
+              {captchaDau.cty.ten} — mã captcha {captchaDau.nhan}
+              {hangCaptcha.length > 1 && (
+                <span className="ml-2 font-normal text-blue-700">
+                  (còn {hangCaptcha.length - 1} mã đang chờ)
+                </span>
+              )}
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <img src={captcha.anh} alt="Mã captcha"
+              <img src={captchaDau.anh} alt="Mã captcha" key={captchaDau.khoa}
                 className="bg-white rounded-lg border border-blue-200" style={{ height: 80 }} />
               <input value={maGo} autoFocus onChange={e => setMaGo(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && maGo.trim() && traLoiCaptcha(maGo.trim())}
@@ -268,7 +363,7 @@ export default function TrangDongBoLo() {
               <tbody>
                 {dsHien.map((c, i) => {
                   const kq = ketQua[c.id]
-                  const dangLam = dangChay && dsChon[viTri]?.id === c.id
+                  const dangLam = dangLamIds.includes(c.id)
                   return (
                     <tr key={c.id} className={'border-b border-gray-100 odd:bg-white even:bg-slate-50/60 '
                       + (dangLam ? 'ring-2 ring-inset ring-blue-300' : '')}>

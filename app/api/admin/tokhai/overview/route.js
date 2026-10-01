@@ -49,7 +49,7 @@ export async function GET(request) {
     // Bốn thứ dưới đây không phụ thuộc nhau → gọi SONG SONG, chỉ còn 2 vòng chờ.
     const [dsClients, dsLoai, kySapToi, dsTaiKhoan, dsRooms, dsStaff, dsPhu] = await Promise.all([
       docHet(() => supabase.from('clients')
-        .select('id, name, client_code, tax_code, report_type, room_id, assigned_to, is_active, status')),
+        .select('id, name, client_code, tax_code, report_type, room_id, assigned_to, is_active, status, is_hkd')),
       docHet(() => supabase.from('tax_filing_types')
         .select('id, code, name, tax_kind, period_kind, sort_order, is_active')),
       kyChon ? Promise.resolve(null) : supabase.from('tax_obligations')
@@ -171,6 +171,7 @@ export async function GET(request) {
         maKH: c.client_code || null,
         mst: c.tax_code || null,
         kyKhai: c.report_type === 'monthly' ? 'Tháng' : 'Quý',
+        laHKD: c.is_hkd === true,
         roomId: phongCuaCty.get(c.id) || null,
         phong: tenPhong.get(phongCuaCty.get(c.id)) || '(chưa xếp phòng)',
         assignedTo: c.assigned_to || null,

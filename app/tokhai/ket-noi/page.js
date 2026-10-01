@@ -285,9 +285,21 @@ function DongCongTy({ cty, dangMo, onMo, onXong, coTienIch }) {
         <div className="px-3 pb-3 pt-1 border-t border-gray-100 space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-gray-500 mb-0.5 block">Tên đăng nhập cổng Dịch vụ công</label>
-              <input value={tenDN} onChange={e => setTenDN(e.target.value)} placeholder="0312180502-QL"
+              {/* Hộ kinh doanh đăng nhập cổng với tư cách "Cá nhân": tên đăng nhập là MST hoặc CCCD,
+                  KHÔNG có đuôi '-QL' như doanh nghiệp. Gõ kèm '-QL' là cổng báo sai tài khoản dù
+                  mật khẩu đúng — mà vài lần sai là khoá tài khoản của khách. */}
+              <label className="text-xs text-gray-500 mb-0.5 block">
+                Tên đăng nhập cổng Dịch vụ công
+                {cty.laHKD && <span className="text-purple-700"> · hộ kinh doanh, đăng nhập dạng Cá nhân (MST hoặc CCCD, không có “-QL”)</span>}
+              </label>
+              <input value={tenDN} onChange={e => setTenDN(e.target.value)}
+                placeholder={cty.laHKD ? '079202030307' : '0312180502-QL'}
                 className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm font-mono" />
+              {cty.laHKD && /-ql\s*$/i.test(tenDN) && (
+                <p className="text-[11px] text-red-600 mt-0.5">
+                  Hộ kinh doanh không có đuôi “-QL” — bỏ đi rồi lưu lại, nếu không cổng sẽ báo sai tài khoản.
+                </p>
+              )}
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-0.5 block">

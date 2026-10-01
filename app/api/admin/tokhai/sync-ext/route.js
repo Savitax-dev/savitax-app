@@ -66,7 +66,11 @@ const yeuCauAnhCaptcha = () => ({
   headers: { Referer: BASE + 'login', Accept: 'image/*' },
 })
 
-const yeuCauDangNhap = (csrf, tenDN, matKhau, captcha) => ({
+    // doiTuong: 'DN' = doanh nghiệp, 'CN' = cá nhân / hộ kinh doanh. Trang đăng nhập của cổng
+    // hỏi "Đối tượng đăng nhập" rồi gửi đúng tham số này (processChonDT → submitLDAP); chọn sai là
+    // cổng báo sai tài khoản dù mật khẩu đúng. Hộ kinh doanh còn KHÔNG có đuôi '-QL' ở tên đăng
+    // nhập — xem clients.is_hkd.
+const yeuCauDangNhap = (csrf, tenDN, matKhau, captcha, doiTuong = 'DN') => ({
   url: BASE + 'loginLDAP', method: 'POST',
   headers: {
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -78,7 +82,7 @@ const yeuCauDangNhap = (csrf, tenDN, matKhau, captcha) => ({
   body: new URLSearchParams({
     tenDN,
     matKhau: Buffer.from(matKhau, 'utf8').toString('base64'),   // cổng nhận mật khẩu dạng base64
-    doiTuong: 'DN', captcha, _csrf: csrf,
+    doiTuong, captcha, _csrf: csrf,
   }).toString(),
 })
 
@@ -142,8 +146,11 @@ export async function POST(request) {
         return Response.json({ error: 'Không có quyền đồng bộ công ty này' }, { status: 403 })
       }
 
-      const { data: tk } = await supabase.from('tax_accounts')
-        .select('id, username').eq('client_id', clientId).eq('portal', 'dvc').maybeSingle()
+      const [{ data: tk }, { data: cty }] = await Promise.all([
+        supabase.from('tax_accounts')
+          .select('id, username').eq('client_id', clientId).eq('portal', 'dvc').maybeSingle(),
+        supabase.from('clients').select('is_hkd').eq('id', clientId).maybeSingle(),
+      ])
       if (!tk) return Response.json({ error: 'Công ty này chưa có tài khoản cổng Dịch vụ công' }, { status: 400 })
 
       // Cổng khóa mỗi tài khoản vào 1 phiên → chặn 2 lượt cùng công ty chạy song song.
@@ -172,6 +179,7 @@ export async function POST(request) {
       const maPhien = crypto.randomUUID()
       phienTam.set(maPhien, {
         clientId, staffId: auth.caller.staffId, jobId: job?.id || null,
+        doiTuong: cty?.is_hkd ? 'CN' : 'DN',
         csrf: null, buoc: 'trang_dang_nhap', chamNhat: Date.now(),
         cuaSo: chiaCuaSo({ tuNgay, denNgay }), viCuaSo: 0, trang: 0,
         maCaptchaTraCuu: null, dong: [], chiTiet: new Map(), viChiTiet: 0, soMaDaGo: 0,
@@ -213,7 +221,7 @@ export async function POST(request) {
         p.buoc = 'dang_nhap'
         return traYeuCau(p, {
           viec: 'goi', buoc: p.buoc,
-          yeuCau: yeuCauDangNhap(p.csrf, tk.username, decrypt(tk.password_enc), ma),
+          yeuCau: yeuCauDangNhap(p.csrf, tk.username, decrypt(tk.password_enc), ma, p.doiTuong),
         })
       }
       if (p.buoc === 'cho_captcha_tc') {

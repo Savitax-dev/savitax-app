@@ -65,7 +65,11 @@ const yc = {
   trangDangNhap: () => ({ url: BASE + 'login', method: 'GET' }),
   anhCaptcha: () => ({ url: `${BASE}login/getCaptcha?${Date.now()}`, method: 'GET',
     headers: { Referer: BASE + 'login', Accept: 'image/*' } }),
-  dangNhap: (csrf, tenDN, matKhau, captcha) => ({
+    // doiTuong: 'DN' = doanh nghiệp, 'CN' = cá nhân / hộ kinh doanh. Trang đăng nhập của cổng
+    // hỏi "Đối tượng đăng nhập" rồi gửi đúng tham số này (processChonDT → submitLDAP); chọn sai là
+    // cổng báo sai tài khoản dù mật khẩu đúng. Hộ kinh doanh còn KHÔNG có đuôi '-QL' ở tên đăng
+    // nhập — xem clients.is_hkd.
+  dangNhap: (csrf, tenDN, matKhau, captcha, doiTuong = 'DN') => ({
     url: BASE + 'loginLDAP', method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -74,7 +78,7 @@ const yc = {
     },
     body: new URLSearchParams({
       tenDN, matKhau: Buffer.from(matKhau, 'utf8').toString('base64'),
-      doiTuong: 'DN', captcha, _csrf: csrf,
+      doiTuong, captcha, _csrf: csrf,
     }).toString(),
   }),
   trangTraCuu: () => ({ url: BASE + 'tchs', method: 'GET', headers: { Referer: BASE + 'home' } }),
@@ -134,7 +138,7 @@ export async function POST(request) {
       }
 
       const [{ data: cty }, { data: tk }, { data: loaiTK }] = await Promise.all([
-        supabase.from('clients').select('id, name, client_code').eq('id', clientId).single(),
+        supabase.from('clients').select('id, name, client_code, is_hkd').eq('id', clientId).single(),
         supabase.from('tax_accounts').select('username').eq('client_id', clientId).eq('portal', 'dvc').maybeSingle(),
         supabase.from('tax_filing_types').select('id, code, tax_kind, ma_tkhai_portal, period_kind'),
       ])
@@ -151,6 +155,7 @@ export async function POST(request) {
       const maPhien = crypto.randomUUID()
       phienTam.set(maPhien, {
         clientId, staffId: auth.caller.staffId, maKH: cty.client_code, tenCty: cty.name,
+        doiTuong: cty.is_hkd ? 'CN' : 'DN',
         csrf: null, buoc: 'trang_dang_nhap', chamNhat: Date.now(),
         cuaSo: chiaCuaSo({ tuNgay, denNgay }), viCuaSo: 0,
         loaiTK: loaiTK || [],
@@ -202,7 +207,7 @@ export async function POST(request) {
         const { data: tk } = await supabase.from('tax_accounts')
           .select('username, password_enc').eq('client_id', p.clientId).eq('portal', 'dvc').maybeSingle()
         p.buoc = 'dang_nhap'
-        return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yc.dangNhap(p.csrf, tk.username, decrypt(tk.password_enc), ma) })
+        return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yc.dangNhap(p.csrf, tk.username, decrypt(tk.password_enc), ma, p.doiTuong) })
       }
       if (p.buoc === 'cho_captcha_tc') {
         p.maCaptcha = ma

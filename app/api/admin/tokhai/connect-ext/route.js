@@ -42,7 +42,11 @@ const yc = {
     url: `${BASE}login/getCaptcha?${Date.now()}`, method: 'GET',
     headers: { Referer: BASE + 'login', Accept: 'image/*' },
   }),
-  dangNhap: (csrf, tenDN, matKhau, captcha) => ({
+    // doiTuong: 'DN' = doanh nghiệp, 'CN' = cá nhân / hộ kinh doanh. Trang đăng nhập của cổng
+    // hỏi "Đối tượng đăng nhập" rồi gửi đúng tham số này (processChonDT → submitLDAP); chọn sai là
+    // cổng báo sai tài khoản dù mật khẩu đúng. Hộ kinh doanh còn KHÔNG có đuôi '-QL' ở tên đăng
+    // nhập — xem clients.is_hkd.
+  dangNhap: (csrf, tenDN, matKhau, captcha, doiTuong = 'DN') => ({
     url: BASE + 'loginLDAP', method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -53,7 +57,7 @@ const yc = {
     body: new URLSearchParams({
       tenDN,
       matKhau: Buffer.from(matKhau, 'utf8').toString('base64'),   // cổng nhận mật khẩu dạng base64
-      doiTuong: 'DN', captcha, _csrf: csrf,
+      doiTuong, captcha, _csrf: csrf,
     }).toString(),
   }),
   dangXuat: csrf => ({
@@ -87,13 +91,17 @@ export async function POST(request) {
       if (!(await canAccessCredentials(supabase, auth.caller, clientId))) {
         return Response.json({ error: 'Không có quyền thao tác công ty này' }, { status: 403 })
       }
-      const { data: tk } = await supabase.from('tax_accounts')
-        .select('id, username').eq('client_id', clientId).eq('portal', 'dvc').maybeSingle()
+      const [{ data: tk }, { data: cty }] = await Promise.all([
+        supabase.from('tax_accounts')
+          .select('id, username').eq('client_id', clientId).eq('portal', 'dvc').maybeSingle(),
+        supabase.from('clients').select('is_hkd').eq('id', clientId).maybeSingle(),
+      ])
       if (!tk) return Response.json({ error: 'Công ty này chưa có tài khoản cổng Dịch vụ công' }, { status: 400 })
 
       const maPhien = crypto.randomUUID()
       phienTam.set(maPhien, {
         clientId, staffId: auth.caller.staffId, taiKhoanId: tk.id,
+        doiTuong: cty?.is_hkd ? 'CN' : 'DN',
         csrf: null, buoc: 'trang_dang_nhap', chamNhat: Date.now(),
       })
       return Response.json({
@@ -129,7 +137,7 @@ export async function POST(request) {
       p.buoc = 'dang_nhap'
       return Response.json({
         viec: 'goi', buoc: p.buoc,
-        yeuCau: yc.dangNhap(p.csrf, tk.username, matKhau, String(body.captcha).trim()),
+        yeuCau: yc.dangNhap(p.csrf, tk.username, matKhau, String(body.captcha).trim(), p.doiTuong),
       })
     }
 
