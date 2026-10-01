@@ -120,8 +120,15 @@ export default function MyDebtPage() {
   // Tổng quan công nợ kỳ đang chọn — chỉ tính các công ty mình là nhân viên chính
   // (công ty phụ trách phụ vẫn hiện trong danh sách để theo dõi, nhưng không cộng vào KPI doanh thu)
   const ownedClients = myClients.filter(c => !c.isSecondary)
-  const totalFee    = ownedClients.reduce((a, c) => a + c.periodFee, 0)
-  const totalKetoan = ownedClients.reduce((a, c) => a + c.collected, 0)
+  // Chỉ công ty ĐẾN HẠN thu trong kỳ mới vào tỉ lệ, và phải chặn CẢ tử số lẫn mẫu số bằng cùng một
+  // cổng (`feeCounted` do /api/admin/my-room trả về). Trước đây mẫu số bỏ công ty quý chưa tới hạn
+  // nhưng tử số vẫn cộng tiền họ đã trả nên tỉ lệ vọt trên 100% (ca thật 01/10/2026: 104%).
+  const dueClients  = ownedClients.filter(c => c.feeCounted)
+  const totalFee    = dueClients.reduce((a, c) => a + c.periodFee, 0)
+  const totalKetoan = dueClients.reduce((a, c) => a + c.collected, 0)
+  // Tiền đã thu của công ty quý CHƯA tới kỳ tính: không vào tỉ lệ, nhưng vẫn phải cho người dùng
+  // thấy — không thì họ tưởng app nuốt mất khoản đã thu.
+  const collectedNotDue = ownedClients.filter(c => !c.feeCounted).reduce((a, c) => a + c.collected, 0)
   const totalKhach  = ownedClients.reduce((a, c) => a + c.collectedKhach, 0)
   const totalRemain = ownedClients.reduce((a, c) => a + c.remain, 0)
   const debtPct     = totalFee === 0 ? 100 : Math.round(totalKetoan / totalFee * 100)
@@ -215,6 +222,11 @@ export default function MyDebtPage() {
               <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3">
                 <p className="text-xs text-gray-400 mb-1">✅ Đã thu</p>
                 <p className="text-xl font-bold text-green-600">{fmt(totalKetoan)}đ</p>
+                {collectedNotDue > 0 && (
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    + {fmt(collectedNotDue)}đ của công ty quý chưa tới kỳ tính
+                  </p>
+                )}
               </div>
               <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3">
                 <p className="text-xs text-gray-400 mb-1">⚠ Còn phải thu</p>
