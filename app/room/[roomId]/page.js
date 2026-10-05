@@ -604,7 +604,14 @@ export default function RoomPage({ params }) {
                       <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1.5">
                         <div className={'h-full rounded-full ' + barClr(dongTien.phiKetoan.pct)} style={{ width: dongTien.phiKetoan.pct + '%' }} />
                       </div>
-                      <p className="text-xs text-gray-400 mt-1.5">{dongTien.phiKetoan.soCty} công ty đến hạn</p>
+                      <p className="text-xs text-gray-400 mt-1.5">
+                        {dongTien.phiKetoan.soCty} công ty đến hạn
+                        {/* Công ty đã ngưng dịch vụ vẫn có phí ở các kỳ họ còn là khách — nói rõ để
+                            không ai thắc mắc vì sao thẻ nhỉnh hơn tổng danh sách nhân viên bên dưới. */}
+                        {dongTien.phiKetoan.ctyNgung > 0 && (
+                          <span className="text-amber-600"> · gồm {fmt(dongTien.phiKetoan.phiNgung)}đ của {dongTien.phiKetoan.ctyNgung} cty đã ngưng DV</span>
+                        )}
+                      </p>
                     </div>
 
                     {/* Tím cho HCNS. Thẻ tự ẩn ở bản clone (không có bảng hcns_*). */}
