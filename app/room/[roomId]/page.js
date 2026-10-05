@@ -845,8 +845,14 @@ export default function RoomPage({ params }) {
                         <span className="text-right">HCNS</span><span className="text-right">DV khác</span><span className="text-right">Còn phải thu</span>
                       </div>
                       {dongTien.ngungConNo.map((x, i) => (
-                        <div key={x.clientId} className={'px-4 py-2 border-b border-gray-50 grid grid-cols-[1fr_140px_96px_96px_96px_104px] gap-2 items-center text-xs ' + zebra(i)}>
-                          <span className="text-gray-700 truncate">{x.name}</span>
+                        <div key={x.clientId} className={'border-b border-gray-50 ' + zebra(i)}>
+                        <div className="px-4 py-2 grid grid-cols-[1fr_140px_96px_96px_96px_104px] gap-2 items-center text-xs">
+                          {/* Bấm tên để mở bảng ghi công nợ ngay tại đây — quản trị / trưởng phòng không
+                              có các công ty này ở trang Quản lý công nợ của riêng mình. */}
+                          <button onClick={() => setOpenClient(p => ({ ...p, ['ngung-' + x.clientId]: !p['ngung-' + x.clientId] }))}
+                            className="text-left text-gray-700 truncate hover:text-blue-600">
+                            {x.name} <span className="text-blue-600">{openClient['ngung-' + x.clientId] ? '▴ đóng' : '▾ ghi thu'}</span>
+                          </button>
                           <span className="text-gray-500 truncate">{staffNameOf(x.staffId)}</span>
                           <span className="text-right text-gray-700">{x.ketoan > 0 ? fmt(x.ketoan) : '—'}</span>
                           <span className="text-right text-violet-600">{x.hcns > 0 ? fmt(x.hcns) : '—'}</span>
@@ -860,6 +866,21 @@ export default function RoomPage({ params }) {
                               </button>
                             )}
                           </span>
+                        </div>
+                        {openClient['ngung-' + x.clientId] && x.client && (
+                          <ClientChecklist
+                            client={x.client}
+                            defaultMonth={selMonth}
+                            defaultYear={selYear}
+                            defaultPanel="debt"
+                            clientMonth={clientMonth[x.clientId] || selMonth}
+                            onMonthChange={m => setClientMonth(p => ({ ...p, [x.clientId]: m }))}
+                            onDebtSaved={load}
+                            isAdmin={isAdmin}
+                            isTrueAdmin={isTrueAdmin}
+                            canUncheck={canUncheck}
+                          />
+                        )}
                         </div>
                       ))}
                       <p className="px-4 py-2 text-xs text-gray-500 bg-gray-50 border-t border-gray-100">

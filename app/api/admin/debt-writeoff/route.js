@@ -95,7 +95,10 @@ export async function POST(request) {
       if (thieu > 0) kyChuaChot.push({ year: y, month: m, amount: thieu })
     }
   }
-  const noTon = Math.max(0, num(client.other_debt))
+  // `other_debt` dồn cả nợ tồn HCNS đã chốt. Chức năng này chỉ xoá phí KẾ TOÁN, nên phần HCNS
+  // phải ở lại — đưa cả other_debt về 0 là xoá lố sang khoản không được phép xoá.
+  const hcnsConLai = (rollovers || []).filter(r => r.source === 'hcns').reduce((a, r) => a + num(r.remaining_amount), 0)
+  const noTon = Math.max(0, num(client.other_debt) - hcnsConLai)
   const chuaChot = kyChuaChot.reduce((a, x) => a + x.amount, 0)
   // Hai cách tính phải ra cùng một số. Lệch nghĩa là sổ sách công ty này có chỗ không khớp —
   // dừng lại cho người xem, đừng xoá bừa.
@@ -107,7 +110,7 @@ export async function POST(request) {
     }, { status: 409 })
   }
 
-  const detail = { noTon, kyChuaChot, otherDebtTruoc: num(client.other_debt) }
+  const detail = { noTon, kyChuaChot, otherDebtTruoc: num(client.other_debt), hcnsGiuLai: hcnsConLai }
   if (dryRun) return Response.json({ ok: true, dryRun: true, amount: conNo, detail, name: client.name })
 
   // 1) ghi dòng xoá nợ TRƯỚC — bảng chưa có (chưa chạy sql/25) thì dừng, chưa đụng gì vào công nợ.
@@ -130,9 +133,13 @@ export async function POST(request) {
     if (error) return hoanTac('Chưa ghi được dòng chốt sổ: ' + error.message)
   }
   // 3) nợ tồn đã chốt về 0
-  const { error: e1 } = await supabase.from('debt_rollovers').update({ remaining_amount: 0 })
-    .eq('client_id', clientId).neq('source', 'hcns').gt('remaining_amount', 0)
-  const { error: e2 } = await supabase.from('clients').update({ other_debt: 0 }).eq('id', clientId)
+  // Lọc theo id chứ không dùng .neq('source','hcns'): PostgREST bỏ luôn dòng có source NULL khi
+  // so sánh khác, mà dòng cũ có thể chưa có source.
+  const idKeToan = (rollovers || []).filter(r => (r.source || 'ketoan') !== 'hcns' && num(r.remaining_amount) > 0).map(r => r.id)
+  const { error: e1 } = idKeToan.length
+    ? await supabase.from('debt_rollovers').update({ remaining_amount: 0 }).in('id', idKeToan)
+    : { error: null }
+  const { error: e2 } = await supabase.from('clients').update({ other_debt: hcnsConLai }).eq('id', clientId)
   if (e1 || e2) {
     return Response.json({
       error: 'Đã ghi dòng xoá nợ nhưng chưa đưa hết nợ tồn về 0: ' + (e1?.message || e2?.message) + '. Báo quản trị kiểm tra tay công ty này.',
