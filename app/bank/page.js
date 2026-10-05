@@ -255,6 +255,12 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients }) {
   const pill = r.state === "open" ? st.label : pillLabel(r)
   const via = r.via && VIA[r.via]
   const periodTxt = r.period ? 'T' + r.period.month + '/' + r.period.year : null
+  // Công ty thu phí theo QUÝ: kỳ khách ghi (T7) khác kỳ app ghi vào sổ (Q3 = T9). Hiện cả hai,
+  // nếu không nhân viên tưởng tiền vào tháng 7 — hoặc tệ hơn, không biết app vừa lùi quý.
+  const p2 = r.postPeriod
+  const ghiVaoTxt = p2 && (p2.month !== r.period?.month || p2.year !== r.period?.year)
+    ? 'ghi Q' + Math.ceil(p2.month / 3) + ' (T' + p2.month + '/' + p2.year + ')'
+    : null
   const [pick, setPick] = useState('')
   const [pYear, setPYear] = useState(r.period?.year || new Date().getFullYear())
   const [pMonth, setPMonth] = useState(r.period?.month || new Date().getMonth() + 1)
@@ -279,6 +285,7 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients }) {
                 ? <span className="font-semibold text-gray-800">{r.client.name}</span>
                 : <span className="text-rose-600">{r.ambiguous?.length ? 'Mã trùng ' + r.ambiguous.length + ' công ty' : 'Không nhận ra công ty'}</span>}
               {periodTxt && r.state === 'open' && <Chip cls="bg-violet-50 text-violet-700">{periodTxt}</Chip>}
+              {ghiVaoTxt && r.state === 'open' && <Chip cls="bg-amber-50 text-amber-700">→ {ghiVaoTxt}</Chip>}
               {via && r.state === 'open' && <Chip cls={via[1]}>{via[0]}</Chip>}
             </div>
           </div>
