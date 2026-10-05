@@ -145,6 +145,15 @@ export async function GET(request) {
     feeKhachNoteMap[f.client_id] = f.note || null
   }
 
+  // Tiền thu của HỒ SƠ "Dịch vụ khác" (sql/24) cộng chung vào "đã thu khác" của tháng — nếu không,
+  // từ lúc chuyển sang hồ sơ thì số thu khác trên trang phòng tụt về 0 dù tiền vẫn về.
+  // Bảng chưa tạo (bản clone / chưa chạy SQL) -> bỏ qua im lặng.
+  try {
+    const { data: dvk } = await supabase.from('other_service_payments')
+      .select('client_id, amount').in('client_id', clientIds).eq('year', year).eq('month', month)
+    for (const p of dvk || []) feeKhachMap[p.client_id] = (feeKhachMap[p.client_id] || 0) + (Number(p.amount) || 0)
+  } catch (_) { /* chưa có bảng dịch vụ khác */ }
+
   // Deadline date helper: deadline_day of selected month/year — clamp về số ngày thực có
   // của tháng + dời sang thứ 2 nếu rơi Chủ nhật.
   const deadlineDate = (deadlineDay) => effectiveDeadlineDate(year, month, deadlineDay)

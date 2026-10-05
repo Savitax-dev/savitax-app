@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { isPastEditDeadline } from '@/lib/feeDue'
 import { loadPermissionData, can } from '@/lib/permissions'
+import DichVuKhac from './DichVuKhac'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : ''
@@ -319,6 +320,21 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     }
     if (p === 'dntt') {
       setExtraRows([])
+      // Hồ sơ "Dịch vụ khác" còn phải thu tự thành dòng trên phiếu — trước đây nhân viên phải tự gõ
+      // lại, dễ quên hẳn một dịch vụ đã làm. Số trên phiếu là số CHƯA VAT (như B1/B2) nên chia 1.08;
+      // nhân viên vẫn sửa/xoá dòng được trước khi mở PDF.
+      fetch('/api/admin/other-services?clientId=' + client.id, { cache: 'no-store' })
+        .then(r => r.json())
+        .then(j => {
+          const con = (j.data || []).filter(s => s.status !== 'done' && s.remain > 0)
+          if (con.length) {
+            setExtraRows(con.map(s => ({
+              desc: s.name + ' (chưa VAT)',
+              amount: String(Math.round(s.remain / 1.08)),
+            })))
+          }
+        })
+        .catch(() => {})
       const periodLabel = client.fee_period === 'quarterly'
         ? 'Q' + Math.ceil(clientMonth / 3) + '/' + selYear
         : 'T' + clientMonth + '/' + selYear
@@ -631,6 +647,9 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   // b1Amount đã được tách VAT sẵn khi mở panel (xem openPanel) — đây là số "chưa VAT" thật
   const b1AmountNum = Number(b1Amount) || 0
   const hcnsAmountNum = hcnsClient ? (Number(hcnsAmount) || 0) : 0
+  // Số dòng B CỐ ĐỊNH còn lại trên phiếu (phí dịch vụ + phí HCNS) — nhân viên xoá dòng nào thì các
+  // dòng dịch vụ khác tự dịch số lên, khớp với phiếu PDF (app/api/admin/dntt).
+  const soDongCoDinh = ((b1Label || b1Amount) ? 1 : 0) + ((hcnsClient && (hcnsLabel || hcnsAmount)) ? 1 : 0)
   const subTotal   = b1AmountNum + hcnsAmountNum + extraTotal
   const prevBal    = Number(client.other_debt) || 0
   // "Tồn" (A) đã là số gồm VAT sẵn — lấy thẳng, không nhân 1.08 nữa
@@ -941,6 +960,9 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                   <td className="border border-gray-200 px-2 py-1 font-semibold">Phí phát sinh kỳ này</td>
                   <td className="border border-gray-200 px-2 py-1 text-right font-bold">{fmt(totalB)}</td>
                 </tr>
+                {/* Xoá được dòng phí dịch vụ: có lúc tách 2 phiếu riêng — một phiếu phí hàng kỳ,
+                    một phiếu dịch vụ khác. Xoá rồi muốn lấy lại thì đóng/mở lại tab ĐNTT. */}
+                {(b1Label || b1Amount) && (
                 <tr className="bg-indigo-50/50">
                   <td className="border border-gray-200 px-2 py-1 text-center text-gray-500">B1</td>
                   <td className="border border-gray-200 px-1 py-0.5">
@@ -948,13 +970,19 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                       className="w-full px-1.5 py-0.5 border border-indigo-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                   </td>
                   <td className="border border-gray-200 px-1 py-0.5">
-                    <input type="text" inputMode="numeric"
-                      value={b1Amount ? Number(b1Amount).toLocaleString('vi-VN') : ''}
-                      onChange={e => setB1Amount(e.target.value.replace(/\D/g,''))}
-                      className="w-full px-1.5 py-0.5 border border-indigo-200 rounded text-xs text-right focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                    <div className="flex items-center gap-1">
+                      <input type="text" inputMode="numeric"
+                        value={b1Amount ? Number(b1Amount).toLocaleString('vi-VN') : ''}
+                        onChange={e => setB1Amount(e.target.value.replace(/\D/g,''))}
+                        className="w-full px-1.5 py-0.5 border border-indigo-200 rounded text-xs text-right focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                      <button title="Xoá dòng phí dịch vụ khỏi phiếu này"
+                        onClick={() => { setB1Label(''); setB1Amount('') }}
+                        className="text-red-400 hover:text-red-600 flex-shrink-0">✕</button>
+                    </div>
                   </td>
                 </tr>
-                {hcnsClient && (
+                )}
+                {hcnsClient && (hcnsLabel || hcnsAmount) && (
                   <tr className="bg-sky-50">
                     <td className="border border-gray-200 px-2 py-1 text-center text-gray-500">B2</td>
                     <td className="border border-gray-200 px-1 py-0.5">
@@ -962,16 +990,21 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                         className="w-full px-1.5 py-0.5 border border-sky-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-sky-400" />
                     </td>
                     <td className="border border-gray-200 px-1 py-0.5">
-                      <input type="text" inputMode="numeric"
-                        value={hcnsAmount ? Number(hcnsAmount).toLocaleString('vi-VN') : ''}
-                        onChange={e => setHcnsAmount(e.target.value.replace(/\D/g,''))}
-                        className="w-full px-1.5 py-0.5 border border-sky-300 rounded text-xs text-right focus:outline-none focus:ring-1 focus:ring-sky-400" />
+                      <div className="flex items-center gap-1">
+                        <input type="text" inputMode="numeric"
+                          value={hcnsAmount ? Number(hcnsAmount).toLocaleString('vi-VN') : ''}
+                          onChange={e => setHcnsAmount(e.target.value.replace(/\D/g,''))}
+                          className="w-full px-1.5 py-0.5 border border-sky-300 rounded text-xs text-right focus:outline-none focus:ring-1 focus:ring-sky-400" />
+                        <button title="Xoá dòng phí HCNS khỏi phiếu này"
+                          onClick={() => { setHcnsLabel(''); setHcnsAmount('') }}
+                          className="text-red-400 hover:text-red-600 flex-shrink-0">✕</button>
+                      </div>
                     </td>
                   </tr>
                 )}
                 {extraRows.map((r, i) => (
                   <tr key={i} className="bg-indigo-50">
-                    <td className="border border-gray-200 px-2 py-1 text-center text-gray-500">B{i + (hcnsClient ? 3 : 2)}</td>
+                    <td className="border border-gray-200 px-2 py-1 text-center text-gray-500">B{i + soDongCoDinh + 1}</td>
                     <td className="border border-gray-200 px-1 py-0.5">
                       <input value={r.desc} onChange={e => { const nr=[...extraRows]; nr[i]={...nr[i],desc:e.target.value}; setExtraRows(nr) }}
                         placeholder="Diễn giải khoản thu..."
@@ -1007,7 +1040,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
               <button onClick={() => setExtraRows([...extraRows, {desc:'', amount:''}])}
                 disabled={extraRows.length >= 6}
                 className="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 disabled:opacity-40 transition-colors font-medium">
-                + Thêm dòng B{extraRows.length + (hcnsClient ? 3 : 2)}
+                + Thêm dòng B{extraRows.length + soDongCoDinh + 1}
               </button>
               <div className="flex items-center gap-1.5 justify-end ml-auto">
                 <label className="text-xs text-gray-400 flex-shrink-0">QR:</label>
@@ -1212,6 +1245,11 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                 ) : <p className="text-xs text-gray-400 text-center py-2">Chưa có lịch sử thu nợ tồn</p>
               })()}
             </div>
+          ) : debtType === 'khach' ? (
+            // Dịch vụ khác giờ là HỒ SƠ (phải thu — đã thu — còn lại — đóng khi xong), không còn
+            // là một ô "số đã thu" mỗi tháng. Xem components/DichVuKhac.js.
+            <DichVuKhac client={client} year={selYear} month={clientMonth} canCloseEarly={isAdmin}
+              onChanged={() => { loadDebtHistory(); onDebtSaved && onDebtSaved() }} />
           ) : (
           <div className="p-3 space-y-2">
             {(() => {

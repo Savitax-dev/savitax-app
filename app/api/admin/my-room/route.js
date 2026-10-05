@@ -122,6 +122,14 @@ export async function GET(request) {
   const feeKhachMap = {}
   for (const f of (feeKhach || [])) feeKhachMap[f.client_id] = (feeKhachMap[f.client_id] || 0) + (Number(f.amount) || 0)
 
+  // Tiền thu của HỒ SƠ "Dịch vụ khác" (sql/24) tính chung vào "đã thu khác" của kỳ. Bảng chưa tạo
+  // thì bỏ qua im lặng để trang vẫn chạy.
+  try {
+    const { data: dvk } = await supabase.from('other_service_payments')
+      .select('client_id, amount, month').in('client_id', clientIds).eq('year', year).in('month', months)
+    for (const p of dvk || []) feeKhachMap[p.client_id] = (feeKhachMap[p.client_id] || 0) + (Number(p.amount) || 0)
+  } catch (_) { /* chưa có bảng dịch vụ khác */ }
+
   // Giới hạn ngày hạn không vượt quá số ngày thực có của tháng + dời sang thứ 2 nếu rơi Chủ nhật
   const deadlineDate = (d) => effectiveDeadlineDate(year, month, d)
   const taskStatus = (rec, deadlineDay) => {

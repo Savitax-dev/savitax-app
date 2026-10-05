@@ -61,7 +61,12 @@ export async function GET(request) {
   // b1AmountParam (panel ĐNTT gửi lên) đã được tách VAT sẵn — dùng thẳng. Chỉ khi KHÔNG có param
   // (fallback lấy trực tiếp client.monthly_fee — số đã bao gồm VAT nhập ở "Thêm công ty") mới cần
   // tách VAT ra lấy B1 (chưa VAT).
-  const baseFee = b1AmountParam !== null && b1AmountParam !== ''
+  // Panel gửi b1Label='' VÀ b1Amount='' nghĩa là nhân viên đã BẤM XOÁ dòng phí dịch vụ (tách phiếu
+  // riêng cho dịch vụ khác). Khác hẳn trường hợp gọi route trực tiếp, không truyền param nào —
+  // lúc đó vẫn rơi về phí sống của công ty như cũ.
+  const b1Deleted = b1AmountParam === '' && b1LabelParam === ''
+  const baseFee = b1Deleted ? 0
+    : b1AmountParam !== null && b1AmountParam !== ''
     ? Number(b1AmountParam) || 0
     : Math.round((Number(client.monthly_fee) || 0) / 1.08)
   const periodLabel = client.fee_period === 'quarterly'
@@ -78,7 +83,13 @@ export async function GET(request) {
   // Với hồ sơ HCNS, mọi dòng B đều là dịch vụ (gửi qua b1/extra) nên KHÔNG có dòng B2 cố định.
   const hasHcns   = !hcnsClientId && hcnsFee > 0
   const hcnsLabel = hcnsLabelParam || ('Phí dịch vụ HCNS ' + periodLabel + ' (chưa VAT)')
-  const extraStartNo = hasHcns ? 3 : 2
+
+  // Nhân viên XOÁ hẳn dòng phí dịch vụ trên panel (bấm ✕) -> phiếu không in dòng đó nữa. Dùng khi
+  // tách hai phiếu riêng: một phiếu phí dịch vụ hàng kỳ, một phiếu dịch vụ khác (chốt 05/10/2026).
+  const hasB1 = !b1Deleted && (baseFee > 0 || !!(b1LabelParam && b1LabelParam.trim()))
+  // Đánh số dòng B theo những dòng THỰC SỰ in ra: xoá dòng phí dịch vụ thì dịch vụ khác thành B1.
+  const extraStartNo = (hasB1 ? 1 : 0) + (hasHcns ? 1 : 0) + 1
+  const hcnsNo = hasB1 ? 2 : 1
 
   const extraTotal = extraRows.reduce((s, r) => s + (Number(r.amount) || 0), 0)
   const subTotal   = baseFee + hcnsFee + extraTotal   // tổng trước VAT (mọi dòng B đều là số chưa VAT)
@@ -216,15 +227,16 @@ export async function GET(request) {
         <td class="ra"><b id="totalB">${fmt(totalB)} đ</b></td>
         <td></td><td></td>
       </tr>
+      ${hasB1 ? `
       <tr>
         <td class="ca">B1</td>
         <td>${b1Label}</td>
         <td class="ra" id="b1amt">${fmt(baseFee)} đ</td>
         <td class="ca">${dayStr}</td><td></td>
-      </tr>
+      </tr>` : ''}
       ${hasHcns ? `
       <tr>
-        <td class="ca">B2</td>
+        <td class="ca">B${hcnsNo}</td>
         <td>${hcnsLabel}</td>
         <td class="ra">${fmt(hcnsFee)} đ</td>
         <td class="ca">${dayStr}</td><td></td>
