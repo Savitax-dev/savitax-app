@@ -743,7 +743,10 @@ export default function RoomPage({ params }) {
                             </div>
                             {g.items.map((x, i) => (
                               <div key={x.clientId} className={'px-4 py-2 pl-7 border-b border-gray-50 grid grid-cols-[1fr_96px_96px_96px_104px] gap-2 items-center text-xs ' + zebra(i)}>
-                                <span className="text-gray-700 truncate">{x.name}</span>
+                                <span className="text-gray-700 truncate">
+                                  {x.name}
+                                  {x.ngung && <span className="ml-1.5 text-[10px] font-semibold bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">Ngưng DV</span>}
+                                </span>
                                 <span className="text-right text-gray-700">{x.ketoan > 0 ? fmt(x.ketoan) : '—'}</span>
                                 <span className="text-right text-violet-600">{x.hcns > 0 ? fmt(x.hcns) : '—'}</span>
                                 <span className="text-right text-teal-600">{x.dvk > 0 ? fmt(x.dvk) : '—'}</span>
@@ -801,6 +804,37 @@ export default function RoomPage({ params }) {
                     <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2.5 flex items-center gap-2">
                       <span className="text-red-500">🔴</span>
                       <p className="text-xs font-semibold text-red-700">{overdue.length} công ty quá hạn thu phí dịch vụ kế toán</p>
+                    </div>
+                  )}
+
+                  {/* Công ty ĐÃ NGƯNG dịch vụ mà còn nợ. Đã ra khỏi checklist công việc và khỏi %-KPI,
+                      nhưng tiền thì vẫn phải đòi — không hiện ở đây thì ngưng xong là khoản nợ biến
+                      khỏi mọi màn hình (anh chốt 05/10/2026). */}
+                  {dongTien?.ngungConNo?.length > 0 && (
+                    <div className="bg-white border border-amber-200 rounded-2xl overflow-hidden">
+                      <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-100 flex items-center justify-between">
+                        <p className="text-xs font-semibold text-amber-800">
+                          ⏸ Đã ngưng dịch vụ — còn phải thu · {dongTien.ngungConNo.length} công ty
+                        </p>
+                        <p className="text-xs font-bold text-amber-800">{fmt(dongTien.ngungConNo.reduce((a, x) => a + x.total, 0))}đ</p>
+                      </div>
+                      <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 grid grid-cols-[1fr_140px_96px_96px_96px_104px] gap-2 text-xs text-gray-400">
+                        <span>Công ty</span><span>Nhân viên</span><span className="text-right">Kế toán</span>
+                        <span className="text-right">HCNS</span><span className="text-right">DV khác</span><span className="text-right">Còn phải thu</span>
+                      </div>
+                      {dongTien.ngungConNo.map((x, i) => (
+                        <div key={x.clientId} className={'px-4 py-2 border-b border-gray-50 grid grid-cols-[1fr_140px_96px_96px_96px_104px] gap-2 items-center text-xs ' + zebra(i)}>
+                          <span className="text-gray-700 truncate">{x.name}</span>
+                          <span className="text-gray-500 truncate">{staffNameOf(x.staffId)}</span>
+                          <span className="text-right text-gray-700">{x.ketoan > 0 ? fmt(x.ketoan) : '—'}</span>
+                          <span className="text-right text-violet-600">{x.hcns > 0 ? fmt(x.hcns) : '—'}</span>
+                          <span className="text-right text-teal-600">{x.dvk > 0 ? fmt(x.dvk) : '—'}</span>
+                          <span className="text-right font-semibold text-red-500">{fmt(x.total)}đ</span>
+                        </div>
+                      ))}
+                      <p className="px-4 py-2 text-xs text-gray-500 bg-gray-50 border-t border-gray-100">
+                        Các công ty này không còn trong checklist công việc và không tính vào %-KPI, nhưng số nợ vẫn nằm trong “Còn phải thu chuyển kỳ sau”.
+                      </p>
                     </div>
                   )}
 
