@@ -583,7 +583,7 @@ export default function RoomPage({ params }) {
                         <div className="flex justify-between text-xs"><span className="text-gray-500">HCNS</span>
                           {dongTien.tonDau.hcnsCoSoLieu
                             ? <span className="font-semibold text-violet-600">{fmt(dongTien.tonDau.hcns)}đ</span>
-                            : <span className="text-gray-400 italic">chưa chốt</span>}
+                            : <span className="text-gray-400 italic">chưa tách riêng</span>}
                         </div>
                         <div className="flex justify-between text-xs"><span className="text-gray-500">Dịch vụ khác</span><span className="font-semibold text-teal-600">{fmt(dongTien.tonDau.dvk)}đ</span></div>
                       </div>
@@ -747,7 +747,7 @@ export default function RoomPage({ params }) {
                         ))}
                         {ton && !dongTien.tonDau.hcnsCoSoLieu && (
                           <p className="px-4 py-2.5 text-xs text-gray-500 bg-amber-50 border-t border-amber-100">
-                            Cột HCNS đang trống vì chưa chốt sổ nợ tồn HCNS — số sẽ có sau khi nạp file chốt từ Excel.
+                            Cột HCNS trống vì phí HCNS mới tách riêng từ T9/2026 — các kỳ trước đó không có số HCNS để chuyển sang.
                           </p>
                         )}
                       </div>

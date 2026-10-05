@@ -49,6 +49,7 @@ async function duLieuPhong(room, year, month) {
 
   // phí HCNS kỳ này — rút gọn từ loadHcnsFees của route
   const hcnsByClient = {}
+  let hcnsLichSu = { links: [], plans: [], paid: [] }
   const { data: links } = await sb.from('hcns_clients')
     .select('id, linked_client_id, hcns_fee, fee_period, created_at')
     .in('linked_client_id', cids).eq('category', 'thoi_ky').eq('is_active', true)
@@ -68,8 +69,9 @@ async function duLieuPhong(room, year, month) {
         collected: paid.get(l.id + '_' + year + '_' + month) || 0,
       }
     }
+    hcnsLichSu = { links, plans, paid: [...paid.entries()] }
   }
-  return { clients, feePlanRows: feePlan, changeLogRows: changeLog, feeKetoanMap, hcnsByClient }
+  return { clients, feePlanRows: feePlan, changeLogRows: changeLog, feeKetoanMap, hcnsByClient, hcnsLichSu }
 }
 
 const { data: rooms } = await sb.from('rooms').select('id, name, type').order('name')

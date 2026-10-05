@@ -306,6 +306,7 @@ export async function GET(request) {
       changeLogRows: changeLogRows || [],
       feeKetoanMap: feeMap,
       hcnsByClient,
+      hcnsLichSu: { links: hcns.links || [], plans: hcns.plans || [], paid: hcns.paid || [] },
     })
   } catch (e) {
     console.error('dongTienPhong:', e?.message || e)
@@ -329,7 +330,7 @@ async function loadHcnsFees(supabase, clientIds, year, month) {
     .in('linked_client_id', clientIds).eq('category', 'thoi_ky').eq('is_active', true)
   // Lỗi = thiếu bảng (bản clone). Không lỗi mà rỗng = có module, chỉ là chưa ai bật DV HCNS.
   if (error) return { installed: false, byClient: out }
-  if (!links?.length) return { installed: true, byClient: out }
+  if (!links?.length) return { installed: true, byClient: out, links: [], plans: [], paid: [] }
 
   const { data: fees } = await supabase.from('hcns_service_fees')
     .select('hcns_client_id, year, month, amount, type').in('hcns_client_id', links.map(l => l.id))
@@ -353,5 +354,11 @@ async function loadHcnsFees(supabase, clientIds, year, month) {
       collected: paid.get(l.id + '_' + year + '_' + month) || 0,
     }
   }
-  return { installed: true, byClient: out }
+  // Trả kèm LỊCH SỬ phí/tiền thu HCNS (mọi tháng, không chỉ tháng đang xem) để tính được
+  // "tồn đầu kỳ" phần HCNS — phí HCNS tách riêng từ T9/2026, phần chưa thu của các kỳ trước
+  // phải chuyển sang kỳ này.
+  return {
+    installed: true, byClient: out, links, plans,
+    paid: [...paid.entries()].map(([k, v]) => [k, v]),
+  }
 }
