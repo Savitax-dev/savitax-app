@@ -45,7 +45,8 @@ const VIA = { code: ['qua Mã KH', 'bg-blue-50 text-blue-700'], mst: ['qua MST',
   name: ['qua Tên', 'bg-amber-50 text-amber-700'], manual: ['chọn tay', 'bg-gray-100 text-gray-600'] }
 // Nhãn thao tác trong nhật ký từng giao dịch (bank_action_logs.action).
 const ACTION_LABEL = { post: 'Ghi công nợ', ignore: 'Đóng giao dịch', reopen: 'Mở lại', assign: 'Chọn công ty', note: 'Ghi chú' }
-const KIND = { ketoan: ['KT', 'bg-emerald-50 text-emerald-700'], hcns: ['HCNS', 'bg-violet-50 text-violet-700'], no_ton: ['Nợ tồn', 'bg-orange-50 text-orange-700'] }
+const KIND = { ketoan: ['KT', 'bg-emerald-50 text-emerald-700'], hcns: ['HCNS', 'bg-violet-50 text-violet-700'], no_ton: ['Nợ tồn', 'bg-orange-50 text-orange-700'],
+  khach: ['DV khác', 'bg-teal-50 text-teal-700'], hcns_case: ['HCNS hồ sơ', 'bg-violet-50 text-violet-700'] }
 
 // Tô mã KH (xanh) và kỳ (tím) trên nội dung gốc.
 function Memo({ text, hl }) {
@@ -81,6 +82,7 @@ export default function BankPage() {
   const [busy, setBusy] = useState(null)
   const [msg, setMsg] = useState(null)
   const [clients, setClients] = useState(null)
+  const [hcnsCases, setHcnsCases] = useState(null)
 
   useEffect(() => {
     (async () => {
@@ -112,6 +114,14 @@ export default function BankPage() {
     if (clients) return
     const json = await fetch('/api/admin/bank-transactions?clients=1', { cache: 'no-store' }).then(r => r.json())
     setClients(json.data || [])
+  }
+
+  // Hồ sơ HCNS "Thời điểm" không gắn công ty kế toán nên không có trong danh sách chọn công ty —
+  // phải lấy riêng, và chỉ lấy khi nhân viên bấm vào (danh sách ít dùng).
+  const loadHcnsCases = async () => {
+    if (hcnsCases) return
+    const json = await fetch('/api/admin/bank-transactions?hcnsCases=1', { cache: 'no-store' }).then(r => r.json())
+    setHcnsCases(json.data || [])
   }
 
   const act = async (body, okText) => {
@@ -231,7 +241,8 @@ export default function BankPage() {
             <Row key={r.id} r={r} zebra={i % 2 === 1} open={!!open[r.id]}
               toggle={() => setOpen(o => ({ ...o, [r.id]: !o[r.id] }))}
               busy={busy === r.id || busy === 'all'} act={act}
-              clients={clients} loadClients={loadClients} />
+              clients={clients} loadClients={loadClients}
+              hcnsCases={hcnsCases} loadHcnsCases={loadHcnsCases} />
           ))}
         </div>
 
@@ -249,7 +260,7 @@ export default function BankPage() {
   )
 }
 
-function Row({ r, zebra, open, toggle, busy, act, clients, loadClients }) {
+function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCases, loadHcnsCases }) {
   const g = groupOf(r)
   const st = ST[g]
   const pill = r.state === "open" ? st.label : pillLabel(r)
@@ -265,9 +276,54 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients }) {
   const [pYear, setPYear] = useState(r.period?.year || new Date().getFullYear())
   const [pMonth, setPMonth] = useState(r.period?.month || new Date().getMonth() + 1)
   const [note, setNote] = useState('')
+  // Ghi tiền vào HỒ SƠ thay vì phí hàng tháng: 'dvk' = Dịch vụ khác của công ty vừa ghép,
+  // 'hcns' = hồ sơ HCNS Thời điểm (chọn riêng, không theo công ty kế toán).
+  const [target, setTarget] = useState('')
+  const [svcList, setSvcList] = useState(null)
+  const [svcFor, setSvcFor] = useState(null)
+  const [svcId, setSvcId] = useState('')
+  const [svcAmount, setSvcAmount] = useState('')
+  const [hcnsPick, setHcnsPick] = useState('')
+  const [hcnsAmount, setHcnsAmount] = useState('')
 
   const pickedClient = clients && pick ? clients.find(c => c.name === pick || c.client_code === pick) : null
-  const lines = r.status === 'posted' ? (r.post_detail?.done || []) : (r.plan || [])
+  // Ghi vào HỒ SƠ (Dịch vụ khác / HCNS Thời điểm) không có `done` như ghi công nợ hàng tháng —
+  // dựng 1 dòng từ post_detail để thẻ "Đã ghi" không hiện dấu gạch.
+  const pd = r.post_detail
+  const lines = r.status === 'posted'
+    ? (pd?.done || (pd?.kind ? [{ kind: pd.kind === 'hcns_case' ? 'hcns_case' : 'khach', amount: pd.amount, label: pd.name }] : []))
+    : (r.plan || [])
+
+  const pickedCase = hcnsCases && hcnsPick ? hcnsCases.find(c => c.name === hcnsPick) : null
+  // Số tiền mặc định = phần nhỏ hơn giữa tiền vào và phần còn phải thu của hồ sơ — ghi quá phần
+  // còn lại thì server chặn, nên đừng để nhân viên phải tự tính.
+  const goiY = (remain) => String(Math.min(Number(r.amount) || 0, Number(remain) || 0))
+  // Lấy hồ sơ Dịch vụ khác của công ty ĐANG ghép. Phải theo dõi `r.client?.id`: nhân viên hay
+  // chọn tay công ty SAU khi đã mở ô này, không lấy lại thì vẫn hiện "chưa chọn công ty".
+  useEffect(() => {
+    if (target !== 'dvk' || !r.client || svcFor === r.client.id) return
+    let huy = false
+    ;(async () => {
+      const json = await fetch('/api/admin/other-services?clientId=' + r.client.id, { cache: 'no-store' })
+        .then(x => x.json()).catch(() => ({}))
+      if (huy) return
+      const mo = (json.data || []).filter(x => x.status !== 'done')
+      setSvcFor(r.client.id); setSvcList(mo)
+      setSvcId(mo.length ? mo[0].id : '')
+      setSvcAmount(mo.length ? goiY(mo[0].remain) : '')
+    })()
+    return () => { huy = true }
+  }, [target, r.client?.id, svcFor])
+  const pickSvc = (vid) => {
+    setSvcId(vid)
+    const x = (svcList || []).find(v => v.id === vid)
+    setSvcAmount(x ? goiY(x.remain) : '')
+  }
+  const pickHcns = (name) => {
+    setHcnsPick(name)
+    const x = (hcnsCases || []).find(c => c.name === name)
+    setHcnsAmount(x ? goiY(x.remain) : '')
+  }
 
   return (
     <div className={'rounded-xl border border-gray-200 mb-1.5 flex gap-2.5 pl-2.5 pr-3 py-2.5 cursor-pointer ' + (zebra ? 'bg-gray-50' : 'bg-white')} onClick={toggle}>
@@ -300,7 +356,7 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients }) {
             <span className="text-gray-500">{r.status === 'posted' ? 'Đã ghi' : 'Tách tiền'}</span>
             <span className="flex flex-wrap gap-1">
               {lines.length ? lines.map((l, i) => (
-                <Chip key={i} cls={KIND[l.kind][1]}>{KIND[l.kind][0]}{l.month ? ' T' + l.month : ''} {fmt(l.amount)}</Chip>
+                <Chip key={i} cls={(KIND[l.kind] || KIND.ketoan)[1]}>{(KIND[l.kind] || KIND.ketoan)[0]}{l.month ? ' T' + l.month : ''}{l.label ? ' · ' + l.label : ''} {fmt(l.amount)}</Chip>
               )) : '—'}
             </span>
 
@@ -344,6 +400,73 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients }) {
                 {(r.manualClient || r.manualPeriod) && (
                   <button disabled={busy} onClick={() => act({ action: 'assign', id: r.id, clientId: null }, 'Đã về lại kết quả tự đọc')}
                     className="px-2 py-1 text-gray-500 hover:underline">Bỏ chọn tay</button>
+                )}
+              </span>
+            </>)}
+
+            {/* Tiền vào có thể là phí của một HỒ SƠ (Dịch vụ khác / HCNS Thời điểm) chứ không phải
+                phí kế toán hàng tháng. Ghi xong giao dịch cũng chuyển sang "Đã ghi" như ghi công nợ,
+                nhật ký ghi rõ đã vào hồ sơ nào. */}
+            {r.state === 'open' && (<>
+              <span className="text-gray-500">Ghi vào hồ sơ</span>
+              <span>
+                <span className="flex flex-wrap items-center gap-1.5">
+                  <button onClick={() => setTarget(t => t === 'dvk' ? '' : 'dvk')}
+                    className={'px-2.5 py-1 rounded-md border ' + (target === 'dvk' ? 'border-teal-400 bg-teal-50 text-teal-700' : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-100')}>
+                    Dịch vụ khác
+                  </button>
+                  <button onClick={() => { setTarget(t => t === 'hcns' ? '' : 'hcns'); loadHcnsCases() }}
+                    className={'px-2.5 py-1 rounded-md border ' + (target === 'hcns' ? 'border-teal-400 bg-teal-50 text-teal-700' : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-100')}>
+                    HCNS Thời điểm
+                  </button>
+                  {!target && <span className="text-gray-400">Chỉ dùng khi tiền này là phí của một hồ sơ, không phải phí hàng tháng</span>}
+                </span>
+
+                {target === 'dvk' && (
+                  <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    {!r.client ? <span className="text-rose-600">Chọn công ty ở dòng “Chọn tay” trước đã.</span>
+                      : svcList === null ? <span className="text-gray-400">Đang lấy hồ sơ…</span>
+                      : !svcList.length ? <span className="text-gray-500">{r.client.name} chưa có hồ sơ Dịch vụ khác đang mở — mở hồ sơ ở trang công ty trước.</span>
+                      : (<>
+                        <select value={svcId} onChange={e => pickSvc(e.target.value)}
+                          className="border border-gray-200 rounded-md px-2 py-1 max-w-full">
+                          {svcList.map(x => <option key={x.id} value={x.id}>{x.name} — còn {fmt(x.remain)}</option>)}
+                        </select>
+                        <input value={svcAmount} onChange={e => setSvcAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                          className="border border-gray-200 rounded-md px-2 py-1 w-32 text-right" />
+                        <button disabled={busy || !svcId || !Number(svcAmount)} onClick={async () => {
+                          const x = svcList.find(v => v.id === svcId)
+                          if (!confirm('Ghi ' + fmt(Number(svcAmount)) + ' vào hồ sơ “' + x.name + '” của ' + r.client.name + '?')) return
+                          if (await act({ action: 'postOther', id: r.id, serviceId: svcId, amount: Number(svcAmount), userNote: note.trim() || undefined },
+                            'Đã ghi vào hồ sơ ' + x.name)) setNote('')
+                        }}
+                          className="px-2.5 py-1 rounded-md border border-teal-400 bg-teal-50 text-teal-700 font-medium hover:bg-teal-100 disabled:opacity-40">
+                          Ghi vào hồ sơ
+                        </button>
+                      </>)}
+                  </span>
+                )}
+
+                {target === 'hcns' && (
+                  <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <input list={'hc-' + r.id} value={hcnsPick} onChange={e => pickHcns(e.target.value)}
+                      placeholder="Gõ tên hồ sơ HCNS Thời điểm…"
+                      className="border border-gray-200 rounded-md px-2 py-1 w-64 max-w-full" />
+                    <datalist id={'hc-' + r.id}>
+                      {(hcnsCases || []).map(c => <option key={c.id} value={c.name}>{'còn ' + fmt(c.remain) + ' / phí ' + fmt(c.fee)}</option>)}
+                    </datalist>
+                    <input value={hcnsAmount} onChange={e => setHcnsAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                      className="border border-gray-200 rounded-md px-2 py-1 w-32 text-right" />
+                    <button disabled={busy || !pickedCase || !Number(hcnsAmount)} onClick={async () => {
+                      if (!confirm('Ghi ' + fmt(Number(hcnsAmount)) + ' vào hồ sơ HCNS “' + pickedCase.name + '”?\nNgày khách trả lấy theo ngày tiền vào ngân hàng.')) return
+                      if (await act({ action: 'postHcnsCase', id: r.id, hcnsClientId: pickedCase.id, amount: Number(hcnsAmount), userNote: note.trim() || undefined },
+                        'Đã ghi vào hồ sơ HCNS ' + pickedCase.name)) setNote('')
+                    }}
+                      className="px-2.5 py-1 rounded-md border border-teal-400 bg-teal-50 text-teal-700 font-medium hover:bg-teal-100 disabled:opacity-40">
+                      Ghi vào hồ sơ
+                    </button>
+                    {pickedCase && <span className="text-gray-500">còn phải thu {fmt(pickedCase.remain)}</span>}
+                  </span>
                 )}
               </span>
             </>)}

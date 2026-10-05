@@ -12,6 +12,9 @@ import { executePlan } from '@/lib/bankPost'
 //      { action: 'ignore', id, note? }           -> bỏ qua (không phải phí dịch vụ)
 //      { action: 'reopen', id }                  -> mở lại giao dịch đã bỏ qua
 //      { action: 'assign', id, clientId, year?, month? } -> chọn tay công ty / kỳ
+//      { action: 'postOther',    id, serviceId, amount }                     -> ghi vào hồ sơ Dịch vụ khác
+//      { action: 'postHcnsCase', id, hcnsClientId, caseServiceId?, amount }  -> ghi vào hồ sơ HCNS Thời điểm
+// GET  ?hcnsCases=1                    -> danh sách hồ sơ HCNS Thời điểm + phần còn phải thu
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -21,6 +24,13 @@ const PERM = 'bank_reconcile'
 const fmtDay = (iso) => {
   const d = new Date(new Date(iso).getTime() + 7 * 3600 * 1000)
   return String(d.getUTCDate()).padStart(2, '0') + '/' + String(d.getUTCMonth() + 1).padStart(2, '0')
+}
+
+// Ngày của giao dịch theo giờ VN — dùng cho kỳ ghi (year/month) và `paid_at` của HCNS.
+const vnParts = (iso) => {
+  const d = new Date(new Date(iso).getTime() + 7 * 3600 * 1000)
+  const y = d.getUTCFullYear(), m = d.getUTCMonth() + 1, day = d.getUTCDate()
+  return { y, m, d: day, ymd: y + '-' + String(m).padStart(2, '0') + '-' + String(day).padStart(2, '0') }
 }
 
 // Mốc đầu/cuối ngày theo giờ VN, trả ISO UTC.
@@ -44,6 +54,30 @@ export async function GET(request) {
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
   const supabase = getAdmin()
   const url = new URL(request.url)
+
+  // Danh sách hồ sơ HCNS "Thời điểm" để ghi thẳng tiền vào hồ sơ ngay tại trang đối soát. Nhóm này
+  // KHÔNG gắn với công ty kế toán (linked_client_id trống) nên không tra được qua ô chọn công ty.
+  if (url.searchParams.get('hcnsCases')) {
+    try {
+      const { data: hc } = await supabase.from('hcns_clients')
+        .select('id, name, tax_code, case_code').eq('category', 'thoi_diem').eq('is_active', true).order('name')
+      const ids = (hc || []).map(h => h.id)
+      const [{ data: svc }, { data: pay }] = await Promise.all([
+        supabase.from('hcns_case_services').select('hcns_client_id, cost').in('hcns_client_id', ids),
+        supabase.from('hcns_case_payments').select('hcns_client_id, amount').in('hcns_client_id', ids),
+      ])
+      const phi = new Map(), thu = new Map()
+      for (const s of svc || []) phi.set(s.hcns_client_id, (phi.get(s.hcns_client_id) || 0) + (Number(s.cost) || 0))
+      for (const p of pay || []) thu.set(p.hcns_client_id, (thu.get(p.hcns_client_id) || 0) + (Number(p.amount) || 0))
+      return Response.json({
+        data: (hc || []).map(h => ({
+          id: h.id, name: h.name, tax_code: h.tax_code, case_code: h.case_code,
+          fee: phi.get(h.id) || 0, paid: thu.get(h.id) || 0,
+          remain: Math.max(0, (phi.get(h.id) || 0) - (thu.get(h.id) || 0)),
+        })),
+      })
+    } catch (e) { return Response.json({ data: [], error: e?.message }) }
+  }
 
   if (url.searchParams.get('clients')) {
     const all = []
@@ -244,6 +278,114 @@ export async function POST(request) {
     })
     if (!res.ok) return Response.json({ error: 'Mới ghi được một phần, phần còn lại lỗi: ' + res.error + '. Kiểm tra tay công nợ công ty này.' }, { status: 500 })
     return Response.json({ ok: true, done: res.done })
+  }
+
+  // Ghi tiền vào HỒ SƠ "Dịch vụ khác" (sql/24) thay vì phí kế toán hàng tháng. Nhân viên đã tự
+  // ghép công ty rồi mới chọn hồ sơ, nên KHÔNG tính lại đề xuất / so planSignature như action
+  // 'post' — ở đây cái cần chặn là ghi quá phần còn lại của hồ sơ.
+  if (action === 'postOther') {
+    if (tx.state !== 'open') return Response.json({ error: 'Giao dịch đã được xử lý — tải lại trang' }, { status: 409 })
+    const amount = Math.round(Number(body.amount) || 0)
+    if (amount <= 0) return Response.json({ error: 'Số tiền ghi phải lớn hơn 0' }, { status: 400 })
+    const { data: svc } = await supabase.from('other_services').select('*').eq('id', body.serviceId).maybeSingle()
+    if (!svc) return Response.json({ error: 'Không tìm thấy hồ sơ dịch vụ khác' }, { status: 404 })
+    if (svc.status === 'done') return Response.json({ error: 'Hồ sơ đã đóng — mở lại ở trang công ty trước khi ghi' }, { status: 400 })
+    const { data: pays } = await supabase.from('other_service_payments').select('amount').eq('service_id', svc.id)
+    const daThu = (pays || []).reduce((a, x) => a + (Number(x.amount) || 0), 0)
+    const conLai = Math.max(0, (Number(svc.amount) || 0) - daThu)
+    if (amount > conLai) {
+      return Response.json({
+        error: 'Số tiền ghi (' + amount.toLocaleString('vi-VN') + 'đ) lớn hơn phần còn lại của hồ sơ ('
+          + conLai.toLocaleString('vi-VN') + 'đ). Ghi số nhỏ hơn, hoặc sửa số phải thu của hồ sơ ở trang công ty.',
+      }, { status: 400 })
+    }
+    // Giữ chỗ trước khi ghi — 2 người bấm cùng lúc thì chỉ 1 người qua.
+    const { data: claimed, error: cErr } = await supabase.from('bank_transactions')
+      .update({ state: 'posted', posted_at: new Date().toISOString(), posted_by: staffId, client_id: svc.client_id })
+      .eq('id', id).eq('state', 'open').select('id')
+    if (cErr) return Response.json({ error: cErr.message }, { status: 500 })
+    if (!claimed?.length) return Response.json({ error: 'Giao dịch đã được xử lý bởi người khác — tải lại trang' }, { status: 409 })
+
+    const d = vnParts(tx.tx_time)
+    const { error } = await supabase.from('other_service_payments').insert({
+      service_id: svc.id, client_id: svc.client_id, amount,
+      // Kỳ ghi = THÁNG TIỀN VÀO theo giờ VN, không phải tháng đang xem trên giao diện.
+      year: d.y, month: d.m,
+      note: 'Đối soát NH ' + String(tx.source || '').toUpperCase() + ' ' + fmtDay(tx.tx_time), created_by: staffId,
+    })
+    if (error) {
+      await supabase.from('bank_transactions').update({ state: 'open', posted_at: null, posted_by: null }).eq('id', id)
+      return Response.json({ error: 'Chưa ghi được: ' + error.message }, { status: 500 })
+    }
+    const tuDong = amount === conLai
+    if (tuDong) {
+      await supabase.from('other_services')
+        .update({ status: 'done', closed_at: new Date().toISOString(), closed_by: staffId }).eq('id', svc.id)
+    }
+    const detail = { kind: 'other_service', serviceId: svc.id, name: svc.name, amount, closed: tuDong }
+    await supabase.from('bank_transactions').update({ post_detail: detail }).eq('id', id)
+    await logAction(supabase, {
+      txId: id, clientId: svc.client_id, action: 'post',
+      detail: 'Dịch vụ khác "' + svc.name + '" ' + amount.toLocaleString('vi-VN') + 'đ'
+        + (tuDong ? ' · hồ sơ đã thu đủ, tự đóng' : ' · còn lại ' + (conLai - amount).toLocaleString('vi-VN') + 'đ'),
+      note: body.userNote, staffId,
+    })
+    return Response.json({ ok: true, closed: tuDong })
+  }
+
+  // Ghi tiền vào HỒ SƠ HCNS "Thời điểm". Nhóm này không gắn công ty kế toán (linked_client_id
+  // trống) nên giao dịch chỉ lưu được hồ sơ ở post_detail, client_id vẫn để nguyên.
+  // paid_at = NGÀY TIỀN VÀO NGÂN HÀNG (không phải ngày bấm) — ghi muộn mà lấy ngày ghi sẽ thổi
+  // phồng "Tồn đầu kỳ" của Phòng HCNS.
+  if (action === 'postHcnsCase') {
+    if (tx.state !== 'open') return Response.json({ error: 'Giao dịch đã được xử lý — tải lại trang' }, { status: 409 })
+    const amount = Math.round(Number(body.amount) || 0)
+    if (amount <= 0) return Response.json({ error: 'Số tiền ghi phải lớn hơn 0' }, { status: 400 })
+    const { data: hc } = await supabase.from('hcns_clients').select('id, name, category').eq('id', body.hcnsClientId).maybeSingle()
+    if (!hc) return Response.json({ error: 'Không tìm thấy hồ sơ HCNS' }, { status: 404 })
+    if (hc.category !== 'thoi_diem') return Response.json({ error: 'Chỉ ghi được vào hồ sơ HCNS Thời điểm' }, { status: 400 })
+    const [{ data: svcs }, { data: pays }] = await Promise.all([
+      supabase.from('hcns_case_services').select('id, cost').eq('hcns_client_id', hc.id),
+      supabase.from('hcns_case_payments').select('amount').eq('hcns_client_id', hc.id),
+    ])
+    const phi = (svcs || []).reduce((a, x) => a + (Number(x.cost) || 0), 0)
+    const daThu = (pays || []).reduce((a, x) => a + (Number(x.amount) || 0), 0)
+    const conLai = Math.max(0, phi - daThu)
+    if (amount > conLai) {
+      return Response.json({
+        error: 'Số tiền ghi (' + amount.toLocaleString('vi-VN') + 'đ) lớn hơn phần còn phải thu của hồ sơ ('
+          + conLai.toLocaleString('vi-VN') + 'đ). Ghi số nhỏ hơn, hoặc kiểm lại phí dịch vụ trong hồ sơ.',
+      }, { status: 400 })
+    }
+    const caseServiceId = body.caseServiceId || null
+    if (caseServiceId && !(svcs || []).some(x => x.id === caseServiceId)) {
+      return Response.json({ error: 'Dịch vụ không thuộc hồ sơ này' }, { status: 400 })
+    }
+    const { data: claimed, error: cErr } = await supabase.from('bank_transactions')
+      .update({ state: 'posted', posted_at: new Date().toISOString(), posted_by: staffId })
+      .eq('id', id).eq('state', 'open').select('id')
+    if (cErr) return Response.json({ error: cErr.message }, { status: 500 })
+    if (!claimed?.length) return Response.json({ error: 'Giao dịch đã được xử lý bởi người khác — tải lại trang' }, { status: 409 })
+
+    const d = vnParts(tx.tx_time)
+    const { error } = await supabase.from('hcns_case_payments').insert({
+      hcns_client_id: hc.id, case_service_id: caseServiceId, amount,
+      note: 'Đối soát NH ' + String(tx.source || '').toUpperCase() + ' ' + fmtDay(tx.tx_time),
+      created_by: staffId, paid_at: d.ymd,
+    })
+    if (error) {
+      await supabase.from('bank_transactions').update({ state: 'open', posted_at: null, posted_by: null }).eq('id', id)
+      return Response.json({ error: 'Chưa ghi được: ' + error.message }, { status: 500 })
+    }
+    const detail = { kind: 'hcns_case', hcnsClientId: hc.id, name: hc.name, caseServiceId, amount, paid_at: d.ymd }
+    await supabase.from('bank_transactions').update({ post_detail: detail }).eq('id', id)
+    await logAction(supabase, {
+      txId: id, clientId: tx.client_id, action: 'post',
+      detail: 'Hồ sơ HCNS Thời điểm "' + hc.name + '" ' + amount.toLocaleString('vi-VN') + 'đ'
+        + ' · ngày trả ' + d.ymd + (conLai - amount > 0 ? ' · còn lại ' + (conLai - amount).toLocaleString('vi-VN') + 'đ' : ' · đã thu đủ'),
+      note: body.userNote, staffId,
+    })
+    return Response.json({ ok: true })
   }
 
   return Response.json({ error: 'Thao tác không hợp lệ' }, { status: 400 })
