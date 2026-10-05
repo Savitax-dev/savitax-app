@@ -239,7 +239,7 @@ export async function PATCH(request) {
   if (!permCheck.caller) return Response.json({ error: permCheck.error }, { status: permCheck.status })
 
   const body = await request.json()
-  const { id, assigned_to, address, tax_status, fee_period, status, monthly_fee, fee_history, other_debt, client_code, name, tax_code, representative, contract_start, report_type, updatedBy, uses_hcns, hcns_fee, hcns_from, hcns_stop_from, is_hkd } = body
+  const { id, assigned_to, address, tax_status, fee_period, status, monthly_fee, fee_history, other_debt, client_code, name, tax_code, representative, contract_start, report_type, updatedBy, uses_hcns, hcns_fee, hcns_from, hcns_stop_from, is_hkd, service_end } = body
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })
   const supabase = getAdmin()
 
@@ -298,8 +298,25 @@ export async function PATCH(request) {
     }
   }
 
+  // Tháng ngưng dịch vụ (sql/25): lưu ngày 01 của tháng ngưng. Chuyển về trạng thái khác thì xoá,
+  // không thì công ty dùng lại dịch vụ vẫn bị chặn phí theo mốc ngưng cũ.
+  let seData = null
+  if (status !== undefined) {
+    if (status === 'inactive') {
+      const m = /^(\d{4})-(\d{2})/.exec(String(service_end || ''))
+      if (m) seData = { service_end: m[1] + '-' + m[2] + '-01' }
+    } else {
+      seData = { service_end: null }
+    }
+  }
+
   const { error } = await supabase.from('clients').update(updateData).eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 400 })
+  if (seData) {
+    // Ghi riêng: chưa chạy sql/25 thì cột chưa có — không được vì thế mà hỏng việc đổi trạng thái.
+    const { error: seErr } = await supabase.from('clients').update(seData).eq('id', id)
+    if (seErr) console.error('service_end chưa ghi được (đã chạy sql/25 chưa?):', seErr.message)
+  }
 
   // Ghi nhật ký mọi thay đổi thông tin công ty (tên, MST, mã KH, nhân viên phụ trách...). Phí dịch
   // vụ có đường ghi riêng bên dưới nên không nằm trong TRACKED, tránh ghi 2 dòng cho cùng 1 việc.

@@ -41,6 +41,8 @@ export default function MyDebtPage() {
   const [selQuarter, setSelQuarter] = useState(Math.floor(now.getMonth() / 3) + 1)
   const [me,        setMe]        = useState(null)
   const [myClients, setMyClients] = useState([])
+  // Công ty đã NGƯNG dịch vụ mà còn nợ — không vào %-công nợ, nhưng vẫn phải có chỗ ghi thu.
+  const [stopped, setStopped] = useState([])
   const [loading,   setLoading]   = useState(true)
   const [search,    setSearch]    = useState('')
   const [filter,    setFilter]    = useState('unpaid')
@@ -110,8 +112,9 @@ export default function MyDebtPage() {
           }
         })
         setMyClients(clients)
+        setStopped(json.stoppedClients || [])
       } else {
-        setMe(null); setMyClients([])
+        setMe(null); setMyClients([]); setStopped([])
       }
     } catch (_) {}
     setLoading(false)
@@ -266,6 +269,62 @@ export default function MyDebtPage() {
                 ))}
               </div>
             </div>
+
+            {/* Công ty ĐÃ NGƯNG dịch vụ mà còn nợ: đã ra khỏi checklist công việc và khỏi %-công nợ ở
+                trên, nhưng tiền thì vẫn phải thu — bấm vào để ghi thu như công ty bình thường. */}
+            {stopped.length > 0 && (
+              <div className="mb-4 bg-amber-50 border border-amber-200 rounded-2xl overflow-hidden">
+                <div className="px-4 py-2.5 flex items-center justify-between border-b border-amber-200">
+                  <p className="text-sm font-semibold text-amber-800">⏸ Đã ngưng dịch vụ — còn phải thu ({stopped.length})</p>
+                  <p className="text-sm font-bold text-amber-800">{fmt(stopped.reduce((a, c) => a + (Number(c.conNo) || 0), 0))}đ</p>
+                </div>
+                <div className="p-2 space-y-2">
+                  {stopped.map(client => {
+                    const isOpen = openClient[client.id]
+                    const cMonth = clientMonth[client.id] || selMonth
+                    return (
+                      <div key={client.id} className="bg-white border border-amber-200 rounded-xl overflow-hidden">
+                        <button onClick={() => setOpenClient(p => ({ ...p, [client.id]: !p[client.id] }))}
+                          className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors text-left">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm font-semibold text-gray-900 break-words">{client.name}</p>
+                              <span className="text-xs font-semibold bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Ngưng DV</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0 font-medium bg-orange-50 text-orange-600">⚠ Còn {fmt(client.conNo)}đ</span>
+                            </div>
+                            <div className="flex items-center gap-3 mt-1 flex-wrap">
+                              <span className="text-xs text-gray-400">{client.tax_code}</span>
+                              {Number(client.other_debt) > 0 && (
+                                <span className="text-xs text-orange-500">📦 Nợ tồn cũ: {fmt(client.other_debt)}đ</span>
+                              )}
+                              {Number(client.conNo) > Number(client.other_debt || 0) && (
+                                <span className="text-xs text-gray-500">phí kỳ cuối chưa thu: {fmt(Number(client.conNo) - Number(client.other_debt || 0))}đ</span>
+                              )}
+                            </div>
+                          </div>
+                          <span className={'text-gray-300 text-sm transition-transform ' + (isOpen ? 'rotate-180' : '')}>▾</span>
+                        </button>
+                        {isOpen && (
+                          <ClientChecklist
+                            client={client}
+                            clientMonth={cMonth}
+                            defaultPanel="debt"
+                            onMonthChange={(newMonth) => setClientMonth(p => ({ ...p, [client.id]: newMonth }))}
+                            onDebtSaved={loadMyData}
+                            isAdmin={isAdmin}
+                            isTrueAdmin={isTrueAdmin}
+                            canUncheck={canUncheck}
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                <p className="px-4 py-2 text-xs text-amber-700 border-t border-amber-200">
+                  Thu đủ thì công ty tự rời khỏi danh sách này. Các công ty ở đây không tính vào % thu hồi công nợ.
+                </p>
+              </div>
+            )}
 
             {/* Danh sách công nợ theo công ty */}
             {filtered.length === 0 ? (

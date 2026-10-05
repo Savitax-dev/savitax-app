@@ -586,6 +586,8 @@ export default function ClientsPage() {
   const [transferTo, setTransferTo] = useState('')
   const [statusEdit, setStatusEdit] = useState(null)
   const [activateMonth, setActivateMonth] = useState('')
+  // Tháng ngưng dịch vụ đang chọn (YYYY-MM) khi chuyển công ty sang "Ngưng dịch vụ".
+  const [stopMonth, setStopMonth] = useState('')
   const [assignEdit, setAssignEdit] = useState(null)
   const [assignRoom, setAssignRoom] = useState('')
   const [assignStaff, setAssignStaff] = useState('')
@@ -857,16 +859,17 @@ export default function ClientsPage() {
     setSaving(false)
   }
 
-  const saveStatus = async (clientId, newStatus, contractStart) => {
+  const saveStatus = async (clientId, newStatus, contractStart, serviceEnd) => {
     setSaving(true)
     const payload = { id: clientId, status: newStatus }
     if (contractStart) payload.contract_start = contractStart
+    if (serviceEnd) payload.service_end = serviceEnd
     await fetch('/api/admin/clients', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
-    setStatusEdit(null); setActivateMonth('')
+    setStatusEdit(null); setActivateMonth(''); setStopMonth('')
     await loadClients()
     setSaving(false)
   }
@@ -1656,13 +1659,33 @@ export default function ClientsPage() {
                               <p className="text-xs text-amber-500">Từ tháng này mới bắt đầu tính tỉ lệ công việc/công nợ.</p>
                             </div>
                           )}
-                          {STATUS_OPTS.filter(o => !(client.status === 'pending' && o.v === 'active')).map(o => (
+                          {/* Ngưng dịch vụ phải CHỌN THÁNG NGƯNG: từ tháng đó không tính phí, không tính
+                              công việc/KPI; phí các tháng trước chưa thu vẫn ở lại để theo dõi và ghi thu. */}
+                          {client.status !== 'inactive' && (
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-2.5 space-y-1.5">
+                              <label className="text-xs text-gray-700 font-medium block">Ngưng dịch vụ — từ tháng:</label>
+                              <input type="month" value={stopMonth || (year + '-' + String(month).padStart(2, '0'))}
+                                min="2026-01"
+                                onChange={e => setStopMonth(e.target.value)}
+                                className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white" />
+                              <p className="text-xs text-gray-500">Từ tháng này không tính phí, không tính công việc và KPI. Phí các tháng trước chưa thu vẫn nằm ở Quản lý công nợ để thu tiếp.</p>
+                              <button disabled={saving}
+                                onClick={() => {
+                                  const sm = stopMonth || (year + '-' + String(month).padStart(2, '0'))
+                                  if (confirm('Ngưng dịch vụ ' + client.name + ' từ tháng ' + sm.split('-').reverse().join('/') + '?')) saveStatus(client.id, 'inactive', null, sm)
+                                }}
+                                className="w-full bg-gray-700 text-white py-1.5 rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors">
+                                Ngưng dịch vụ từ {(stopMonth || (year + '-' + String(month).padStart(2, '0'))).split('-').reverse().join('/')}
+                              </button>
+                            </div>
+                          )}
+                          {STATUS_OPTS.filter(o => !(client.status === 'pending' && o.v === 'active') && !(o.v === 'inactive' && client.status !== 'inactive')).map(o => (
                             <button key={o.v} onClick={() => saveStatus(client.id, o.v)}
                               className={'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ' +
                                 (client.status === o.v ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-50 text-gray-700')
                               }>{o.l}</button>
                           ))}
-                          <button onClick={() => { setStatusEdit(null); setActivateMonth('') }} className="text-xs text-gray-400 hover:text-gray-600">Hủy</button>
+                          <button onClick={() => { setStatusEdit(null); setActivateMonth(''); setStopMonth('') }} className="text-xs text-gray-400 hover:text-gray-600">Hủy</button>
                         </div>
                       ) : (
                         <button onClick={() => setStatusEdit(client.id)}

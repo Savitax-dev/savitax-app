@@ -5,6 +5,7 @@ import { getPeriodMonths } from '@/lib/period'
 import { countsForMonth } from '@/lib/contractDates'
 import { dueFeeMonthsCount, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireLogin } from '@/lib/serverAuth'
+import { tinhDongTienPhong } from '@/lib/dongTienPhong'
 
 function getAdmin() {
   return createClient(
@@ -52,6 +53,50 @@ export async function GET(request) {
 
   const room = staffRecord.rooms || null
 
+  // Công ty ĐÃ NGƯNG dịch vụ mà còn nợ: ra khỏi checklist + %-KPI nhưng nhân viên vẫn phải có chỗ
+  // ghi thu (anh chốt 05/10/2026). Trả riêng `stoppedClients`, KHÔNG trộn vào `clients` để mọi con
+  // số KPI bên dưới giữ nguyên. Lỗi ở đây không được làm hỏng trang.
+  const loadStopped = async () => {
+    try {
+      const { data: st } = await supabase.from('clients')
+        .select('id, name, tax_code, assigned_to, monthly_fee, other_debt, report_type, fee_period, status, client_code, contract_start, created_at')
+        .eq('assigned_to', staffRecord.id).eq('status', 'inactive')
+      if (!st?.length) return []
+      const ids = st.map(c => c.id)
+      // Chỉ chốt nợ tồn cho công ty ĐÃ BIẾT tháng ngưng — không biết mà chốt thì sinh nợ cho mọi
+      // tháng từ lúc ngưng tới giờ.
+      const now = new Date()
+      if (period === 'month' && year === now.getFullYear() && month === now.getMonth() + 1) {
+        try {
+          const { data: se } = await supabase.from('clients').select('id, service_end').in('id', ids)
+          const coMoc = (se || []).filter(r => r.service_end).map(r => r.id)
+          if (coMoc.length) {
+            await ensureRollovers(supabase, coMoc, year, month)
+            const { data: rf } = await supabase.from('clients').select('id, other_debt').in('id', coMoc)
+            for (const r of rf || []) { const c = st.find(x => x.id === r.id); if (c) c.other_debt = r.other_debt }
+          }
+        } catch (_) { /* chưa chạy sql/25 */ }
+      }
+      const [{ data: plans }, { data: logs }] = await Promise.all([
+        supabase.from('service_fees').select('client_id, year, month, amount').in('client_id', ids).eq('type', 'fee_plan'),
+        supabase.from('client_change_log').select('client_id, old_value, changed_at')
+          .in('client_id', ids).eq('entity', 'monthly_fee').eq('action', 'update'),
+      ])
+      const dt = await tinhDongTienPhong(supabase, {
+        clients: st, year, month: months[months.length - 1], feePlanRows: plans || [], changeLogRows: logs || [],
+      })
+      const no = new Map(dt.chuyenKySau.theoCty.map(x => [x.clientId, x]))
+      return st.filter(c => no.has(c.id)).map(c => ({
+        ...c, ngungDv: true, conNo: no.get(c.id).total, conNoKetoan: no.get(c.id).ketoan,
+        tasks: [], taskTotal: 0, taskDone: 0,
+      }))
+    } catch (e) {
+      console.error('stoppedClients:', e?.message || e)
+      return []
+    }
+  }
+  const stoppedClients = await loadStopped()
+
   // Chạy song song mọi truy vấn không phụ thuộc lẫn nhau trong CÙNG 1 lượt
   // (giảm round-trip tới Supabase — mỗi lượt chờ tốn ~300-800ms do khác vùng với Vercel)
   const [{ data: taskDefs }, { data: secondaryRows }, { data: primaryClients }] = await Promise.all([
@@ -81,6 +126,7 @@ export async function GET(request) {
       staff: staffRecord,
       room,
       clients: [],
+      stoppedClients,
       taskPct: 100,
       debtPct: 0,
     })
@@ -197,6 +243,7 @@ export async function GET(request) {
     staff:   staffRecord,
     room,
     clients: clientsWithTasks,
+    stoppedClients,
     // Không phụ trách công ty nào thì % công việc = 0%, không phải 100%.
     taskPct: isMonthOnly ? (clientsWithTasks.length === 0 ? 0 : (totalTasks === 0 ? 100 : Math.round(doneTasks / totalTasks * 100))) : null,
     debtPct: totalFee   === 0 ? (ownedClients.length > 0 ? 100 : 0) : Math.round(totalCol  / totalFee  * 100),
