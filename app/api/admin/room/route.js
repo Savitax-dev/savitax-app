@@ -5,6 +5,7 @@ import { countsForMonth } from '@/lib/contractDates'
 import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
 import { resolveHcnsFeeForMonth } from '@/lib/hcnsFee'
 import { requireRoomAccess } from '@/lib/serverAuth'
+import { tinhDongTienPhong } from '@/lib/dongTienPhong'
 
 function getAdmin() {
   return createClient(
@@ -292,9 +293,27 @@ export async function GET(request) {
     clientCount: activeOwnedClients.length,
   }
 
+  // Khối DÒNG TIỀN công nợ phòng (tồn đầu kỳ + phát sinh − đã thu = chuyển kỳ sau). Tính ở
+  // MÁY CHỦ, giao diện chỉ hiển thị — trước đây mỗi trang tự cộng lại nên ra số khác nhau
+  // (ca %-công nợ 01/10/2026). Truyền TẤT CẢ công ty nhân viên chính kể cả đã ngưng dịch vụ:
+  // còn nợ thì vẫn phải đòi, chỉ phí phát sinh trong kỳ mới gate theo hợp đồng/kỳ thu.
+  let dongTien = null
+  try {
+    dongTien = await tinhDongTienPhong(supabase, {
+      clients: ownedClients || [],
+      year, month,
+      feePlanRows: feePlanRows || [],
+      changeLogRows: changeLogRows || [],
+      feeKetoanMap: feeMap,
+      hcnsByClient,
+    })
+  } catch (e) {
+    console.error('dongTienPhong:', e?.message || e)
+  }
+
   // hcnsInstalled: bản clone không chạy sql/06_hcns_module.sql -> false -> thẻ HCNS không
   // render. Savitax thì luôn true, thẻ hiện kể cả khi chưa công ty nào dùng dịch vụ.
-  return Response.json({ room, staff: staffData, totals, hcnsInstalled: hcns.installed, taskDefs: taskDefs || [] })
+  return Response.json({ room, staff: staffData, totals, dongTien, hcnsInstalled: hcns.installed, taskDefs: taskDefs || [] })
 }
 
 // Phí HCNS + tiền đã thu của tháng đang xem, khoá theo id công ty KẾ TOÁN.

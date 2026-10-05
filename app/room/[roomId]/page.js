@@ -44,6 +44,8 @@ export default function RoomPage({ params }) {
   const [staffData, setStaffData] = useState([])
   const [totals,    setTotals]    = useState(null)
   const [hcnsOn,    setHcnsOn]    = useState(false)
+  // Khối dòng tiền công nợ phòng — MÁY CHỦ tính sẵn (lib/dongTienPhong.js), trang chỉ hiển thị.
+  const [dongTien,  setDongTien]  = useState(null)
   const [ready,     setReady]     = useState(false)
   const [loading,   setLoading]   = useState(false)
   const [forbidden, setForbidden] = useState(false)
@@ -54,8 +56,8 @@ export default function RoomPage({ params }) {
   const [openClient,  setOpenClient]  = useState({})  // clientId → bool
   const [clientMonth, setClientMonth] = useState({})  // clientId → month number
   const [debtTabLoading, setDebtTabLoading] = useState(false)
-  // Thẻ tổng quan nào ở tab "Công nợ phòng" đang mở bảng chi tiết ('unpaid' | 'khach' |
-  // 'otherDebt' | null) — mỗi lúc chỉ mở 1 bảng cho gọn, bấm lại thẻ đó để đóng.
+  // Thẻ dòng tiền nào ở tab "Công nợ phòng" đang mở bảng chi tiết ('ton' | 'hcns' | 'khac' |
+  // 'chuyen' | null) — mỗi lúc chỉ mở 1 bảng cho gọn, bấm lại thẻ đó để đóng.
   const [openDebtCard, setOpenDebtCard] = useState(null)
 
   const monthOpts = []
@@ -105,7 +107,7 @@ export default function RoomPage({ params }) {
     try {
       const res = await fetch('/api/admin/room?roomId=' + roomId + '&year=' + selYear + '&month=' + selMonth + '&_t=' + Date.now(), { cache: 'no-store' })
       const json = await res.json()
-      if (!json.error) { setRoom(json.room); setStaffData(json.staff || []); setTotals(json.totals || null); setHcnsOn(!!json.hcnsInstalled) }
+      if (!json.error) { setRoom(json.room); setStaffData(json.staff || []); setTotals(json.totals || null); setHcnsOn(!!json.hcnsInstalled); setDongTien(json.dongTien || null) }
     } catch (_) {}
     setLoading(false)
   }
@@ -499,36 +501,11 @@ export default function RoomPage({ params }) {
                 ? Math.max(0, Number(c.rolloverRemaining) || 0)
                 : (c.dueThisMonth ? Math.max(0, (Number(c.monthly_fee) || 0) - c.ketoan) : 0)
               const hcnsRemainOf = (c) => Math.max(0, (Number(c.hcnsFee) || 0) - (Number(c.hcnsPaid) || 0))
-              // Công ty chỉ còn nợ phí HCNS cũng phải có mặt ở đây, nếu không con số trên thẻ
-              // (đã gồm HCNS) sẽ không khớp với danh sách bấm mở ra.
-              const unpaidClients = ownedClients.filter(c => ketoanRemainOf(c) > 0 || hcnsRemainOf(c) > 0)
-              const unpaidByStaff = []
-              for (const s of staffData) {
-                const items = unpaidClients.filter(c => c.assigned_to === s.id)
-                if (items.length === 0) continue
-                unpaidByStaff.push({
-                  id: s.id, name: s.full_name, items,
-                  total: items.reduce((a, c) => a + ketoanRemainOf(c) + hcnsRemainOf(c), 0),
-                })
-              }
-              // "Thu khác" = tiền thật đã ghi nhận trong tháng, không phụ thuộc hạn thu quý.
-              const khachClients = ownedClients.filter(c => c.khach > 0)
-              const totalKhach   = khachClients.reduce((a, c) => a + c.khach, 0)
-              // Thẻ "Nợ tồn đầu kỳ chuyển tháng sau" — CHỈ là nợ tồn đang có (clients.other_debt),
-              // KHÔNG cộng phần tháng này chưa thu. Đây là số dư hiện tại, không tách theo tháng
-              // (đổi tên thẻ 2026-08-28 nhưng nguyên tắc tính giữ nguyên như "Nợ tồn cũ chuyển qua").
-              const otherDebtClients = ownedClients.filter(c => Number(c.other_debt) > 0)
-              const totalOtherDebt   = otherDebtClients.reduce((a, c) => a + (Number(c.other_debt) || 0), 0)
-
               // ── Phí HCNS ──────────────────────────────────────────────────────────────
-              // Nhân viên kế toán là người thu cả phí HCNS, nên khoản này nằm trong "Còn phải
-              // thu tháng này" và cũng chuyển thành nợ tồn khi không thu kịp. Nhưng nó KHÔNG
-              // vào %-KPI thu hồi công nợ — xem chú thích ở ô % của từng nhân viên.
+              // Nhân viên kế toán là người thu cả phí HCNS, nên khoản này có dòng riêng trong
+              // "Tồn đầu kỳ" / "Còn phải thu chuyển kỳ sau". Nhưng nó KHÔNG vào %-KPI thu hồi
+              // công nợ — xem chú thích ở ô % của từng nhân viên.
               const hcnsClientsList = ownedClients.filter(c => c.usesHcns && c.hcnsFee > 0)
-              const totalHcnsFee    = hcnsClientsList.reduce((a, c) => a + c.hcnsFee, 0)
-              const totalHcnsPaid   = hcnsClientsList.reduce((a, c) => a + c.hcnsPaid, 0)
-              const totalHcnsRemain = Math.max(0, totalHcnsFee - totalHcnsPaid)
-              const hcnsPct         = totalHcnsFee === 0 ? 0 : Math.round(totalHcnsPaid / totalHcnsFee * 100)
               const hcnsByStaff = []
               for (const st of staffData) {
                 const items = hcnsClientsList.filter(c => c.assigned_to === st.id)
@@ -539,10 +516,6 @@ export default function RoomPage({ params }) {
                   paid: items.reduce((a, c) => a + c.hcnsPaid, 0),
                 })
               }
-              // Tổng còn phải thu = phí kế toán còn thiếu + phí HCNS còn thiếu. Phần kế toán lấy
-              // theo ketoanRemainOf để tháng đã chuyển nợ tồn không treo lại khoản đã thu.
-              const totalRemainAll = ownedClients.reduce((a, c) => a + ketoanRemainOf(c), 0) + totalHcnsRemain
-
               const toggleCard = (k) => setOpenDebtCard(prev => prev === k ? null : k)
               // Nền xen kẽ đậm/nhạt giữa các công ty cho dễ dò mắt theo hàng.
               const zebra = (i) => i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
@@ -593,91 +566,104 @@ export default function RoomPage({ params }) {
                   </div>
                   </div>
 
-                  {/* Summary cards — 4 thẻ, 3 thẻ sau bấm mở bảng chi tiết bên dưới.
-                      Mỗi thẻ 1 màu riêng ở vạch trên + số liệu (xanh lá = phí kế toán tháng này,
-                      đỏ = chưa đòi được, xanh dương = thu khác, cam = nợ để lâu). Cố tình để nền TRẮNG,
-                      không tô màu cả thẻ — ngay bên dưới là danh sách công ty vốn đã có nền
-                      xanh/đỏ theo trạng thái, tô đậm thêm ở đây sẽ rối mắt. */}
+                  {/* ===== KHỐI DÒNG TIỀN CÔNG NỢ PHÒNG =====
+                      Tồn đầu kỳ + phí phát sinh trong kỳ − đã thu = còn phải thu chuyển kỳ sau.
+                      Mọi con số do MÁY CHỦ tính (lib/dongTienPhong.js) — trang KHÔNG tự cộng lại,
+                      vì mỗi trang tự cộng là lại ra số khác nhau (ca %-công nợ 01/10/2026).
+                      Thẻ đầu/cuối tách 3 dòng đúng 3 loại thu: kế toán · HCNS · dịch vụ khác. */}
+                  {dongTien && (
                   <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                    <div className="bg-white border border-gray-100 border-t-4 border-t-green-500 rounded-2xl px-4 py-3">
-                      <p className="text-xs text-gray-400 mb-1">📋 Phí kế toán tháng này</p>
-                      <p className="text-lg font-bold text-gray-900">{fmt(totalFee)}đ</p>
+                    <button onClick={() => toggleCard('ton')}
+                      className={'text-left bg-white border border-t-4 border-t-orange-500 rounded-2xl px-4 py-3 flex flex-col transition-colors hover:bg-gray-50 ' +
+                        (openDebtCard === 'ton' ? 'border-orange-300 ring-1 ring-orange-200' : 'border-gray-100')}>
+                      <p className="text-xs text-gray-400 mb-1">📦 Tồn đầu kỳ chuyển sang</p>
+                      <p className={'text-lg font-bold ' + (dongTien.tonDau.total > 0 ? 'text-orange-500' : 'text-green-600')}>{fmt(dongTien.tonDau.total)}đ</p>
+                      <div className="mt-1.5 pt-1.5 border-t border-dashed border-gray-200 space-y-0.5">
+                        <div className="flex justify-between text-xs"><span className="text-gray-500">Kế toán</span><span className="font-semibold text-gray-700">{fmt(dongTien.tonDau.ketoan)}đ</span></div>
+                        <div className="flex justify-between text-xs"><span className="text-gray-500">HCNS</span>
+                          {dongTien.tonDau.hcnsCoSoLieu
+                            ? <span className="font-semibold text-violet-600">{fmt(dongTien.tonDau.hcns)}đ</span>
+                            : <span className="text-gray-400 italic">chưa chốt</span>}
+                        </div>
+                        <div className="flex justify-between text-xs"><span className="text-gray-500">Dịch vụ khác</span><span className="font-semibold text-teal-600">{fmt(dongTien.tonDau.dvk)}đ</span></div>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1.5">
+                        {dongTien.tonDau.soCty} công ty
+                        {dongTien.tonDau.daThuTrongKy > 0 && <span className="text-green-600"> · kỳ này đã thu {fmt(dongTien.tonDau.daThuTrongKy)}đ</span>}
+                      </p>
+                      <p className="text-xs text-blue-600 mt-auto pt-1">{dongTien.tonDau.soCty === 0 ? '—' : (openDebtCard === 'ton' ? '▴ Đang mở' : '▾ Xem danh sách')}</p>
+                    </button>
+
+                    <div className="bg-white border border-gray-100 border-t-4 border-t-green-500 rounded-2xl px-4 py-3 flex flex-col">
+                      <p className="text-xs text-gray-400 mb-1">📋 Phí kế toán trong kỳ</p>
+                      <p className="text-lg font-bold text-gray-900">{fmt(dongTien.phiKetoan.phi)}đ</p>
                       <div className="flex justify-between text-xs mt-1">
-                        <span className="text-green-600 font-medium">Đã thu: {fmt(totalKetoan)}đ</span>
-                        <span className={pctClr(debtPct) + ' font-bold'}>{debtPct}%</span>
+                        <span className="text-green-600 font-medium">Đã thu: {fmt(dongTien.phiKetoan.daThu)}đ</span>
+                        <span className={pctClr(dongTien.phiKetoan.pct) + ' font-bold'}>{dongTien.phiKetoan.pct}%</span>
                       </div>
                       <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1.5">
-                        <div className={'h-full rounded-full ' + barClr(debtPct)} style={{ width: debtPct + '%' }} />
+                        <div className={'h-full rounded-full ' + barClr(dongTien.phiKetoan.pct)} style={{ width: dongTien.phiKetoan.pct + '%' }} />
                       </div>
+                      <p className="text-xs text-gray-400 mt-1.5">{dongTien.phiKetoan.soCty} công ty đến hạn</p>
                     </div>
 
-                    {/* Tím cho HCNS — 4 màu kia đã có nghĩa riêng, thêm màu mới thì không phải
-                        học lại cái nào. Thẻ tự ẩn ở bản clone (không công ty nào có DV HCNS). */}
+                    {/* Tím cho HCNS. Thẻ tự ẩn ở bản clone (không có bảng hcns_*). */}
                     {hcnsOn && (
                       <button onClick={() => toggleCard('hcns')}
-                        className={'text-left bg-white border border-t-4 border-t-violet-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
+                        className={'text-left bg-white border border-t-4 border-t-violet-500 rounded-2xl px-4 py-3 flex flex-col transition-colors hover:bg-gray-50 ' +
                           (openDebtCard === 'hcns' ? 'border-violet-300 ring-1 ring-violet-200' : 'border-gray-100')}>
-                        <p className="text-xs text-gray-400 mb-1">🏢 Phí HCNS tháng này</p>
-                        <p className={'text-lg font-bold ' + (totalHcnsFee > 0 ? 'text-violet-600' : 'text-gray-300')}>{fmt(totalHcnsFee)}đ</p>
-                        {totalHcnsFee > 0 ? (
-                          <>
-                            <div className="flex justify-between text-xs mt-1">
-                              <span className="text-violet-600 font-medium">Đã thu: {fmt(totalHcnsPaid)}đ</span>
-                              <span className="text-violet-600 font-bold">{hcnsPct}%</span>
-                            </div>
-                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1.5">
-                              <div className="h-full rounded-full bg-violet-500" style={{ width: hcnsPct + '%' }} />
-                            </div>
-                          </>
-                        ) : (
-                          <p className="text-xs text-gray-400 mt-1">Chưa công ty nào dùng DV HCNS</p>
-                        )}
-                        <p className={'text-xs mt-1 ' + (totalHcnsFee > 0 ? 'text-blue-600' : 'text-gray-400')}>
-                          {totalHcnsFee === 0 ? '—' : (openDebtCard === 'hcns' ? '▴ Đang mở' : '▾ Xem danh sách')}
-                        </p>
+                        <p className="text-xs text-gray-400 mb-1">🏢 Phí HCNS trong kỳ</p>
+                        <p className={'text-lg font-bold ' + (dongTien.phiHcns.phi > 0 ? 'text-violet-600' : 'text-gray-300')}>{fmt(dongTien.phiHcns.phi)}đ</p>
+                        {dongTien.phiHcns.phi > 0 ? (<>
+                          <div className="flex justify-between text-xs mt-1">
+                            <span className="text-violet-600 font-medium">Đã thu: {fmt(dongTien.phiHcns.daThu)}đ</span>
+                            <span className="text-violet-600 font-bold">{dongTien.phiHcns.pct}%</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1.5">
+                            <div className="h-full rounded-full bg-violet-500" style={{ width: dongTien.phiHcns.pct + '%' }} />
+                          </div>
+                        </>) : <p className="text-xs text-gray-400 mt-1">Chưa công ty nào dùng DV HCNS</p>}
+                        <p className="text-xs text-gray-400 mt-1.5">{dongTien.phiHcns.soCty} công ty dùng DV HCNS</p>
+                        <p className="text-xs text-blue-600 mt-auto pt-1">{dongTien.phiHcns.phi === 0 ? '—' : (openDebtCard === 'hcns' ? '▴ Đang mở' : '▾ Xem danh sách')}</p>
                       </button>
                     )}
 
-                    <button onClick={() => toggleCard('khach')}
-                      className={'text-left bg-white border border-t-4 border-t-blue-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
-                        (openDebtCard === 'khach' ? 'border-blue-300 ring-1 ring-blue-200' : 'border-gray-100')}>
-                      <p className="text-xs text-gray-400 mb-1">🗂 Phí Thu khác tháng này</p>
-                      <p className={'text-lg font-bold ' + (totalKhach > 0 ? 'text-blue-600' : 'text-gray-300')}>{fmt(totalKhach)}đ</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {khachClients.length > 0 ? khachClients.length + ' công ty phát sinh' : 'Không phát sinh'}
+                    <button onClick={() => toggleCard('khac')}
+                      className={'text-left bg-white border border-t-4 border-t-teal-500 rounded-2xl px-4 py-3 flex flex-col transition-colors hover:bg-gray-50 ' +
+                        (openDebtCard === 'khac' ? 'border-teal-300 ring-1 ring-teal-200' : 'border-gray-100')}>
+                      <p className="text-xs text-gray-400 mb-1">🗂 Phí thu khác trong kỳ</p>
+                      <p className={'text-lg font-bold ' + (dongTien.thuKhac.phaiThu > 0 ? 'text-teal-600' : 'text-gray-300')}>{fmt(dongTien.thuKhac.phaiThu)}đ</p>
+                      {dongTien.thuKhac.phaiThu > 0 ? (<>
+                        <div className="flex justify-between text-xs mt-1">
+                          <span className="text-teal-600 font-medium">Đã thu: {fmt(dongTien.thuKhac.daThu)}đ</span>
+                          <span className="text-teal-600 font-bold">{dongTien.thuKhac.pct}%</span>
+                        </div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1.5">
+                          <div className="h-full rounded-full bg-teal-500" style={{ width: dongTien.thuKhac.pct + '%' }} />
+                        </div>
+                      </>) : <p className="text-xs text-gray-400 mt-1">Kỳ này không phát sinh</p>}
+                      <p className="text-xs text-gray-400 mt-1.5">
+                        {dongTien.thuKhac.soCty} công ty
+                        {dongTien.thuKhac.soHoSo > 0 && <span> · {dongTien.thuKhac.soHoSo} hồ sơ Dịch vụ khác</span>}
                       </p>
-                      <p className="text-xs text-blue-600 mt-1">
-                        {khachClients.length === 0 ? '—' : (openDebtCard === 'khach' ? '▴ Đang mở' : '▾ Xem danh sách')}
-                      </p>
+                      <p className="text-xs text-blue-600 mt-auto pt-1">{dongTien.thuKhac.hoSo.length === 0 ? '—' : (openDebtCard === 'khac' ? '▴ Đang mở' : '▾ Xem danh sách')}</p>
                     </button>
 
-                    <button onClick={() => toggleCard('unpaid')}
-                      className={'text-left bg-white border border-t-4 border-t-red-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
-                        (openDebtCard === 'unpaid' ? 'border-red-300 ring-1 ring-red-200' : 'border-gray-100')}>
-                      <p className="text-xs text-gray-400 mb-1">💰 Còn phải thu tháng này</p>
-                      <p className={'text-lg font-bold ' + (totalRemainAll > 0 ? 'text-red-500' : 'text-green-600')}>
-                        {fmt(totalRemainAll)}đ
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {unpaidClients.length} công ty
-                        {totalHcnsRemain > 0 && <span className="text-violet-500"> · gồm {fmt(totalHcnsRemain)}đ HCNS</span>}
-                      </p>
-                      <p className="text-xs text-blue-600 mt-1">{openDebtCard === 'unpaid' ? '▴ Đang mở' : '▾ Xem danh sách'}</p>
-                    </button>
-
-                    <button onClick={() => toggleCard('otherDebt')}
-                      className={'text-left bg-white border border-t-4 border-t-orange-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
-                        (openDebtCard === 'otherDebt' ? 'border-orange-300 ring-1 ring-orange-200' : 'border-gray-100')}>
-                      <p className="text-xs text-gray-400 mb-1">📦 Nợ tồn đầu kỳ chuyển tháng sau</p>
-                      <p className={'text-lg font-bold ' + (totalOtherDebt > 0 ? 'text-orange-500' : 'text-green-600')}>{fmt(totalOtherDebt)}đ</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {otherDebtClients.length} công ty · <span className="text-gray-400 italic">tính đến hiện tại</span>
-                      </p>
-                      <p className="text-xs text-blue-600 mt-1">
-                        {otherDebtClients.length === 0 ? '—' : (openDebtCard === 'otherDebt' ? '▴ Đang mở' : '▾ Xem danh sách')}
-                      </p>
+                    <button onClick={() => toggleCard('chuyen')}
+                      className={'text-left bg-white border border-t-4 border-t-red-500 rounded-2xl px-4 py-3 flex flex-col transition-colors hover:bg-gray-50 ' +
+                        (openDebtCard === 'chuyen' ? 'border-red-300 ring-1 ring-red-200' : 'border-gray-100')}>
+                      <p className="text-xs text-gray-400 mb-1">💰 Còn phải thu chuyển kỳ sau</p>
+                      <p className={'text-lg font-bold ' + (dongTien.chuyenKySau.total > 0 ? 'text-red-500' : 'text-green-600')}>{fmt(dongTien.chuyenKySau.total)}đ</p>
+                      <div className="mt-1.5 pt-1.5 border-t border-dashed border-gray-200 space-y-0.5">
+                        <div className="flex justify-between text-xs"><span className="text-gray-500">Kế toán</span><span className="font-semibold text-gray-700">{fmt(dongTien.chuyenKySau.ketoan)}đ</span></div>
+                        <div className="flex justify-between text-xs"><span className="text-gray-500">HCNS</span><span className="font-semibold text-violet-600">{fmt(dongTien.chuyenKySau.hcns)}đ</span></div>
+                        <div className="flex justify-between text-xs"><span className="text-gray-500">Dịch vụ khác</span><span className="font-semibold text-teal-600">{fmt(dongTien.chuyenKySau.dvk)}đ</span></div>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1.5">{dongTien.chuyenKySau.soCty} công ty</p>
+                      <p className="text-xs text-blue-600 mt-auto pt-1">{dongTien.chuyenKySau.soCty === 0 ? '—' : (openDebtCard === 'chuyen' ? '▴ Đang mở' : '▾ Xem danh sách')}</p>
                     </button>
                   </div>
+                  )}
 
                   {/* Bảng chi tiết của thẻ đang mở */}
                   {openDebtCard === 'hcns' && hcnsByStaff.length > 0 && (
@@ -710,90 +696,96 @@ export default function RoomPage({ params }) {
                         </div>
                       ))}
                       <p className="px-4 py-2 text-xs text-gray-400 bg-gray-50 border-t border-gray-100">
-                        Phí HCNS nằm trong "Còn phải thu tháng này" và cũng chuyển thành nợ tồn nếu không thu kịp,
+                        Phí HCNS có dòng riêng trong "Tồn đầu kỳ" và "Còn phải thu chuyển kỳ sau",
                         nhưng KHÔNG tính vào %-KPI thu hồi công nợ.
                       </p>
                     </div>
                   )}
 
-                  {openDebtCard === 'unpaid' && (
-                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-                      <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                        <p className="text-xs font-semibold text-gray-700">📋 Công ty còn phải thu — theo từng nhân viên</p>
-                        <button onClick={() => setOpenDebtCard(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
-                      </div>
-                      {unpaidByStaff.length === 0 ? (
-                        <p className="px-4 py-4 text-xs text-gray-400">Tất cả công ty đã thu đủ 🎉</p>
-                      ) : unpaidByStaff.map(g => (
-                        <div key={g.id}>
-                          <div className="px-4 py-2 bg-gray-100/70 flex items-center justify-between">
-                            <p className="text-xs font-semibold text-gray-700">{g.name}</p>
-                            <p className="text-xs font-semibold text-red-600">{g.items.length} cty · {fmt(g.total)}đ</p>
-                          </div>
-                          {g.items.map((c, i) => (
-                            <div key={c.id} className={'px-4 py-2 pl-7 border-b border-gray-50 ' + zebra(i)}>
-                              <div className="flex items-center justify-between gap-3">
-                                <p className="text-xs text-gray-700 truncate">{c.name}</p>
-                                <p className="text-xs whitespace-nowrap flex-shrink-0">
-                                  <span className="text-gray-400">{fmt(c.ketoan)} / </span>
-                                  <span className="font-semibold text-gray-800">{fmt(c.monthly_fee)}đ</span>
-                                </p>
-                              </div>
-                              {c.hcnsRemain > 0 && (
-                                <div className="flex items-center justify-between gap-3 mt-0.5">
-                                  <p className="text-xs text-violet-600">🏢 Phí HCNS còn thiếu</p>
-                                  <p className="text-xs whitespace-nowrap flex-shrink-0 text-violet-700 font-semibold">
-                                    {fmt(c.hcnsPaid)} / {fmt(c.hcnsFee)}đ
-                                  </p>
-                                </div>
-                              )}
+                  {/* Bảng chi tiết: nhóm theo nhân viên, 3 cột đúng 3 loại thu của thẻ.
+                      Dùng THẲNG dongTien.*.theoCty do máy chủ trả — không lọc/cộng lại ở đây. */}
+                  {(openDebtCard === 'ton' || openDebtCard === 'chuyen') && dongTien && (() => {
+                    const k = openDebtCard === 'ton' ? dongTien.tonDau : dongTien.chuyenKySau
+                    const nhom = []
+                    for (const x of k.theoCty) {
+                      let g = nhom.find(n => n.id === x.staffId)
+                      if (!g) { g = { id: x.staffId, name: staffNameOf(x.staffId), items: [], total: 0 }; nhom.push(g) }
+                      g.items.push(x); g.total += x.total
+                    }
+                    nhom.sort((a, b) => b.total - a.total)
+                    const ton = openDebtCard === 'ton'
+                    return (
+                      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                        <div className={'px-4 py-2.5 border-b border-gray-100 flex items-center justify-between ' + (ton ? 'bg-orange-50' : 'bg-red-50')}>
+                          <p className={'text-xs font-semibold ' + (ton ? 'text-orange-800' : 'text-red-800')}>
+                            {ton ? '📦 Tồn đầu kỳ chuyển sang' : '💰 Còn phải thu chuyển kỳ sau'} — {k.soCty} công ty · {fmt(k.total)}đ
+                          </p>
+                          <button onClick={() => setOpenDebtCard(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
+                        </div>
+                        <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 grid grid-cols-[1fr_96px_96px_96px_104px] gap-2 text-xs text-gray-400">
+                          <span>Công ty</span><span className="text-right">Kế toán</span><span className="text-right">HCNS</span>
+                          <span className="text-right">DV khác</span><span className="text-right">Tổng</span>
+                        </div>
+                        {k.theoCty.length === 0 ? (
+                          <p className="px-4 py-4 text-xs text-gray-400">{ton ? 'Đầu kỳ không công ty nào còn nợ 🎉' : 'Tất cả đã thu đủ, không có gì chuyển kỳ sau 🎉'}</p>
+                        ) : nhom.map(g => (
+                          <div key={g.id || 'khong-ro'}>
+                            <div className="px-4 py-2 bg-gray-100/70 flex items-center justify-between">
+                              <p className="text-xs font-semibold text-gray-700">{g.name}</p>
+                              <p className={'text-xs font-semibold ' + (ton ? 'text-orange-600' : 'text-red-600')}>{g.items.length} cty · {fmt(g.total)}đ</p>
                             </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                            {g.items.map((x, i) => (
+                              <div key={x.clientId} className={'px-4 py-2 pl-7 border-b border-gray-50 grid grid-cols-[1fr_96px_96px_96px_104px] gap-2 items-center text-xs ' + zebra(i)}>
+                                <span className="text-gray-700 truncate">{x.name}</span>
+                                <span className="text-right text-gray-700">{x.ketoan > 0 ? fmt(x.ketoan) : '—'}</span>
+                                <span className="text-right text-violet-600">{x.hcns > 0 ? fmt(x.hcns) : '—'}</span>
+                                <span className="text-right text-teal-600">{x.dvk > 0 ? fmt(x.dvk) : '—'}</span>
+                                <span className="text-right font-semibold text-gray-900">{fmt(x.total)}đ</span>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                        {ton && !dongTien.tonDau.hcnsCoSoLieu && (
+                          <p className="px-4 py-2.5 text-xs text-gray-500 bg-amber-50 border-t border-amber-100">
+                            Cột HCNS đang trống vì chưa chốt sổ nợ tồn HCNS — số sẽ có sau khi nạp file chốt từ Excel.
+                          </p>
+                        )}
+                      </div>
+                    )
+                  })()}
 
-                  {openDebtCard === 'khach' && (
+                  {openDebtCard === 'khac' && dongTien && (
                     <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-                      <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                        <p className="text-xs font-semibold text-gray-700">🗂 Các khoản thu khác trong T{selMonth}/{selYear}</p>
+                      <div className="px-4 py-2.5 border-b border-gray-100 bg-teal-50 flex items-center justify-between">
+                        <p className="text-xs font-semibold text-teal-800">
+                          🗂 Phí thu khác T{selMonth}/{selYear} — phải thu {fmt(dongTien.thuKhac.phaiThu)}đ · đã thu {fmt(dongTien.thuKhac.daThu)}đ
+                        </p>
                         <button onClick={() => setOpenDebtCard(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
                       </div>
-                      {khachClients.length === 0 ? (
-                        <p className="px-4 py-4 text-xs text-gray-400">Tháng này không có khoản thu khác nào.</p>
-                      ) : khachClients.map((c, i) => (
-                        <div key={c.id} className={'px-4 py-2.5 flex items-start justify-between gap-3 border-b border-gray-50 ' + zebra(i)}>
-                          <div className="min-w-0">
-                            <p className="text-xs text-gray-800 truncate">{c.name}</p>
-                            <p className="text-xs text-gray-400 mt-0.5 break-words">
-                              {staffNameOf(c.assigned_to)}
-                              {c.collectedKhachNote ? ' · ' + c.collectedKhachNote : ' · (không có ghi chú)'}
-                            </p>
-                          </div>
-                          <p className="text-xs font-semibold text-blue-600 whitespace-nowrap flex-shrink-0">{fmt(c.khach)}đ</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {openDebtCard === 'otherDebt' && (
-                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-                      <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                        <p className="text-xs font-semibold text-gray-700">📦 Công ty còn nợ tồn <span className="font-normal text-gray-400 italic">(tính đến hiện tại)</span></p>
-                        <button onClick={() => setOpenDebtCard(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
+                      <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 grid grid-cols-[1fr_104px_104px_104px_90px] gap-2 text-xs text-gray-400">
+                        <span>Công ty / hồ sơ</span><span className="text-right">Phải thu</span><span className="text-right">Đã thu</span>
+                        <span className="text-right">Còn lại</span><span className="text-right">Trạng thái</span>
                       </div>
-                      {otherDebtClients.length === 0 ? (
-                        <p className="px-4 py-4 text-xs text-gray-400">Không có công ty nào còn nợ tồn 🎉</p>
-                      ) : [...otherDebtClients].sort((a, b) => Number(b.other_debt) - Number(a.other_debt)).map((c, i) => (
-                        <div key={c.id} className={'px-4 py-2.5 flex items-start justify-between gap-3 border-b border-gray-50 ' + zebra(i)}>
-                          <div className="min-w-0">
-                            <p className="text-xs text-gray-800 truncate">{c.name}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">{staffNameOf(c.assigned_to)}</p>
-                          </div>
-                          <p className="text-xs font-semibold text-orange-500 whitespace-nowrap flex-shrink-0">{fmt(c.other_debt)}đ</p>
+                      {dongTien.thuKhac.hoSo.length === 0 ? (
+                        <p className="px-4 py-4 text-xs text-gray-400">Kỳ này không có khoản thu khác nào.</p>
+                      ) : dongTien.thuKhac.hoSo.map((h, i) => (
+                        <div key={h.id} className={'px-4 py-2.5 border-b border-gray-50 grid grid-cols-[1fr_104px_104px_104px_90px] gap-2 items-center text-xs ' + zebra(i)}>
+                          <span className="min-w-0">
+                            <span className="text-gray-800 block truncate">{h.clientName}</span>
+                            <span className="text-gray-400 block truncate">
+                              {h.name}
+                              {h.le ? ' · thu khác lẻ' : (h.moTrongKy ? ' · hồ sơ mở kỳ này' : ' · hồ sơ kỳ trước, kỳ này có thu')}
+                            </span>
+                          </span>
+                          <span className="text-right text-gray-700">{fmt(h.phaiThu)}</span>
+                          <span className="text-right text-green-600 font-medium">{fmt(h.daThu)}</span>
+                          <span className={'text-right font-medium ' + (h.conLai > 0 ? 'text-red-500' : 'text-gray-300')}>{h.conLai > 0 ? fmt(h.conLai) : '0'}</span>
+                          <span className={'text-right ' + (h.status === 'done' ? 'text-green-600' : 'text-orange-500')}>{h.status === 'done' ? 'Đã đóng' : 'Đang mở'}</span>
                         </div>
                       ))}
+                      <p className="px-4 py-2.5 text-xs text-gray-500 bg-gray-50 border-t border-gray-100">
+                        Hồ sơ chưa thu đủ thì phần còn lại tự chảy vào thẻ “Còn phải thu chuyển kỳ sau”, dòng Dịch vụ khác.
+                      </p>
                     </div>
                   )}
 
