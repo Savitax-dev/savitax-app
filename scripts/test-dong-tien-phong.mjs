@@ -135,21 +135,19 @@ for (const room of list) {
   console.log('   (nợ tồn hiện tại trong clients.other_debt: ' + fmt(tongNoTon) + ')')
 }
 
-// --- bất biến 4: chuyển kỳ sau của T(n) = tồn đầu kỳ của T(n+1), kiểm trên 1 phòng ---
-if (list.length) {
-  const room = list[0]
-  const a = await tinhDongTienPhong(sb, { ...(await duLieuPhong(room, 2026, 8)), year: 2026, month: 8 })
-  const b = await tinhDongTienPhong(sb, { ...(await duLieuPhong(room, 2026, 9)), year: 2026, month: 9 })
-  console.log('\n=== Nối kỳ (' + room.name + '): chuyển kỳ sau T8 vs tồn đầu T9 ===')
-  console.log(' T8 chuyển kỳ sau: KT ' + fmt(a.chuyenKySau.ketoan) + ' · DVK ' + fmt(a.chuyenKySau.dvk))
-  console.log(' T9 tồn đầu kỳ   : KT ' + fmt(b.tonDau.ketoan) + ' · DVK ' + fmt(b.tonDau.dvk))
-  // Kế toán có thể lệch hợp lý: phí T8 chưa thu chỉ thành nợ tồn SAU khi chốt sổ (quá 10 ngày) —
-  // nên chỉ cảnh báo, không tính là lỗi.
-  if (Math.abs(a.chuyenKySau.dvk - b.tonDau.dvk) > 1) bad('dịch vụ khác nối kỳ lệch')
-  else ok('dịch vụ khác nối kỳ khớp')
-  if (a.chuyenKySau.ketoan !== b.tonDau.ketoan) {
-    console.log(' ⓘ Kế toán lệch ' + fmt(a.chuyenKySau.ketoan - b.tonDau.ketoan)
-      + ' — bình thường nếu phí T8 chưa thu mà chưa tới mốc chốt sổ nợ tồn (10 ngày).')
+// --- bất biến 4: CHUYỂN KỲ SAU của kỳ P = TỒN ĐẦU KỲ của kỳ P+1, mọi phòng ---
+console.log('')
+console.log('=== Nối kỳ: chuyển kỳ sau T' + (thang - 1) + ' phải bằng tồn đầu kỳ T' + thang + ' ===')
+for (const room of list) {
+  const truoc = await tinhDongTienPhong(sb, { ...(await duLieuPhong(room, nam, thang - 1)), year: nam, month: thang - 1 })
+  const sau = await tinhDongTienPhong(sb, { ...(await duLieuPhong(room, nam, thang)), year: nam, month: thang })
+  for (const [ten, a, b] of [
+    ['kế toán', truoc.chuyenKySau.ketoan, sau.tonDau.ketoan],
+    ['HCNS', truoc.chuyenKySau.hcns, sau.tonDau.hcns],
+    ['DV khác', truoc.chuyenKySau.dvk, sau.tonDau.dvk],
+  ]) {
+    if (a === b) ok(room.name + ' · ' + ten + ': ' + fmt(a))
+    else bad(room.name + ' · ' + ten + ': chuyển kỳ sau ' + fmt(a) + ' ≠ tồn đầu kỳ ' + fmt(b) + ' (lệch ' + fmt(a - b) + ')')
   }
 }
 
