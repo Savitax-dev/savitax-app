@@ -154,7 +154,14 @@ export async function POST(request) {
   if (other_debt) insertData.other_debt = Number(other_debt)
   if (client_code)    insertData.client_code    = client_code
   if (representative) insertData.representative = representative
+  // Bỏ trống "Ngày bắt đầu hợp đồng" nhưng có chọn "Áp dụng từ tháng" -> lấy luôn ngày 01 của
+  // tháng đó làm mốc hợp đồng. Thiếu mốc này thì countsForMonth rơi về THÁNG NHẬP LÊN APP, công ty
+  // bị tính KPI/công nợ ngay tháng đó (ca thật 05/10/2026: TRUETRUST nhập 30/09, phí áp từ T10,
+  // vẫn hiện "0/8 việc T9" và kéo %-công việc của nhân viên xuống).
   if (contract_start) insertData.contract_start = contract_start
+  else if (fee_start && /^\d{4}-\d{2}/.test(String(fee_start))) {
+    insertData.contract_start = String(fee_start).slice(0, 7) + '-01'
+  }
   // Ghi ngay lúc TẠO, không đợi sửa: Phân hệ Tờ khai đọc cờ này để bỏ qua hộ kinh doanh khi sinh
   // lịch hạn nộp. Thiếu ở đây thì công ty mới thêm sẽ lãnh nguyên bộ nghĩa vụ của doanh nghiệp.
   if (is_hkd)         insertData.is_hkd         = true
@@ -348,6 +355,31 @@ export async function PATCH(request) {
   let rolloverChanges = []
   if (fee_history) {
     const { year, month, amount, note } = fee_history
+
+    // Công ty chưa có "Ngày bắt đầu hợp đồng" mà áp phí từ tháng X: nếu TRƯỚC tháng X công ty chưa
+    // có việc nào đã tick và chưa thu đồng nào thì đây là công ty mới -> lấy 01/X làm mốc hợp đồng.
+    // Không có mốc này, countsForMonth rơi về tháng nhập lên app nên công ty bị tính KPI/công nợ
+    // sớm hơn thực tế (ca TRUETRUST 05/10/2026). Công ty CŨ đã có dữ liệu tháng trước thì KHÔNG
+    // đụng tới — số liệu các tháng đã chốt phải đứng yên.
+    if (!before?.contract_start) {
+      const moc = Number(year) * 12 + Number(month)
+      const [{ data: viecCu }, { data: thuCu }] = await Promise.all([
+        supabase.from('task_records').select('year, month').eq('client_id', id).eq('is_done', true),
+        supabase.from('service_fees').select('year, month, amount').eq('client_id', id).in('type', ['ketoan', 'khach', 'no_ton']),
+      ])
+      const truocMoc = (r) => Number(r.year) * 12 + Number(r.month) < moc
+      const coViec = (viecCu || []).some(truocMoc)
+      const coThu  = (thuCu  || []).some(r => truocMoc(r) && Number(r.amount) > 0)
+      if (!coViec && !coThu) {
+        const mocNgay = String(year) + '-' + String(month).padStart(2, '0') + '-01'
+        await supabase.from('clients').update({ contract_start: mocNgay }).eq('id', id)
+        await logClientChanges(supabase, {
+          clientId: id, before, updateData: { contract_start: mocNgay },
+          changedBy: permCheck.caller?.staffId || updatedBy || null,
+        })
+      }
+    }
+
     await supabase.from('service_fees').upsert({
       client_id: id,
       year: Number(year),

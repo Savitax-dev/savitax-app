@@ -1624,7 +1624,12 @@ export default function ClientsPage() {
                         </button>
                       </div>
                       {!client.contract_start && (
-                        <p className="text-xs text-amber-500 mt-1">Chưa có "Ngày bắt đầu hợp đồng" — hãy sửa thông tin để hợp đồng hiển thị đúng thời hạn.</p>
+                        <p className="text-xs text-amber-500 mt-1">
+                          Chưa có "Ngày bắt đầu hợp đồng" — hợp đồng in ra sai thời hạn, và công ty bị
+                          tính KPI/công nợ ngay từ tháng được nhập lên app
+                          {client.created_at ? ' (T' + (new Date(client.created_at).getMonth() + 1) + '/' + new Date(client.created_at).getFullYear() + ')' : ''}.
+                          Hãy sửa thông tin để điền mốc đúng.
+                        </p>
                       )}
                     </div>
 
