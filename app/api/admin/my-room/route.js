@@ -84,6 +84,8 @@ export async function GET(request) {
       ])
       const dt = await tinhDongTienPhong(supabase, {
         clients: st, year, month: months[months.length - 1], feePlanRows: plans || [], changeLogRows: logs || [],
+        // 4 kỳ gần nhất: phí chưa thu mà chưa kịp chốt sổ chỉ có thể nằm ở 1–2 kỳ cuối trước khi ngưng.
+        lichSuTu: year * 12 + months[months.length - 1] - 4,
       })
       const no = new Map(dt.chuyenKySau.theoCty.map(x => [x.clientId, x]))
       return st.filter(c => no.has(c.id)).map(c => ({

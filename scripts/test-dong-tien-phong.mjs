@@ -114,7 +114,7 @@ for (const room of list) {
 
   // --- bất biến 1c: cộng trừ của cả thẻ phải khớp (chặn sàn 0 chỉ làm chuyển kỳ sau LỚN hơn) ---
   for (const [ten, t, ps, dt, ck] of [
-    ['kế toán', d.tonDau.ketoan, d.phiKetoan.phi, d.phiKetoan.daThu + d.tonDau.daThuTrongKy, d.chuyenKySau.ketoan],
+    ['kế toán', d.tonDau.ketoan, d.phiKetoan.phi, d.phiKetoan.daThu + d.tonDau.daThuTrongKy + (d.tonDau.daXoaTrongKy || 0), d.chuyenKySau.ketoan],
     ['HCNS', d.tonDau.hcns, d.phiHcns.phi, d.phiHcns.daThu, d.chuyenKySau.hcns],
     ['dịch vụ khác', d.tonDau.dvk, d.thuKhac.phaiThu, d.thuKhac.daThu, d.chuyenKySau.dvk],
   ]) {

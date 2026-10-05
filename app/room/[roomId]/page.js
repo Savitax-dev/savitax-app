@@ -46,6 +46,27 @@ export default function RoomPage({ params }) {
   const [hcnsOn,    setHcnsOn]    = useState(false)
   // Khối dòng tiền công nợ phòng — MÁY CHỦ tính sẵn (lib/dongTienPhong.js), trang chỉ hiển thị.
   const [dongTien,  setDongTien]  = useState(null)
+  const [xoaNoBusy, setXoaNoBusy] = useState(null)
+  // Xoá nợ không đòi được của công ty đã ngưng dịch vụ — chỉ Quản trị, bắt buộc ghi lý do.
+  // Hỏi máy chủ số sẽ xoá TRƯỚC (dryRun) để người bấm thấy đúng con số rồi mới xác nhận.
+  const xoaNo = async (x) => {
+    setXoaNoBusy(x.clientId)
+    try {
+      const goi = (body) => fetch('/api/admin/debt-writeoff', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      }).then(r => r.json())
+      const xem = await goi({ clientId: x.clientId, dryRun: 1 })
+      if (xem.error) { alert(xem.error); return }
+      const lyDo = prompt('XOÁ NỢ ' + x.name + '\n\nSố sẽ xoá: ' + fmt(xem.amount) + 'đ (phí kế toán còn phải thu)\n'
+        + 'Thao tác này đưa nợ tồn của công ty về 0 và KHÔNG tính là tiền đã thu.\n\nNhập lý do xoá nợ:')
+      if (lyDo === null) return
+      if (lyDo.trim().length < 5) { alert('Phải ghi lý do (ít nhất 5 ký tự).'); return }
+      const kq = await goi({ clientId: x.clientId, reason: lyDo.trim() })
+      if (kq.error) { alert(kq.error); return }
+      alert('Đã xoá nợ ' + fmt(kq.amount) + 'đ của ' + x.name)
+      await load()
+    } finally { setXoaNoBusy(null) }
+  }
   const [ready,     setReady]     = useState(false)
   const [loading,   setLoading]   = useState(false)
   const [forbidden, setForbidden] = useState(false)
@@ -590,6 +611,7 @@ export default function RoomPage({ params }) {
                       <p className="text-xs text-gray-400 mt-1.5">
                         {dongTien.tonDau.soCty} công ty
                         {dongTien.tonDau.daThuTrongKy > 0 && <span className="text-green-600"> · kỳ này đã thu {fmt(dongTien.tonDau.daThuTrongKy)}đ</span>}
+                        {dongTien.tonDau.daXoaTrongKy > 0 && <span className="text-gray-500"> · đã xoá nợ {fmt(dongTien.tonDau.daXoaTrongKy)}đ</span>}
                       </p>
                       <p className="text-xs text-blue-600 mt-auto pt-1">{dongTien.tonDau.soCty === 0 ? '—' : (openDebtCard === 'ton' ? '▴ Đang mở' : '▾ Xem danh sách')}</p>
                     </button>
@@ -829,7 +851,15 @@ export default function RoomPage({ params }) {
                           <span className="text-right text-gray-700">{x.ketoan > 0 ? fmt(x.ketoan) : '—'}</span>
                           <span className="text-right text-violet-600">{x.hcns > 0 ? fmt(x.hcns) : '—'}</span>
                           <span className="text-right text-teal-600">{x.dvk > 0 ? fmt(x.dvk) : '—'}</span>
-                          <span className="text-right font-semibold text-red-500">{fmt(x.total)}đ</span>
+                          <span className="text-right font-semibold text-red-500">
+                            {fmt(x.total)}đ
+                            {isTrueAdmin && x.ketoan > 0 && (
+                              <button disabled={xoaNoBusy === x.clientId} onClick={() => xoaNo(x)}
+                                className="block ml-auto mt-0.5 text-[11px] font-medium text-gray-500 underline hover:text-red-600 disabled:opacity-40">
+                                {xoaNoBusy === x.clientId ? 'Đang xoá…' : 'Xoá nợ'}
+                              </button>
+                            )}
+                          </span>
                         </div>
                       ))}
                       <p className="px-4 py-2 text-xs text-gray-500 bg-gray-50 border-t border-gray-100">
