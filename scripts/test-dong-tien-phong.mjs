@@ -39,10 +39,13 @@ async function duLieuPhong(room, year, month) {
     .select('id, name, assigned_to, monthly_fee, report_type, fee_period, status, contract_start, created_at, other_debt')
     .in('assigned_to', ids)).then(d => ({ data: d }))
   const cids = clients.map(c => c.id)
+  // Lịch sử phí chỉ nạp cho công ty ĐANG dùng dịch vụ — y như app/api/admin/room/route.js. Nạp
+  // cho tất cả thì bộ kiểm che mất lỗi "công ty ngưng bị tính theo phí hôm nay".
+  const cidsActive = clients.filter(c => (c.status || 'active') === 'active').map(c => c.id)
   const [feeKt, feePlan, changeLog] = await Promise.all([
     hetTrang(() => sb.from('service_fees').select('client_id, amount').in('client_id', cids).eq('year', year).eq('month', month).eq('type', 'ketoan')),
-    hetTrang(() => sb.from('service_fees').select('client_id, year, month, amount').in('client_id', cids).eq('type', 'fee_plan')),
-    hetTrang(() => sb.from('client_change_log').select('client_id, old_value, changed_at').in('client_id', cids).eq('entity', 'monthly_fee').eq('action', 'update')),
+    hetTrang(() => sb.from('service_fees').select('client_id, year, month, amount').in('client_id', cidsActive).eq('type', 'fee_plan')),
+    hetTrang(() => sb.from('client_change_log').select('client_id, old_value, changed_at').in('client_id', cidsActive).eq('entity', 'monthly_fee').eq('action', 'update')),
   ])
   const feeKetoanMap = {}
   for (const f of feeKt) feeKetoanMap[f.client_id] = (feeKetoanMap[f.client_id] || 0) + Number(f.amount || 0)
@@ -123,6 +126,15 @@ for (const room of list) {
     else if (ck > tinh) console.log('   ⓘ ' + ten + ': chuyển kỳ sau ' + fmt(ck) + ' > tính thẳng ' + fmt(tinh)
       + ' (lệch ' + fmt(ck - tinh) + ') — do chặn sàn 0 ở công ty trả vượt / thu khác lẻ')
     else bad(ten + ': chuyển kỳ sau ' + fmt(ck) + ' < tính thẳng ' + fmt(tinh))
+  }
+
+  // --- bất biến 1d: công ty ngưng còn nợ — số ở trang Phòng phải bằng số khi gọi riêng công ty đó
+  //     (đường xoá nợ / Quản lý công nợ). Lệch thì xoá nợ xong vẫn treo lại một khoản.
+  for (const x of d.ngungConNo || []) {
+    const le = await tinhDongTienPhong(sb, { clients: dl.clients.filter(c => c.id === x.clientId), year: nam, month: thang, lichSuTu: nam * 12 + thang - 4 })
+    const soLe = le.chuyenKySau.theoCty[0]?.ketoan || 0
+    if (soLe === x.ketoan) ok('công ty ngưng ' + x.name + ': ' + fmt(x.ketoan) + ' ở cả hai đường tính')
+    else bad('công ty ngưng ' + x.name + ': trang Phòng ' + fmt(x.ketoan) + ' ≠ gọi riêng ' + fmt(soLe))
   }
 
   // --- bất biến 2: không có số âm ---
