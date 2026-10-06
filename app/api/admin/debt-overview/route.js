@@ -51,7 +51,12 @@ export async function GET(request) {
   // Tách thành lượt gọi riêng để danh sách công nợ bên dưới không phải chờ phần tính này.
   // Toàn công ty = CỘNG từng phòng nghiệp vụ (xem gopDongTien) nên luôn bằng tổng các trang Phòng.
   if (searchParams.get('dongTien')) {
-    if (period !== 'month') return Response.json({ dongTien: null })
+    // Tháng CHƯA TỚI không tính: xem "Năm 2026" vào tháng 10 thì T11, T12 chưa phát sinh phí.
+    const vnNow = new Date(Date.now() + 7 * 3600 * 1000)
+    const mocNay = vnNow.getUTCFullYear() * 12 + vnNow.getUTCMonth() + 1
+    const dsThang = months.filter(m => year * 12 + m <= mocNay)
+    if (!dsThang.length) return Response.json({ dongTien: null })
+    const thangCuoi = dsThang[dsThang.length - 1]
     try {
       const [{ data: rl }, { data: sl }] = await Promise.all([
         supabase.from('rooms').select('id, name, type').not('type', 'in', '(hcns,kinhdoanh)').order('name'),
@@ -71,10 +76,10 @@ export async function GET(request) {
             .then(r => r.flatMap(v => v.data || [])),
           Promise.all(lo.map(x => supabase.from('client_change_log').select('client_id, old_value, changed_at').in('client_id', x).eq('entity', 'monthly_fee').eq('action', 'update')))
             .then(r => r.flatMap(v => v.data || [])),
-          loadHcnsFees(supabase, active, year, month),
+          loadHcnsFees(supabase, active, year, thangCuoi),
         ])
         return tinhDongTienPhong(supabase, {
-          clients: cl, year, month, feePlanRows: plans, changeLogRows: logs,
+          clients: cl, year, month: thangCuoi, months: dsThang, feePlanRows: plans, changeLogRows: logs,
           hcnsByClient: hcns.byClient || {},
           hcnsLichSu: { links: hcns.links || [], plans: hcns.plans || [], paid: hcns.paid || [] },
         })
@@ -83,7 +88,10 @@ export async function GET(request) {
       const staffNames = {}
       const tenPhong = new Map((rl || []).map(r => [r.id, r.name]))
       for (const x of sl || []) staffNames[x.id] = x.full_name + (tenPhong.get(x.room_id) ? ' · ' + tenPhong.get(x.room_id) : '')
-      return Response.json({ dongTien: gopDongTien(tungPhong), staffNames })
+      return Response.json({
+        dongTien: { ...gopDongTien(tungPhong), tuThang: dsThang[0], denThang: thangCuoi, thieuThang: dsThang.length < months.length },
+        staffNames,
+      })
     } catch (e) {
       console.error('debt-overview dongTien:', e?.message || e)
       return Response.json({ dongTien: null, error: e?.message })

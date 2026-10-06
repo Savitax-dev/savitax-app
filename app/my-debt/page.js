@@ -224,16 +224,16 @@ export default function MyDebtPage() {
             {/* Xem theo THÁNG: khối dòng tiền 5 thẻ, y hệt trang Phòng (cùng component, cùng hàm tính) —
                 tồn đầu kỳ + phát sinh − đã thu = chuyển kỳ sau, theo dõi được qua từng kỳ.
                 Xem theo quý / năm thì vẫn là 5 ô tổng như cũ (dòng tiền chỉ tính theo tháng). */}
-            {period === 'month' && dongTien && (
+            {dongTien && (
               <div className="space-y-3 mb-5">
                 <KhoiDongTien dongTien={dongTien} hcnsOn={dongTien.hcnsInstalled}
                   open={openCard} setOpen={setOpenCard}
-                  staffNameOf={() => me?.full_name || '—'} selMonth={selMonth} selYear={selYear} />
+                  staffNameOf={() => me?.full_name || '—'} selMonth={selMonth} selYear={selYear} kyLabel={periodLabel} />
               </div>
             )}
 
             {/* KPI tổng quan công nợ */}
-            <div className={'grid grid-cols-2 md:grid-cols-5 gap-3 mb-5 ' + (period === 'month' && dongTien ? 'hidden' : '')}>
+            <div className={'grid grid-cols-2 md:grid-cols-5 gap-3 mb-5 ' + (dongTien ? 'hidden' : '')}>
               <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3">
                 <p className="text-xs text-gray-400 mb-1">💰 Tổng phí kế toán ({periodLabel})</p>
                 <p className="text-xl font-bold text-gray-800">{fmt(totalFee)}đ</p>

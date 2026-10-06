@@ -6,18 +6,26 @@
 //
 // Props: dongTien (kết quả tinhDongTienPhong) · hcnsOn · open / setOpen (thẻ nào đang mở bảng:
 // 'ton' | 'hcns' | 'khac' | 'chuyen' | null — trang cha giữ, vì trang Phòng còn bảng HCNS riêng)
-// · staffNameOf(id) · selMonth / selYear.
+// · staffNameOf(id) · kyLabel (nhãn kỳ đang xem: "T10/2026", "Quý 4/2026", "Năm 2026").
+// Quý / năm: tồn đầu = đầu tháng đầu kỳ, phí và đã thu = cộng các tháng ĐÃ TỚI trong kỳ, chuyển kỳ sau
+// = sau tháng cuối đã tới. Kỳ chưa hết thì máy chủ báo `thieuThang` và ở đây ghi rõ "tính đến T..".
 
 const fmt = (n) => Number(n || 0).toLocaleString('vi-VN')
 const pctClr = (v) => v >= 90 ? 'text-green-600' : v >= 70 ? 'text-yellow-500' : 'text-red-500'
 const barClr = (v) => v >= 90 ? 'bg-green-500' : v >= 70 ? 'bg-yellow-400' : 'bg-red-400'
 const zebra = (i) => i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
 
-export default function KhoiDongTien({ dongTien, hcnsOn, open, setOpen, staffNameOf = () => '—', selMonth, selYear }) {
+export default function KhoiDongTien({ dongTien, hcnsOn, open, setOpen, staffNameOf = () => '—', selMonth, selYear, kyLabel }) {
   const toggle = (k) => setOpen(open === k ? null : k)
   if (!dongTien) return null
+  const ky = kyLabel || ('T' + selMonth + '/' + selYear)
   return (
     <>
+      {dongTien.thieuThang && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+          {ky} chưa hết kỳ — số liệu tính từ T{dongTien.tuThang} đến hết T{dongTien.denThang}; các tháng chưa tới chưa phát sinh phí.
+        </p>
+      )}
                   {/* ===== KHỐI DÒNG TIỀN CÔNG NỢ PHÒNG =====
                       Tồn đầu kỳ + phí phát sinh trong kỳ − đã thu = còn phải thu chuyển kỳ sau.
                       Mọi con số do MÁY CHỦ tính (lib/dongTienPhong.js) — trang KHÔNG tự cộng lại,
@@ -143,7 +151,7 @@ export default function KhoiDongTien({ dongTien, hcnsOn, open, setOpen, staffNam
                     return (
                       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
                         <div className="px-4 py-2.5 border-b border-gray-100 bg-violet-50 flex items-center justify-between">
-                          <p className="text-xs font-semibold text-violet-800">🏢 Phí HCNS T{selMonth}/{selYear} — {dongTien.phiHcns.soCty} công ty · đã thu {fmt(dongTien.phiHcns.daThu)} / {fmt(dongTien.phiHcns.phi)}đ</p>
+                          <p className="text-xs font-semibold text-violet-800">🏢 Phí HCNS {ky} — {dongTien.phiHcns.soCty} công ty · đã thu {fmt(dongTien.phiHcns.daThu)} / {fmt(dongTien.phiHcns.phi)}đ</p>
                           <button onClick={() => setOpen(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
                         </div>
                         {nhom.map(g => (
@@ -233,7 +241,7 @@ export default function KhoiDongTien({ dongTien, hcnsOn, open, setOpen, staffNam
                     <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
                       <div className="px-4 py-2.5 border-b border-gray-100 bg-teal-50 flex items-center justify-between">
                         <p className="text-xs font-semibold text-teal-800">
-                          🗂 Phí thu khác T{selMonth}/{selYear} — phải thu {fmt(dongTien.thuKhac.phaiThu)}đ · đã thu {fmt(dongTien.thuKhac.daThu)}đ
+                          🗂 Phí thu khác {ky} — phải thu {fmt(dongTien.thuKhac.phaiThu)}đ · đã thu {fmt(dongTien.thuKhac.daThu)}đ
                         </p>
                         <button onClick={() => setOpen(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
                       </div>

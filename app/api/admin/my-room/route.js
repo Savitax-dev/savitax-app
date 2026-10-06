@@ -104,7 +104,12 @@ export async function GET(request) {
   // cầu 06/10/2026). Chỉ dựng khi xem theo THÁNG. Tính trên mọi công ty mình là nhân viên CHÍNH,
   // kể cả đã ngưng dịch vụ, y như trang Phòng — để cộng các nhân viên lại ra đúng số của phòng.
   const loadDongTien = async () => {
-    if (period !== 'month') return null
+    // Tháng CHƯA TỚI không tính: xem "Năm 2026" vào tháng 10 thì T11, T12 chưa phát sinh phí.
+    const vnNow = new Date(Date.now() + 7 * 3600 * 1000)
+    const mocNay = vnNow.getUTCFullYear() * 12 + vnNow.getUTCMonth() + 1
+    const dsThang = months.filter(m => year * 12 + m <= mocNay)
+    if (!dsThang.length) return null
+    const thangCuoi = dsThang[dsThang.length - 1]
     try {
       const { data: mine } = await supabase.from('clients')
         .select('id, name, tax_code, assigned_to, monthly_fee, other_debt, report_type, fee_period, status, client_code, contract_start, created_at')
@@ -128,15 +133,15 @@ export async function GET(request) {
         active.length ? supabase.from('service_fees').select('client_id, year, month, amount').in('client_id', active).eq('type', 'fee_plan') : { data: [] },
         active.length ? supabase.from('client_change_log').select('client_id, old_value, changed_at')
           .in('client_id', active).eq('entity', 'monthly_fee').eq('action', 'update') : { data: [] },
-        loadHcnsFees(supabase, active, year, month),
+        loadHcnsFees(supabase, active, year, thangCuoi),
       ])
       const dt = await tinhDongTienPhong(supabase, {
-        clients: mine, year, month, feePlanRows: plans || [], changeLogRows: logs || [],
+        clients: mine, year, month: thangCuoi, months: dsThang, feePlanRows: plans || [], changeLogRows: logs || [],
         hcnsByClient: hcns.byClient || {},
         hcnsLichSu: { links: hcns.links || [], plans: hcns.plans || [], paid: hcns.paid || [] },
         lichSuTu,
       })
-      return { ...dt, hcnsInstalled: !!hcns.installed }
+      return { ...dt, hcnsInstalled: !!hcns.installed, tuThang: dsThang[0], denThang: thangCuoi, thieuThang: dsThang.length < months.length }
     } catch (e) {
       console.error('my-room dongTien:', e?.message || e)
       return null
