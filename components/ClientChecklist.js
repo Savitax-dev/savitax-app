@@ -1193,7 +1193,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
               ...(hcnsOnly ? [] : [
                 // Hồ sơ Dịch vụ khác đi theo TỪNG THÁNG cho tới khi thu đủ — KHÔNG chuyển vào "Nợ tồn
                 // cũ" khi quá hạn như phí kế toán (anh chốt 06/10/2026), nên số còn phải thu hiện ở đây.
-                { key: 'khach',  label: '🗂 Dịch vụ khác', hint: dvkConLai > 0 ? fmt(dvkConLai) + 'đ còn phải thu' : 'Phát sinh khác', warn: dvkConLai > 0 },
+                { key: 'khach',  label: '🗂 Dịch vụ khác', hint: dvkConLai > 0 ? fmt(dvkConLai) + 'đ còn phải thu' : 'Phát sinh khác' },
                 { key: 'no_ton', label: '📦 Nợ tồn cũ',    hint: fmt(client.other_debt) + 'đ còn nợ' },
               ]),
             ].map(t => (
@@ -1203,7 +1203,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                     ? 'text-green-700 border-green-500 bg-green-50'
                     : 'text-gray-400 border-transparent hover:text-gray-600')}>
                 {t.label}
-                <span className={'block text-xs mt-0.5 ' + (t.warn ? 'font-semibold text-orange-500' : 'font-normal text-gray-400')}>{t.hint}</span>
+                <span className="block text-xs font-normal text-gray-400 mt-0.5">{t.hint}</span>
               </button>
             ))}
           </div>
