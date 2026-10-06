@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import BaoCaoPhiDaThu from '@/components/BaoCaoPhiDaThu'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
@@ -116,6 +117,8 @@ export default function ReportPage() {
           {[
             { k: 'room', l: 'Theo phòng' },
             { k: 'staff', l: 'Theo nhân viên' },
+            // Báo cáo riêng, có bộ lọc ngày của nó — không theo ô Tháng/Năm ở góc trên.
+            { k: 'fee', l: 'Phí đã thu' },
           ].map(t => (
             <button key={t.k} onClick={() => setTab(t.k)}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
@@ -123,6 +126,8 @@ export default function ReportPage() {
               }`}>{t.l}</button>
           ))}
         </div>
+
+        {tab === 'fee' && <BaoCaoPhiDaThu />}
 
         {/* ── TAB 1: Theo phòng ── */}
         {tab === 'room' && (
