@@ -226,7 +226,7 @@ export default function MyDebtPage() {
                 Xem theo quý / năm thì vẫn là 5 ô tổng như cũ (dòng tiền chỉ tính theo tháng). */}
             {period === 'month' && dongTien && (
               <div className="space-y-3 mb-5">
-                <KhoiDongTien dongTien={dongTien} hcnsOn={dongTien.hcnsInstalled} hcnsCoBang={false}
+                <KhoiDongTien dongTien={dongTien} hcnsOn={dongTien.hcnsInstalled}
                   open={openCard} setOpen={setOpenCard}
                   staffNameOf={() => me?.full_name || '—'} selMonth={selMonth} selYear={selYear} />
               </div>

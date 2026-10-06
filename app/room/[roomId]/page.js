@@ -523,22 +523,6 @@ export default function RoomPage({ params }) {
                 ? Math.max(0, Number(c.rolloverRemaining) || 0)
                 : (c.dueThisMonth ? Math.max(0, (Number(c.monthly_fee) || 0) - c.ketoan) : 0)
               const hcnsRemainOf = (c) => Math.max(0, (Number(c.hcnsFee) || 0) - (Number(c.hcnsPaid) || 0))
-              // ── Phí HCNS ──────────────────────────────────────────────────────────────
-              // Nhân viên kế toán là người thu cả phí HCNS, nên khoản này có dòng riêng trong
-              // "Tồn đầu kỳ" / "Còn phải thu chuyển kỳ sau". Nhưng nó KHÔNG vào %-KPI thu hồi
-              // công nợ — xem chú thích ở ô % của từng nhân viên.
-              const hcnsClientsList = ownedClients.filter(c => c.usesHcns && c.hcnsFee > 0)
-              const hcnsByStaff = []
-              for (const st of staffData) {
-                const items = hcnsClientsList.filter(c => c.assigned_to === st.id)
-                if (items.length === 0) continue
-                hcnsByStaff.push({
-                  id: st.id, name: st.full_name, items,
-                  fee: items.reduce((a, c) => a + c.hcnsFee, 0),
-                  paid: items.reduce((a, c) => a + c.hcnsPaid, 0),
-                })
-              }
-              const toggleCard = (k) => setOpenDebtCard(prev => prev === k ? null : k)
               // Nền xen kẽ đậm/nhạt giữa các công ty cho dễ dò mắt theo hàng.
               const zebra = (i) => i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
 
@@ -591,43 +575,6 @@ export default function RoomPage({ params }) {
                   {/* Khối dòng tiền 5 thẻ + bảng chi tiết — dùng chung với trang Quản lý công nợ. */}
                   <KhoiDongTien dongTien={dongTien} hcnsOn={hcnsOn} open={openDebtCard} setOpen={setOpenDebtCard}
                     staffNameOf={staffNameOf} selMonth={selMonth} selYear={selYear} />
-
-                  {/* Bảng chi tiết của thẻ đang mở */}
-                  {openDebtCard === 'hcns' && hcnsByStaff.length > 0 && (
-                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-                      <div className="px-4 py-2.5 border-b border-gray-100 bg-violet-50 flex items-center justify-between">
-                        <p className="text-xs font-semibold text-violet-800">🏢 Công ty có dùng DV HCNS — theo từng nhân viên</p>
-                        <button onClick={() => setOpenDebtCard(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
-                      </div>
-                      {hcnsByStaff.map(g => (
-                        <div key={g.id}>
-                          <div className="px-4 py-2 bg-gray-100/70 flex items-center justify-between">
-                            <p className="text-xs font-semibold text-gray-700">{g.name}</p>
-                            <p className="text-xs font-semibold text-violet-700">
-                              {g.items.length} cty · {fmt(g.paid)} / {fmt(g.fee)}đ
-                            </p>
-                          </div>
-                          {g.items.map((c, i) => (
-                            <div key={c.id} className={'px-4 py-2 pl-7 flex items-center justify-between gap-3 border-b border-gray-50 ' + zebra(i)}>
-                              <p className="text-xs text-gray-700 truncate">{c.name}</p>
-                              <p className="text-xs whitespace-nowrap flex-shrink-0">
-                                <span className="text-gray-400">{fmt(c.hcnsPaid)} / </span>
-                                <span className="font-semibold text-gray-800">{fmt(c.hcnsFee)}đ</span>
-                                <span className={'ml-2 text-white px-2 py-0.5 rounded-full ' +
-                                  (c.hcnsRemain === 0 ? 'bg-green-600' : c.hcnsPaid > 0 ? 'bg-yellow-500' : 'bg-red-500')}>
-                                  {c.hcnsRemain === 0 ? 'Đã thu đủ' : c.hcnsPaid > 0 ? 'Thu một phần' : 'Chưa thu'}
-                                </span>
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                      <p className="px-4 py-2 text-xs text-gray-400 bg-gray-50 border-t border-gray-100">
-                        Phí HCNS có dòng riêng trong "Tồn đầu kỳ" và "Còn phải thu chuyển kỳ sau",
-                        nhưng KHÔNG tính vào %-KPI thu hồi công nợ.
-                      </p>
-                    </div>
-                  )}
 
                   {/* Warning */}
                   {overdue.length > 0 && (

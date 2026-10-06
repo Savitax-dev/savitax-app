@@ -13,7 +13,7 @@ const pctClr = (v) => v >= 90 ? 'text-green-600' : v >= 70 ? 'text-yellow-500' :
 const barClr = (v) => v >= 90 ? 'bg-green-500' : v >= 70 ? 'bg-yellow-400' : 'bg-red-400'
 const zebra = (i) => i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
 
-export default function KhoiDongTien({ dongTien, hcnsOn, open, setOpen, staffNameOf = () => '—', selMonth, selYear, hcnsCoBang = true }) {
+export default function KhoiDongTien({ dongTien, hcnsOn, open, setOpen, staffNameOf = () => '—', selMonth, selYear }) {
   const toggle = (k) => setOpen(open === k ? null : k)
   if (!dongTien) return null
   return (
@@ -69,7 +69,7 @@ export default function KhoiDongTien({ dongTien, hcnsOn, open, setOpen, staffNam
 
                     {/* Tím cho HCNS. Thẻ tự ẩn ở bản clone (không có bảng hcns_*). */}
                     {hcnsOn && (
-                      <button onClick={() => hcnsCoBang && toggle('hcns')}
+                      <button onClick={() => toggle('hcns')}
                         className={'text-left bg-white border border-t-4 border-t-violet-500 rounded-2xl px-4 py-3 flex flex-col transition-colors hover:bg-gray-50 ' +
                           (open === 'hcns' ? 'border-violet-300 ring-1 ring-violet-200' : 'border-gray-100')}>
                         <p className="text-xs text-gray-400 mb-1">🏢 Phí HCNS trong kỳ</p>
@@ -84,7 +84,7 @@ export default function KhoiDongTien({ dongTien, hcnsOn, open, setOpen, staffNam
                           </div>
                         </>) : <p className="text-xs text-gray-400 mt-1">Chưa công ty nào dùng DV HCNS</p>}
                         <p className="text-xs text-gray-400 mt-1.5">{dongTien.phiHcns.soCty} công ty dùng DV HCNS</p>
-                        {hcnsCoBang && <p className="text-xs text-blue-600 mt-auto pt-1">{dongTien.phiHcns.phi === 0 ? '—' : (open === 'hcns' ? '▴ Đang mở' : '▾ Xem danh sách')}</p>}
+                        <p className="text-xs text-blue-600 mt-auto pt-1">{dongTien.phiHcns.phi === 0 ? '—' : (open === 'hcns' ? '▴ Đang mở' : '▾ Xem danh sách')}</p>
                       </button>
                     )}
 
@@ -124,6 +124,48 @@ export default function KhoiDongTien({ dongTien, hcnsOn, open, setOpen, staffNam
                     </button>
                   </div>
                   )}
+
+                  {/* Bảng của thẻ Phí HCNS — công ty có phí HCNS trong kỳ, nhóm theo nhân viên. */}
+                  {open === 'hcns' && (dongTien.phiHcns.theoCty || []).length > 0 && (() => {
+                    const nhom = []
+                    for (const x of dongTien.phiHcns.theoCty) {
+                      let g = nhom.find(n => n.id === x.staffId)
+                      if (!g) { g = { id: x.staffId, name: staffNameOf(x.staffId), items: [], fee: 0, paid: 0 }; nhom.push(g) }
+                      g.items.push(x); g.fee += x.fee; g.paid += x.paid
+                    }
+                    return (
+                      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                        <div className="px-4 py-2.5 border-b border-gray-100 bg-violet-50 flex items-center justify-between">
+                          <p className="text-xs font-semibold text-violet-800">🏢 Phí HCNS T{selMonth}/{selYear} — {dongTien.phiHcns.soCty} công ty · đã thu {fmt(dongTien.phiHcns.daThu)} / {fmt(dongTien.phiHcns.phi)}đ</p>
+                          <button onClick={() => setOpen(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
+                        </div>
+                        {nhom.map(g => (
+                          <div key={g.id || 'khong-ro'}>
+                            <div className="px-4 py-2 bg-gray-100/70 flex items-center justify-between">
+                              <p className="text-xs font-semibold text-gray-700">{g.name}</p>
+                              <p className="text-xs font-semibold text-violet-700">{g.items.length} cty · {fmt(g.paid)} / {fmt(g.fee)}đ</p>
+                            </div>
+                            {g.items.map((c, i) => (
+                              <div key={c.clientId} className={'px-4 py-2 pl-7 flex items-center justify-between gap-3 border-b border-gray-50 ' + zebra(i)}>
+                                <p className="text-xs text-gray-700 truncate">{c.name}</p>
+                                <p className="text-xs whitespace-nowrap flex-shrink-0">
+                                  <span className="text-gray-400">{fmt(c.paid)} / </span>
+                                  <span className="font-semibold text-gray-800">{fmt(c.fee)}đ</span>
+                                  <span className={'ml-2 text-white px-2 py-0.5 rounded-full ' +
+                                    (c.remain === 0 ? 'bg-green-600' : c.paid > 0 ? 'bg-yellow-500' : 'bg-red-500')}>
+                                    {c.remain === 0 ? 'Đã thu đủ' : c.paid > 0 ? 'Thu một phần' : 'Chưa thu'}
+                                  </span>
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                        <p className="px-4 py-2 text-xs text-gray-400 bg-gray-50 border-t border-gray-100">
+                          Phí HCNS có dòng riêng trong “Tồn đầu kỳ” và “Còn phải thu chuyển kỳ sau”, nhưng KHÔNG tính vào %-KPI thu hồi công nợ.
+                        </p>
+                      </div>
+                    )
+                  })()}
 
                   {/* Bảng chi tiết: nhóm theo nhân viên, 3 cột đúng 3 loại thu của thẻ.
                       Dùng THẲNG dongTien.*.theoCty do máy chủ trả — không lọc/cộng lại ở đây. */}
