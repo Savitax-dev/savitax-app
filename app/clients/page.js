@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import { hasPermission } from '@/lib/permissions'
+import DichVuKhac from '@/components/DichVuKhac'
 
 const STATUS_LABEL = { pending: 'Trình ký', active: 'Đang sử dụng', inactive: 'Ngưng dịch vụ', transferred: 'Đã chuyển đi' }
 const STATUS_COLOR = {
@@ -1558,6 +1559,19 @@ export default function ClientsPage() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Công ty đã NGƯNG dịch vụ kế toán vẫn có thể phát sinh dịch vụ khác (làm lại sổ, quyết
+                        toán…). Ngưng rồi mà không còn nợ thì công ty rời mọi danh sách công nợ, nên phải
+                        có chỗ mở hồ sơ ở ngay đây (anh báo 06/10/2026, ca D&T). Mở hồ sơ xong, công ty tự
+                        hiện lại ở khối "Đã ngưng dịch vụ — còn phải thu" để theo dõi và ghi thu tiếp. */}
+                    {client.status === 'inactive' && canEditThis && (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Dịch vụ khác (phát sinh sau khi ngưng)</p>
+                        <div className="border border-gray-100 rounded-xl p-3 bg-white">
+                          <DichVuKhac client={client} year={year} month={month} canCloseEarly={isAdmin} onChanged={() => {}} />
+                        </div>
+                      </div>
+                    )}
 
                     {/* Assignment edit */}
                     <div>

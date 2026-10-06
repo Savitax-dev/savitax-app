@@ -89,7 +89,7 @@ export async function GET(request) {
       })
       const no = new Map(dt.chuyenKySau.theoCty.map(x => [x.clientId, x]))
       return st.filter(c => no.has(c.id)).map(c => ({
-        ...c, ngungDv: true, conNo: no.get(c.id).total, conNoKetoan: no.get(c.id).ketoan,
+        ...c, ngungDv: true, conNo: no.get(c.id).total, conNoKetoan: no.get(c.id).ketoan, conNoDvk: no.get(c.id).dvk,
         tasks: [], taskTotal: 0, taskDone: 0,
       }))
     } catch (e) {

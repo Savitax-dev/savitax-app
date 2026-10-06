@@ -297,8 +297,11 @@ export default function MyDebtPage() {
                               {Number(client.other_debt) > 0 && (
                                 <span className="text-xs text-orange-500">📦 Nợ tồn cũ: {fmt(client.other_debt)}đ</span>
                               )}
-                              {Number(client.conNo) > Number(client.other_debt || 0) && (
-                                <span className="text-xs text-gray-500">phí kỳ cuối chưa thu: {fmt(Number(client.conNo) - Number(client.other_debt || 0))}đ</span>
+                              {Number(client.conNoKetoan) > Number(client.other_debt || 0) && (
+                                <span className="text-xs text-gray-500">phí kỳ cuối chưa thu: {fmt(Number(client.conNoKetoan) - Number(client.other_debt || 0))}đ</span>
+                              )}
+                              {Number(client.conNoDvk) > 0 && (
+                                <span className="text-xs text-orange-500">🗂 Dịch vụ khác: {fmt(client.conNoDvk)}đ</span>
                               )}
                             </div>
                           </div>
