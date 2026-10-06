@@ -126,6 +126,13 @@ export default function KhoiDongTien({ dongTien, hcnsOn, open, setOpen, staffNam
                   )}
 
                   {/* Bảng của thẻ Phí HCNS — công ty có phí HCNS trong kỳ, nhóm theo nhân viên. */}
+                  {/* Thẻ đang mở mà chưa có danh sách (trang còn giữ dữ liệu nạp từ trước) thì NÓI RÕ, đừng để
+                      thẻ ghi "Đang mở" mà bên dưới trống trơn. */}
+                  {open === 'hcns' && (dongTien.phiHcns.theoCty || []).length === 0 && (
+                    <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 text-xs text-gray-500">
+                      {dongTien.phiHcns.phi > 0 ? 'Chưa nạp được danh sách công ty — bấm “Tải lại” để lấy dữ liệu mới.' : 'Kỳ này không công ty nào có phí HCNS.'}
+                    </div>
+                  )}
                   {open === 'hcns' && (dongTien.phiHcns.theoCty || []).length > 0 && (() => {
                     const nhom = []
                     for (const x of dongTien.phiHcns.theoCty) {
