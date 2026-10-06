@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import { hasPermission } from '@/lib/permissions'
+import KhoiDongTien from '@/components/KhoiDongTien'
 
 const fmt   = (n) => Number(n || 0).toLocaleString('vi-VN')
 const pctClr = (v) => v >= 90 ? 'text-green-600' : v >= 70 ? 'text-yellow-500' : 'text-red-500'
@@ -42,6 +43,10 @@ export default function DebtPage() {
   // Thẻ tổng quan nào đang mở bảng chi tiết ('unpaid' | 'khach' | 'otherDebt' | null) — mỗi lúc
   // chỉ mở 1 bảng, bấm lại chính thẻ đó để đóng (giống tab "Công nợ phòng" ở /room/[roomId]).
   const [openCard, setOpenCard] = useState(null)
+  // Khối dòng tiền toàn công ty (máy chủ tính, = cộng các phòng). Nạp riêng, không chặn danh sách.
+  const [dongTien, setDongTien] = useState(null)
+  const [staffNames, setStaffNames] = useState({})
+  const [dtLoading, setDtLoading] = useState(false)
 
   // Month options (12 months back)
   const monthOpts = []
@@ -71,6 +76,15 @@ export default function DebtPage() {
         const periodParams = period === 'month' ? `&month=${selMonth}`
           : period === 'quarter' ? `&period=quarter&quarter=${selQuarter}`
           : `&period=year`
+        setDongTien(null); setOpenCard(null)
+        if (period === 'month') {
+          setDtLoading(true)
+          fetch(`/api/admin/debt-overview?dongTien=1&year=${selYear}&month=${selMonth}&_t=${Date.now()}`, { cache: 'no-store' })
+            .then(r => r.json())
+            .then(j => { setDongTien(j.dongTien || null); setStaffNames(j.staffNames || {}) })
+            .catch(() => {})
+            .finally(() => setDtLoading(false))
+        }
         const res = await fetch(
           `/api/admin/debt-overview?year=${selYear}${periodParams}&_t=${Date.now()}`,
           { cache: 'no-store' }
@@ -259,7 +273,20 @@ export default function DebtPage() {
           <>
             {/* Grand summary — 6 thẻ, dùng chung khung với tab "Công nợ phòng" (nền trắng, vạch
                 màu 4px phía trên, số liệu cùng tông). 3 thẻ bấm mở được bảng chi tiết bên dưới. */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+            {/* Xem theo THÁNG: khối dòng tiền 5 thẻ y hệt trang Phòng / Quản lý công nợ (cùng component,
+                cùng hàm tính; toàn công ty = cộng các phòng). Xem quý / năm vẫn là 6 thẻ tổng cũ. */}
+            {period === 'month' && (dongTien ? (
+              <div className="space-y-3 mb-3">
+                <KhoiDongTien dongTien={dongTien} hcnsOn open={openCard} setOpen={setOpenCard}
+                  staffNameOf={(id) => staffNames[id] || '—'} selMonth={selMonth} selYear={selYear} />
+              </div>
+            ) : (
+              <div className="bg-white border border-gray-100 rounded-2xl px-4 py-6 mb-3 text-center text-sm text-gray-400">
+                {dtLoading ? 'Đang tính dòng tiền toàn công ty…' : 'Chưa lấy được khối dòng tiền — tải lại trang.'}
+              </div>
+            ))}
+
+            <div className={'grid grid-cols-2 md:grid-cols-3 gap-3 mb-3 ' + (period === 'month' ? 'hidden' : '')}>
               <div className="bg-white border border-gray-100 border-t-4 border-t-green-500 rounded-2xl px-4 py-3">
                 <p className="text-xs text-gray-400 mb-1">Tổng phí phát sinh</p>
                 <p className="text-lg font-bold text-gray-900">{fmt(grandFee)}đ</p>
