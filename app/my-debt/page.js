@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import ClientChecklist from '@/components/ClientChecklist'
+import KhoiDongTien from '@/components/KhoiDongTien'
 import { hasPermission } from '@/lib/permissions'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
@@ -43,6 +44,9 @@ export default function MyDebtPage() {
   const [myClients, setMyClients] = useState([])
   // Công ty đã NGƯNG dịch vụ mà còn nợ — không vào %-công nợ, nhưng vẫn phải có chỗ ghi thu.
   const [stopped, setStopped] = useState([])
+  // Khối dòng tiền của riêng mình (máy chủ tính sẵn) + thẻ nào đang mở bảng chi tiết.
+  const [dongTien, setDongTien] = useState(null)
+  const [openCard, setOpenCard] = useState(null)
   const [loading,   setLoading]   = useState(true)
   const [search,    setSearch]    = useState('')
   const [filter,    setFilter]    = useState('unpaid')
@@ -113,8 +117,9 @@ export default function MyDebtPage() {
         })
         setMyClients(clients)
         setStopped(json.stoppedClients || [])
+        setDongTien(json.dongTien || null)
       } else {
-        setMe(null); setMyClients([]); setStopped([])
+        setMe(null); setMyClients([]); setStopped([]); setDongTien(null)
       }
     } catch (_) {}
     setLoading(false)
@@ -216,8 +221,19 @@ export default function MyDebtPage() {
           </div>
         ) : (
           <>
+            {/* Xem theo THÁNG: khối dòng tiền 5 thẻ, y hệt trang Phòng (cùng component, cùng hàm tính) —
+                tồn đầu kỳ + phát sinh − đã thu = chuyển kỳ sau, theo dõi được qua từng kỳ.
+                Xem theo quý / năm thì vẫn là 5 ô tổng như cũ (dòng tiền chỉ tính theo tháng). */}
+            {period === 'month' && dongTien && (
+              <div className="space-y-3 mb-5">
+                <KhoiDongTien dongTien={dongTien} hcnsOn={dongTien.hcnsInstalled} hcnsCoBang={false}
+                  open={openCard} setOpen={setOpenCard}
+                  staffNameOf={() => me?.full_name || '—'} selMonth={selMonth} selYear={selYear} />
+              </div>
+            )}
+
             {/* KPI tổng quan công nợ */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+            <div className={'grid grid-cols-2 md:grid-cols-5 gap-3 mb-5 ' + (period === 'month' && dongTien ? 'hidden' : '')}>
               <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3">
                 <p className="text-xs text-gray-400 mb-1">💰 Tổng phí kế toán ({periodLabel})</p>
                 <p className="text-xl font-bold text-gray-800">{fmt(totalFee)}đ</p>

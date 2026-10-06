@@ -6,6 +6,7 @@ import { countsForMonth } from '@/lib/contractDates'
 import { dueFeeMonthsCount, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireLogin } from '@/lib/serverAuth'
 import { tinhDongTienPhong } from '@/lib/dongTienPhong'
+import { loadHcnsFees } from '@/lib/hcnsPhiCongTy'
 
 function getAdmin() {
   return createClient(
@@ -99,6 +100,50 @@ export async function GET(request) {
   }
   const stoppedClients = await loadStopped()
 
+  // KHỐI DÒNG TIỀN của riêng nhân viên này — cùng hàm, cùng cách hiển thị với trang Phòng (anh yêu
+  // cầu 06/10/2026). Chỉ dựng khi xem theo THÁNG. Tính trên mọi công ty mình là nhân viên CHÍNH,
+  // kể cả đã ngưng dịch vụ, y như trang Phòng — để cộng các nhân viên lại ra đúng số của phòng.
+  const loadDongTien = async () => {
+    if (period !== 'month') return null
+    try {
+      const { data: mine } = await supabase.from('clients')
+        .select('id, name, tax_code, assigned_to, monthly_fee, other_debt, report_type, fee_period, status, client_code, contract_start, created_at')
+        .eq('assigned_to', staffRecord.id)
+      if (!mine?.length) return null
+      const ids = mine.map(c => c.id)
+      const active = mine.filter(c => (c.status || 'active') === 'active').map(c => c.id)
+      // Mốc bắt đầu chạy số dư phải GIỐNG trang Phòng (kỳ chốt sổ sớm nhất của CẢ PHÒNG), không thì
+      // cùng một công ty mà hai trang ra hai số.
+      let lichSuTu = null
+      const { data: nvPhong } = await supabase.from('staff').select('id').eq('room_id', staffRecord.room_id)
+      const { data: ctyPhong } = await supabase.from('clients').select('id').in('assigned_to', (nvPhong || []).map(s => s.id))
+      const idPhong = (ctyPhong || []).map(c => c.id)
+      for (let i = 0; i < idPhong.length; i += 150) {
+        const { data: r } = await supabase.from('debt_rollovers').select('year, month, source')
+          .in('client_id', idPhong.slice(i, i + 150)).or('source.is.null,source.eq.ketoan')
+          .order('year').order('month').limit(1)
+        if (r?.[0]) lichSuTu = Math.min(lichSuTu ?? Infinity, r[0].year * 12 + r[0].month)
+      }
+      const [{ data: plans }, { data: logs }, hcns] = await Promise.all([
+        active.length ? supabase.from('service_fees').select('client_id, year, month, amount').in('client_id', active).eq('type', 'fee_plan') : { data: [] },
+        active.length ? supabase.from('client_change_log').select('client_id, old_value, changed_at')
+          .in('client_id', active).eq('entity', 'monthly_fee').eq('action', 'update') : { data: [] },
+        loadHcnsFees(supabase, active, year, month),
+      ])
+      const dt = await tinhDongTienPhong(supabase, {
+        clients: mine, year, month, feePlanRows: plans || [], changeLogRows: logs || [],
+        hcnsByClient: hcns.byClient || {},
+        hcnsLichSu: { links: hcns.links || [], plans: hcns.plans || [], paid: hcns.paid || [] },
+        lichSuTu,
+      })
+      return { ...dt, hcnsInstalled: !!hcns.installed }
+    } catch (e) {
+      console.error('my-room dongTien:', e?.message || e)
+      return null
+    }
+  }
+  const dongTien = await loadDongTien()
+
   // Chạy song song mọi truy vấn không phụ thuộc lẫn nhau trong CÙNG 1 lượt
   // (giảm round-trip tới Supabase — mỗi lượt chờ tốn ~300-800ms do khác vùng với Vercel)
   const [{ data: taskDefs }, { data: secondaryRows }, { data: primaryClients }] = await Promise.all([
@@ -129,6 +174,7 @@ export async function GET(request) {
       room,
       clients: [],
       stoppedClients,
+      dongTien,
       taskPct: 100,
       debtPct: 0,
     })
@@ -246,6 +292,7 @@ export async function GET(request) {
     room,
     clients: clientsWithTasks,
     stoppedClients,
+    dongTien,
     // Không phụ trách công ty nào thì % công việc = 0%, không phải 100%.
     taskPct: isMonthOnly ? (clientsWithTasks.length === 0 ? 0 : (totalTasks === 0 ? 100 : Math.round(doneTasks / totalTasks * 100))) : null,
     debtPct: totalFee   === 0 ? (ownedClients.length > 0 ? 100 : 0) : Math.round(totalCol  / totalFee  * 100),
