@@ -59,6 +59,42 @@ công việc hàng tháng/quý, công nợ dịch vụ, KPI nhân viên/phòng b
   2 → ngày 28/29) và task chỉ "Quá hạn" sau khi qua HẾT ngày hạn (0h ngày kế), không phải ngay
   khi vừa tới ngày hạn.
 
+## Khối dòng tiền công nợ (5 thẻ) — Phòng, Quản lý công nợ, Công nợ toàn công ty, Báo cáo KPI
+
+Tồn đầu kỳ + phí phát sinh − đã thu (− đã xoá nợ) = còn phải thu chuyển kỳ sau, tách 3 loại thu: kế
+toán · HCNS · dịch vụ khác. Dựng 2026-10-05/06. Lõi `lib/dongTienPhong.js`, hiển thị
+`components/KhoiDongTien.js` — **một hàm tính, một component cho cả 4 trang**; trang KHÔNG tự cộng lại.
+
+- ⚠ **Hai bất biến người dùng tự cộng trên màn hình và hỏi ngay khi lệch**: (1) cộng trừ trên thẻ phải
+  khớp; (2) chuyển kỳ sau của T(n) = tồn đầu kỳ của T(n+1). Sửa gì ở đây cũng phải chạy đủ 4 bộ kiểm
+  (chỉ đọc, dữ liệu thật): `test-dong-tien-phong` · `-nhan-vien` (cộng nhân viên = phòng) · `-toan-cty`
+  · `-quy-nam` (quý nối đúng sang tháng kế).
+- **Tồn đầu kỳ là SỐ DƯ CHẠY DẦN từng kỳ**, không đọc từ `debt_rollovers`: sổ chỉ chốt sau ngày 10 nên
+  đọc sổ là hụt phần chưa thu của kỳ vừa qua. Điểm xuất phát suy ngược từ nợ đang có
+  (`other_debt − Σ đã chốt + Σ đã thu nợ tồn`) vì nợ cũ nhập tay không có dòng chốt nào; chặn sàn 0
+  cho TỪNG công ty.
+- **Mốc bắt đầu chạy số dư = kỳ chốt sổ sớm nhất của CẢ PHÒNG**, ở mọi trang (kể cả khi tính cho một
+  nhân viên / một công ty — truyền `lichSuTu`). Toàn công ty = `gopDongTien` CỘNG từng phòng, không tính
+  gộp một lần. Sai mốc là cùng một công ty mà hai trang ra hai số.
+- `clients.status` là trạng thái HÔM NAY — đừng dùng nó để quyết định phí của kỳ cũ. Bộ kiểm phải nạp
+  dữ liệu GIỐNG route (lịch sử phí chỉ của công ty đang dùng dịch vụ), nạp rộng hơn là che mất lỗi.
+- **HCNS** tính từ T9/2026 (`HCNS_TU`, kỳ tách phí HCNS khỏi phí kế toán). **Dịch vụ khác**
+  (`other_services`, sql/24) đi theo từng tháng tới khi thu đủ, KHÔNG bao giờ chuyển vào nợ tồn.
+- **Quý / Năm**: tham số `months`; số dư cuối kỳ chạy lần lượt từng tháng; tháng chưa tới không tính.
+- **Ngưng dịch vụ** (sql/25): phải chọn THÁNG NGƯNG → `clients.service_end` (ngày 01 của tháng). Từ
+  tháng đó không phí, không KPI; phí các tháng trước chưa thu vẫn là nợ, hiện ở khối "Đã ngưng dịch vụ
+  — còn phải thu" (trang Phòng + Quản lý công nợ) để ghi thu. Công ty ngưng vẫn mở được hồ sơ Dịch vụ
+  khác ở Danh sách công ty. Đặt tháng ngưng muộn hơn thực tế là đẻ nợ ảo cho các tháng giữa.
+- **Xoá nợ** (`/api/admin/debt-writeoff`, bảng `debt_writeoffs`): chỉ role admin thật, chỉ công ty đã
+  ngưng, bắt buộc lý do, chỉ phí kế toán. Xoá là giảm số dư nhưng KHÔNG phải tiền thu. Phải ghi luôn
+  dòng chốt `remaining_amount = 0` cho kỳ chưa chốt sổ, không thì sau ngày 10 khoản vừa xoá mọc lại.
+- **Báo cáo "Phí đã thu"** (`/api/admin/fee-collected`): chọn theo NGÀY ghi vào app; dòng tiền lấy các
+  tháng mà khoảng ngày chạm tới, nên có HAI cột đã thu cố ý để riêng ("của kỳ" và "ghi trong khoảng
+  ngày"). `service_fees` mỗi (công ty, kỳ, loại) chỉ một dòng luỹ kế và `created_at` bị đặt lại mỗi lần
+  ghi — không có sổ từng lần thu.
+- ⏳ Chưa xử lý: nợ HCNS đã chốt mà trả qua "Nợ tồn cũ" thì ghi `no_ton` chung túi với kế toán, nên
+  phần trả đó đang trừ vào dòng KẾ TOÁN của thẻ (tổng đúng, chia dòng lệch).
+
 ## Module Đối soát ngân hàng (`/bank`)
 
 Tiền vào ngân hàng → tự nhận ra công ty + kỳ phí → người dùng bấm mới ghi công nợ. Dựng 2026-09-22,
