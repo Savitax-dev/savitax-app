@@ -6,6 +6,7 @@ import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireRoomAccess } from '@/lib/serverAuth'
 import { tinhDongTienPhong } from '@/lib/dongTienPhong'
 import { loadHcnsFees } from '@/lib/hcnsPhiCongTy'
+import { docViPham, truViPham } from '@/lib/viPham'
 
 function getAdmin() {
   return createClient(
@@ -226,6 +227,8 @@ export async function GET(request) {
   // nhân viên cùng 1 tháng). %-công nợ thì NGƯỢC LẠI — xem debtPct bên dưới.
   const clientTaskPct = (built) => built.tasks.length === 0 ? 100 : Math.round(built.tasks.filter(t => t.status === 'done_ontime').length / built.tasks.length * 100)
 
+  const viPham = await docViPham(supabase, year, month, staffIds)
+
   // Build per-staff data
   const staffData = staffList.map(s => {
     const myOwnedClients = activeOwnedClients.filter(c => c.assigned_to === s.id)
@@ -267,13 +270,15 @@ export async function GET(request) {
     // Công ty phụ trách phụ vẫn hiện trong danh sách (clientsWithTasks) nhưng không tính vào %.
     const taskPcts = ownedWithTasks.map(clientTaskPct)
     const debtCountedClients = ownedWithTasks.filter(c => feeCountsForMonth(c.fee_period, year, month))
-    const taskPct = myOwnedClients.length === 0 ? 0 : mean(taskPcts)
+    // %-công việc GỐC rồi mới trừ vi phạm (lib/viPham.js) — trả cả hai để trang ghi rõ đã trừ bao nhiêu.
+    const taskPctGoc = myOwnedClients.length === 0 ? 0 : mean(taskPcts)
+    const taskPct = truViPham(taskPctGoc, viPham.get(s.id))
     // %-công nợ nhân viên (2026-08-24, đổi theo yêu cầu) = TỔNG tiền đã thu / TỔNG phí phải thu
     // gộp tất cả công ty đến hạn của người đó — totalFee/collectedFee đã dồn sẵn ở vòng lặp
     // ownedWithTasks.map bên trên, KHÔNG phải trung bình cộng % từng công ty (khác task ở trên).
     const debtPct = myOwnedClients.length === 0 ? 0 : (debtCountedClients.length ? (totalFee === 0 ? 100 : Math.round(collectedFee / totalFee * 100)) : 100)
 
-    return { ...s, clientCount: myOwnedClients.length, clients: clientsWithTasks, taskPct, debtPct, totalTasks, doneTasks, totalFee, collectedFee }
+    return { ...s, clientCount: myOwnedClients.length, clients: clientsWithTasks, taskPct, taskPctGoc, viPham: viPham.get(s.id) || null, debtPct, totalTasks, doneTasks, totalFee, collectedFee }
   })
 
   const sumKpiTotal = staffData.reduce((a, s) => a + s.clients.reduce((b, c) => b + c.tasks.length, 0), 0)

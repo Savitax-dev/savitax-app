@@ -7,6 +7,7 @@ import { dueFeeMonthsCount, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireLogin } from '@/lib/serverAuth'
 import { tinhDongTienPhong } from '@/lib/dongTienPhong'
 import { loadHcnsFees } from '@/lib/hcnsPhiCongTy'
+import { docViPham, truViPham } from '@/lib/viPham'
 
 function getAdmin() {
   return createClient(
@@ -292,6 +293,10 @@ export async function GET(request) {
   const totalFee   = dueClients.reduce((a, c) => a + c.periodFee, 0)
   const totalCol   = dueClients.reduce((a, c) => a + c.collected, 0)
 
+  // Vi phạm của tháng đang xem (lib/viPham.js) — trừ 20 điểm %-công việc, nhân viên thấy rõ lý do.
+  const taskPctGoc = clientsWithTasks.length === 0 ? 0 : (totalTasks === 0 ? 100 : Math.round(doneTasks / totalTasks * 100))
+  const viPhamCuaToi = isMonthOnly ? (await docViPham(supabase, year, month, [staffRecord.id])).get(staffRecord.id) : null
+
   return Response.json({
     staff:   staffRecord,
     room,
@@ -299,7 +304,9 @@ export async function GET(request) {
     stoppedClients,
     dongTien,
     // Không phụ trách công ty nào thì % công việc = 0%, không phải 100%.
-    taskPct: isMonthOnly ? (clientsWithTasks.length === 0 ? 0 : (totalTasks === 0 ? 100 : Math.round(doneTasks / totalTasks * 100))) : null,
+    taskPct: isMonthOnly ? truViPham(taskPctGoc, viPhamCuaToi) : null,
+    taskPctGoc: isMonthOnly ? taskPctGoc : null,
+    viPham: isMonthOnly ? (viPhamCuaToi || null) : null,
     debtPct: totalFee   === 0 ? (ownedClients.length > 0 ? 100 : 0) : Math.round(totalCol  / totalFee  * 100),
     totalTasks, doneTasks, totalFee, totalCol,
   })

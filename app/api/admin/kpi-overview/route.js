@@ -3,6 +3,7 @@ import { countsForMonth } from '@/lib/contractDates'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireLogin } from '@/lib/serverAuth'
+import { docViPham, truViPham } from '@/lib/viPham'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -121,6 +122,9 @@ export async function GET(request) {
     clientsByStaff[c.assigned_to].push(c)
   }
 
+  // Vi phạm của tháng (lib/viPham.js): trừ 20 điểm %-công việc của nhân viên đó, một lần.
+  const viPham = await docViPham(supabase, year, month)
+
   const staffResults = (staffList || []).map(s => {
     const myClients = clientsByStaff[s.id] || []
     const taskPcts = myClients.map(clientTaskPct)
@@ -135,7 +139,9 @@ export async function GET(request) {
       role:         s.role,
       client_count: myClients.length,
       // Nhân viên không phụ trách công ty nào thì % công việc = 0%, không phải 100%.
-      task_pct:     myClients.length ? mean(taskPcts) : 0,
+      task_pct:     truViPham(myClients.length ? mean(taskPcts) : 0, viPham.get(s.id)),
+      task_pct_goc: myClients.length ? mean(taskPcts) : 0,
+      vi_pham:      viPham.get(s.id) || null,
       debt_pct:     myClients.length
         ? (debtCountedClients.length ? (totalDebtFee === 0 ? 100 : Math.round(totalDebtCollected / totalDebtFee * 100)) : 100)
         : 0,

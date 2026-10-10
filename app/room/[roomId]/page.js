@@ -47,6 +47,38 @@ export default function RoomPage({ params }) {
   const [hcnsOn,    setHcnsOn]    = useState(false)
   // Khối dòng tiền công nợ phòng — MÁY CHỦ tính sẵn (lib/dongTienPhong.js), trang chỉ hiển thị.
   const [dongTien,  setDongTien]  = useState(null)
+  // VI PHẠM (lib/viPham.js): Trưởng phòng / Quản trị đánh dấu cho một nhân viên ở tháng đang xem ->
+  // %-công việc tháng đó bị trừ 20 điểm, một lần. Bắt buộc ghi rõ vi phạm gì; gỡ được.
+  const [viPhamBusy, setViPhamBusy] = useState(null)
+  const danhDauViPham = async (nv) => {
+    const goc = nv.taskPctGoc ?? nv.taskPct
+    const lyDo = prompt('ĐÁNH DẤU VI PHẠM — ' + nv.full_name + ' · T' + selMonth + '/' + selYear
+      + '\n\n%-hoàn thành công việc tháng này sẽ bị trừ 20 điểm (' + goc + '% còn ' + Math.max(0, goc - 20) + '%).'
+      + '\n\nGhi rõ vi phạm (công ty nào, việc gì):', nv.viPham?.reason || '')
+    if (lyDo === null) return
+    if (lyDo.trim().length < 5) { alert('Phải ghi rõ vi phạm gì (ít nhất 5 ký tự).'); return }
+    setViPhamBusy(nv.id)
+    try {
+      const j = await fetch('/api/admin/kpi-violation', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staffId: nv.id, year: selYear, month: selMonth, reason: lyDo.trim() }),
+      }).then(r => r.json())
+      if (j.error) { alert(j.error); return }
+      await load()
+    } finally { setViPhamBusy(null) }
+  }
+  const goViPham = async (nv) => {
+    if (!confirm('Gỡ vi phạm T' + selMonth + '/' + selYear + ' của ' + nv.full_name + '?\n%-công việc trở lại ' + (nv.taskPctGoc ?? nv.taskPct) + '%.')) return
+    setViPhamBusy(nv.id)
+    try {
+      const j = await fetch('/api/admin/kpi-violation', {
+        method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staffId: nv.id, year: selYear, month: selMonth }),
+      }).then(r => r.json())
+      if (j.error) { alert(j.error); return }
+      await load()
+    } finally { setViPhamBusy(null) }
+  }
   const [xoaNoBusy, setXoaNoBusy] = useState(null)
   // Xoá nợ không đòi được của công ty đã ngưng dịch vụ — chỉ Quản trị, bắt buộc ghi lý do.
   // Hỏi máy chủ số sẽ xoá TRƯỚC (dryRun) để người bấm thấy đúng con số rồi mới xác nhận.
@@ -359,7 +391,19 @@ export default function RoomPage({ params }) {
                             <span className="text-xs text-gray-300 w-4 flex-shrink-0">{i + 1}</span>
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-gray-900 truncate">{s.full_name}</p>
-                              <p className="text-xs text-gray-400">{s.clientCount} cty</p>
+                              <p className="text-xs text-gray-400">
+                                {s.clientCount} cty
+                                {s.viPham ? (<>
+                                  <span className="ml-2 font-semibold text-white bg-red-500 px-1.5 py-0.5 rounded-full" title={s.viPham.reason}>Vi phạm −20%</span>
+                                  <span className="ml-1.5 text-red-500">gốc {s.taskPctGoc}% · {s.viPham.reason}</span>
+                                  {isAdmin && (
+                                    <button disabled={viPhamBusy === s.id} onClick={() => goViPham(s)} className="ml-2 text-blue-600 underline disabled:opacity-40">gỡ</button>
+                                  )}
+                                </>) : isAdmin && s.clientCount > 0 && (
+                                  <button disabled={viPhamBusy === s.id} onClick={() => danhDauViPham(s)}
+                                    className="ml-2 text-gray-400 underline hover:text-red-600 disabled:opacity-40">đánh dấu vi phạm</button>
+                                )}
+                              </p>
                             </div>
                           </div>
                           <p className={'text-sm font-bold text-center ' + pctClr(s.taskPct)}>{s.taskPct}%</p>
