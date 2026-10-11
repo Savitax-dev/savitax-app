@@ -7,6 +7,7 @@
 //
 // HTML dưới đây dựng lại theo đúng bảng anh chụp ngày 11/10/2026 (3 bản ghi của PAPER ART VIỆT).
 import { docBangKetQuaEtax, doanLoaiToKhaiTuTen } from '../lib/dvcPortal.js'
+import { chuanHoaKy } from '../lib/taxDeadline.js'
 
 let dat = 0, hong = 0
 const kiem = (ten, thucTe, mongDoi) => {
@@ -90,6 +91,15 @@ doan('Bảng tổng hợp đăng ký người phụ thuộc giảm trừ gia c�
 doan('Văn bản đề nghị hủy hồ sơ đề nghị hoàn thuế(11220250300583305-)', null)
 kiem('tên rỗng → null, không nổ', doanLoaiToKhaiTuTen(''), null)
 kiem('null → null, không nổ', doanLoaiToKhaiTuTen(null), null)
+
+console.log('')
+console.log('Kỳ tính thuế: cổng ghi quý có tiền tố, THÁNG để trần:')
+// Ca thật 11/10/2026 (PAPER ART VIỆT): 'Văn bản đề nghị hủy hồ sơ hoàn thuế' kỳ 03/2025 bị đọc
+// thành Q3.2025 vì chưa khớp loại tờ khai nên mặc định coi là quý.
+kiem("'Q4/2024' → quý 4", chuanHoaKy('Q4/2024', 'month'), 'Q4.2024')
+kiem("'2024' → năm", chuanHoaKy('2024', 'month'), 'NAM.2024')
+kiem("'03/2025' chưa biết loại → THÁNG 3, không phải quý 3", chuanHoaKy('03/2025', 'month'), 'T03.2025')
+kiem('loại tờ khai theo quý thì vẫn ra quý', chuanHoaKy('3/2025', 'quarter'), 'Q3.2025')
 
 console.log(hong === 0 ? `\nTẤT CẢ ${dat} MỤC ĐỀU ĐẠT.` : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)
