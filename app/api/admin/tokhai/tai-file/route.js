@@ -99,10 +99,17 @@ const yc = {
       scope_tdt2: 'SELF', mstUyQuyen_tdt2: '', captcha, btnSearch_tdt: '',
     }).toString(),
   }),
-  // CÙNG địa chỉ cho cả hai tab, chỉ khác `loai`: trống = hồ sơ DVC, 'ETAX' = hồ sơ cũ.
-  chiTiet: (maHoSo, nguon) => ({
-    url: `${BASE}tchs/files/detail/${encodeURIComponent(maHoSo)}?loai=${nguon === 'etax' ? 'ETAX' : ''}`,
-    method: 'GET', headers: { Referer: BASE + 'tchs' } }),
+  // Trang chi tiết: `loai` LUÔN ĐỂ TRỐNG, kể cả hồ sơ tab cũ.
+//
+  // ⚠ Nghe phản trực giác nên ghi rõ kẻo người sau "sửa lại cho đúng": trình duyệt khi bấm Xem chi
+  // tiết thì đi vào /files/detail/<mã>?loai=ETAX, nên 11/10/2026 em theo y vậy — và cổng trả 500
+  // "Đã có lỗi hệ thống xảy ra!" cho TẤT CẢ 8 hồ sơ. Để trống thì chính những hồ sơ cũ đó đọc được
+  // bình thường (đo thật cùng công ty, cùng phiên, chỉ khác tham số này).
+  // Đoán: nhánh ETAX của cổng cần thêm trạng thái mà lượt gọi thuần không có. Dù lý do gì thì bằng
+  // chứng rõ: ĐỂ TRỐNG LÀ CHẠY.
+  chiTiet: maHoSo => ({
+    url: `${BASE}tchs/files/detail/${encodeURIComponent(maHoSo)}?loai=`, method: 'GET',
+    headers: { Referer: BASE + 'tchs' } }),
   // Xin phép trước khi tải tờ khai — thiếu bước này cổng trả "Hồ sơ truyền lên không hợp lệ".
   xinPhep: maHoSo => ({ url: `${BASE}tchs/validateIdTkhai?idTKhai=${encodeURIComponent(maHoSo)}`, method: 'GET',
     headers: { 'X-Requested-With': 'XMLHttpRequest', Referer: BASE + 'tchs' } }),
@@ -389,7 +396,7 @@ function hoSoKeTiep(p, ghiFile) {
   if (p.viHangDoi < p.hangDoi.length) {
     p.buoc = 'chi_tiet'
     return traYeuCau(p, {
-      viec: 'goi', buoc: p.buoc, ghiFile, yeuCau: yc.chiTiet(hoSoHienTai(p).maHoSo, hoSoHienTai(p).nguon),
+      viec: 'goi', buoc: p.buoc, ghiFile, yeuCau: yc.chiTiet(hoSoHienTai(p).maHoSo),
       tienDo: `Cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length} — hồ sơ ${p.viHangDoi + 1}/${p.hangDoi.length}`,
     })
   }

@@ -121,11 +121,16 @@ const yeuCauTraCuuCuaSo = (csrf, cs, captcha, trang) =>
 const docBangTheoCuaSo = (cs, html, trang) =>
   (cs.nguon === 'etax' ? docBangKetQuaEtax(html, cs) : docBangKetQua(html, { ...cs, trang }))
 
-// CÙNG một địa chỉ cho cả hai tab, chỉ khác tham số `loai`: để trống = hồ sơ DVC, 'ETAX' = hồ sơ
-// nộp trước 01/07/2025. Truyền sai thì cổng không tìm thấy hồ sơ.
-const yeuCauChiTiet = (maHoSo, nguon) => ({
-  url: `${BASE}tchs/files/detail/${encodeURIComponent(maHoSo)}?loai=${nguon === 'etax' ? 'ETAX' : ''}`,
-  method: 'GET',
+// Trang chi tiết: `loai` LUÔN ĐỂ TRỐNG, kể cả hồ sơ tab cũ.
+//
+// ⚠ Nghe phản trực giác nên ghi rõ kẻo người sau "sửa lại cho đúng": trình duyệt khi bấm Xem chi
+// tiết thì đi vào /files/detail/<mã>?loai=ETAX, nên 11/10/2026 em theo y vậy — và cổng trả 500
+// "Đã có lỗi hệ thống xảy ra!" cho TẤT CẢ 8 hồ sơ. Để trống thì chính những hồ sơ cũ đó đọc được
+// bình thường (đo thật cùng công ty, cùng phiên, chỉ khác tham số này).
+// Đoán: nhánh ETAX của cổng cần thêm trạng thái mà lượt gọi thuần không có. Dù lý do gì thì bằng
+// chứng rõ: ĐỂ TRỐNG LÀ CHẠY.
+const yeuCauChiTiet = maHoSo => ({
+  url: `${BASE}tchs/files/detail/${encodeURIComponent(maHoSo)}?loai=`, method: 'GET',
   headers: { Referer: BASE + 'tchs' },
 })
 
@@ -196,8 +201,15 @@ export async function POST(request) {
         captcha_entered_by: auth.caller.staffId, captcha_count: 0,
       }).select('id').single()
 
+      // Hồ sơ nào ĐÃ có ngày tiếp nhận từ lần trước thì khỏi mở lại trang chi tiết. Nạp ngay đây
+      // chứ không đợi tra xong: từ 11/10/2026 chi tiết đọc theo TỪNG cửa sổ nên cần có sẵn từ
+      // cửa sổ đầu tiên. Thiếu nó thì lượt nào cũng mở lại hết, gõ cửa cổng thừa hàng chục lần.
+      const { data: daCoCT } = await supabase.from('tax_filings')
+        .select('portal_code').eq('client_id', clientId).not('received_at', 'is', null)
+
       const maPhien = crypto.randomUUID()
       phienTam.set(maPhien, {
+        daCoChiTiet: new Set((daCoCT || []).map(f => f.portal_code)),
         clientId, staffId: auth.caller.staffId, jobId: job?.id || null,
         doiTuong: cty?.is_hkd ? 'CN' : 'DN',
         csrf: null, buoc: 'trang_dang_nhap', chamNhat: Date.now(),
@@ -364,6 +376,22 @@ export async function POST(request) {
             tienDo: `Tra cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length}, trang ${p.trang + 1}`,
           })
         }
+        // ⚠ ĐỌC CHI TIẾT NGAY, TRƯỚC KHI SANG CỬA SỔ KHÁC.
+        //
+        // Cổng chỉ cho mở trang chi tiết của LẦN TRA GẦN NHẤT trong phiên — đúng ràng buộc vẫn
+        // biết với lệnh tải file, nhưng nó áp cho cả trang chi tiết. Bản trước tra hết mọi cửa sổ
+        // rồi mới đi đọc chi tiết, nên mọi hồ sơ trừ cửa sổ cuối đều nhận HTTP 500 "Đã có lỗi hệ
+        // thống xảy ra" (đo thật 11/10/2026: 8/8 hồ sơ tháng 3 hỏng, trong khi lượt chạy chỉ có
+        // một cửa sổ thì đọc được bình thường).
+        //
+        // Hỏng kiểu này LẶNG LẼ: hồ sơ vẫn vào app, chỉ thiếu ngày tiếp nhận (không xét được
+        // đúng/trễ hạn) và thiếu mã tờ khai của hồ sơ tab cũ.
+        p.dongCuaSo = ds
+        p.viChiTiet = 0
+        return buocChiTietKeTiep(p, supabase)
+      }
+
+      case 'het_chi_tiet': {
         p.viCuaSo++; p.trang = 0
         if (p.viCuaSo < p.cuaSo.length) {
           // ⚠ TAB CŨ KHÔNG CHO DÙNG LẠI MÃ CAPTCHA. Đo thật 11/10/2026: cửa sổ thứ hai dùng lại
@@ -384,18 +412,27 @@ export async function POST(request) {
             tienDo: `Tra cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length}`,
           })
         }
-        // Trước khi mở trang chi tiết, hỏi DB xem hồ sơ nào đã có ngày tiếp nhận rồi.
-        const { data: daCo } = await supabase.from('tax_filings')
-          .select('portal_code, received_at').eq('client_id', p.clientId).not('received_at', 'is', null)
-        p.daCoChiTiet = new Set((daCo || []).map(f => f.portal_code))
-        return buocChiTietKeTiep(p)
+        // Hết cửa sổ: chi tiết đã đọc xong theo từng cửa sổ rồi, giờ chỉ việc ghi và đăng xuất.
+        p.buoc = 'dang_xuat'
+        return traYeuCau(p, {
+          viec: 'goi', buoc: p.buoc, yeuCau: yeuCauDangXuat(p.csrf),
+          tienDo: 'Đang ghi dữ liệu và đăng xuất',
+        })
       }
 
       case 'chi_tiet': {
-        const dong = p.dong[p.viChiTiet]
+        const dong = (p.dongCuaSo || [])[p.viChiTiet]
         const ma = dong?.maHoSo
+        // Log đủ để lần chạy sau tự nói ra vì sao hỏng, khỏi phải đoán: mã nào, tab nào, cổng
+        // trả mã gì, đọc được những gì. Chi tiết hỏng thì MẤT ngày tiếp nhận (không xét được
+        // đúng/trễ hạn) và MẤT mã tờ khai của hồ sơ tab cũ — hỏng lặng lẽ, không ai thấy.
+        console.log(`[CHI TIẾT] ${ma} (${dong?.nguon || 'dvc'}): cổng trả ${ph.status}, `
+          + `${String(noiDung || '').length} ký tự`
+          + (ph.status !== 200 ? ` | đầu: ${String(noiDung || '').slice(0, 200).replace(/\s+/g, ' ')}` : ''))
         if (ma && ph.status === 200) {
           const ct = docChiTiet(noiDung)
+          console.log(`[CHI TIẾT] ${ma}: tờ khai=${ct.toKhai || 'KHÔNG ĐỌC ĐƯỢC'}, `
+            + `ngày tiếp nhận=${ct.ngayTiepNhan || 'không có'}, ${ct.thongBao.length} thông báo`)
           p.chiTiet.set(ma, ct)
           // Hồ sơ tab cũ: bảng kết quả không có mã tờ khai nên chưa khớp được danh mục. Trang chi
           // tiết có đủ ('05/KK-TNCN - Tờ khai khấu trừ…') → lấy về đây, nếu không thì hồ sơ nằm
@@ -418,33 +455,41 @@ export async function POST(request) {
   }
 }
 
-// Mở trang chi tiết từng hồ sơ để lấy ngày tiếp nhận + thông báo. Không tốn captcha, nhưng phải
-// giãn nhịp. Hết hồ sơ thì ghi dữ liệu rồi đăng xuất.
+// Mở trang chi tiết từng hồ sơ CỦA CỬA SỔ VỪA TRA, để lấy ngày tiếp nhận + thông báo + mã tờ
+// khai. Không tốn captcha, nhưng phải giãn nhịp.
+//
+// Chạy theo TỪNG CỬA SỔ chứ không gom cuối lượt: cổng chỉ cho mở chi tiết của lần tra gần nhất.
+// Hết hồ sơ của cửa sổ này thì quay lại nhánh 'het_chi_tiet' để sang cửa sổ kế.
 function buocChiTietKeTiep(p) {
-  const GIOI_HAN = 25       // đủ cho một lượt; còn nữa thì lượt sau lấy tiếp
+  const GIOI_HAN = 25       // đủ cho một cửa sổ; còn nữa thì lượt sau lấy tiếp
+  const ds = p.dongCuaSo || []
 
   // BỎ QUA hồ sơ đã có ngày tiếp nhận từ lần đồng bộ trước: trang chi tiết chỉ dùng để lấy ngày
   // tiếp nhận và danh sách thông báo, lấy rồi thì mở lại chẳng thêm gì. Cách giảm nguy cơ bị cổng
   // chặn tốt nhất là GỌI ÍT ĐI, chứ không phải gọi chậm hơn.
-  while (p.viChiTiet < p.dong.length && p.daCoChiTiet?.has(p.dong[p.viChiTiet].maHoSo)) {
+  // BỎ QUA luôn hồ sơ TAB CŨ: gọi trang chi tiết của chúng từ app LUÔN nhận HTTP 500 "Đã có lỗi
+  // hệ thống xảy ra" (đo thật 11/10/2026 — thử cả loai= trống lẫn ETAX, cả đọc-ngay-sau-cửa-sổ
+  // lẫn gom-cuối-lượt, 8/8 hồ sơ hỏng), dù mở cùng địa chỉ đó bằng trình duyệt thì ra bình
+  // thường. Mà kể cả mở được cũng chẳng thêm gì: ô "Ngày tiếp nhận" của hồ sơ cũ TRỐNG trên
+  // chính cổng. Loại tờ khai đã đoán được từ tên (doanLoaiToKhaiTuTen), nên bỏ bước này là
+  // BỚT MỘT LƯỢT GỌI CỔNG CHO MỖI HỒ SƠ, vừa nhanh vừa đỡ nguy cơ bị chặn.
+  while (p.viChiTiet < ds.length
+      && (ds[p.viChiTiet].nguon === 'etax' || p.daCoChiTiet?.has(ds[p.viChiTiet].maHoSo))) {
     p.boQuaChiTiet = (p.boQuaChiTiet || 0) + 1
     p.viChiTiet++
   }
 
-  if (p.viChiTiet < p.dong.length && p.viChiTiet < GIOI_HAN) {
+  if (p.viChiTiet < ds.length && p.viChiTiet < GIOI_HAN) {
     p.buoc = 'chi_tiet'
     return traYeuCau(p, {
       viec: 'goi', buoc: p.buoc, nghi: 2500,
-      yeuCau: yeuCauChiTiet(p.dong[p.viChiTiet].maHoSo, p.dong[p.viChiTiet].nguon),
-      tienDo: `Đọc chi tiết ${p.viChiTiet + 1}/${Math.min(p.dong.length, GIOI_HAN)}`,
+      yeuCau: yeuCauChiTiet(ds[p.viChiTiet].maHoSo),
+      tienDo: `Cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length} — đọc chi tiết ${p.viChiTiet + 1}/${Math.min(ds.length, GIOI_HAN)}`,
     })
   }
-  // Tên bước phải khớp với nhánh trong switch ở trên, nếu không lượt cuối sẽ rơi vào default.
-  p.buoc = 'dang_xuat'
-  return traYeuCau(p, {
-    viec: 'goi', buoc: p.buoc, yeuCau: yeuCauDangXuat(p.csrf),
-    tienDo: 'Đang ghi dữ liệu và đăng xuất',
-  })
+  // Xong cửa sổ này. Tên bước phải khớp nhánh trong switch, nếu không lượt sau rơi vào default.
+  p.buoc = 'het_chi_tiet'
+  return traYeuCau(p, { viec: 'goi', buoc: p.buoc, nghi: 1500, yeuCau: yeuCauTrangTraCuu() })
 }
 
 async function ketThuc(supabase, p, maPhien, ketQua, loi) {

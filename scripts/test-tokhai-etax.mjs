@@ -6,7 +6,7 @@
 // _BSLn và tên file — sai lặng lẽ, chỉ lộ khi kế toán mở thư mục khách đi tìm.
 //
 // HTML dưới đây dựng lại theo đúng bảng anh chụp ngày 11/10/2026 (3 bản ghi của PAPER ART VIỆT).
-import { docBangKetQuaEtax } from '../lib/dvcPortal.js'
+import { docBangKetQuaEtax, doanLoaiToKhaiTuTen } from '../lib/dvcPortal.js'
 
 let dat = 0, hong = 0
 const kiem = (ten, thucTe, mongDoi) => {
@@ -67,6 +67,29 @@ console.log('')
 console.log('Không có gì thì đừng nổ:')
 kiem('bảng rỗng → 0 dòng', docBangKetQuaEtax('<table></table>').ds.length, 0)
 kiem('HTML rác → 0 dòng', docBangKetQuaEtax('xin lỗi, có lỗi xảy ra').ds.length, 0)
+
+console.log('')
+console.log('Đoán loại tờ khai từ TÊN (bảng tab cũ không có mã):')
+// Tên lấy nguyên văn từ bảng thật của PAPER ART VIỆT, tháng 3/2025.
+const doan = (ten, mong) => kiem(ten.slice(0, 44) + (ten.length > 44 ? '…' : ''), doanLoaiToKhaiTuTen(ten), mong)
+doan('TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP CÁ NHÂN (TT80/2021)', '05/QTT-TNCN')
+doan('Tờ khai khấu trừ thuế thu nhập cá nhân (TT80)', '05/KK-TNCN')
+doan('Tờ khai quyết toán thuế TNDN (TT80/2021)', '03/TNDN')
+doan('Bộ báo cáo tài chính', 'BCTC')
+doan('TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (TT80/2021)(00-Hoạt động sản xuất kinh doanh thông thường-)', '01/GTGT')
+
+console.log('')
+console.log('Thứ tự xét: quyết toán phải TRƯỚC khấu trừ (cả hai đều có "thu nhập cá nhân"):')
+kiem('quyết toán TNCN không bị gán nhầm thành tờ khấu trừ',
+  doanLoaiToKhaiTuTen('TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP CÁ NHÂN (TT80/2021)') !== '05/KK-TNCN', true)
+
+console.log('')
+console.log('Giấy tờ KHÔNG có trong danh mục thì trả null, đừng gán bừa:')
+doan('Giấy đề nghị hoàn trả khoản thu ngân sách nhà nước', null)
+doan('Bảng tổng hợp đăng ký người phụ thuộc giảm trừ gia cảnh', null)
+doan('Văn bản đề nghị hủy hồ sơ đề nghị hoàn thuế(11220250300583305-)', null)
+kiem('tên rỗng → null, không nổ', doanLoaiToKhaiTuTen(''), null)
+kiem('null → null, không nổ', doanLoaiToKhaiTuTen(null), null)
 
 console.log(hong === 0 ? `\nTẤT CẢ ${dat} MỤC ĐỀU ĐẠT.` : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)
