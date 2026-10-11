@@ -14,6 +14,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { canAccessCredentials } from '@/lib/credentialScope'
+import { ghiHoSoVaThongBao } from '@/lib/tokhaiGhi'
 import { decrypt } from '@/lib/taxCrypto'
 import { docBangKetQua, docChiTiet, RANGE_MAX_DAYS } from '@/lib/dvcPortal'
 import { chuanHoaKy } from '@/lib/taxDeadline'
@@ -277,6 +278,24 @@ export async function POST(request) {
 
       case 'tra_cuu': {
         const { ds } = docBangKetQua(noiDung, { ...p.cuaSo[p.viCuaSo], trang: 0 })
+
+        // GHI HỒ SƠ VÀO CƠ SỞ DỮ LIỆU NGAY, dùng chung hàm với màn hình Đồng bộ.
+        //
+        // ⚠ Trước 11/10/2026 màn hình này KHÔNG ghi gì: nó chỉ cập nhật `file_path` vào dòng hồ sơ
+        // CÓ SẴN. Công ty chưa đồng bộ lần nào thì không có dòng nào để cập nhật — lệnh chạy, khớp
+        // 0 dòng, KHÔNG báo lỗi. Hậu quả thấy ở ca GSC AUTO (anh phát hiện): 12 file nằm trên đĩa
+        // mà app coi như chưa có hồ sơ nào, nên (a) Hồ sơ đã nộp / Lịch hạn nộp / Báo cáo đều
+        // trống, (b) lần tải sau không biết đã tải rồi nên tải lại hết, đẻ ra _v2, _v3.
+        //
+        // Dữ liệu đã nằm sẵn trong tay (chính nó đặt được tên file TK_GTGT_Q2.2025_GSC.xml) nên
+        // vứt đi là tự làm hỏng dữ liệu của mình.
+        try {
+          await ghiHoSoVaThongBao(supabase, p.clientId, ds)
+        } catch (e) {
+          // Ghi hỏng thì VẪN CHO TẢI TIẾP — file về đĩa quan trọng hơn, nhân viên đang ngồi gõ mã.
+          p.loi.push('Không ghi được hồ sơ vào cơ sở dữ liệu: ' + e.message)
+        }
+
         // Chỉ xếp hàng những hồ sơ CHƯA có file — tải lại thứ đã có chỉ tổ gõ cửa cổng thêm.
         p.hangDoi = ds.filter(r => !p.daTai.has(r.maHoSo))
         p.soBoQua += ds.length - p.hangDoi.length
