@@ -19,7 +19,8 @@ import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { canAccessCredentials } from '@/lib/credentialScope'
 import { decrypt } from '@/lib/taxCrypto'
-import { docBangKetQua, docChiTiet, RANGE_MAX_DAYS } from '@/lib/dvcPortal'
+import { docBangKetQua, docBangKetQuaEtax, docChiTiet } from '@/lib/dvcPortal'
+import { chiaCuaSo } from '@/lib/tokhaiCuaSo'
 import { ghiHoSoVaThongBao } from '@/lib/tokhaiGhi'
 
 export const maxDuration = 60
@@ -39,24 +40,8 @@ function donPhienCu() {
   for (const [ma, p] of phienTam) if (nay - p.chamNhat > PHIEN_SONG) phienTam.delete(ma)
 }
 
-const ddmmyyyy = d => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
-const tuISO = s => new Date(`${s}T00:00:00Z`)
 const docCsrf = html => html.match(/name="csrf-token" content="([^"]+)"/)?.[1]
   || html.match(/name="_csrf"\s+value="([^"]+)"/)?.[1]
-
-function chiaCuaSo({ tuNgay, denNgay }) {
-  const den0 = denNgay ? tuISO(denNgay) : new Date()
-  const tu0 = tuNgay ? tuISO(tuNgay) : new Date(den0.getTime() - 29 * 864e5)
-  const cs = []
-  let den = den0
-  while (den >= tu0 && cs.length < 24) {
-    const lui = new Date(den.getTime() - (RANGE_MAX_DAYS - 1) * 864e5)
-    const tu = lui > tu0 ? lui : tu0
-    cs.push({ tuNgay: ddmmyyyy(tu), denNgay: ddmmyyyy(den) })
-    den = new Date(tu.getTime() - 864e5)
-  }
-  return cs
-}
 
 // ── Các yêu cầu gửi cho tiện ích ─────────────────────────────────────────────
 const yeuCauTrangDangNhap = () => ({ url: BASE + 'login', method: 'GET' })
@@ -104,8 +89,43 @@ const yeuCauTraCuu = (csrf, { tuNgay, denNgay }, captcha, trang) => ({
   headers: { 'HX-Request': 'true', 'X-XSRF-TOKEN': csrf, Referer: BASE + 'tchs', Accept: 'text/html, */*' },
 })
 
-const yeuCauChiTiet = maHoSo => ({
-  url: `${BASE}tchs/files/detail/${encodeURIComponent(maHoSo)}?loai=`, method: 'GET',
+// Tra cứu TAB CŨ — hồ sơ nộp trước 01/07/2025. POST form, tên tham số đuôi _tdt, phạm vi
+// scope_tdt2. Để trống maToKhai_tdt = lấy MỌI sắc thuế (ô đó nhìn như bắt buộc nhưng không phải).
+// Ba header hx-* là bắt buộc: thiếu thì cổng trả cả trang thay vì mảnh bảng, bộ đọc sẽ ra 0 dòng.
+const yeuCauTraCuuEtax = (csrf, { tuNgay, denNgay }, captcha) => ({
+  url: BASE + 'tchs/thuedientu', method: 'POST',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'X-XSRF-TOKEN': csrf,
+    'HX-Request': 'true',
+    'HX-Target': 'bangKetQuaTraCuu_tdt',
+    'HX-Trigger': 'form_search_tdt',
+    'HX-Current-URL': BASE + 'tchs',
+    Referer: BASE + 'tchs', Origin: ORIGIN, Accept: 'text/html-partial',
+  },
+  body: new URLSearchParams({
+    _csrf: csrf, page: '', size: '',
+    maToKhai_tdt: '', maGiaoDichTthc_tdt: '',
+    tuNgay_tdt: tuNgay, denNgay_tdt: denNgay,
+    scope_tdt2: 'SELF', mstUyQuyen_tdt2: '',
+    captcha, btnSearch_tdt: '',
+  }).toString(),
+})
+
+// Gọi đúng tab theo cửa sổ. Mọi chỗ tra cứu phải đi qua đây, đừng gọi thẳng một trong hai hàm —
+// gọi nhầm tab thì cổng trả bảng RỖNG chứ không báo lỗi, nhìn y như "công ty không nộp gì".
+const yeuCauTraCuuCuaSo = (csrf, cs, captcha, trang) =>
+  (cs.nguon === 'etax' ? yeuCauTraCuuEtax(csrf, cs, captcha) : yeuCauTraCuu(csrf, cs, captcha, trang))
+
+// Bảng của hai tab khác cột nhau → bộ đọc khác nhau.
+const docBangTheoCuaSo = (cs, html, trang) =>
+  (cs.nguon === 'etax' ? docBangKetQuaEtax(html, cs) : docBangKetQua(html, { ...cs, trang }))
+
+// CÙNG một địa chỉ cho cả hai tab, chỉ khác tham số `loai`: để trống = hồ sơ DVC, 'ETAX' = hồ sơ
+// nộp trước 01/07/2025. Truyền sai thì cổng không tìm thấy hồ sơ.
+const yeuCauChiTiet = (maHoSo, nguon) => ({
+  url: `${BASE}tchs/files/detail/${encodeURIComponent(maHoSo)}?loai=${nguon === 'etax' ? 'ETAX' : ''}`,
+  method: 'GET',
   headers: { Referer: BASE + 'tchs' },
 })
 
@@ -319,7 +339,7 @@ export async function POST(request) {
         p.buoc = 'tra_cuu'
         return traYeuCau(p, {
           viec: 'goi', buoc: p.buoc,
-          yeuCau: yeuCauTraCuu(p.csrf, p.cuaSo[0], p.maCaptchaTraCuu, 0),
+          yeuCau: yeuCauTraCuuCuaSo(p.csrf, p.cuaSo[0], p.maCaptchaTraCuu, 0),
           tienDo: `Tra cửa sổ 1/${p.cuaSo.length}`,
         })
       }
@@ -329,14 +349,14 @@ export async function POST(request) {
           return await ketThuc(supabase, p, body.maPhien, 'portal_error',
             'Cổng chặn vì tra cứu quá dày (429). Đợi vài phút rồi tra lại, mỗi lần một khoảng 30 ngày.')
         }
-        const { ds, conTrangSau } = docBangKetQua(noiDung, { ...p.cuaSo[p.viCuaSo], trang: p.trang })
+        const { ds, conTrangSau } = docBangTheoCuaSo(p.cuaSo[p.viCuaSo], noiDung, p.trang)
         p.dong.push(...ds)
 
         if (conTrangSau && p.trang < 9) {
           p.trang++
           return traYeuCau(p, {
             viec: 'goi', buoc: 'tra_cuu', nghi: 3000,
-            yeuCau: yeuCauTraCuu(p.csrf, p.cuaSo[p.viCuaSo], p.maCaptchaTraCuu, p.trang),
+            yeuCau: yeuCauTraCuuCuaSo(p.csrf, p.cuaSo[p.viCuaSo], p.maCaptchaTraCuu, p.trang),
             tienDo: `Tra cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length}, trang ${p.trang + 1}`,
           })
         }
@@ -345,7 +365,7 @@ export async function POST(request) {
           // Giãn nhịp giữa các cửa sổ — bắn liền tay là cổng trả 429.
           return traYeuCau(p, {
             viec: 'goi', buoc: 'tra_cuu', nghi: 5000,
-            yeuCau: yeuCauTraCuu(p.csrf, p.cuaSo[p.viCuaSo], p.maCaptchaTraCuu, 0),
+            yeuCau: yeuCauTraCuuCuaSo(p.csrf, p.cuaSo[p.viCuaSo], p.maCaptchaTraCuu, 0),
             tienDo: `Tra cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length}`,
           })
         }
@@ -391,7 +411,7 @@ function buocChiTietKeTiep(p) {
     p.buoc = 'chi_tiet'
     return traYeuCau(p, {
       viec: 'goi', buoc: p.buoc, nghi: 2500,
-      yeuCau: yeuCauChiTiet(p.dong[p.viChiTiet].maHoSo),
+      yeuCau: yeuCauChiTiet(p.dong[p.viChiTiet].maHoSo, p.dong[p.viChiTiet].nguon),
       tienDo: `Đọc chi tiết ${p.viChiTiet + 1}/${Math.min(p.dong.length, GIOI_HAN)}`,
     })
   }

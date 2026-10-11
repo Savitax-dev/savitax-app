@@ -16,7 +16,8 @@ import { requireLogin } from '@/lib/serverAuth'
 import { canAccessCredentials } from '@/lib/credentialScope'
 import { ghiHoSoVaThongBao } from '@/lib/tokhaiGhi'
 import { decrypt } from '@/lib/taxCrypto'
-import { docBangKetQua, docChiTiet, RANGE_MAX_DAYS } from '@/lib/dvcPortal'
+import { docBangKetQua, docBangKetQuaEtax, docChiTiet } from '@/lib/dvcPortal'
+import { chiaCuaSo } from '@/lib/tokhaiCuaSo'
 import { chuanHoaKy } from '@/lib/taxDeadline'
 import {
   duongDanToKhai, duongDanThongBao, tenFileToKhai, tenFileThongBao, macSacThue, tachKy,
@@ -42,24 +43,9 @@ function donPhienCu() {
   for (const [ma, p] of phienTam) if (nay - p.chamNhat > PHIEN_SONG) phienTam.delete(ma)
 }
 
-const ddmmyyyy = d => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
-const tuISO = s => new Date(`${s}T00:00:00Z`)
 const docCsrf = html => html.match(/name="csrf-token" content="([^"]+)"/)?.[1]
   || html.match(/name="_csrf"\s+value="([^"]+)"/)?.[1]
 
-function chiaCuaSo({ tuNgay, denNgay }) {
-  const den0 = denNgay ? tuISO(denNgay) : new Date()
-  const tu0 = tuNgay ? tuISO(tuNgay) : new Date(den0.getTime() - 29 * 864e5)
-  const cs = []
-  let den = den0
-  while (den >= tu0 && cs.length < 24) {
-    const lui = new Date(den.getTime() - (RANGE_MAX_DAYS - 1) * 864e5)
-    const tu = lui > tu0 ? lui : tu0
-    cs.push({ tuNgay: ddmmyyyy(tu), denNgay: ddmmyyyy(den) })
-    den = new Date(tu.getTime() - 864e5)
-  }
-  return cs
-}
 
 // ── Yêu cầu gửi cho tiện ích ─────────────────────────────────────────────────
 const yc = {
@@ -96,18 +82,40 @@ const yc = {
     method: 'GET',
     headers: { 'HX-Request': 'true', 'X-XSRF-TOKEN': csrf, Referer: BASE + 'tchs', Accept: 'text/html, */*' },
   }),
-  chiTiet: maHoSo => ({ url: `${BASE}tchs/files/detail/${encodeURIComponent(maHoSo)}?loai=`, method: 'GET',
-    headers: { Referer: BASE + 'tchs' } }),
+  // Tra cứu TAB CŨ — hồ sơ nộp trước 01/07/2025. POST form, tham số đuôi _tdt, phạm vi
+  // scope_tdt2. maToKhai_tdt để trống = mọi sắc thuế. Ba header hx-* bắt buộc, thiếu thì cổng
+  // trả cả trang thay vì mảnh bảng và bộ đọc ra 0 dòng.
+  traCuuEtax: (csrf, cs, captcha) => ({
+    url: BASE + 'tchs/thuedientu', method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded', 'X-XSRF-TOKEN': csrf,
+      'HX-Request': 'true', 'HX-Target': 'bangKetQuaTraCuu_tdt', 'HX-Trigger': 'form_search_tdt',
+      'HX-Current-URL': BASE + 'tchs',
+      Referer: BASE + 'tchs', Origin: ORIGIN, Accept: 'text/html-partial',
+    },
+    body: new URLSearchParams({
+      _csrf: csrf, page: '', size: '', maToKhai_tdt: '', maGiaoDichTthc_tdt: '',
+      tuNgay_tdt: cs.tuNgay, denNgay_tdt: cs.denNgay,
+      scope_tdt2: 'SELF', mstUyQuyen_tdt2: '', captcha, btnSearch_tdt: '',
+    }).toString(),
+  }),
+  // CÙNG địa chỉ cho cả hai tab, chỉ khác `loai`: trống = hồ sơ DVC, 'ETAX' = hồ sơ cũ.
+  chiTiet: (maHoSo, nguon) => ({
+    url: `${BASE}tchs/files/detail/${encodeURIComponent(maHoSo)}?loai=${nguon === 'etax' ? 'ETAX' : ''}`,
+    method: 'GET', headers: { Referer: BASE + 'tchs' } }),
   // Xin phép trước khi tải tờ khai — thiếu bước này cổng trả "Hồ sơ truyền lên không hợp lệ".
   xinPhep: maHoSo => ({ url: `${BASE}tchs/validateIdTkhai?idTKhai=${encodeURIComponent(maHoSo)}`, method: 'GET',
     headers: { 'X-Requested-With': 'XMLHttpRequest', Referer: BASE + 'tchs' } }),
-  taiToKhai: (token, maHoSo) => ({
-    url: BASE + 'tchs/downloadhoso', method: 'POST',
+  // Hồ sơ cũ chỉ khác cái đuôi địa chỉ; thân yêu cầu y nguyên (đã bắt gói thật 11/10/2026).
+  taiToKhai: (token, maHoSo, nguon) => ({
+    url: BASE + (nguon === 'etax' ? 'tchs/downloadhoso-tdt?loaiTraCuu=ETAX' : 'tchs/downloadhoso'),
+    method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest', Origin: ORIGIN },
     body: JSON.stringify({ maHoSo }),
   }),
-  taiThongBao: (token, idTbao) => ({
-    url: BASE + 'tchs/downloadthongbao', method: 'POST',
+  taiThongBao: (token, idTbao, nguon) => ({
+    url: BASE + (nguon === 'etax' ? 'tchs/downloadthongbao-tdt?loaiTraCuu=ETAX' : 'tchs/downloadthongbao'),
+    method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest', Origin: ORIGIN },
     body: JSON.stringify({ idTbao, loaiTBao: '' }),
   }),
@@ -277,7 +285,12 @@ export async function POST(request) {
         return traCuuCuaSo(p, 0)
 
       case 'tra_cuu': {
-        const { ds } = docBangKetQua(noiDung, { ...p.cuaSo[p.viCuaSo], trang: 0 })
+        const cs = p.cuaSo[p.viCuaSo]
+        const { ds } = cs.nguon === 'etax'
+          ? docBangKetQuaEtax(noiDung, cs)
+          : docBangKetQua(noiDung, { ...cs, trang: 0 })
+        // Hồ sơ nhớ mình đến từ tab nào: các bước sau (chi tiết, tải) cần biết để gọi đúng địa chỉ.
+        for (const r of ds) r.nguon = cs.nguon
 
         // GHI HỒ SƠ VÀO CƠ SỞ DỮ LIỆU NGAY, dùng chung hàm với màn hình Đồng bộ.
         //
@@ -321,7 +334,7 @@ export async function POST(request) {
           return hoSoKeTiep(p, null)
         }
         p.buoc = 'tai_to_khai'
-        return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yc.taiToKhai(p.tokenTai, hoSoHienTai(p).maHoSo),
+        return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yc.taiToKhai(p.tokenTai, hoSoHienTai(p).maHoSo, hoSoHienTai(p).nguon),
           tienDo: `Tải tờ khai ${hoSoHienTai(p).maHoSo}` })
       }
 
@@ -357,7 +370,11 @@ function traCuuCuaSo(p, viTri, ghiFile) {
   p.buoc = 'tra_cuu'
   return traYeuCau(p, {
     viec: 'goi', buoc: p.buoc, nghi: 5000, ghiFile,
-    yeuCau: yc.traCuu(p.csrf, p.cuaSo[viTri], p.maCaptcha, 0),
+    // Chọn đúng tab theo cửa sổ. Gọi nhầm tab thì cổng trả bảng RỖNG chứ không báo lỗi — nhìn y
+    // hệt "công ty không nộp gì", nên đừng bao giờ gọi thẳng một trong hai hàm.
+    yeuCau: p.cuaSo[viTri].nguon === 'etax'
+      ? yc.traCuuEtax(p.csrf, p.cuaSo[viTri], p.maCaptcha)
+      : yc.traCuu(p.csrf, p.cuaSo[viTri], p.maCaptcha, 0),
     tienDo: `Tra cửa sổ ${viTri + 1}/${p.cuaSo.length} (${p.cuaSo[viTri].tuNgay} – ${p.cuaSo[viTri].denNgay})`,
   })
 }
@@ -369,7 +386,7 @@ function hoSoKeTiep(p, ghiFile) {
   if (p.viHangDoi < p.hangDoi.length) {
     p.buoc = 'chi_tiet'
     return traYeuCau(p, {
-      viec: 'goi', buoc: p.buoc, ghiFile, yeuCau: yc.chiTiet(hoSoHienTai(p).maHoSo),
+      viec: 'goi', buoc: p.buoc, ghiFile, yeuCau: yc.chiTiet(hoSoHienTai(p).maHoSo, hoSoHienTai(p).nguon),
       tienDo: `Cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length} — hồ sơ ${p.viHangDoi + 1}/${p.hangDoi.length}`,
     })
   }
@@ -387,7 +404,7 @@ function tiepThongBao(p, ghiFile) {
     if (!tb.portalId) return tiepThongBao(p, ghiFile)
     p.buoc = 'tai_thong_bao'
     return traYeuCau(p, {
-      viec: 'goi', buoc: p.buoc, yeuCau: yc.taiThongBao(p.tokenTai, tb.portalId),
+      viec: 'goi', buoc: p.buoc, yeuCau: yc.taiThongBao(p.tokenTai, tb.portalId, hoSoHienTai(p)?.nguon),
       ghiFile, tienDo: `Tải thông báo ${p.viThongBao}/${ds.length}`,
     })
   }
