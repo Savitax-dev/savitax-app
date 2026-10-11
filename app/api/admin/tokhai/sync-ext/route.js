@@ -335,12 +335,16 @@ export async function POST(request) {
           p.buoc = 'anh_captcha_tc'
           return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yeuCauAnhCaptcha(), moTa: 'Mã captcha chưa đúng, lấy ảnh mới' })
         }
-        p.viCuaSo = 0; p.trang = 0
+        // ⚠ ĐỪNG quay về cửa sổ 0 khi đang tra dở. Tab cũ bắt gõ mã MỚI cho TỪNG cửa sổ (xem
+        // chỗ chuyển cửa sổ bên dưới), nên bước này còn chạy giữa chừng — reset là tra lại từ
+        // đầu, vừa tốn mã vừa không bao giờ đi hết khoảng ngày.
+        if (!p.daTraCuu) { p.daTraCuu = true; p.viCuaSo = 0 }
+        p.trang = 0
         p.buoc = 'tra_cuu'
         return traYeuCau(p, {
           viec: 'goi', buoc: p.buoc,
-          yeuCau: yeuCauTraCuuCuaSo(p.csrf, p.cuaSo[0], p.maCaptchaTraCuu, 0),
-          tienDo: `Tra cửa sổ 1/${p.cuaSo.length}`,
+          yeuCau: yeuCauTraCuuCuaSo(p.csrf, p.cuaSo[p.viCuaSo], p.maCaptchaTraCuu, 0),
+          tienDo: `Tra cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length}`,
         })
       }
 
@@ -362,6 +366,17 @@ export async function POST(request) {
         }
         p.viCuaSo++; p.trang = 0
         if (p.viCuaSo < p.cuaSo.length) {
+          // ⚠ TAB CŨ KHÔNG CHO DÙNG LẠI MÃ CAPTCHA. Đo thật 11/10/2026: cửa sổ thứ hai dùng lại
+          // mã vừa gõ thì cổng trả thẳng 'Mã captcha không chính xác'. Tab DVC thì ngược lại —
+          // một mã dùng được cho nhiều cửa sổ trong cùng phiên (đo 18/09/2026). Nên mỗi cửa sổ
+          // tab cũ phải xin ảnh mã mới, nhân viên gõ thêm một lần.
+          if (p.cuaSo[p.viCuaSo].nguon === 'etax') {
+            p.buoc = 'anh_captcha_tc'
+            return traYeuCau(p, {
+              viec: 'goi', buoc: p.buoc, nghi: 5000, yeuCau: yeuCauAnhCaptcha(),
+              tienDo: `Cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length} (hồ sơ cũ) — cần mã mới`,
+            })
+          }
           // Giãn nhịp giữa các cửa sổ — bắn liền tay là cổng trả 429.
           return traYeuCau(p, {
             viec: 'goi', buoc: 'tra_cuu', nghi: 5000,
@@ -377,8 +392,17 @@ export async function POST(request) {
       }
 
       case 'chi_tiet': {
-        const ma = p.dong[p.viChiTiet]?.maHoSo
-        if (ma && ph.status === 200) p.chiTiet.set(ma, docChiTiet(noiDung))
+        const dong = p.dong[p.viChiTiet]
+        const ma = dong?.maHoSo
+        if (ma && ph.status === 200) {
+          const ct = docChiTiet(noiDung)
+          p.chiTiet.set(ma, ct)
+          // Hồ sơ tab cũ: bảng kết quả không có mã tờ khai nên chưa khớp được danh mục. Trang chi
+          // tiết có đủ ('05/KK-TNCN - Tờ khai khấu trừ…') → lấy về đây, nếu không thì hồ sơ nằm
+          // trong app mà KHÔNG biết là sắc thuế gì: không khớp được nghĩa vụ, và lúc tải file sẽ
+          // đặt tên TK_KHAC_… thay vì TK_TNCN_…
+          if (dong.nguon === 'etax' && ct.toKhai) dong.tenToKhai = ct.toKhai
+        }
         p.viChiTiet++
         return buocChiTietKeTiep(p)
       }

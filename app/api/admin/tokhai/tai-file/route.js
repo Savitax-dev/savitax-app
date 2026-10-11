@@ -282,7 +282,10 @@ export async function POST(request) {
           p.buoc = 'anh_captcha_tc'
           return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yc.anhCaptcha(), moTa: 'Mã captcha chưa đúng' })
         }
-        return traCuuCuaSo(p, 0)
+        // ⚠ ĐỪNG quay về cửa sổ 0. Bước này còn chạy GIỮA CHỪNG vì cửa sổ tab cũ nào cũng đòi mã
+        // mới (xem cuaSoKeTiep) — reset là tải lại từ đầu, không bao giờ đi hết khoảng ngày.
+        if (!p.daTraCuu) { p.daTraCuu = true; p.viCuaSo = 0 }
+        return traCuuCuaSo(p, p.viCuaSo)
 
       case 'tra_cuu': {
         const cs = p.cuaSo[p.viCuaSo]
@@ -390,7 +393,19 @@ function hoSoKeTiep(p, ghiFile) {
       tienDo: `Cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length} — hồ sơ ${p.viHangDoi + 1}/${p.hangDoi.length}`,
     })
   }
-  if (p.viCuaSo + 1 < p.cuaSo.length) return traCuuCuaSo(p, p.viCuaSo + 1, ghiFile)
+  if (p.viCuaSo + 1 < p.cuaSo.length) {
+    // TAB CŨ KHÔNG CHO DÙNG LẠI MÃ CAPTCHA (đo thật 11/10/2026) — mỗi cửa sổ một mã mới. Tab DVC
+    // thì dùng lại được cả phiên, giữ nguyên như cũ để khỏi bắt gõ thêm vô ích.
+    if (p.cuaSo[p.viCuaSo + 1].nguon === 'etax') {
+      p.viCuaSo += 1
+      p.buoc = 'anh_captcha_tc'
+      return traYeuCau(p, {
+        viec: 'goi', buoc: p.buoc, nghi: 5000, ghiFile, yeuCau: yc.anhCaptcha(),
+        tienDo: `Cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length} (hồ sơ cũ) — cần mã mới`,
+      })
+    }
+    return traCuuCuaSo(p, p.viCuaSo + 1, ghiFile)
+  }
   p.buoc = 'dang_xuat'
   return traYeuCau(p, { viec: 'goi', buoc: p.buoc, ghiFile, yeuCau: yc.dangXuat(p.csrf), tienDo: 'Đang đăng xuất' })
 }
