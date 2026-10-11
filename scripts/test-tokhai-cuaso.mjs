@@ -52,13 +52,24 @@ kiem('mọi cửa sổ phần cũ đều là etax',
     .every(c => c.nguon === 'etax'), true)
 
 console.log('')
-console.log('Không cửa sổ nào dài quá 30 ngày:')
-const quaDai = cs.filter(c => {
+console.log('Không cửa sổ nào dài quá mức cổng cho (31 ngày kể cả hai đầu):')
+const soNgay = c => {
   const [dt, mt, yt] = c.tuNgay.split('/').map(Number)
   const [dd, md, yd] = c.denNgay.split('/').map(Number)
-  return (Date.UTC(yd, md - 1, dd) - Date.UTC(yt, mt - 1, dt)) / 864e5 > 29
-})
-kiem('tất cả đều ≤ 30 ngày', quaDai.length, 0)
+  return (Date.UTC(yd, md - 1, dd) - Date.UTC(yt, mt - 1, dt)) / 864e5 + 1
+}
+kiem('tất cả đều ≤ 31 ngày', cs.filter(c => soNgay(c) > 31).length, 0)
+
+console.log('')
+console.log('Tháng dương lịch phải gọn trong MỘT cửa sổ — mỗi cửa sổ tab cũ tốn một mã captcha:')
+// Để 30 ngày thì tháng 31 ngày bị cắt làm hai, cửa sổ thứ hai chỉ có 1 ngày và thường rỗng
+// nhưng vẫn tốn một mã. Anh gặp thật 11/10/2026: tra tháng 3 mà phải gõ 3 mã.
+for (const [t, d, ten] of [['2025-01-01', '2025-01-31', 'tháng 1 (31 ngày)'],
+                           ['2025-03-01', '2025-03-31', 'tháng 3 (31 ngày)'],
+                           ['2025-04-01', '2025-04-30', 'tháng 4 (30 ngày)'],
+                           ['2025-02-01', '2025-02-28', 'tháng 2 (28 ngày)']]) {
+  kiem(ten + ' → 1 cửa sổ', chiaCuaSo({ tuNgay: t, denNgay: d }).length, 1)
+}
 
 console.log('')
 console.log('Đầu vào thiếu:')
