@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import ClientChecklist from '@/components/ClientChecklist'
+import KhoiDongTien from '@/components/KhoiDongTien'
 import { hasPermission } from '@/lib/permissions'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
@@ -41,6 +42,11 @@ export default function MyDebtPage() {
   const [selQuarter, setSelQuarter] = useState(Math.floor(now.getMonth() / 3) + 1)
   const [me,        setMe]        = useState(null)
   const [myClients, setMyClients] = useState([])
+  // Công ty đã NGƯNG dịch vụ mà còn nợ — không vào %-công nợ, nhưng vẫn phải có chỗ ghi thu.
+  const [stopped, setStopped] = useState([])
+  // Khối dòng tiền của riêng mình (máy chủ tính sẵn) + thẻ nào đang mở bảng chi tiết.
+  const [dongTien, setDongTien] = useState(null)
+  const [openCard, setOpenCard] = useState(null)
   const [loading,   setLoading]   = useState(true)
   const [search,    setSearch]    = useState('')
   const [filter,    setFilter]    = useState('unpaid')
@@ -110,8 +116,10 @@ export default function MyDebtPage() {
           }
         })
         setMyClients(clients)
+        setStopped(json.stoppedClients || [])
+        setDongTien(json.dongTien || null)
       } else {
-        setMe(null); setMyClients([])
+        setMe(null); setMyClients([]); setStopped([]); setDongTien(null)
       }
     } catch (_) {}
     setLoading(false)
@@ -213,8 +221,19 @@ export default function MyDebtPage() {
           </div>
         ) : (
           <>
+            {/* Xem theo THÁNG: khối dòng tiền 5 thẻ, y hệt trang Phòng (cùng component, cùng hàm tính) —
+                tồn đầu kỳ + phát sinh − đã thu = chuyển kỳ sau, theo dõi được qua từng kỳ.
+                Xem theo quý / năm thì vẫn là 5 ô tổng như cũ (dòng tiền chỉ tính theo tháng). */}
+            {dongTien && (
+              <div className="space-y-3 mb-5">
+                <KhoiDongTien dongTien={dongTien} hcnsOn={dongTien.hcnsInstalled}
+                  open={openCard} setOpen={setOpenCard}
+                  staffNameOf={() => me?.full_name || '—'} selMonth={selMonth} selYear={selYear} kyLabel={periodLabel} />
+              </div>
+            )}
+
             {/* KPI tổng quan công nợ */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+            <div className={'grid grid-cols-2 md:grid-cols-5 gap-3 mb-5 ' + (dongTien ? 'hidden' : '')}>
               <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3">
                 <p className="text-xs text-gray-400 mb-1">💰 Tổng phí kế toán ({periodLabel})</p>
                 <p className="text-xl font-bold text-gray-800">{fmt(totalFee)}đ</p>
@@ -266,6 +285,65 @@ export default function MyDebtPage() {
                 ))}
               </div>
             </div>
+
+            {/* Công ty ĐÃ NGƯNG dịch vụ mà còn nợ: đã ra khỏi checklist công việc và khỏi %-công nợ ở
+                trên, nhưng tiền thì vẫn phải thu — bấm vào để ghi thu như công ty bình thường. */}
+            {stopped.length > 0 && (
+              <div className="mb-4 bg-amber-50 border border-amber-200 rounded-2xl overflow-hidden">
+                <div className="px-4 py-2.5 flex items-center justify-between border-b border-amber-200">
+                  <p className="text-sm font-semibold text-amber-800">⏸ Đã ngưng dịch vụ — còn phải thu ({stopped.length})</p>
+                  <p className="text-sm font-bold text-amber-800">{fmt(stopped.reduce((a, c) => a + (Number(c.conNo) || 0), 0))}đ</p>
+                </div>
+                <div className="p-2 space-y-2">
+                  {stopped.map(client => {
+                    const isOpen = openClient[client.id]
+                    const cMonth = clientMonth[client.id] || selMonth
+                    return (
+                      <div key={client.id} className="bg-white border border-amber-200 rounded-xl overflow-hidden">
+                        <button onClick={() => setOpenClient(p => ({ ...p, [client.id]: !p[client.id] }))}
+                          className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors text-left">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm font-semibold text-gray-900 break-words">{client.name}</p>
+                              <span className="text-xs font-semibold bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Ngưng DV</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0 font-medium bg-orange-50 text-orange-600">⚠ Còn {fmt(client.conNo)}đ</span>
+                            </div>
+                            <div className="flex items-center gap-3 mt-1 flex-wrap">
+                              <span className="text-xs text-gray-400">{client.tax_code}</span>
+                              {Number(client.other_debt) > 0 && (
+                                <span className="text-xs text-orange-500">📦 Nợ tồn cũ: {fmt(client.other_debt)}đ</span>
+                              )}
+                              {Number(client.conNoKetoan) > Number(client.other_debt || 0) && (
+                                <span className="text-xs text-gray-500">phí kỳ cuối chưa thu: {fmt(Number(client.conNoKetoan) - Number(client.other_debt || 0))}đ</span>
+                              )}
+                              {Number(client.conNoDvk) > 0 && (
+                                <span className="text-xs text-orange-500">🗂 Dịch vụ khác: {fmt(client.conNoDvk)}đ</span>
+                              )}
+                            </div>
+                          </div>
+                          <span className={'text-gray-300 text-sm transition-transform ' + (isOpen ? 'rotate-180' : '')}>▾</span>
+                        </button>
+                        {isOpen && (
+                          <ClientChecklist
+                            client={client}
+                            clientMonth={cMonth}
+                            defaultPanel="debt"
+                            onMonthChange={(newMonth) => setClientMonth(p => ({ ...p, [client.id]: newMonth }))}
+                            onDebtSaved={loadMyData}
+                            isAdmin={isAdmin}
+                            isTrueAdmin={isTrueAdmin}
+                            canUncheck={canUncheck}
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                <p className="px-4 py-2 text-xs text-amber-700 border-t border-amber-200">
+                  Thu đủ thì công ty tự rời khỏi danh sách này. Các công ty ở đây không tính vào % thu hồi công nợ.
+                </p>
+              </div>
+            )}
 
             {/* Danh sách công nợ theo công ty */}
             {filtered.length === 0 ? (

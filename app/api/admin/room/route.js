@@ -3,8 +3,10 @@ import { ensureRollovers } from '@/lib/debtRollover'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { countsForMonth } from '@/lib/contractDates'
 import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
-import { resolveHcnsFeeForMonth } from '@/lib/hcnsFee'
 import { requireRoomAccess } from '@/lib/serverAuth'
+import { tinhDongTienPhong } from '@/lib/dongTienPhong'
+import { loadHcnsFees } from '@/lib/hcnsPhiCongTy'
+import { docViPham, truViPham } from '@/lib/viPham'
 
 function getAdmin() {
   return createClient(
@@ -225,6 +227,8 @@ export async function GET(request) {
   // nhân viên cùng 1 tháng). %-công nợ thì NGƯỢC LẠI — xem debtPct bên dưới.
   const clientTaskPct = (built) => built.tasks.length === 0 ? 100 : Math.round(built.tasks.filter(t => t.status === 'done_ontime').length / built.tasks.length * 100)
 
+  const viPham = await docViPham(supabase, year, month, staffIds)
+
   // Build per-staff data
   const staffData = staffList.map(s => {
     const myOwnedClients = activeOwnedClients.filter(c => c.assigned_to === s.id)
@@ -266,13 +270,15 @@ export async function GET(request) {
     // Công ty phụ trách phụ vẫn hiện trong danh sách (clientsWithTasks) nhưng không tính vào %.
     const taskPcts = ownedWithTasks.map(clientTaskPct)
     const debtCountedClients = ownedWithTasks.filter(c => feeCountsForMonth(c.fee_period, year, month))
-    const taskPct = myOwnedClients.length === 0 ? 0 : mean(taskPcts)
+    // %-công việc GỐC rồi mới trừ vi phạm (lib/viPham.js) — trả cả hai để trang ghi rõ đã trừ bao nhiêu.
+    const taskPctGoc = myOwnedClients.length === 0 ? 0 : mean(taskPcts)
+    const taskPct = truViPham(taskPctGoc, viPham.get(s.id))
     // %-công nợ nhân viên (2026-08-24, đổi theo yêu cầu) = TỔNG tiền đã thu / TỔNG phí phải thu
     // gộp tất cả công ty đến hạn của người đó — totalFee/collectedFee đã dồn sẵn ở vòng lặp
     // ownedWithTasks.map bên trên, KHÔNG phải trung bình cộng % từng công ty (khác task ở trên).
     const debtPct = myOwnedClients.length === 0 ? 0 : (debtCountedClients.length ? (totalFee === 0 ? 100 : Math.round(collectedFee / totalFee * 100)) : 100)
 
-    return { ...s, clientCount: myOwnedClients.length, clients: clientsWithTasks, taskPct, debtPct, totalTasks, doneTasks, totalFee, collectedFee }
+    return { ...s, clientCount: myOwnedClients.length, clients: clientsWithTasks, taskPct, taskPctGoc, viPham: viPham.get(s.id) || null, debtPct, totalTasks, doneTasks, totalFee, collectedFee }
   })
 
   const sumKpiTotal = staffData.reduce((a, s) => a + s.clients.reduce((b, c) => b + c.tasks.length, 0), 0)
@@ -292,47 +298,26 @@ export async function GET(request) {
     clientCount: activeOwnedClients.length,
   }
 
+  // Khối DÒNG TIỀN công nợ phòng (tồn đầu kỳ + phát sinh − đã thu = chuyển kỳ sau). Tính ở
+  // MÁY CHỦ, giao diện chỉ hiển thị — trước đây mỗi trang tự cộng lại nên ra số khác nhau
+  // (ca %-công nợ 01/10/2026). Truyền TẤT CẢ công ty nhân viên chính kể cả đã ngưng dịch vụ:
+  // còn nợ thì vẫn phải đòi, chỉ phí phát sinh trong kỳ mới gate theo hợp đồng/kỳ thu.
+  let dongTien = null
+  try {
+    dongTien = await tinhDongTienPhong(supabase, {
+      clients: ownedClients || [],
+      year, month,
+      feePlanRows: feePlanRows || [],
+      changeLogRows: changeLogRows || [],
+      feeKetoanMap: feeMap,
+      hcnsByClient,
+      hcnsLichSu: { links: hcns.links || [], plans: hcns.plans || [], paid: hcns.paid || [] },
+    })
+  } catch (e) {
+    console.error('dongTienPhong:', e?.message || e)
+  }
+
   // hcnsInstalled: bản clone không chạy sql/06_hcns_module.sql -> false -> thẻ HCNS không
   // render. Savitax thì luôn true, thẻ hiện kể cả khi chưa công ty nào dùng dịch vụ.
-  return Response.json({ room, staff: staffData, totals, hcnsInstalled: hcns.installed, taskDefs: taskDefs || [] })
-}
-
-// Phí HCNS + tiền đã thu của tháng đang xem, khoá theo id công ty KẾ TOÁN.
-//
-// ⚠ RÀNG BUỘC CLONE-APP: bản clone không có bảng hcns_*. Thiếu bảng -> trả {} và trang Công nợ
-// phòng chạy y như trước, không thẻ HCNS, không lỗi.
-async function loadHcnsFees(supabase, clientIds, year, month) {
-  const out = {}
-  if (!clientIds?.length) return { installed: false, byClient: out }
-
-  const { data: links, error } = await supabase.from('hcns_clients')
-    .select('id, linked_client_id, hcns_fee, fee_period, created_at')
-    .in('linked_client_id', clientIds).eq('category', 'thoi_ky').eq('is_active', true)
-  // Lỗi = thiếu bảng (bản clone). Không lỗi mà rỗng = có module, chỉ là chưa ai bật DV HCNS.
-  if (error) return { installed: false, byClient: out }
-  if (!links?.length) return { installed: true, byClient: out }
-
-  const { data: fees } = await supabase.from('hcns_service_fees')
-    .select('hcns_client_id, year, month, amount, type').in('hcns_client_id', links.map(l => l.id))
-
-  const paid = new Map()
-  const plans = []
-  for (const f of fees || []) {
-    if (f.type === 'hcns') paid.set(f.hcns_client_id + '_' + f.year + '_' + f.month, Number(f.amount) || 0)
-    // resolveFeeForMonth lọc theo trường client_id — đổi tên khoá cho khớp.
-    else if (f.type === 'fee_plan') plans.push({ ...f, client_id: f.hcns_client_id })
-  }
-
-  for (const l of links) {
-    // Công ty HCNS thu theo quý: tháng không phải cuối quý chưa tới hạn, phí tính 0 cho tháng đó
-    // — cùng luật với phí kế toán, tránh nhân sai x3.
-    const due = feeCountsForMonth(l.fee_period, year, month)
-    out[l.linked_client_id] = {
-      due,
-      // Tháng trước khi công ty bật DV HCNS phải là 0 — xem lib/hcnsFee.js.
-      fee: due ? resolveHcnsFeeForMonth(plans, l.id, year, month, Number(l.hcns_fee) || 0, l.created_at) : 0,
-      collected: paid.get(l.id + '_' + year + '_' + month) || 0,
-    }
-  }
-  return { installed: true, byClient: out }
+  return Response.json({ room, staff: staffData, totals, dongTien, hcnsInstalled: hcns.installed, taskDefs: taskDefs || [] })
 }

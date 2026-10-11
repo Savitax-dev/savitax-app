@@ -5,6 +5,9 @@ import { getPeriodMonths } from '@/lib/period'
 import { countsForMonth } from '@/lib/contractDates'
 import { dueFeeMonthsCount, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireLogin } from '@/lib/serverAuth'
+import { tinhDongTienPhong } from '@/lib/dongTienPhong'
+import { loadHcnsFees } from '@/lib/hcnsPhiCongTy'
+import { docViPham, truViPham } from '@/lib/viPham'
 
 function getAdmin() {
   return createClient(
@@ -52,6 +55,101 @@ export async function GET(request) {
 
   const room = staffRecord.rooms || null
 
+  // Công ty ĐÃ NGƯNG dịch vụ mà còn nợ: ra khỏi checklist + %-KPI nhưng nhân viên vẫn phải có chỗ
+  // ghi thu (anh chốt 05/10/2026). Trả riêng `stoppedClients`, KHÔNG trộn vào `clients` để mọi con
+  // số KPI bên dưới giữ nguyên. Lỗi ở đây không được làm hỏng trang.
+  const loadStopped = async () => {
+    try {
+      const { data: st } = await supabase.from('clients')
+        .select('id, name, tax_code, assigned_to, monthly_fee, other_debt, report_type, fee_period, status, client_code, contract_start, created_at')
+        .eq('assigned_to', staffRecord.id).eq('status', 'inactive')
+      if (!st?.length) return []
+      const ids = st.map(c => c.id)
+      // Chỉ chốt nợ tồn cho công ty ĐÃ BIẾT tháng ngưng — không biết mà chốt thì sinh nợ cho mọi
+      // tháng từ lúc ngưng tới giờ.
+      const now = new Date()
+      if (period === 'month' && year === now.getFullYear() && month === now.getMonth() + 1) {
+        try {
+          const { data: se } = await supabase.from('clients').select('id, service_end').in('id', ids)
+          const coMoc = (se || []).filter(r => r.service_end).map(r => r.id)
+          if (coMoc.length) {
+            await ensureRollovers(supabase, coMoc, year, month)
+            const { data: rf } = await supabase.from('clients').select('id, other_debt').in('id', coMoc)
+            for (const r of rf || []) { const c = st.find(x => x.id === r.id); if (c) c.other_debt = r.other_debt }
+          }
+        } catch (_) { /* chưa chạy sql/25 */ }
+      }
+      const [{ data: plans }, { data: logs }] = await Promise.all([
+        supabase.from('service_fees').select('client_id, year, month, amount').in('client_id', ids).eq('type', 'fee_plan'),
+        supabase.from('client_change_log').select('client_id, old_value, changed_at')
+          .in('client_id', ids).eq('entity', 'monthly_fee').eq('action', 'update'),
+      ])
+      const dt = await tinhDongTienPhong(supabase, {
+        clients: st, year, month: months[months.length - 1], feePlanRows: plans || [], changeLogRows: logs || [],
+        // 4 kỳ gần nhất: phí chưa thu mà chưa kịp chốt sổ chỉ có thể nằm ở 1–2 kỳ cuối trước khi ngưng.
+        lichSuTu: year * 12 + months[months.length - 1] - 4,
+      })
+      const no = new Map(dt.chuyenKySau.theoCty.map(x => [x.clientId, x]))
+      return st.filter(c => no.has(c.id)).map(c => ({
+        ...c, ngungDv: true, conNo: no.get(c.id).total, conNoKetoan: no.get(c.id).ketoan, conNoDvk: no.get(c.id).dvk,
+        tasks: [], taskTotal: 0, taskDone: 0,
+      }))
+    } catch (e) {
+      console.error('stoppedClients:', e?.message || e)
+      return []
+    }
+  }
+  const stoppedClients = await loadStopped()
+
+  // KHỐI DÒNG TIỀN của riêng nhân viên này — cùng hàm, cùng cách hiển thị với trang Phòng (anh yêu
+  // cầu 06/10/2026). Chỉ dựng khi xem theo THÁNG. Tính trên mọi công ty mình là nhân viên CHÍNH,
+  // kể cả đã ngưng dịch vụ, y như trang Phòng — để cộng các nhân viên lại ra đúng số của phòng.
+  const loadDongTien = async () => {
+    // Tháng CHƯA TỚI không tính: xem "Năm 2026" vào tháng 10 thì T11, T12 chưa phát sinh phí.
+    const vnNow = new Date(Date.now() + 7 * 3600 * 1000)
+    const mocNay = vnNow.getUTCFullYear() * 12 + vnNow.getUTCMonth() + 1
+    const dsThang = months.filter(m => year * 12 + m <= mocNay)
+    if (!dsThang.length) return null
+    const thangCuoi = dsThang[dsThang.length - 1]
+    try {
+      const { data: mine } = await supabase.from('clients')
+        .select('id, name, tax_code, assigned_to, monthly_fee, other_debt, report_type, fee_period, status, client_code, contract_start, created_at')
+        .eq('assigned_to', staffRecord.id)
+      if (!mine?.length) return null
+      const ids = mine.map(c => c.id)
+      const active = mine.filter(c => (c.status || 'active') === 'active').map(c => c.id)
+      // Mốc bắt đầu chạy số dư phải GIỐNG trang Phòng (kỳ chốt sổ sớm nhất của CẢ PHÒNG), không thì
+      // cùng một công ty mà hai trang ra hai số.
+      let lichSuTu = null
+      const { data: nvPhong } = await supabase.from('staff').select('id').eq('room_id', staffRecord.room_id)
+      const { data: ctyPhong } = await supabase.from('clients').select('id').in('assigned_to', (nvPhong || []).map(s => s.id))
+      const idPhong = (ctyPhong || []).map(c => c.id)
+      for (let i = 0; i < idPhong.length; i += 150) {
+        const { data: r } = await supabase.from('debt_rollovers').select('year, month, source')
+          .in('client_id', idPhong.slice(i, i + 150)).or('source.is.null,source.eq.ketoan')
+          .order('year').order('month').limit(1)
+        if (r?.[0]) lichSuTu = Math.min(lichSuTu ?? Infinity, r[0].year * 12 + r[0].month)
+      }
+      const [{ data: plans }, { data: logs }, hcns] = await Promise.all([
+        active.length ? supabase.from('service_fees').select('client_id, year, month, amount').in('client_id', active).eq('type', 'fee_plan') : { data: [] },
+        active.length ? supabase.from('client_change_log').select('client_id, old_value, changed_at')
+          .in('client_id', active).eq('entity', 'monthly_fee').eq('action', 'update') : { data: [] },
+        loadHcnsFees(supabase, active, year, thangCuoi),
+      ])
+      const dt = await tinhDongTienPhong(supabase, {
+        clients: mine, year, month: thangCuoi, months: dsThang, feePlanRows: plans || [], changeLogRows: logs || [],
+        hcnsByClient: hcns.byClient || {},
+        hcnsLichSu: { links: hcns.links || [], plans: hcns.plans || [], paid: hcns.paid || [] },
+        lichSuTu,
+      })
+      return { ...dt, hcnsInstalled: !!hcns.installed, tuThang: dsThang[0], denThang: thangCuoi, thieuThang: dsThang.length < months.length }
+    } catch (e) {
+      console.error('my-room dongTien:', e?.message || e)
+      return null
+    }
+  }
+  const dongTien = await loadDongTien()
+
   // Chạy song song mọi truy vấn không phụ thuộc lẫn nhau trong CÙNG 1 lượt
   // (giảm round-trip tới Supabase — mỗi lượt chờ tốn ~300-800ms do khác vùng với Vercel)
   const [{ data: taskDefs }, { data: secondaryRows }, { data: primaryClients }] = await Promise.all([
@@ -81,6 +179,8 @@ export async function GET(request) {
       staff: staffRecord,
       room,
       clients: [],
+      stoppedClients,
+      dongTien,
       taskPct: 100,
       debtPct: 0,
     })
@@ -193,12 +293,20 @@ export async function GET(request) {
   const totalFee   = dueClients.reduce((a, c) => a + c.periodFee, 0)
   const totalCol   = dueClients.reduce((a, c) => a + c.collected, 0)
 
+  // Vi phạm của tháng đang xem (lib/viPham.js) — trừ 20 điểm %-công việc, nhân viên thấy rõ lý do.
+  const taskPctGoc = clientsWithTasks.length === 0 ? 0 : (totalTasks === 0 ? 100 : Math.round(doneTasks / totalTasks * 100))
+  const viPhamCuaToi = isMonthOnly ? (await docViPham(supabase, year, month, [staffRecord.id])).get(staffRecord.id) : null
+
   return Response.json({
     staff:   staffRecord,
     room,
     clients: clientsWithTasks,
+    stoppedClients,
+    dongTien,
     // Không phụ trách công ty nào thì % công việc = 0%, không phải 100%.
-    taskPct: isMonthOnly ? (clientsWithTasks.length === 0 ? 0 : (totalTasks === 0 ? 100 : Math.round(doneTasks / totalTasks * 100))) : null,
+    taskPct: isMonthOnly ? truViPham(taskPctGoc, viPhamCuaToi) : null,
+    taskPctGoc: isMonthOnly ? taskPctGoc : null,
+    viPham: isMonthOnly ? (viPhamCuaToi || null) : null,
     debtPct: totalFee   === 0 ? (ownedClients.length > 0 ? 100 : 0) : Math.round(totalCol  / totalFee  * 100),
     totalTasks, doneTasks, totalFee, totalCol,
   })

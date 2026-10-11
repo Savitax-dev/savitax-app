@@ -37,6 +37,7 @@ export default function ChecklistPage() {
   const [myClients,  setMyClients]  = useState([])
   // %-công nợ + tổng phí/đã thu do máy chủ tính, để khớp đúng trang Phòng và Báo cáo KPI.
   const [kpi,        setKpi]        = useState({ debtPct: 0, totalFee: 0, totalCol: 0 })
+  const [viPham, setViPham] = useState(null)
   const [loading,    setLoading]    = useState(true)
   const [search,     setSearch]     = useState('')
   const [openClient, setOpenClient] = useState({})      // clientId → bool
@@ -91,6 +92,7 @@ export default function ChecklistPage() {
           collectedKhach: Number(c.collectedKhach) || 0,
         }))
         setMyClients(clients)
+        setViPham(json.viPham || null)
         setKpi({
           debtPct:  Number(json.debtPct)  || 0,
           totalFee: Number(json.totalFee) || 0,
@@ -108,7 +110,10 @@ export default function ChecklistPage() {
   // KPI tổng của tôi
   const totalTasks = myClients.reduce((a, c) => a + c.tasks.length, 0)
   const doneTasks  = myClients.reduce((a, c) => a + c.tasks.filter(t => t.status === 'done_ontime').length, 0)
-  const taskPct    = totalTasks === 0 ? 100 : Math.round(doneTasks / totalTasks * 100)
+  const taskPctGoc = totalTasks === 0 ? 100 : Math.round(doneTasks / totalTasks * 100)
+  // Bị Trưởng phòng đánh dấu VI PHẠM trong tháng thì trừ 20 điểm (lib/viPham.js) — cùng luật với trang
+  // Phòng và Báo cáo KPI, và nhân viên phải thấy rõ mình bị trừ vì gì.
+  const taskPct    = viPham ? Math.max(0, taskPctGoc - 20) : taskPctGoc
   // %-công nợ LẤY THẲNG số máy chủ đã tính (/api/admin/my-room), KHÔNG tự cộng lại ở đây.
   //
   // Trang này trước đây cộng monthly_fee của MỌI công ty phụ trách chính, bỏ qua luật "công ty thu
@@ -165,6 +170,12 @@ export default function ChecklistPage() {
                 <p className="text-xs text-gray-400 mb-1">✅ Hoàn thành công việc</p>
                 <p className={'text-2xl font-bold ' + pctClr(taskPct)}>{taskPct}%</p>
                 <p className="text-xs text-gray-400 mt-0.5">{doneTasks}/{totalTasks} việc đúng hạn</p>
+                {viPham && (
+                  <p className="text-xs text-red-600 mt-1">
+                    <span className="font-semibold text-white bg-red-500 px-1.5 py-0.5 rounded-full">Vi phạm −20%</span>
+                    {' '}gốc {taskPctGoc}% · {viPham.reason}
+                  </p>
+                )}
                 <Bar value={taskPct} />
               </div>
               <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3">

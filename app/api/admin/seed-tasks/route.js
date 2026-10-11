@@ -304,6 +304,20 @@ const QUARTERLY_TASKS = [
   { month: 12, deadline_day: 25, name: 'Đối chiếu kho + Đối chiếu công nợ từ đầu năm đến tháng 11' },
 ]
 
+// Hai việc có ở MỌI tháng của cả hai loại báo cáo (thêm 10/10/2026, áp dụng từ T10/2026):
+// ngày 10 hoàn thiện Nhật ký công việc, ngày 27 hoàn thiện Folder lưu trữ — đều "tới tháng trước".
+// Đã thêm thẳng vào database bằng scripts/them-checklist-nhat-ky-folder.mjs; khai ở đây để lần "Tạo
+// lại checklist mẫu" sau không làm rơi mất hai việc này.
+// ⚠ Tạo lại checklist mẫu sinh id mới: các dòng "tự hoàn thành" của T1–T10/2026 gắn với id cũ sẽ
+// không còn khớp — phải chạy lại script trên cho bộ id mới.
+for (const DS of [MONTHLY_TASKS, QUARTERLY_TASKS]) {
+  for (let m = 1; m <= 12; m++) {
+    const truoc = m === 1 ? 12 : m - 1
+    DS.push({ month: m, deadline_day: 10, name: 'Hoàn thiện Nhật ký công việc SVT.MB07 tới tháng ' + truoc })
+    DS.push({ month: m, deadline_day: 27, name: 'Hoàn thiện Folder lưu trữ trên drive tới tháng ' + truoc })
+  }
+}
+
 export async function POST(request) {
   const auth = await callerHasPermission('manage_checklist_template')
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })

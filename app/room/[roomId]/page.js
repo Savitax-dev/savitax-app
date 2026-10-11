@@ -6,6 +6,7 @@ import AppShell from '@/components/AppShell'
 import ClientChecklist from '@/components/ClientChecklist'
 import { hasPermission } from '@/lib/permissions'
 import * as XLSX from 'xlsx'
+import KhoiDongTien from '@/components/KhoiDongTien'
 import { feeCountsForMonth } from '@/lib/feeDue'
 import { isSharedRoom } from '@/lib/specialRooms'
 
@@ -44,6 +45,61 @@ export default function RoomPage({ params }) {
   const [staffData, setStaffData] = useState([])
   const [totals,    setTotals]    = useState(null)
   const [hcnsOn,    setHcnsOn]    = useState(false)
+  // Khối dòng tiền công nợ phòng — MÁY CHỦ tính sẵn (lib/dongTienPhong.js), trang chỉ hiển thị.
+  const [dongTien,  setDongTien]  = useState(null)
+  // VI PHẠM (lib/viPham.js): Trưởng phòng / Quản trị đánh dấu cho một nhân viên ở tháng đang xem ->
+  // %-công việc tháng đó bị trừ 20 điểm, một lần. Bắt buộc ghi rõ vi phạm gì; gỡ được.
+  const [viPhamBusy, setViPhamBusy] = useState(null)
+  const danhDauViPham = async (nv) => {
+    const goc = nv.taskPctGoc ?? nv.taskPct
+    const lyDo = prompt('ĐÁNH DẤU VI PHẠM — ' + nv.full_name + ' · T' + selMonth + '/' + selYear
+      + '\n\n%-hoàn thành công việc tháng này sẽ bị trừ 20 điểm (' + goc + '% còn ' + Math.max(0, goc - 20) + '%).'
+      + '\n\nGhi rõ vi phạm (công ty nào, việc gì):', nv.viPham?.reason || '')
+    if (lyDo === null) return
+    if (lyDo.trim().length < 5) { alert('Phải ghi rõ vi phạm gì (ít nhất 5 ký tự).'); return }
+    setViPhamBusy(nv.id)
+    try {
+      const j = await fetch('/api/admin/kpi-violation', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staffId: nv.id, year: selYear, month: selMonth, reason: lyDo.trim() }),
+      }).then(r => r.json())
+      if (j.error) { alert(j.error); return }
+      await load()
+    } finally { setViPhamBusy(null) }
+  }
+  const goViPham = async (nv) => {
+    if (!confirm('Gỡ vi phạm T' + selMonth + '/' + selYear + ' của ' + nv.full_name + '?\n%-công việc trở lại ' + (nv.taskPctGoc ?? nv.taskPct) + '%.')) return
+    setViPhamBusy(nv.id)
+    try {
+      const j = await fetch('/api/admin/kpi-violation', {
+        method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staffId: nv.id, year: selYear, month: selMonth }),
+      }).then(r => r.json())
+      if (j.error) { alert(j.error); return }
+      await load()
+    } finally { setViPhamBusy(null) }
+  }
+  const [xoaNoBusy, setXoaNoBusy] = useState(null)
+  // Xoá nợ không đòi được của công ty đã ngưng dịch vụ — chỉ Quản trị, bắt buộc ghi lý do.
+  // Hỏi máy chủ số sẽ xoá TRƯỚC (dryRun) để người bấm thấy đúng con số rồi mới xác nhận.
+  const xoaNo = async (x) => {
+    setXoaNoBusy(x.clientId)
+    try {
+      const goi = (body) => fetch('/api/admin/debt-writeoff', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      }).then(r => r.json())
+      const xem = await goi({ clientId: x.clientId, dryRun: 1 })
+      if (xem.error) { alert(xem.error); return }
+      const lyDo = prompt('XOÁ NỢ ' + x.name + '\n\nSố sẽ xoá: ' + fmt(xem.amount) + 'đ (phí kế toán còn phải thu)\n'
+        + 'Thao tác này đưa nợ tồn của công ty về 0 và KHÔNG tính là tiền đã thu.\n\nNhập lý do xoá nợ:')
+      if (lyDo === null) return
+      if (lyDo.trim().length < 5) { alert('Phải ghi lý do (ít nhất 5 ký tự).'); return }
+      const kq = await goi({ clientId: x.clientId, reason: lyDo.trim() })
+      if (kq.error) { alert(kq.error); return }
+      alert('Đã xoá nợ ' + fmt(kq.amount) + 'đ của ' + x.name)
+      await load()
+    } finally { setXoaNoBusy(null) }
+  }
   const [ready,     setReady]     = useState(false)
   const [loading,   setLoading]   = useState(false)
   const [forbidden, setForbidden] = useState(false)
@@ -54,8 +110,8 @@ export default function RoomPage({ params }) {
   const [openClient,  setOpenClient]  = useState({})  // clientId → bool
   const [clientMonth, setClientMonth] = useState({})  // clientId → month number
   const [debtTabLoading, setDebtTabLoading] = useState(false)
-  // Thẻ tổng quan nào ở tab "Công nợ phòng" đang mở bảng chi tiết ('unpaid' | 'khach' |
-  // 'otherDebt' | null) — mỗi lúc chỉ mở 1 bảng cho gọn, bấm lại thẻ đó để đóng.
+  // Thẻ dòng tiền nào ở tab "Công nợ phòng" đang mở bảng chi tiết ('ton' | 'hcns' | 'khac' |
+  // 'chuyen' | null) — mỗi lúc chỉ mở 1 bảng cho gọn, bấm lại thẻ đó để đóng.
   const [openDebtCard, setOpenDebtCard] = useState(null)
 
   const monthOpts = []
@@ -105,7 +161,7 @@ export default function RoomPage({ params }) {
     try {
       const res = await fetch('/api/admin/room?roomId=' + roomId + '&year=' + selYear + '&month=' + selMonth + '&_t=' + Date.now(), { cache: 'no-store' })
       const json = await res.json()
-      if (!json.error) { setRoom(json.room); setStaffData(json.staff || []); setTotals(json.totals || null); setHcnsOn(!!json.hcnsInstalled) }
+      if (!json.error) { setRoom(json.room); setStaffData(json.staff || []); setTotals(json.totals || null); setHcnsOn(!!json.hcnsInstalled); setDongTien(json.dongTien || null) }
     } catch (_) {}
     setLoading(false)
   }
@@ -335,7 +391,19 @@ export default function RoomPage({ params }) {
                             <span className="text-xs text-gray-300 w-4 flex-shrink-0">{i + 1}</span>
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-gray-900 truncate">{s.full_name}</p>
-                              <p className="text-xs text-gray-400">{s.clientCount} cty</p>
+                              <p className="text-xs text-gray-400">
+                                {s.clientCount} cty
+                                {s.viPham ? (<>
+                                  <span className="ml-2 font-semibold text-white bg-red-500 px-1.5 py-0.5 rounded-full" title={s.viPham.reason}>Vi phạm −20%</span>
+                                  <span className="ml-1.5 text-red-500">gốc {s.taskPctGoc}% · {s.viPham.reason}</span>
+                                  {isAdmin && (
+                                    <button disabled={viPhamBusy === s.id} onClick={() => goViPham(s)} className="ml-2 text-blue-600 underline disabled:opacity-40">gỡ</button>
+                                  )}
+                                </>) : isAdmin && s.clientCount > 0 && (
+                                  <button disabled={viPhamBusy === s.id} onClick={() => danhDauViPham(s)}
+                                    className="ml-2 text-gray-400 underline hover:text-red-600 disabled:opacity-40">đánh dấu vi phạm</button>
+                                )}
+                              </p>
                             </div>
                           </div>
                           <p className={'text-sm font-bold text-center ' + pctClr(s.taskPct)}>{s.taskPct}%</p>
@@ -499,51 +567,6 @@ export default function RoomPage({ params }) {
                 ? Math.max(0, Number(c.rolloverRemaining) || 0)
                 : (c.dueThisMonth ? Math.max(0, (Number(c.monthly_fee) || 0) - c.ketoan) : 0)
               const hcnsRemainOf = (c) => Math.max(0, (Number(c.hcnsFee) || 0) - (Number(c.hcnsPaid) || 0))
-              // Công ty chỉ còn nợ phí HCNS cũng phải có mặt ở đây, nếu không con số trên thẻ
-              // (đã gồm HCNS) sẽ không khớp với danh sách bấm mở ra.
-              const unpaidClients = ownedClients.filter(c => ketoanRemainOf(c) > 0 || hcnsRemainOf(c) > 0)
-              const unpaidByStaff = []
-              for (const s of staffData) {
-                const items = unpaidClients.filter(c => c.assigned_to === s.id)
-                if (items.length === 0) continue
-                unpaidByStaff.push({
-                  id: s.id, name: s.full_name, items,
-                  total: items.reduce((a, c) => a + ketoanRemainOf(c) + hcnsRemainOf(c), 0),
-                })
-              }
-              // "Thu khác" = tiền thật đã ghi nhận trong tháng, không phụ thuộc hạn thu quý.
-              const khachClients = ownedClients.filter(c => c.khach > 0)
-              const totalKhach   = khachClients.reduce((a, c) => a + c.khach, 0)
-              // Thẻ "Nợ tồn đầu kỳ chuyển tháng sau" — CHỈ là nợ tồn đang có (clients.other_debt),
-              // KHÔNG cộng phần tháng này chưa thu. Đây là số dư hiện tại, không tách theo tháng
-              // (đổi tên thẻ 2026-08-28 nhưng nguyên tắc tính giữ nguyên như "Nợ tồn cũ chuyển qua").
-              const otherDebtClients = ownedClients.filter(c => Number(c.other_debt) > 0)
-              const totalOtherDebt   = otherDebtClients.reduce((a, c) => a + (Number(c.other_debt) || 0), 0)
-
-              // ── Phí HCNS ──────────────────────────────────────────────────────────────
-              // Nhân viên kế toán là người thu cả phí HCNS, nên khoản này nằm trong "Còn phải
-              // thu tháng này" và cũng chuyển thành nợ tồn khi không thu kịp. Nhưng nó KHÔNG
-              // vào %-KPI thu hồi công nợ — xem chú thích ở ô % của từng nhân viên.
-              const hcnsClientsList = ownedClients.filter(c => c.usesHcns && c.hcnsFee > 0)
-              const totalHcnsFee    = hcnsClientsList.reduce((a, c) => a + c.hcnsFee, 0)
-              const totalHcnsPaid   = hcnsClientsList.reduce((a, c) => a + c.hcnsPaid, 0)
-              const totalHcnsRemain = Math.max(0, totalHcnsFee - totalHcnsPaid)
-              const hcnsPct         = totalHcnsFee === 0 ? 0 : Math.round(totalHcnsPaid / totalHcnsFee * 100)
-              const hcnsByStaff = []
-              for (const st of staffData) {
-                const items = hcnsClientsList.filter(c => c.assigned_to === st.id)
-                if (items.length === 0) continue
-                hcnsByStaff.push({
-                  id: st.id, name: st.full_name, items,
-                  fee: items.reduce((a, c) => a + c.hcnsFee, 0),
-                  paid: items.reduce((a, c) => a + c.hcnsPaid, 0),
-                })
-              }
-              // Tổng còn phải thu = phí kế toán còn thiếu + phí HCNS còn thiếu. Phần kế toán lấy
-              // theo ketoanRemainOf để tháng đã chuyển nợ tồn không treo lại khoản đã thu.
-              const totalRemainAll = ownedClients.reduce((a, c) => a + ketoanRemainOf(c), 0) + totalHcnsRemain
-
-              const toggleCard = (k) => setOpenDebtCard(prev => prev === k ? null : k)
               // Nền xen kẽ đậm/nhạt giữa các công ty cho dễ dò mắt theo hàng.
               const zebra = (i) => i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
 
@@ -593,215 +616,75 @@ export default function RoomPage({ params }) {
                   </div>
                   </div>
 
-                  {/* Summary cards — 4 thẻ, 3 thẻ sau bấm mở bảng chi tiết bên dưới.
-                      Mỗi thẻ 1 màu riêng ở vạch trên + số liệu (xanh lá = phí kế toán tháng này,
-                      đỏ = chưa đòi được, xanh dương = thu khác, cam = nợ để lâu). Cố tình để nền TRẮNG,
-                      không tô màu cả thẻ — ngay bên dưới là danh sách công ty vốn đã có nền
-                      xanh/đỏ theo trạng thái, tô đậm thêm ở đây sẽ rối mắt. */}
-                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                    <div className="bg-white border border-gray-100 border-t-4 border-t-green-500 rounded-2xl px-4 py-3">
-                      <p className="text-xs text-gray-400 mb-1">📋 Phí kế toán tháng này</p>
-                      <p className="text-lg font-bold text-gray-900">{fmt(totalFee)}đ</p>
-                      <div className="flex justify-between text-xs mt-1">
-                        <span className="text-green-600 font-medium">Đã thu: {fmt(totalKetoan)}đ</span>
-                        <span className={pctClr(debtPct) + ' font-bold'}>{debtPct}%</span>
-                      </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1.5">
-                        <div className={'h-full rounded-full ' + barClr(debtPct)} style={{ width: debtPct + '%' }} />
-                      </div>
-                    </div>
-
-                    {/* Tím cho HCNS — 4 màu kia đã có nghĩa riêng, thêm màu mới thì không phải
-                        học lại cái nào. Thẻ tự ẩn ở bản clone (không công ty nào có DV HCNS). */}
-                    {hcnsOn && (
-                      <button onClick={() => toggleCard('hcns')}
-                        className={'text-left bg-white border border-t-4 border-t-violet-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
-                          (openDebtCard === 'hcns' ? 'border-violet-300 ring-1 ring-violet-200' : 'border-gray-100')}>
-                        <p className="text-xs text-gray-400 mb-1">🏢 Phí HCNS tháng này</p>
-                        <p className={'text-lg font-bold ' + (totalHcnsFee > 0 ? 'text-violet-600' : 'text-gray-300')}>{fmt(totalHcnsFee)}đ</p>
-                        {totalHcnsFee > 0 ? (
-                          <>
-                            <div className="flex justify-between text-xs mt-1">
-                              <span className="text-violet-600 font-medium">Đã thu: {fmt(totalHcnsPaid)}đ</span>
-                              <span className="text-violet-600 font-bold">{hcnsPct}%</span>
-                            </div>
-                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1.5">
-                              <div className="h-full rounded-full bg-violet-500" style={{ width: hcnsPct + '%' }} />
-                            </div>
-                          </>
-                        ) : (
-                          <p className="text-xs text-gray-400 mt-1">Chưa công ty nào dùng DV HCNS</p>
-                        )}
-                        <p className={'text-xs mt-1 ' + (totalHcnsFee > 0 ? 'text-blue-600' : 'text-gray-400')}>
-                          {totalHcnsFee === 0 ? '—' : (openDebtCard === 'hcns' ? '▴ Đang mở' : '▾ Xem danh sách')}
-                        </p>
-                      </button>
-                    )}
-
-                    <button onClick={() => toggleCard('khach')}
-                      className={'text-left bg-white border border-t-4 border-t-blue-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
-                        (openDebtCard === 'khach' ? 'border-blue-300 ring-1 ring-blue-200' : 'border-gray-100')}>
-                      <p className="text-xs text-gray-400 mb-1">🗂 Phí Thu khác tháng này</p>
-                      <p className={'text-lg font-bold ' + (totalKhach > 0 ? 'text-blue-600' : 'text-gray-300')}>{fmt(totalKhach)}đ</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {khachClients.length > 0 ? khachClients.length + ' công ty phát sinh' : 'Không phát sinh'}
-                      </p>
-                      <p className="text-xs text-blue-600 mt-1">
-                        {khachClients.length === 0 ? '—' : (openDebtCard === 'khach' ? '▴ Đang mở' : '▾ Xem danh sách')}
-                      </p>
-                    </button>
-
-                    <button onClick={() => toggleCard('unpaid')}
-                      className={'text-left bg-white border border-t-4 border-t-red-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
-                        (openDebtCard === 'unpaid' ? 'border-red-300 ring-1 ring-red-200' : 'border-gray-100')}>
-                      <p className="text-xs text-gray-400 mb-1">💰 Còn phải thu tháng này</p>
-                      <p className={'text-lg font-bold ' + (totalRemainAll > 0 ? 'text-red-500' : 'text-green-600')}>
-                        {fmt(totalRemainAll)}đ
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {unpaidClients.length} công ty
-                        {totalHcnsRemain > 0 && <span className="text-violet-500"> · gồm {fmt(totalHcnsRemain)}đ HCNS</span>}
-                      </p>
-                      <p className="text-xs text-blue-600 mt-1">{openDebtCard === 'unpaid' ? '▴ Đang mở' : '▾ Xem danh sách'}</p>
-                    </button>
-
-                    <button onClick={() => toggleCard('otherDebt')}
-                      className={'text-left bg-white border border-t-4 border-t-orange-500 rounded-2xl px-4 py-3 transition-colors hover:bg-gray-50 ' +
-                        (openDebtCard === 'otherDebt' ? 'border-orange-300 ring-1 ring-orange-200' : 'border-gray-100')}>
-                      <p className="text-xs text-gray-400 mb-1">📦 Nợ tồn đầu kỳ chuyển tháng sau</p>
-                      <p className={'text-lg font-bold ' + (totalOtherDebt > 0 ? 'text-orange-500' : 'text-green-600')}>{fmt(totalOtherDebt)}đ</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {otherDebtClients.length} công ty · <span className="text-gray-400 italic">tính đến hiện tại</span>
-                      </p>
-                      <p className="text-xs text-blue-600 mt-1">
-                        {otherDebtClients.length === 0 ? '—' : (openDebtCard === 'otherDebt' ? '▴ Đang mở' : '▾ Xem danh sách')}
-                      </p>
-                    </button>
-                  </div>
-
-                  {/* Bảng chi tiết của thẻ đang mở */}
-                  {openDebtCard === 'hcns' && hcnsByStaff.length > 0 && (
-                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-                      <div className="px-4 py-2.5 border-b border-gray-100 bg-violet-50 flex items-center justify-between">
-                        <p className="text-xs font-semibold text-violet-800">🏢 Công ty có dùng DV HCNS — theo từng nhân viên</p>
-                        <button onClick={() => setOpenDebtCard(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
-                      </div>
-                      {hcnsByStaff.map(g => (
-                        <div key={g.id}>
-                          <div className="px-4 py-2 bg-gray-100/70 flex items-center justify-between">
-                            <p className="text-xs font-semibold text-gray-700">{g.name}</p>
-                            <p className="text-xs font-semibold text-violet-700">
-                              {g.items.length} cty · {fmt(g.paid)} / {fmt(g.fee)}đ
-                            </p>
-                          </div>
-                          {g.items.map((c, i) => (
-                            <div key={c.id} className={'px-4 py-2 pl-7 flex items-center justify-between gap-3 border-b border-gray-50 ' + zebra(i)}>
-                              <p className="text-xs text-gray-700 truncate">{c.name}</p>
-                              <p className="text-xs whitespace-nowrap flex-shrink-0">
-                                <span className="text-gray-400">{fmt(c.hcnsPaid)} / </span>
-                                <span className="font-semibold text-gray-800">{fmt(c.hcnsFee)}đ</span>
-                                <span className={'ml-2 text-white px-2 py-0.5 rounded-full ' +
-                                  (c.hcnsRemain === 0 ? 'bg-green-600' : c.hcnsPaid > 0 ? 'bg-yellow-500' : 'bg-red-500')}>
-                                  {c.hcnsRemain === 0 ? 'Đã thu đủ' : c.hcnsPaid > 0 ? 'Thu một phần' : 'Chưa thu'}
-                                </span>
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                      <p className="px-4 py-2 text-xs text-gray-400 bg-gray-50 border-t border-gray-100">
-                        Phí HCNS nằm trong "Còn phải thu tháng này" và cũng chuyển thành nợ tồn nếu không thu kịp,
-                        nhưng KHÔNG tính vào %-KPI thu hồi công nợ.
-                      </p>
-                    </div>
-                  )}
-
-                  {openDebtCard === 'unpaid' && (
-                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-                      <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                        <p className="text-xs font-semibold text-gray-700">📋 Công ty còn phải thu — theo từng nhân viên</p>
-                        <button onClick={() => setOpenDebtCard(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
-                      </div>
-                      {unpaidByStaff.length === 0 ? (
-                        <p className="px-4 py-4 text-xs text-gray-400">Tất cả công ty đã thu đủ 🎉</p>
-                      ) : unpaidByStaff.map(g => (
-                        <div key={g.id}>
-                          <div className="px-4 py-2 bg-gray-100/70 flex items-center justify-between">
-                            <p className="text-xs font-semibold text-gray-700">{g.name}</p>
-                            <p className="text-xs font-semibold text-red-600">{g.items.length} cty · {fmt(g.total)}đ</p>
-                          </div>
-                          {g.items.map((c, i) => (
-                            <div key={c.id} className={'px-4 py-2 pl-7 border-b border-gray-50 ' + zebra(i)}>
-                              <div className="flex items-center justify-between gap-3">
-                                <p className="text-xs text-gray-700 truncate">{c.name}</p>
-                                <p className="text-xs whitespace-nowrap flex-shrink-0">
-                                  <span className="text-gray-400">{fmt(c.ketoan)} / </span>
-                                  <span className="font-semibold text-gray-800">{fmt(c.monthly_fee)}đ</span>
-                                </p>
-                              </div>
-                              {c.hcnsRemain > 0 && (
-                                <div className="flex items-center justify-between gap-3 mt-0.5">
-                                  <p className="text-xs text-violet-600">🏢 Phí HCNS còn thiếu</p>
-                                  <p className="text-xs whitespace-nowrap flex-shrink-0 text-violet-700 font-semibold">
-                                    {fmt(c.hcnsPaid)} / {fmt(c.hcnsFee)}đ
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {openDebtCard === 'khach' && (
-                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-                      <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                        <p className="text-xs font-semibold text-gray-700">🗂 Các khoản thu khác trong T{selMonth}/{selYear}</p>
-                        <button onClick={() => setOpenDebtCard(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
-                      </div>
-                      {khachClients.length === 0 ? (
-                        <p className="px-4 py-4 text-xs text-gray-400">Tháng này không có khoản thu khác nào.</p>
-                      ) : khachClients.map((c, i) => (
-                        <div key={c.id} className={'px-4 py-2.5 flex items-start justify-between gap-3 border-b border-gray-50 ' + zebra(i)}>
-                          <div className="min-w-0">
-                            <p className="text-xs text-gray-800 truncate">{c.name}</p>
-                            <p className="text-xs text-gray-400 mt-0.5 break-words">
-                              {staffNameOf(c.assigned_to)}
-                              {c.collectedKhachNote ? ' · ' + c.collectedKhachNote : ' · (không có ghi chú)'}
-                            </p>
-                          </div>
-                          <p className="text-xs font-semibold text-blue-600 whitespace-nowrap flex-shrink-0">{fmt(c.khach)}đ</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {openDebtCard === 'otherDebt' && (
-                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-                      <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                        <p className="text-xs font-semibold text-gray-700">📦 Công ty còn nợ tồn <span className="font-normal text-gray-400 italic">(tính đến hiện tại)</span></p>
-                        <button onClick={() => setOpenDebtCard(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
-                      </div>
-                      {otherDebtClients.length === 0 ? (
-                        <p className="px-4 py-4 text-xs text-gray-400">Không có công ty nào còn nợ tồn 🎉</p>
-                      ) : [...otherDebtClients].sort((a, b) => Number(b.other_debt) - Number(a.other_debt)).map((c, i) => (
-                        <div key={c.id} className={'px-4 py-2.5 flex items-start justify-between gap-3 border-b border-gray-50 ' + zebra(i)}>
-                          <div className="min-w-0">
-                            <p className="text-xs text-gray-800 truncate">{c.name}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">{staffNameOf(c.assigned_to)}</p>
-                          </div>
-                          <p className="text-xs font-semibold text-orange-500 whitespace-nowrap flex-shrink-0">{fmt(c.other_debt)}đ</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {/* Khối dòng tiền 5 thẻ + bảng chi tiết — dùng chung với trang Quản lý công nợ. */}
+                  <KhoiDongTien dongTien={dongTien} hcnsOn={hcnsOn} open={openDebtCard} setOpen={setOpenDebtCard}
+                    staffNameOf={staffNameOf} selMonth={selMonth} selYear={selYear} />
 
                   {/* Warning */}
                   {overdue.length > 0 && (
                     <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2.5 flex items-center gap-2">
                       <span className="text-red-500">🔴</span>
                       <p className="text-xs font-semibold text-red-700">{overdue.length} công ty quá hạn thu phí dịch vụ kế toán</p>
+                    </div>
+                  )}
+
+                  {/* Công ty ĐÃ NGƯNG dịch vụ mà còn nợ. Đã ra khỏi checklist công việc và khỏi %-KPI,
+                      nhưng tiền thì vẫn phải đòi — không hiện ở đây thì ngưng xong là khoản nợ biến
+                      khỏi mọi màn hình (anh chốt 05/10/2026). */}
+                  {dongTien?.ngungConNo?.length > 0 && (
+                    <div className="bg-white border border-amber-200 rounded-2xl overflow-hidden">
+                      <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-100 flex items-center justify-between">
+                        <p className="text-xs font-semibold text-amber-800">
+                          ⏸ Đã ngưng dịch vụ — còn phải thu · {dongTien.ngungConNo.length} công ty
+                        </p>
+                        <p className="text-xs font-bold text-amber-800">{fmt(dongTien.ngungConNo.reduce((a, x) => a + x.total, 0))}đ</p>
+                      </div>
+                      <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 grid grid-cols-[1fr_140px_96px_96px_96px_104px] gap-2 text-xs text-gray-400">
+                        <span>Công ty</span><span>Nhân viên</span><span className="text-right">Kế toán</span>
+                        <span className="text-right">HCNS</span><span className="text-right">DV khác</span><span className="text-right">Còn phải thu</span>
+                      </div>
+                      {dongTien.ngungConNo.map((x, i) => (
+                        <div key={x.clientId} className={'border-b border-gray-50 ' + zebra(i)}>
+                        <div className="px-4 py-2 grid grid-cols-[1fr_140px_96px_96px_96px_104px] gap-2 items-center text-xs">
+                          {/* Bấm tên để mở bảng ghi công nợ ngay tại đây — quản trị / trưởng phòng không
+                              có các công ty này ở trang Quản lý công nợ của riêng mình. */}
+                          <button onClick={() => setOpenClient(p => ({ ...p, ['ngung-' + x.clientId]: !p['ngung-' + x.clientId] }))}
+                            className="text-left text-gray-700 truncate hover:text-blue-600">
+                            {x.name} <span className="text-blue-600">{openClient['ngung-' + x.clientId] ? '▴ đóng' : '▾ ghi thu'}</span>
+                          </button>
+                          <span className="text-gray-500 truncate">{staffNameOf(x.staffId)}</span>
+                          <span className="text-right text-gray-700">{x.ketoan > 0 ? fmt(x.ketoan) : '—'}</span>
+                          <span className="text-right text-violet-600">{x.hcns > 0 ? fmt(x.hcns) : '—'}</span>
+                          <span className="text-right text-teal-600">{x.dvk > 0 ? fmt(x.dvk) : '—'}</span>
+                          <span className="text-right font-semibold text-red-500">
+                            {fmt(x.total)}đ
+                            {isTrueAdmin && x.ketoan > 0 && (
+                              <button disabled={xoaNoBusy === x.clientId} onClick={() => xoaNo(x)}
+                                className="block ml-auto mt-0.5 text-[11px] font-medium text-gray-500 underline hover:text-red-600 disabled:opacity-40">
+                                {xoaNoBusy === x.clientId ? 'Đang xoá…' : 'Xoá nợ'}
+                              </button>
+                            )}
+                          </span>
+                        </div>
+                        {openClient['ngung-' + x.clientId] && x.client && (
+                          <ClientChecklist
+                            client={x.client}
+                            defaultMonth={selMonth}
+                            defaultYear={selYear}
+                            defaultPanel="debt"
+                            clientMonth={clientMonth[x.clientId] || selMonth}
+                            onMonthChange={m => setClientMonth(p => ({ ...p, [x.clientId]: m }))}
+                            onDebtSaved={load}
+                            isAdmin={isAdmin}
+                            isTrueAdmin={isTrueAdmin}
+                            canUncheck={canUncheck}
+                          />
+                        )}
+                        </div>
+                      ))}
+                      <p className="px-4 py-2 text-xs text-gray-500 bg-gray-50 border-t border-gray-100">
+                        Các công ty này không còn trong checklist công việc và không tính vào %-KPI, nhưng số nợ vẫn nằm trong “Còn phải thu chuyển kỳ sau”.
+                      </p>
                     </div>
                   )}
 

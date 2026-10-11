@@ -74,6 +74,9 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   const [debtNote,     setDebtNote]     = useState('')
   const [savingDebt,   setSavingDebt]   = useState(false)
   const [debtHistory,  setDebtHistory]  = useState(null)
+  // Tổng CÒN PHẢI THU của các hồ sơ Dịch vụ khác đang mở — hiện ngay trên tiêu đề tab để không phải
+  // bấm vào mới biết công ty còn nợ khoản dịch vụ khác. null = chưa nạp.
+  const [dvkConLai, setDvkConLai] = useState(null)
   // Phí ĐÚNG của từng tháng (từ /api/admin/debt-history) — panel công nợ phải theo tháng đang
   // chọn trên thẻ công ty, không được dùng monthly_fee sống.
   const [feeByPeriod,  setFeeByPeriod]  = useState({})
@@ -197,6 +200,11 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   }
 
   const loadDebtHistory = async () => {
+    // Chạy riêng, không chờ: lỗi/chậm ở đây không được chặn lịch sử công nợ bên dưới.
+    fetch('/api/admin/other-services?clientId=' + client.id, { cache: 'no-store' })
+      .then(r => r.json())
+      .then(j => setDvkConLai((j.data || []).filter(x => x.status !== 'done').reduce((a, x) => a + (Number(x.remain) || 0), 0)))
+      .catch(() => {})
     try {
       // Chỉ bỏ qua khi CHẮC CHẮN công ty không dùng HCNS. Field undefined (trang chưa trả về
       // uses_hcns) thì vẫn hỏi — route trả hcnsClient=null rất nhẹ nếu không có.
@@ -1178,13 +1186,15 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
           <div className="flex border-b border-gray-100">
             {[
               // Mở từ trang Phòng HCNS thì CHỈ có mục HCNS — 3 mục kế toán ẩn hẳn để không ghi nhầm.
-              ...(hcnsOnly ? [] : [{ key: 'ketoan', label: '📋 Dịch vụ kế toán', hint: fmt(feeForSelected('ketoan')) + 'đ' + (client.fee_period === 'quarterly' ? '/Quý' : '/Tháng') }]),
+              ...(hcnsOnly ? [] : [{ key: 'ketoan', label: '📋 Dịch vụ kế toán', hint: fmt(feeForSelected('ketoan')) + 'đ' + (client.fee_period === 'quarterly' ? '/Quý' : '/Tháng'), cls: 'text-blue-600' }]),
               // Mục HCNS chỉ hiện với công ty đã tick "Có sử dụng DV HCNS".
               ...(hcnsClient ? [{ key: 'hcns', label: '🏢 Dịch vụ HCNS',
                 hint: feeForSelected('hcns') > 0 ? fmt(feeForSelected('hcns')) + 'đ' + (hcnsClient.fee_period === 'quarterly' ? '/Quý' : '/Tháng') : 'Chưa áp dụng tháng này' }] : []),
               ...(hcnsOnly ? [] : [
-                { key: 'khach',  label: '🗂 Dịch vụ khác', hint: 'Phát sinh khác' },
-                { key: 'no_ton', label: '📦 Nợ tồn cũ',    hint: fmt(client.other_debt) + 'đ còn nợ' },
+                // Hồ sơ Dịch vụ khác đi theo TỪNG THÁNG cho tới khi thu đủ — KHÔNG chuyển vào "Nợ tồn
+                // cũ" khi quá hạn như phí kế toán (anh chốt 06/10/2026), nên số còn phải thu hiện ở đây.
+                { key: 'khach',  label: '🗂 Dịch vụ khác', hint: dvkConLai > 0 ? fmt(dvkConLai) + 'đ còn phải thu' : 'Phát sinh khác', cls: dvkConLai > 0 ? 'text-orange-500' : '' },
+                { key: 'no_ton', label: '📦 Nợ tồn cũ',    hint: fmt(client.other_debt) + 'đ còn nợ', cls: 'text-red-500' },
               ]),
             ].map(t => (
               <button key={t.key} onClick={() => { setDebtType(t.key); setDebtNote('') }}
@@ -1193,7 +1203,9 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                     ? 'text-green-700 border-green-500 bg-green-50'
                     : 'text-gray-400 border-transparent hover:text-gray-600')}>
                 {t.label}
-                <span className="block text-xs font-normal text-gray-400 mt-0.5">{t.hint}</span>
+                {/* Màu theo loại tiền (anh chốt 06/10/2026): kế toán xanh dương, dịch vụ khác cam, nợ tồn đỏ
+                    — chữ thường, không in đậm. */}
+                <span className={'block text-xs font-normal mt-0.5 ' + (t.cls || 'text-gray-400')}>{t.hint}</span>
               </button>
             ))}
           </div>
