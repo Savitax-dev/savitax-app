@@ -16,7 +16,7 @@ import { requireLogin } from '@/lib/serverAuth'
 import { canAccessCredentials } from '@/lib/credentialScope'
 import { ghiHoSoVaThongBao } from '@/lib/tokhaiGhi'
 import { decrypt } from '@/lib/taxCrypto'
-import { docBangKetQua, docBangKetQuaEtax, docChiTiet } from '@/lib/dvcPortal'
+import { docBangKetQua, docBangKetQuaEtax, docChiTiet, doanLoaiToKhaiTuTen } from '@/lib/dvcPortal'
 import { chiaCuaSo } from '@/lib/tokhaiCuaSo'
 import { chuanHoaKy } from '@/lib/taxDeadline'
 import {
@@ -440,7 +440,11 @@ function duongDanFileToKhai(p, hs, noiDungJson) {
     const j = JSON.parse(noiDungJson)
     if (!j?.content) { p.loi.push(`${hs.maHoSo}: cổng không trả nội dung tờ khai`); return null }
     const loai = timLoai(p, hs)
-    const ky = chuanHoaKy(hs.kyTinhThue, loai?.period_kind || 'quarter') || 'PS.' + (hs.ngayNop || '').slice(0, 10)
+    // Mặc định 'month' chứ KHÔNG phải 'quarter': cổng ghi quý có tiền tố ('Q4/2024'), năm để
+    // trần ('2024'), tháng cũng để trần ('03/2025'). Chuỗi trần rơi xuống nhánh đoán gần như
+    // chắc chắn là tháng. Phải khớp y hệt lib/tokhaiGhi.js, nếu không TÊN FILE và KỲ TRONG APP
+    // lệch nhau — file nằm một thư mục, app ghi một kỳ khác.
+    const ky = chuanHoaKy(hs.kyTinhThue, loai?.period_kind || 'month') || 'PS.' + (hs.ngayNop || '').slice(0, 10)
     const boSung = soLanBoSung(hs)
     p.soFile++
     return {
@@ -462,7 +466,7 @@ function duongDanFileThongBao(p, hs, tb, noiDungJson) {
     const j = JSON.parse(noiDungJson)
     if (!j?.content) return null
     const loai = timLoai(p, hs)
-    const ky = chuanHoaKy(hs.kyTinhThue, loai?.period_kind || 'quarter') || 'PS.' + (hs.ngayNop || '').slice(0, 10)
+    const ky = chuanHoaKy(hs.kyTinhThue, loai?.period_kind || 'month') || 'PS.' + (hs.ngayNop || '').slice(0, 10)
     const boSung = soLanBoSung(hs)
     p.soFile++
     return {
@@ -480,9 +484,17 @@ function duongDanFileThongBao(p, hs, tb, noiDungJson) {
 
 const duoiTheoKieu = kieu => /zip/i.test(kieu || '') ? 'zip' : /pdf/i.test(kieu || '') ? 'pdf' : 'xml'
 
+// Tìm loại tờ khai để đặt TÊN FILE. Ba cách, từ chắc chắn tới suy đoán.
+//
+// ⚠ Cách thứ ba (đoán từ tên) là BẮT BUỘC cho hồ sơ tab cũ: bảng tab đó không có mã tờ khai và
+// tên cũng không kèm mã. Thiếu nó thì mọi hồ sơ cũ đặt tên TK_KHAC_… — gặp thật 11/10/2026:
+// ba hồ sơ khác nhau (báo cáo tài chính, quyết toán TNDN, quyết toán TNCN) cùng kỳ NAM.2024 ra
+// ba file TRÙNG TÊN, chỉ phân biệt bằng _v2, _v3. Kế toán mở thư mục ra không biết file nào là
+// tờ gì.
 function timLoai(p, hs) {
   return p.loaiTK.find(t => t.ma_tkhai_portal && t.ma_tkhai_portal === hs.maToKhaiCong)
     || p.loaiTK.find(t => hs.tenToKhai && t.code === hs.tenToKhai.split(' - ')[0].trim())
+    || p.loaiTK.find(t => t.code === doanLoaiToKhaiTuTen(hs.tenToKhai))
     || null
 }
 
