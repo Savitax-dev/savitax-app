@@ -528,7 +528,10 @@ function ReportBlock({ report, mode, setMode, selYear, selMonth, setSelYear, set
           <h2 className="text-sm font-bold text-slate-900">Thời kỳ</h2>
           <span className="text-xs px-2 py-0.5 rounded-full bg-[#FCE8E8] text-[#8B1A1A] border border-[#E8B4B4]">{tk.clientCount} công ty</span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        {/* Hai thẻ KPI chia đôi chiều ngang. Thẻ "Nợ tồn HCNS chuyển tháng sau" đã bỏ (anh yêu cầu
+            12/10/2026): số đó đọc từ sổ nợ tồn nên thiếu, và khối dòng tiền ngay bên dưới đã có "Tồn đầu kỳ
+            chuyển sang" tính đủ. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <div className="bg-white border border-indigo-200 border-t-[3px] border-t-indigo-600 rounded-b-xl p-3">
             <p className="text-xs text-indigo-800">KPI Công nợ — trung bình theo nhân viên</p>
             <p className={'text-3xl font-bold mt-0.5 leading-none ' + pctText(tk.debtPercent)}>
@@ -544,21 +547,6 @@ function ReportBlock({ report, mode, setMode, selYear, selMonth, setSelYear, set
             </p>
             <div className="mt-2"><Meter value={tk.taskPercent ?? 0} /></div>
             <p className="text-xs text-slate-600 mt-1.5">Checklist DV HCNS Thời Kỳ · chỉ tính việc đúng hạn</p>
-          </div>
-          {/* Nợ tồn có NGUỒN HCNS. Kỳ nào không thu đủ, qua ngày 10 tháng sau sẽ tự chuyển vào
-              đây và phải thu ở mục "Nợ tồn cũ" trong hồ sơ công ty. */}
-          <div className="bg-white border border-orange-200 border-t-[3px] border-t-orange-500 rounded-b-xl p-3">
-            <p className="text-xs text-orange-800">Nợ tồn HCNS chuyển tháng sau</p>
-            <p className={'text-3xl font-bold mt-0.5 leading-none ' +
-              (tk.oldDebt > 0 ? 'text-orange-600' : 'text-[#2E6B3A]')}>
-              {fmt(tk.oldDebt || 0)}đ
-            </p>
-            <p className="text-xs text-slate-600 mt-2">
-              {tk.oldDebt > 0
-                ? tk.oldDebtClients + ' công ty · thu ở mục “Nợ tồn cũ”'
-                : 'Chưa có kỳ nào quá hạn chuyển sang'}
-            </p>
-            <p className="text-xs text-slate-500 mt-1.5">Tính đến hiện tại, không theo tháng đang chọn</p>
           </div>
         </div>
         {tk.flow && (() => {
