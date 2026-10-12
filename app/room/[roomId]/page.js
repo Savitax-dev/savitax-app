@@ -127,23 +127,21 @@ export default function RoomPage({ params }) {
       const supabase = createClient()
       const { data: sd } = await supabase.auth.getSession()
       if (!sd.session) { router.push('/login'); return }
-      let role = 'staff', myRoomId = null
-      const { data: me } = await supabase.from('staff').select('role, room_id').eq('id', sd.session.user.id).single()
-      if (me && me.role) { role = me.role; myRoomId = me.room_id }
-      else {
-        const email = sd.session.user.email || ''
-        role = (sd.session.user.user_metadata && sd.session.user.user_metadata.role)
-          || (email === 'admin@savitax.vn' ? 'admin' : 'staff')
-      }
-      // Chỉ admin thật được xem mọi phòng — trưởng phòng/nhân viên chỉ vào đúng phòng mình thuộc về.
-      // Ngoại lệ: phòng "đặc thù" (lib/specialRooms.js) — MỌI trưởng phòng đều vào được như phòng
-      // mình. Phải khớp đúng điều kiện với requireRoomAccess ở lib/serverAuth.js (server cũng chặn
-      // độc lập) — nếu chỉ sửa 1 trong 2 thì hoặc bị chặn oan ở đây, hoặc lọt qua UI rồi API mới báo lỗi.
-      const canEnter = role === 'admin' || myRoomId === roomId || (role === 'leader' && isSharedRoom(roomId))
+      // Lấy vai trò + phòng từ /api/admin/me (GỒM CẢ KIÊM NHIỆM), không đọc thẳng staff.role /
+      // staff.room_id: hai cột đó chỉ là vai trò và phòng CHÍNH. Ca thật 12/10/2026: Lương Tấn Đức là
+      // nhân viên phòng Grand, kiêm Trưởng phòng Danxia — máy chủ cho vào Danxia (requireRoomAccess
+      // đã tính kiêm nhiệm) nhưng trang này tự chặn vì chỉ nhìn phòng chính.
+      // Phải khớp điều kiện với requireRoomAccess ở lib/serverAuth.js — sửa một bên mà quên bên kia thì
+      // hoặc bị chặn oan ở đây, hoặc lọt qua giao diện rồi API mới báo lỗi.
+      const me = await fetch('/api/admin/me', { cache: 'no-store' }).then(r => r.json()).catch(() => null)
+      if (!me || me.error) { router.push('/login'); return }
+      const roles = me.roles?.length ? me.roles : [me.role].filter(Boolean)
+      const roomIds = me.roomIds?.length ? me.roomIds : [me.roomId].filter(Boolean)
+      const canEnter = roles.includes('admin') || roomIds.includes(roomId) || (roles.includes('leader') && isSharedRoom(roomId))
       if (!canEnter) setForbidden(true)
-      setIsAdmin(['admin', 'leader', 'manager'].includes(role))
-      setIsTrueAdmin(role === 'admin')
-      setCanUncheck(await hasPermission(role, 'uncheck_task'))
+      setIsAdmin(roles.some(r => ['admin', 'leader', 'manager'].includes(r)))
+      setIsTrueAdmin(roles.includes('admin'))
+      setCanUncheck(await hasPermission(roles, 'uncheck_task'))
       setReady(true)
     }
     check()

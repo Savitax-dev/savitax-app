@@ -21,6 +21,7 @@ function Bar({ value }) {
 export default function ReportPage() {
   const router = useRouter()
   const [myStaff, setMyStaff] = useState(null)
+  const [myRoles, setMyRoles] = useState(null) // gồm cả vai trò kiêm nhiệm
   const [permData, setPermData] = useState(null)
   const [rooms, setRooms] = useState([])      // từ /api/admin/kpi-overview
   const [allStaff, setAllStaff] = useState([]) // tất cả nhân viên (kèm room_name để filter)
@@ -52,8 +53,14 @@ export default function ReportPage() {
       ])
       // Không phải admin (vd trưởng phòng) chỉ thấy phòng mình trong bộ lọc, không thấy phòng khác.
       // Riêng phòng "đặc thù" (xem lib/specialRooms.js): MỌI trưởng phòng đều thấy như phòng mình.
-      const isAdmin = me?.role === 'admin'
-      const canSeeRoom = (id) => isAdmin || id === me?.room_id || (me?.role === 'leader' && isSharedRoom(id))
+      // Vai trò + phòng GỒM CẢ KIÊM NHIỆM (xem /api/admin/me) — người kiêm Trưởng phòng một phòng khác
+      // phải thấy cả phòng đó, không chỉ phòng chính.
+      const quyen = await fetch('/api/admin/me', { cache: 'no-store' }).then(r => r.json()).catch(() => null)
+      const roles = quyen?.roles?.length ? quyen.roles : [me?.role].filter(Boolean)
+      const roomIds = quyen?.roomIds?.length ? quyen.roomIds : [me?.room_id].filter(Boolean)
+      setMyRoles(roles)
+      const isAdmin = roles.includes('admin')
+      const canSeeRoom = (id) => isAdmin || roomIds.includes(id) || (roles.includes('leader') && isSharedRoom(id))
 
       const visibleRooms = (resRl.data ?? []).filter(r => canSeeRoom(r.id))
       setRoomList(visibleRooms)
@@ -73,7 +80,7 @@ export default function ReportPage() {
     load()
   }, [router, year, month])
 
-  const isAdminOrManager = can(myStaff?.role, 'view_kpi_report', permData)
+  const isAdminOrManager = can(myRoles?.length ? myRoles : myStaff?.role, 'view_kpi_report', permData)
 
   // Tab 2: filter + sort theo % hoàn thành công việc
   const filteredStaff = allStaff
