@@ -14,8 +14,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { canAccessCredentials } from '@/lib/credentialScope'
+import { ghiHoSoVaThongBao } from '@/lib/tokhaiGhi'
 import { decrypt } from '@/lib/taxCrypto'
-import { docBangKetQua, docChiTiet, RANGE_MAX_DAYS } from '@/lib/dvcPortal'
+import { docBangKetQua, docBangKetQuaEtax, docChiTiet, doanLoaiToKhaiTuTen } from '@/lib/dvcPortal'
+import { chiaCuaSo } from '@/lib/tokhaiCuaSo'
 import { chuanHoaKy } from '@/lib/taxDeadline'
 import {
   duongDanToKhai, duongDanThongBao, tenFileToKhai, tenFileThongBao, macSacThue, tachKy,
@@ -41,24 +43,9 @@ function donPhienCu() {
   for (const [ma, p] of phienTam) if (nay - p.chamNhat > PHIEN_SONG) phienTam.delete(ma)
 }
 
-const ddmmyyyy = d => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
-const tuISO = s => new Date(`${s}T00:00:00Z`)
 const docCsrf = html => html.match(/name="csrf-token" content="([^"]+)"/)?.[1]
   || html.match(/name="_csrf"\s+value="([^"]+)"/)?.[1]
 
-function chiaCuaSo({ tuNgay, denNgay }) {
-  const den0 = denNgay ? tuISO(denNgay) : new Date()
-  const tu0 = tuNgay ? tuISO(tuNgay) : new Date(den0.getTime() - 29 * 864e5)
-  const cs = []
-  let den = den0
-  while (den >= tu0 && cs.length < 24) {
-    const lui = new Date(den.getTime() - (RANGE_MAX_DAYS - 1) * 864e5)
-    const tu = lui > tu0 ? lui : tu0
-    cs.push({ tuNgay: ddmmyyyy(tu), denNgay: ddmmyyyy(den) })
-    den = new Date(tu.getTime() - 864e5)
-  }
-  return cs
-}
 
 // ── Yêu cầu gửi cho tiện ích ─────────────────────────────────────────────────
 const yc = {
@@ -95,18 +82,47 @@ const yc = {
     method: 'GET',
     headers: { 'HX-Request': 'true', 'X-XSRF-TOKEN': csrf, Referer: BASE + 'tchs', Accept: 'text/html, */*' },
   }),
-  chiTiet: maHoSo => ({ url: `${BASE}tchs/files/detail/${encodeURIComponent(maHoSo)}?loai=`, method: 'GET',
+  // Tra cứu TAB CŨ — hồ sơ nộp trước 01/07/2025. POST form, tham số đuôi _tdt, phạm vi
+  // scope_tdt2. maToKhai_tdt để trống = mọi sắc thuế. Ba header hx-* bắt buộc, thiếu thì cổng
+  // trả cả trang thay vì mảnh bảng và bộ đọc ra 0 dòng.
+  traCuuEtax: (csrf, cs, captcha) => ({
+    url: BASE + 'tchs/thuedientu', method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded', 'X-XSRF-TOKEN': csrf,
+      'HX-Request': 'true', 'HX-Target': 'bangKetQuaTraCuu_tdt', 'HX-Trigger': 'form_search_tdt',
+      'HX-Current-URL': BASE + 'tchs',
+      Referer: BASE + 'tchs', Origin: ORIGIN, Accept: 'text/html-partial',
+    },
+    body: new URLSearchParams({
+      _csrf: csrf, page: '', size: '', maToKhai_tdt: '', maGiaoDichTthc_tdt: '',
+      tuNgay_tdt: cs.tuNgay, denNgay_tdt: cs.denNgay,
+      scope_tdt2: 'SELF', mstUyQuyen_tdt2: '', captcha, btnSearch_tdt: '',
+    }).toString(),
+  }),
+  // Trang chi tiết: `loai` LUÔN ĐỂ TRỐNG, kể cả hồ sơ tab cũ.
+//
+  // ⚠ Nghe phản trực giác nên ghi rõ kẻo người sau "sửa lại cho đúng": trình duyệt khi bấm Xem chi
+  // tiết thì đi vào /files/detail/<mã>?loai=ETAX, nên 11/10/2026 em theo y vậy — và cổng trả 500
+  // "Đã có lỗi hệ thống xảy ra!" cho TẤT CẢ 8 hồ sơ. Để trống thì chính những hồ sơ cũ đó đọc được
+  // bình thường (đo thật cùng công ty, cùng phiên, chỉ khác tham số này).
+  // Đoán: nhánh ETAX của cổng cần thêm trạng thái mà lượt gọi thuần không có. Dù lý do gì thì bằng
+  // chứng rõ: ĐỂ TRỐNG LÀ CHẠY.
+  chiTiet: maHoSo => ({
+    url: `${BASE}tchs/files/detail/${encodeURIComponent(maHoSo)}?loai=`, method: 'GET',
     headers: { Referer: BASE + 'tchs' } }),
   // Xin phép trước khi tải tờ khai — thiếu bước này cổng trả "Hồ sơ truyền lên không hợp lệ".
   xinPhep: maHoSo => ({ url: `${BASE}tchs/validateIdTkhai?idTKhai=${encodeURIComponent(maHoSo)}`, method: 'GET',
     headers: { 'X-Requested-With': 'XMLHttpRequest', Referer: BASE + 'tchs' } }),
-  taiToKhai: (token, maHoSo) => ({
-    url: BASE + 'tchs/downloadhoso', method: 'POST',
+  // Hồ sơ cũ chỉ khác cái đuôi địa chỉ; thân yêu cầu y nguyên (đã bắt gói thật 11/10/2026).
+  taiToKhai: (token, maHoSo, nguon) => ({
+    url: BASE + (nguon === 'etax' ? 'tchs/downloadhoso-tdt?loaiTraCuu=ETAX' : 'tchs/downloadhoso'),
+    method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest', Origin: ORIGIN },
     body: JSON.stringify({ maHoSo }),
   }),
-  taiThongBao: (token, idTbao) => ({
-    url: BASE + 'tchs/downloadthongbao', method: 'POST',
+  taiThongBao: (token, idTbao, nguon) => ({
+    url: BASE + (nguon === 'etax' ? 'tchs/downloadthongbao-tdt?loaiTraCuu=ETAX' : 'tchs/downloadthongbao'),
+    method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest', Origin: ORIGIN },
     body: JSON.stringify({ idTbao, loaiTBao: '' }),
   }),
@@ -273,10 +289,36 @@ export async function POST(request) {
           p.buoc = 'anh_captcha_tc'
           return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yc.anhCaptcha(), moTa: 'Mã captcha chưa đúng' })
         }
-        return traCuuCuaSo(p, 0)
+        // ⚠ ĐỪNG quay về cửa sổ 0. Bước này còn chạy GIỮA CHỪNG vì cửa sổ tab cũ nào cũng đòi mã
+        // mới (xem cuaSoKeTiep) — reset là tải lại từ đầu, không bao giờ đi hết khoảng ngày.
+        if (!p.daTraCuu) { p.daTraCuu = true; p.viCuaSo = 0 }
+        return traCuuCuaSo(p, p.viCuaSo)
 
       case 'tra_cuu': {
-        const { ds } = docBangKetQua(noiDung, { ...p.cuaSo[p.viCuaSo], trang: 0 })
+        const cs = p.cuaSo[p.viCuaSo]
+        const { ds } = cs.nguon === 'etax'
+          ? docBangKetQuaEtax(noiDung, cs)
+          : docBangKetQua(noiDung, { ...cs, trang: 0 })
+        // Hồ sơ nhớ mình đến từ tab nào: các bước sau (chi tiết, tải) cần biết để gọi đúng địa chỉ.
+        for (const r of ds) r.nguon = cs.nguon
+
+        // GHI HỒ SƠ VÀO CƠ SỞ DỮ LIỆU NGAY, dùng chung hàm với màn hình Đồng bộ.
+        //
+        // ⚠ Trước 11/10/2026 màn hình này KHÔNG ghi gì: nó chỉ cập nhật `file_path` vào dòng hồ sơ
+        // CÓ SẴN. Công ty chưa đồng bộ lần nào thì không có dòng nào để cập nhật — lệnh chạy, khớp
+        // 0 dòng, KHÔNG báo lỗi. Hậu quả thấy ở ca GSC AUTO (anh phát hiện): 12 file nằm trên đĩa
+        // mà app coi như chưa có hồ sơ nào, nên (a) Hồ sơ đã nộp / Lịch hạn nộp / Báo cáo đều
+        // trống, (b) lần tải sau không biết đã tải rồi nên tải lại hết, đẻ ra _v2, _v3.
+        //
+        // Dữ liệu đã nằm sẵn trong tay (chính nó đặt được tên file TK_GTGT_Q2.2025_GSC.xml) nên
+        // vứt đi là tự làm hỏng dữ liệu của mình.
+        try {
+          await ghiHoSoVaThongBao(supabase, p.clientId, ds)
+        } catch (e) {
+          // Ghi hỏng thì VẪN CHO TẢI TIẾP — file về đĩa quan trọng hơn, nhân viên đang ngồi gõ mã.
+          p.loi.push('Không ghi được hồ sơ vào cơ sở dữ liệu: ' + e.message)
+        }
+
         // Chỉ xếp hàng những hồ sơ CHƯA có file — tải lại thứ đã có chỉ tổ gõ cửa cổng thêm.
         p.hangDoi = ds.filter(r => !p.daTai.has(r.maHoSo))
         p.soBoQua += ds.length - p.hangDoi.length
@@ -302,7 +344,7 @@ export async function POST(request) {
           return hoSoKeTiep(p, null)
         }
         p.buoc = 'tai_to_khai'
-        return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yc.taiToKhai(p.tokenTai, hoSoHienTai(p).maHoSo),
+        return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yc.taiToKhai(p.tokenTai, hoSoHienTai(p).maHoSo, hoSoHienTai(p).nguon),
           tienDo: `Tải tờ khai ${hoSoHienTai(p).maHoSo}` })
       }
 
@@ -338,7 +380,11 @@ function traCuuCuaSo(p, viTri, ghiFile) {
   p.buoc = 'tra_cuu'
   return traYeuCau(p, {
     viec: 'goi', buoc: p.buoc, nghi: 5000, ghiFile,
-    yeuCau: yc.traCuu(p.csrf, p.cuaSo[viTri], p.maCaptcha, 0),
+    // Chọn đúng tab theo cửa sổ. Gọi nhầm tab thì cổng trả bảng RỖNG chứ không báo lỗi — nhìn y
+    // hệt "công ty không nộp gì", nên đừng bao giờ gọi thẳng một trong hai hàm.
+    yeuCau: p.cuaSo[viTri].nguon === 'etax'
+      ? yc.traCuuEtax(p.csrf, p.cuaSo[viTri], p.maCaptcha)
+      : yc.traCuu(p.csrf, p.cuaSo[viTri], p.maCaptcha, 0),
     tienDo: `Tra cửa sổ ${viTri + 1}/${p.cuaSo.length} (${p.cuaSo[viTri].tuNgay} – ${p.cuaSo[viTri].denNgay})`,
   })
 }
@@ -354,7 +400,19 @@ function hoSoKeTiep(p, ghiFile) {
       tienDo: `Cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length} — hồ sơ ${p.viHangDoi + 1}/${p.hangDoi.length}`,
     })
   }
-  if (p.viCuaSo + 1 < p.cuaSo.length) return traCuuCuaSo(p, p.viCuaSo + 1, ghiFile)
+  if (p.viCuaSo + 1 < p.cuaSo.length) {
+    // TAB CŨ KHÔNG CHO DÙNG LẠI MÃ CAPTCHA (đo thật 11/10/2026) — mỗi cửa sổ một mã mới. Tab DVC
+    // thì dùng lại được cả phiên, giữ nguyên như cũ để khỏi bắt gõ thêm vô ích.
+    if (p.cuaSo[p.viCuaSo + 1].nguon === 'etax') {
+      p.viCuaSo += 1
+      p.buoc = 'anh_captcha_tc'
+      return traYeuCau(p, {
+        viec: 'goi', buoc: p.buoc, nghi: 5000, ghiFile, yeuCau: yc.anhCaptcha(),
+        tienDo: `Cửa sổ ${p.viCuaSo + 1}/${p.cuaSo.length} (hồ sơ cũ) — cần mã mới`,
+      })
+    }
+    return traCuuCuaSo(p, p.viCuaSo + 1, ghiFile)
+  }
   p.buoc = 'dang_xuat'
   return traYeuCau(p, { viec: 'goi', buoc: p.buoc, ghiFile, yeuCau: yc.dangXuat(p.csrf), tienDo: 'Đang đăng xuất' })
 }
@@ -368,7 +426,7 @@ function tiepThongBao(p, ghiFile) {
     if (!tb.portalId) return tiepThongBao(p, ghiFile)
     p.buoc = 'tai_thong_bao'
     return traYeuCau(p, {
-      viec: 'goi', buoc: p.buoc, yeuCau: yc.taiThongBao(p.tokenTai, tb.portalId),
+      viec: 'goi', buoc: p.buoc, yeuCau: yc.taiThongBao(p.tokenTai, tb.portalId, hoSoHienTai(p)?.nguon),
       ghiFile, tienDo: `Tải thông báo ${p.viThongBao}/${ds.length}`,
     })
   }
@@ -382,7 +440,11 @@ function duongDanFileToKhai(p, hs, noiDungJson) {
     const j = JSON.parse(noiDungJson)
     if (!j?.content) { p.loi.push(`${hs.maHoSo}: cổng không trả nội dung tờ khai`); return null }
     const loai = timLoai(p, hs)
-    const ky = chuanHoaKy(hs.kyTinhThue, loai?.period_kind || 'quarter') || 'PS.' + (hs.ngayNop || '').slice(0, 10)
+    // Mặc định 'month' chứ KHÔNG phải 'quarter': cổng ghi quý có tiền tố ('Q4/2024'), năm để
+    // trần ('2024'), tháng cũng để trần ('03/2025'). Chuỗi trần rơi xuống nhánh đoán gần như
+    // chắc chắn là tháng. Phải khớp y hệt lib/tokhaiGhi.js, nếu không TÊN FILE và KỲ TRONG APP
+    // lệch nhau — file nằm một thư mục, app ghi một kỳ khác.
+    const ky = chuanHoaKy(hs.kyTinhThue, loai?.period_kind || 'month') || 'PS.' + (hs.ngayNop || '').slice(0, 10)
     const boSung = soLanBoSung(hs)
     p.soFile++
     return {
@@ -404,7 +466,7 @@ function duongDanFileThongBao(p, hs, tb, noiDungJson) {
     const j = JSON.parse(noiDungJson)
     if (!j?.content) return null
     const loai = timLoai(p, hs)
-    const ky = chuanHoaKy(hs.kyTinhThue, loai?.period_kind || 'quarter') || 'PS.' + (hs.ngayNop || '').slice(0, 10)
+    const ky = chuanHoaKy(hs.kyTinhThue, loai?.period_kind || 'month') || 'PS.' + (hs.ngayNop || '').slice(0, 10)
     const boSung = soLanBoSung(hs)
     p.soFile++
     return {
@@ -422,9 +484,17 @@ function duongDanFileThongBao(p, hs, tb, noiDungJson) {
 
 const duoiTheoKieu = kieu => /zip/i.test(kieu || '') ? 'zip' : /pdf/i.test(kieu || '') ? 'pdf' : 'xml'
 
+// Tìm loại tờ khai để đặt TÊN FILE. Ba cách, từ chắc chắn tới suy đoán.
+//
+// ⚠ Cách thứ ba (đoán từ tên) là BẮT BUỘC cho hồ sơ tab cũ: bảng tab đó không có mã tờ khai và
+// tên cũng không kèm mã. Thiếu nó thì mọi hồ sơ cũ đặt tên TK_KHAC_… — gặp thật 11/10/2026:
+// ba hồ sơ khác nhau (báo cáo tài chính, quyết toán TNDN, quyết toán TNCN) cùng kỳ NAM.2024 ra
+// ba file TRÙNG TÊN, chỉ phân biệt bằng _v2, _v3. Kế toán mở thư mục ra không biết file nào là
+// tờ gì.
 function timLoai(p, hs) {
   return p.loaiTK.find(t => t.ma_tkhai_portal && t.ma_tkhai_portal === hs.maToKhaiCong)
     || p.loaiTK.find(t => hs.tenToKhai && t.code === hs.tenToKhai.split(' - ')[0].trim())
+    || p.loaiTK.find(t => t.code === doanLoaiToKhaiTuTen(hs.tenToKhai))
     || null
 }
 
