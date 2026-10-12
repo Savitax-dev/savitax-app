@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { canWriteAccountingDebt } from '@/lib/debtScope'
 import { phongCuaMotCongTy } from '@/lib/clientRoom'
+import { roomsWithRole } from '@/lib/roleUnion'
 
 // Hồ sơ "Dịch vụ khác" của một công ty (sql/24_dich_vu_khac.sql).
 //
@@ -29,10 +30,11 @@ const num = (v) => Math.round(Number(v) || 0)
 async function canCloseEarly(supabase, caller, client) {
   const roles = caller.roles?.length ? caller.roles : [caller.role].filter(Boolean)
   if (roles.includes('admin')) return true
-  if (!roles.includes('leader') && !roles.includes('manager')) return false
+  // Chỉ ở phòng mình LÀM trưởng phòng / quản lý (kiêm nhiệm thì đúng phòng kiêm nhiệm).
+  const phongTruong = roomsWithRole(caller, ['leader', 'manager'])
+  if (!phongTruong.length) return false
   const phong = await phongCuaMotCongTy(supabase, client)
-  const rooms = caller.roomIds?.length ? caller.roomIds : [caller.roomId].filter(Boolean)
-  return !!phong && rooms.includes(phong)
+  return !!phong && phongTruong.includes(phong)
 }
 
 async function loadServices(supabase, clientId) {

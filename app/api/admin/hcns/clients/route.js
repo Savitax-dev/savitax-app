@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { roomsWithRole } from '@/lib/roleUnion'
 import { requireLogin, callerHasPermission } from '@/lib/serverAuth'
 import { writeHcnsFeePlan, applyScheduledHcnsStops, stopHcnsForClient, syncHcnsForClient } from '@/lib/hcnsSync'
 import { hcnsDueState } from '@/lib/hcnsDue'
@@ -267,7 +268,7 @@ async function canEditLinkedFee(supabase, caller, linkedClientId) {
     .select('assigned_to, room_id').eq('id', linkedClientId).maybeSingle()
   if (!c) return false
   if (c.assigned_to === caller.staffId) return true
-  if (c.room_id && rooms.includes(c.room_id) && roles.includes('leader')) return true
+  if (c.room_id && roomsWithRole(caller, ['leader']).includes(c.room_id)) return true
   const mc = await callerHasPermission('manage_clients')
   return mc.ok
 }

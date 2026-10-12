@@ -139,9 +139,12 @@ export default function RoomPage({ params }) {
       const roomIds = me.roomIds?.length ? me.roomIds : [me.roomId].filter(Boolean)
       const canEnter = roles.includes('admin') || roomIds.includes(roomId) || (roles.includes('leader') && isSharedRoom(roomId))
       if (!canEnter) setForbidden(true)
-      setIsAdmin(roles.some(r => ['admin', 'leader', 'manager'].includes(r)))
+      // Quyền trưởng phòng tính theo ĐÚNG phòng đang xem (anh chốt 12/10/2026): kiêm Trưởng phòng
+      // Danxia thì ở trang phòng Grand vẫn chỉ là nhân viên.
+      const laTruongOday = (me.leaderRoomIds || []).includes(roomId) || ((me.leaderRoomIds || []).length > 0 && isSharedRoom(roomId))
+      setIsAdmin(roles.includes('admin') || laTruongOday)
       setIsTrueAdmin(roles.includes('admin'))
-      setCanUncheck(await hasPermission(roles, 'uncheck_task'))
+      setCanUncheck(await hasPermission(me.roomRoles?.[roomId] || [me.role].filter(Boolean), 'uncheck_task'))
       setReady(true)
     }
     check()

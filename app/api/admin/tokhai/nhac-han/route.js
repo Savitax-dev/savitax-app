@@ -7,6 +7,7 @@
 // 10 ngày trước cho kế toán có thời gian xoay, và giữ nguyên các kỳ ĐÃ QUÁ HẠN mà chưa nộp —
 // quá hạn là thứ càng phải nhắc, không được im lặng.
 import { createClient } from '@supabase/supabase-js'
+import { roomsWithRole } from '@/lib/roleUnion'
 import { requireLogin } from '@/lib/serverAuth'
 import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
 import { nhanKy } from '@/lib/taxDeadline'
@@ -42,6 +43,8 @@ export async function GET() {
   const rooms = caller.roomIds?.length ? caller.roomIds : [caller.roomId].filter(Boolean)
   const laAdmin = roles.includes('admin')
   const laTruongPhong = roles.includes('leader')
+  // Trưởng phòng thấy cả phòng — nhưng chỉ phòng mình LÀM TRƯỞNG (kiêm nhiệm: đúng phòng kiêm nhiệm).
+  const phongLamTruong = roomsWithRole(caller, ['leader'])
 
   const homNay = new Date().toISOString().slice(0, 10)
   const denNgay = new Date(Date.now() + NGAY_NHAC_TRUOC * 864e5).toISOString().slice(0, 10)
@@ -72,7 +75,7 @@ export async function GET() {
       .filter(c => laAdmin
         || c.assigned_to === caller.staffId
         || phu.has(c.id)
-        || (laTruongPhong && rooms.includes(phongCuaCty.get(c.id))))
+        || phongLamTruong.includes(phongCuaCty.get(c.id)))
       .map(c => c.id))
 
     let nghiaVu = dsNghiaVu.filter(o => trongPhamVi.has(o.client_id))

@@ -6,6 +6,7 @@
 //
 // Cùng bộ chỉ số cho cả hai mức, để trưởng phòng và giám đốc đọc một kiểu bảng duy nhất.
 import { createClient } from '@supabase/supabase-js'
+import { roomsWithRole } from '@/lib/roleUnion'
 import { requireLogin } from '@/lib/serverAuth'
 import { cacKyTrongNam, kyQuyetToanNam, nhanKy } from '@/lib/taxDeadline'
 import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
@@ -64,6 +65,8 @@ export async function GET(request) {
   const rooms = caller.roomIds?.length ? caller.roomIds : [caller.roomId].filter(Boolean)
   const laAdmin = roles.includes('admin')
   const laTruongPhong = roles.includes('leader')
+  // Trưởng phòng thấy cả phòng — nhưng chỉ phòng mình LÀM TRƯỞNG (kiêm nhiệm: đúng phòng kiêm nhiệm).
+  const phongLamTruong = roomsWithRole(caller, ['leader'])
 
   const homNayISO = new Date().toISOString().slice(0, 10)
 
@@ -91,7 +94,7 @@ export async function GET(request) {
       clients = clients.filter(c =>
         c.assigned_to === caller.staffId
         || phu.has(c.id)
-        || (laTruongPhong && rooms.includes(phongCuaCty.get(c.id))))
+        || phongLamTruong.includes(phongCuaCty.get(c.id)))
     }
     // Phòng HCNS và Kinh doanh không làm tờ khai → loại khỏi báo cáo cho khỏi nhiễu,
     // giống cách KPI và công nợ đang loại.

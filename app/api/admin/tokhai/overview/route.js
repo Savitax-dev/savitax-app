@@ -6,6 +6,7 @@
 //     phụ trách (chính hoặc phụ). Giống lib/credentialScope.js nhưng lọc theo lô cho nhanh,
 //     không hỏi từng công ty một.
 import { createClient } from '@supabase/supabase-js'
+import { roomsWithRole } from '@/lib/roleUnion'
 import { requireLogin } from '@/lib/serverAuth'
 import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
 import { cacKyTrongNam, kyQuyetToanNam, nhanKy } from '@/lib/taxDeadline'
@@ -41,6 +42,8 @@ export async function GET(request) {
   const rooms = caller.roomIds?.length ? caller.roomIds : [caller.roomId].filter(Boolean)
   const laAdmin = roles.includes('admin')
   const laTruongPhong = roles.includes('leader')
+  // Trưởng phòng thấy cả phòng — nhưng chỉ phòng mình LÀM TRƯỞNG (kiêm nhiệm: đúng phòng kiêm nhiệm).
+  const phongLamTruong = roomsWithRole(caller, ['leader'])
 
   const homNayISO = new Date().toISOString().slice(0, 10)
 
@@ -76,7 +79,7 @@ export async function GET(request) {
       clients = clients.filter(c =>
         c.assigned_to === caller.staffId
         || phu.has(c.id)
-        || (laTruongPhong && rooms.includes(phongCuaCty.get(c.id))))
+        || phongLamTruong.includes(phongCuaCty.get(c.id)))
     }
 
     if (!clients.length) {

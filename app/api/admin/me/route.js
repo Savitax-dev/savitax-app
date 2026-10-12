@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
+import { roomsWithRole, rolesFor } from '@/lib/roleUnion'
 
 // GET /api/admin/me — thông tin phân quyền của chính người đang đăng nhập.
 //
@@ -32,5 +33,8 @@ export async function GET() {
     roomId: c.roomId,      // phòng chính
     roles: c.roles || [c.role].filter(Boolean),
     roomIds: c.roomIds || [c.roomId].filter(Boolean),
+    // Quyền THEO PHÒNG: vai trò kiêm nhiệm chỉ có hiệu lực ở đúng phòng kiêm nhiệm.
+    leaderRoomIds: roomsWithRole(c, ['leader', 'manager']),
+    roomRoles: Object.fromEntries((c.roomIds || [c.roomId].filter(Boolean)).map(id => [id, rolesFor(c, id)])),
   })
 }
