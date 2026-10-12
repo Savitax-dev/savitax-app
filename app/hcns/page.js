@@ -528,7 +528,10 @@ function ReportBlock({ report, mode, setMode, selYear, selMonth, setSelYear, set
           <h2 className="text-sm font-bold text-slate-900">Thời kỳ</h2>
           <span className="text-xs px-2 py-0.5 rounded-full bg-[#FCE8E8] text-[#8B1A1A] border border-[#E8B4B4]">{tk.clientCount} công ty</span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        {/* Hai thẻ KPI chia đôi chiều ngang. Thẻ "Nợ tồn HCNS chuyển tháng sau" đã bỏ (anh yêu cầu
+            12/10/2026): số đó đọc từ sổ nợ tồn nên thiếu, và khối dòng tiền ngay bên dưới đã có "Tồn đầu kỳ
+            chuyển sang" tính đủ. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <div className="bg-white border border-indigo-200 border-t-[3px] border-t-indigo-600 rounded-b-xl p-3">
             <p className="text-xs text-indigo-800">KPI Công nợ — trung bình theo nhân viên</p>
             <p className={'text-3xl font-bold mt-0.5 leading-none ' + pctText(tk.debtPercent)}>
@@ -545,27 +548,12 @@ function ReportBlock({ report, mode, setMode, selYear, selMonth, setSelYear, set
             <div className="mt-2"><Meter value={tk.taskPercent ?? 0} /></div>
             <p className="text-xs text-slate-600 mt-1.5">Checklist DV HCNS Thời Kỳ · chỉ tính việc đúng hạn</p>
           </div>
-          {/* Nợ tồn có NGUỒN HCNS. Kỳ nào không thu đủ, qua ngày 10 tháng sau sẽ tự chuyển vào
-              đây và phải thu ở mục "Nợ tồn cũ" trong hồ sơ công ty. */}
-          <div className="bg-white border border-orange-200 border-t-[3px] border-t-orange-500 rounded-b-xl p-3">
-            <p className="text-xs text-orange-800">Nợ tồn HCNS chuyển tháng sau</p>
-            <p className={'text-3xl font-bold mt-0.5 leading-none ' +
-              (tk.oldDebt > 0 ? 'text-orange-600' : 'text-[#2E6B3A]')}>
-              {fmt(tk.oldDebt || 0)}đ
-            </p>
-            <p className="text-xs text-slate-600 mt-2">
-              {tk.oldDebt > 0
-                ? tk.oldDebtClients + ' công ty · thu ở mục “Nợ tồn cũ”'
-                : 'Chưa có kỳ nào quá hạn chuyển sang'}
-            </p>
-            <p className="text-xs text-slate-500 mt-1.5">Tính đến hiện tại, không theo tháng đang chọn</p>
-          </div>
         </div>
         {tk.flow && (() => {
           const nameOf = new Map((tk.perStaff || []).map(x => [x.staffId, x.staffName]))
           return (
             <FlowTiles flow={tk.flow} unit="cty"
-              note="Tồn đầu kỳ = nợ tồn HCNS còn lại của các tháng trước kỳ. Tháng đã chuyển nợ tồn thì còn phải thu lấy theo số nợ tồn còn lại."
+              note="Tồn đầu kỳ + phí trong kỳ − đã thu = còn phải thu chuyển kỳ sau (cùng nguyên tắc với công nợ kế toán). Tồn đầu kỳ là phần chưa thu của các tháng trước, tính từ T9/2026 — tháng bắt đầu tách phí HCNS."
               rows={(tk.perClient || []).map(c => ({
                 id: c.id, name: c.name, sub: c.assigned_to ? nameOf.get(c.assigned_to) : 'Chưa phân công',
                 opening: c.opening || 0, fee: c.dueFee, paid: c.collected, remain: c.totalRemain || 0,
@@ -725,14 +713,14 @@ function OnTimeTile({ ot }) {
 function FlowTiles({ flow, rows, unit, note }) {
   const [open, setOpen] = useState(null)   // null | 'opening' | 'fee' | 'paid' | 'remain'
   const TILES = [
-    ['opening', 'Tồn đầu kỳ',      'bg-amber-50 border-amber-300 text-amber-900',   flow.opening],
+    ['opening', 'Tồn đầu kỳ chuyển sang', 'bg-amber-50 border-amber-300 text-amber-900',   flow.opening],
     ['fee',     '+ Phí trong kỳ',  'bg-blue-50 border-blue-200 text-blue-900',      flow.periodFee],
     ['paid',    '− Đã thu',        'bg-emerald-50 border-emerald-200 text-emerald-900', flow.periodPaid],
-    ['remain',  '= Còn phải thu',  flow.remain > 0 ? 'bg-red-50 border-red-300 text-[#8B1A1A]' : 'bg-emerald-50 border-emerald-200 text-emerald-900', flow.remain],
+    ['remain',  '= Còn phải thu chuyển kỳ sau', flow.remain > 0 ? 'bg-red-50 border-red-300 text-[#8B1A1A]' : 'bg-emerald-50 border-emerald-200 text-emerald-900', flow.remain],
   ]
   const count = (k) => rows.filter(r => r[k] > 0).length
   const shown = open ? rows.filter(r => r[open] > 0).sort((a, b) => b[open] - a[open]) : []
-  const label = { opening: 'Có tồn đầu kỳ', fee: 'Có phí trong kỳ', paid: 'Đã thu trong kỳ', remain: 'Còn phải thu' }
+  const label = { opening: 'Có tồn đầu kỳ', fee: 'Có phí trong kỳ', paid: 'Đã thu trong kỳ', remain: 'Còn phải thu chuyển kỳ sau' }
   return (
     <div className="mb-3">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
@@ -826,7 +814,7 @@ function CaseBlock({ title, data, wide }) {
 
       {data.flow && (
         <FlowTiles flow={data.flow} unit="hồ sơ"
-          note="Tồn đầu kỳ = chi phí dịch vụ nhận trước kỳ trừ tiền đã thu trước kỳ. Phí trong kỳ = dịch vụ nhận trong kỳ. Đã thu = tiền ghi nhận trong kỳ."
+          note="Tồn đầu kỳ + phí trong kỳ − đã thu = còn phải thu chuyển kỳ sau. Tồn đầu kỳ = chi phí dịch vụ nhận trước kỳ trừ tiền đã thu trước kỳ; phí trong kỳ = dịch vụ nhận trong kỳ; đã thu tính theo ngày khách trả."
           rows={cases.map(c => ({
             id: c.id, name: c.name, sub: [c.caseCode, c.staffName].filter(Boolean).join(' · ') + (c.allDone ? ' · xong việc' : ''),
             opening: c.opening || 0, fee: c.periodFee || 0, paid: c.periodPaid || 0, remain: c.periodRemain || 0,

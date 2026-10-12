@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { isSharedRoom } from '@/lib/specialRooms'
+import { roomsWithRole } from '@/lib/roleUnion'
 import { tinhDongTienPhong, gopDongTien } from '@/lib/dongTienPhong'
 import { loadHcnsFees } from '@/lib/hcnsPhiCongTy'
 
@@ -68,7 +69,9 @@ export async function GET(request) {
   ])
   // Phòng Kinh doanh / HCNS không thu phí kế toán -> không đưa vào bộ lọc.
   const phongNghiepVu = (rooms || []).filter(r => r.type !== 'kinhdoanh' && r.type !== 'hcns')
-  const duocXemPhong = (id) => laAdmin || (laQuanLy && (phongCuaToi.includes(id) || (roles.includes('leader') && isSharedRoom(id))))
+  // Xem được cả phòng chỉ ở phòng mình LÀM trưởng phòng / quản lý (kiêm nhiệm: đúng phòng kiêm nhiệm).
+  const phongTruong = roomsWithRole(caller, ['leader', 'manager'])
+  const duocXemPhong = (id) => laAdmin || phongTruong.includes(id) || (roomsWithRole(caller, ['leader']).length > 0 && isSharedRoom(id))
   const staffDuocXem = (staffAll || []).filter(s => laAdmin || s.id === caller.staffId || (s.room_id && duocXemPhong(s.room_id)))
   const idDuocXem = new Set(staffDuocXem.map(s => s.id))
   const tenPhong = new Map((rooms || []).map(r => [r.id, r.name]))

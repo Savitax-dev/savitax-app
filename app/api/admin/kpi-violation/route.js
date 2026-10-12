@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { isSharedRoom } from '@/lib/specialRooms'
+import { roomsWithRole } from '@/lib/roleUnion'
 
 // Đánh dấu / gỡ VI PHẠM cho một nhân viên ở một tháng (xem lib/viPham.js).
 //   POST   { staffId, year, month, reason }  -> đánh dấu (đã có thì cập nhật lý do)
@@ -17,10 +18,11 @@ async function kiemQuyen(supabase, caller, staffId) {
   const { data: nv } = await supabase.from('staff').select('id, full_name, room_id').eq('id', staffId).maybeSingle()
   if (!nv) return { ok: false, status: 404, error: 'Không tìm thấy nhân viên' }
   if (roles.includes('admin')) return { ok: true, nv }
-  if (!roles.includes('leader') && !roles.includes('manager')) return { ok: false, status: 403, error: 'Chỉ Trưởng phòng hoặc Quản trị được đánh dấu vi phạm' }
+  // Phòng mình LÀM trưởng phòng / quản lý — kiêm nhiệm thì chỉ đúng phòng kiêm nhiệm.
+  const phongTruong = roomsWithRole(caller, ['leader', 'manager'])
+  if (!phongTruong.length) return { ok: false, status: 403, error: 'Chỉ Trưởng phòng hoặc Quản trị được đánh dấu vi phạm' }
   if (staffId === caller.staffId) return { ok: false, status: 403, error: 'Không tự đánh dấu / gỡ vi phạm cho chính mình' }
-  const rooms = caller.roomIds?.length ? caller.roomIds : [caller.roomId].filter(Boolean)
-  if (nv.room_id && (rooms.includes(nv.room_id) || (roles.includes('leader') && isSharedRoom(nv.room_id)))) return { ok: true, nv }
+  if (nv.room_id && (phongTruong.includes(nv.room_id) || (roomsWithRole(caller, ['leader']).length && isSharedRoom(nv.room_id)))) return { ok: true, nv }
   return { ok: false, status: 403, error: 'Nhân viên này không thuộc phòng của bạn' }
 }
 

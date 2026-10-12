@@ -119,14 +119,24 @@ export async function GET(request) {
   // AGENTS.md: tháng ĐÃ chuyển nợ tồn thì "còn phải thu" lấy remaining_amount, KHÔNG lấy phí − thu
   // (thu qua Nợ tồn cũ không quay lại tháng gốc — lấy phí − thu sẽ báo nợ oan).
   const rollRemain = new Map()
+  const traQuaNoTon = new Map()   // (công ty kế toán)_(năm*12+tháng) -> tiền trả nợ HCNS qua "Nợ tồn cũ"
   if (linkedIds.length) {
     const { data: rolls } = await supabase.from('debt_rollovers')
-      .select('client_id, year, month, remaining_amount').in('client_id', linkedIds)
+      .select('client_id, year, month, rolled_amount, remaining_amount').in('client_id', linkedIds)
       .eq('source', 'hcns')
     const perClientDebt = new Map()
     for (const r of rolls || []) {
       const v = Number(r.remaining_amount) || 0
       rollRemain.set(r.client_id + '_' + r.year + '_' + r.month, v)
+      // Phần nợ HCNS đã chốt mà khách trả qua "Nợ tồn cũ": tiền đó ghi chung túi `no_ton` với kế
+      // toán nên không nằm trong hcns_service_fees — chỉ suy được từ (đã chốt − còn lại). Không biết
+      // ngày trả, nên tính vào THÁNG KẾ của tháng gốc (sớm nhất có thể trả, vì sổ chốt ngày 11 tháng
+      // kế). Quy ước cố định một chỗ thì tồn đầu kỳ và chuyển kỳ sau vẫn nối đúng nhau.
+      const daTra = Math.max(0, (Number(r.rolled_amount) || 0) - v)
+      if (daTra > 0) {
+        const kk = r.client_id + '_' + (r.year * 12 + r.month + 1)
+        traQuaNoTon.set(kk, (traQuaNoTon.get(kk) || 0) + daTra)
+      }
       if (v <= 0) continue
       hcnsOldDebt += v
       perClientDebt.set(r.client_id, (perClientDebt.get(r.client_id) || 0) + v)
@@ -135,23 +145,38 @@ export async function GET(request) {
   }
   const periodStartKey = year * 12 + (months[0] - 1)
 
+  // DÒNG TIỀN THEO NGUYÊN TẮC CỦA KẾ TOÁN (anh yêu cầu 12/10/2026, xem lib/dongTienPhong.js):
+  //     tồn đầu kỳ + phí trong kỳ − đã thu = còn phải thu chuyển kỳ sau
+  // và chuyển kỳ sau của T(n) phải bằng tồn đầu kỳ của T(n+1). Nên tồn đầu kỳ là SỐ DƯ CHẠY DẦN từng
+  // tháng kể từ kỳ tách phí HCNS (T9/2026), KHÔNG đọc sổ nợ tồn: sổ chỉ chốt sau ngày 10, lại chốt
+  // lười (công ty nào được mở trang mới chốt) — đo thật 12/10: sổ mới có 2 công ty / 4.320.000đ trong
+  // khi phí T9 chưa thu của cả phòng lớn hơn nhiều.
+  const HCNS_TU_KEY = 2026 * 12 + 9
+  const phiThang = (c, y, m) => feeCountsForMonth(c.fee_period, y, m, now)
+    ? (Number(resolveHcnsFeeForMonth(planRows, c.id, y, m, c.hcns_fee, c.created_at)) || 0) : 0
+  const thuThang = (c, y, m) => (paidMap.get(c.id + '_' + y + '_' + m) || 0)
+    + (c.linked_client_id ? (traQuaNoTon.get(c.linked_client_id + '_' + (y * 12 + m)) || 0) : 0)
+  const kyDau = year * 12 + months[0]
+
   const perClient = thoiKy.map(c => {
-    let dueFee = 0, collected = 0, periodRemain = 0
+    // Số dư chạy tới đầu kỳ đang xem.
+    let soDu = 0
+    for (let k = HCNS_TU_KEY; k < kyDau; k++) {
+      const y = Math.floor((k - 1) / 12), m = k - y * 12
+      soDu = Math.max(0, soDu + phiThang(c, y, m) - thuThang(c, y, m))
+    }
+    const opening = soDu
+    let dueFee = 0, collected = 0
     for (const m of months) {
-      if (!feeCountsForMonth(c.fee_period, year, m, now)) continue
-      const fee = resolveHcnsFeeForMonth(planRows, c.id, year, m, c.hcns_fee, c.created_at)
-      const got = paidMap.get(c.id + '_' + year + '_' + m) || 0
+      // Tháng chưa tới thì chưa phát sinh phí (xem Quý / Năm).
+      if (year * 12 + m > now.getFullYear() * 12 + now.getMonth() + 1) continue
+      const fee = phiThang(c, year, m), got = thuThang(c, year, m)
       dueFee += fee
       collected += got
-      const rk = c.linked_client_id + '_' + year + '_' + m
-      periodRemain += rollRemain.has(rk) ? rollRemain.get(rk) : Math.max(0, fee - got)
+      soDu = Math.max(0, soDu + fee - got)     // chạy lần lượt từng tháng, chặn sàn 0 mỗi bước
     }
-    // Tồn đầu kỳ = nợ tồn HCNS (còn lại tới hôm nay) của các tháng TRƯỚC kỳ đang xem.
-    let opening = 0
-    for (const [k, v] of rollRemain) {
-      const [cid, y, mm] = k.split('_')
-      if (cid === c.linked_client_id && Number(y) * 12 + (Number(mm) - 1) < periodStartKey) opening += v
-    }
+    const periodRemain = Math.max(0, soDu - opening)
+    const totalRemainMoi = soDu
     // %-công việc lấy theo tháng đang xem (checklist là việc của từng tháng, không cộng dồn kỳ).
     const doneThisMonth = recDone.get(c.id + '_' + year + '_' + months[months.length - 1]) || 0
     return {
@@ -163,7 +188,7 @@ export async function GET(request) {
       freeOfCharge: (Number(c.hcns_fee) || 0) === 0,
       remain: Math.max(0, dueFee - collected),
       opening, periodRemain,
-      totalRemain: opening + periodRemain,
+      totalRemain: totalRemainMoi,   // = còn phải thu chuyển kỳ sau
       debtPercent: dueFee > 0 ? Math.round(collected / dueFee * 100) : null,
       taskDone: doneThisMonth, taskTotal,
       taskPercent: taskTotal > 0 ? Math.round(doneThisMonth / taskTotal * 100) : null,
@@ -273,7 +298,10 @@ export async function GET(request) {
       else if (d <= p1) paidIn += Number(p.amount) || 0
     }
     const opening = Math.max(0, costBefore - paidBefore)
-    return { opening, periodFee: costIn, periodPaid: paidIn, remain: Math.max(0, opening + costIn - paidIn) }
+    // Còn phải thu chuyển kỳ sau tính từ số LUỸ KẾ (không cộng từ `opening` đã chặn sàn): khách trả
+    // trước ở kỳ trước cho dịch vụ nhận kỳ này thì khoản trả trước phải được trừ, và con số này phải
+    // đúng bằng tồn đầu kỳ của kỳ kế.
+    return { opening, periodFee: costIn, periodPaid: paidIn, remain: Math.max(0, costBefore + costIn - paidBefore - paidIn) }
   }
 
   const avg = (arr) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null

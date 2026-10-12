@@ -6,6 +6,7 @@
 // công ty là hơn một nghìn dòng — vừa nặng đường truyền vừa không ai đọc nổi. Mỗi công ty trả về
 // một dòng tóm tắt kèm danh sách hồ sơ bên trong, và phân trang theo CÔNG TY.
 import { createClient } from '@supabase/supabase-js'
+import { roomsWithRole } from '@/lib/roleUnion'
 import { requireLogin } from '@/lib/serverAuth'
 import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
 
@@ -44,6 +45,8 @@ export async function GET(request) {
   const rooms = caller.roomIds?.length ? caller.roomIds : [caller.roomId].filter(Boolean)
   const laAdmin = roles.includes('admin')
   const laTruongPhong = roles.includes('leader')
+  // Trưởng phòng thấy cả phòng — nhưng chỉ phòng mình LÀM TRƯỞNG (kiêm nhiệm: đúng phòng kiêm nhiệm).
+  const phongLamTruong = roomsWithRole(caller, ['leader'])
 
   try {
     // Tất cả đều không phụ thuộc nhau → MỘT vòng chờ. Bảng hồ sơ chỉ lọc theo kỳ, không dính
@@ -73,7 +76,7 @@ export async function GET(request) {
     let clients = dangPhucVu.filter(c => laAdmin
       || c.assigned_to === caller.staffId
       || phu.has(c.id)
-      || (laTruongPhong && rooms.includes(phongCuaCty.get(c.id))))
+      || phongLamTruong.includes(phongCuaCty.get(c.id)))
 
     if (roomId) clients = clients.filter(c => phongCuaCty.get(c.id) === roomId)
     if (staffId) clients = clients.filter(c => c.assigned_to === staffId)

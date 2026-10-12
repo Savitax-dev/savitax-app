@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { roomsWithRole } from '@/lib/roleUnion'
 import { requireLogin } from '@/lib/serverAuth'
 import { resolveFeeForMonthWithSource } from '@/lib/feeDue'
 import { hcnsStartMonth } from '@/lib/hcnsFee'
@@ -167,7 +168,7 @@ async function canWriteHcnsDebt(supabase, caller, hcnsClient) {
     const { data: c } = await supabase.from('clients')
       .select('assigned_to, room_id').eq('id', hcnsClient.linked_client_id).maybeSingle()
     if (c?.assigned_to === caller.staffId) return true
-    if (c?.room_id && rooms.includes(c.room_id) && roles.includes('leader')) return true
+    if (c?.room_id && roomsWithRole(caller, ['leader']).includes(c.room_id)) return true
   }
 
   const { data: roleRows } = await supabase.from('roles').select('is_system').in('id', roles)
