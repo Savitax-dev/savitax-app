@@ -6,7 +6,7 @@
 // _BSLn và tên file — sai lặng lẽ, chỉ lộ khi kế toán mở thư mục khách đi tìm.
 //
 // HTML dưới đây dựng lại theo đúng bảng anh chụp ngày 11/10/2026 (3 bản ghi của PAPER ART VIỆT).
-import { docBangKetQuaEtax, doanLoaiToKhaiTuTen } from '../lib/dvcPortal.js'
+import { docBangKetQuaEtax, doanLoaiToKhaiTuTen, chuanHoaTrangThai } from '../lib/dvcPortal.js'
 import { chuanHoaKy } from '../lib/taxDeadline.js'
 
 let dat = 0, hong = 0
@@ -100,6 +100,23 @@ kiem("'Q4/2024' → quý 4", chuanHoaKy('Q4/2024', 'month'), 'Q4.2024')
 kiem("'2024' → năm", chuanHoaKy('2024', 'month'), 'NAM.2024')
 kiem("'03/2025' chưa biết loại → THÁNG 3, không phải quý 3", chuanHoaKy('03/2025', 'month'), 'T03.2025')
 kiem('loại tờ khai theo quý thì vẫn ra quý', chuanHoaKy('3/2025', 'quarter'), 'Q3.2025')
+
+console.log('')
+console.log('Trạng thái: nhãn nào CHỨA "chấp nhận" cũng phải ra đúng nghĩa của nó')
+// Ca thật 12/10/2026 (ĐẠI KHANG PHÁT): cổng ghi "Chờ chấp nhận" mà app hiện "Chấp nhận" —
+// báo xong cho việc chưa xong. Vì nhánh 'chấp nhận' xét trước nhánh 'chờ'.
+const tt = (chu, mong) => kiem(`"${chu}"`, chuanHoaTrangThai(chu), mong)
+tt('Chờ chấp nhận', 'received')
+tt('Chưa chấp nhận', 'received')
+tt('Không chấp nhận', 'rejected')
+tt('Cơ quan thuế chấp nhận hồ sơ khai thuế điện tử của NNT', 'accepted')
+tt('Chấp nhận việc nộp HSKT điện tử', 'accepted')
+tt('Đã gửi tờ khai thành công đến CQT', 'received')
+tt('Đã trả kết quả', 'received')
+kiem('nhãn lạ → coi như CHƯA xong, không đoán là accepted',
+  chuanHoaTrangThai('Một nhãn cổng chưa từng thấy'), 'received')
+kiem('rỗng → received, không nổ', chuanHoaTrangThai(''), 'received')
+kiem('null → received, không nổ', chuanHoaTrangThai(null), 'received')
 
 console.log(hong === 0 ? `\nTẤT CẢ ${dat} MỤC ĐỀU ĐẠT.` : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)
