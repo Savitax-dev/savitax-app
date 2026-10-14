@@ -115,8 +115,12 @@ export async function GET(request) {
     // Dòng "nợ tồn tự động" của các tháng trong kỳ đang xem — tháng đã chốt sổ chuyển nợ tồn thì
     // số nợ thật nằm ở remaining_amount, không còn là "phí trừ đã thu" nữa (khoản đó được thu ở
     // mục "Nợ tồn cũ", không tạo dòng 'ketoan' cho tháng gốc). Xem lib/debtRollover.js.
+    // CHỈ nguồn kế toán — trang này là công nợ KẾ TOÁN. Từ sql/28 một tháng có thể có hai dòng;
+    // không lọc thì nợ HCNS bị cộng vào nợ kế toán, và `months` đếm một tháng thành hai làm
+    // remainOf() rẽ nhầm sang nhánh "cả kỳ đã chốt sổ".
     fetchAllRows(() => supabase.from('debt_rollovers').select('client_id, year, month, remaining_amount')
-      .eq('year', year).in('month', months)),
+      .eq('year', year).in('month', months)
+      .or('source.is.null,source.eq.ketoan')),
   ])
 
   // Tự động chuyển nợ thiếu của các tháng trước thành nợ tồn — chỉ khi đang xem đúng tháng hiện tại.

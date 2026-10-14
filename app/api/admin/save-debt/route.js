@@ -145,8 +145,13 @@ export async function POST(request) {
     if (type === 'ketoan') {
       const delta = numAmount - prevAmount
       if (delta > 0) {
+        // CHỈ nguồn kế toán. Đây là nhánh `type === 'ketoan'` — thu phí kế toán thì trừ vào nợ tồn
+        // kế toán. Từ sql/28 một tháng có thể có hai dòng; thiếu bộ lọc này thì maybeSingle() gặp
+        // hai dòng sẽ lỗi, mà tệ hơn là nó có thể vớ đúng dòng HCNS và TRỪ NHẦM tiền khách nợ
+        // phí nhân sự bằng khoản khách trả phí kế toán.
         const { data: rollover } = await supabase.from('debt_rollovers')
-          .select('id, remaining_amount').eq('client_id', clientId).eq('year', numYear).eq('month', numMonth).maybeSingle()
+          .select('id, remaining_amount').eq('client_id', clientId).eq('year', numYear).eq('month', numMonth)
+          .or('source.is.null,source.eq.ketoan').maybeSingle()
         if (rollover && Number(rollover.remaining_amount) > 0) {
           const reduce = Math.min(delta, Number(rollover.remaining_amount))
           const { data: clientRow } = await supabase.from('clients').select('other_debt').eq('id', clientId).single()

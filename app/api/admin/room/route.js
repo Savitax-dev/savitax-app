@@ -126,8 +126,14 @@ export async function GET(request) {
     // chuyển sang nợ tồn và được thu ở mục "Nợ tồn cũ" (tạo dòng type='no_ton', KHÔNG tạo dòng
     // 'ketoan' cho tháng gốc) — nên "phí trừ đã thu" của tháng gốc không còn nói đúng số nợ nữa.
     // Số nợ thật của tháng đó là remaining_amount ở đây. Xem lib/debtRollover.js.
+    // CHỈ nguồn kế toán. Từ sql/28 một tháng có thể có hai dòng (kế toán + HCNS); không lọc thì
+    // rolloverMap bên dưới ghi đè dòng này bằng dòng kia và số nợ kế toán của tháng hiện sai.
+    // Phí HCNS đi đường riêng qua loadHcnsFees, không gộp vào đây.
+    // Dùng .or thay .eq: dòng cũ của bản clone chưa chạy sql/11 có thể để source rỗng, mà
+    // PostgREST loại luôn dòng rỗng khi so sánh bằng.
     fetchAllRows(() => supabase.from('debt_rollovers').select('client_id, remaining_amount')
-      .in('client_id', clientIds).eq('year', year).eq('month', month)),
+      .in('client_id', clientIds).eq('year', year).eq('month', month)
+      .or('source.is.null,source.eq.ketoan')),
   ])
 
   // Dấu "TP đã kiểm tra" của đúng tháng đang xem (sql/27). Bản clone chưa chạy file SQL đó thì

@@ -10,7 +10,7 @@ const now = new Date()
 const Y = now.getFullYear(), M = now.getMonth() + 1
 const prev = (n) => { let y = Y, m = M - n; while (m <= 0) { m += 12; y-- } return { year: y, month: m } }
 
-function makeDb({ hcnsClients, fees = [], rollovers = [], clients = [] }) {
+function makeDb({ hcnsClients, fees = [], rollovers = [], clients = [], chanGhi = null }) {
   const writes = { inserted: [], updated: [] }
   const q = (rows) => {
     const o = {
@@ -33,7 +33,14 @@ function makeDb({ hcnsClients, fees = [], rollovers = [], clients = [] }) {
       }
       if (table === 'debt_rollovers') return {
         ...q([...rollovers]),
-        insert(rows) { writes.inserted.push(...rows); return Promise.resolve({ error: null }) },
+        // `chanGhi(row)` tra ve chuoi loi de gia lap co so du lieu tu choi mot dong (hoac ca lo).
+        insert(rows) {
+          const list = Array.isArray(rows) ? rows : [rows]
+          const loi = chanGhi ? list.map(chanGhi).find(Boolean) : null
+          if (loi) return Promise.resolve({ error: { message: loi } })
+          writes.inserted.push(...list)
+          return Promise.resolve({ error: null })
+        },
       }
       throw new Error('bảng lạ: ' + table)
     },
@@ -128,6 +135,58 @@ console.log('\n8. Không có công ty nào → thoát ngay')
 {
   const r = await ensureHcnsRollovers(makeDb({ hcnsClients: [] }), [], Y, M)
   check('trả null', r === null)
+}
+
+console.log('\n9. Tháng đã có dòng nợ tồn KẾ TOÁN thì vẫn phải ghi được dòng HCNS')
+{
+  // Ca thật 14/10/2026 (BẢO VỆ HẬU CẦN THĂNG LONG): ràng buộc unique cũ của debt_rollovers thiếu
+  // cột source, nên dòng kế toán ghi trước là chặn luôn dòng HCNS cùng tháng. Mất 22.680.000đ nợ
+  // của 10 công ty mà giao diện không báo một chữ nào. Xem sql/28.
+  const p1 = prev(1)
+  const db = makeDb({
+    hcnsClients: [base()],
+    rollovers: [{ client_id: 'c1', year: p1.year, month: p1.month, source: 'ketoan' }],
+    clients: [{ id: 'c1', other_debt: 500000 }],
+  })
+  const r = await ensureHcnsRollovers(db, ['c1'], Y, M)
+  const dong = db.writes.inserted.find(x => x.year === p1.year && x.month === p1.month)
+  check('vẫn ghi dòng HCNS cho tháng đã có dòng kế toán', !!dong, 'inserted=' + r?.inserted)
+  check('và dòng đó mang source=hcns', dong?.source === 'hcns')
+}
+
+console.log('\n10. Ghi cả lô hỏng → ghi lại từng dòng, không mất sạch')
+{
+  // Chỉ chặn đúng MỘT kỳ: lô đầu hỏng vì có kỳ đó, các kỳ còn lại phải được cứu.
+  const p1 = prev(1)
+  const db = makeDb({
+    hcnsClients: [base()], clients: [{ id: 'c1', other_debt: 0 }],
+    chanGhi: (r) => (r.year === p1.year && r.month === p1.month)
+      ? 'duplicate key value violates unique constraint' : null,
+  })
+  const r = await ensureHcnsRollovers(db, ['c1'], Y, M)
+  check('vẫn ghi được các kỳ khác', db.writes.inserted.length > 0, 'ghi được ' + db.writes.inserted.length)
+  check('kỳ bị chặn không nằm trong danh sách đã ghi',
+    !db.writes.inserted.some(x => x.year === p1.year && x.month === p1.month))
+  check('inserted báo đúng số dòng THẬT SỰ ghi được', r?.inserted === db.writes.inserted.length,
+    'inserted=' + r?.inserted + ' vs ghi thật ' + db.writes.inserted.length)
+  // Quan trọng nhất: other_debt không được cộng phần không ghi được — nếu không thì thành nợ ảo
+  // không có dòng nợ tồn nào đỡ lưng, thu tiền cũng chẳng trừ vào đâu được.
+  const tongDaGhi = db.writes.inserted.reduce((a, x) => a + x.rolled_amount, 0)
+  check('other_debt chỉ cộng đúng phần đã ghi được',
+    db.writes.updated[0]?.other_debt === tongDaGhi,
+    'other_debt=' + db.writes.updated[0]?.other_debt + ' vs đã ghi ' + tongDaGhi)
+}
+
+console.log('\n11. Chặn SẠCH mọi dòng → trả null, không đụng other_debt')
+{
+  const db = makeDb({
+    hcnsClients: [base()], clients: [{ id: 'c1', other_debt: 0 }],
+    chanGhi: () => 'hỏng hết',
+  })
+  const r = await ensureHcnsRollovers(db, ['c1'], Y, M)
+  check('trả null', r === null)
+  check('không cộng đồng nào vào other_debt', db.writes.updated.length === 0,
+    JSON.stringify(db.writes.updated[0] || null))
 }
 
 console.log('\n' + (fail === 0 ? '✅ ' : '❌ ') + pass + ' đạt, ' + fail + ' hỏng')
