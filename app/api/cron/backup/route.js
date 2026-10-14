@@ -29,6 +29,11 @@ const TABLES = [
   'sales_leads', 'sales_quotes', 'sales_lead_activities', 'sales_channels',
   // Đối soát ngân hàng — giao dịch VPS đẩy lên + dấu vết đã ghi công nợ (post_detail)
   'bank_transactions', 'bank_action_logs',
+  // Thêm 13/10/2026 — soát lại lúc chụp toàn bộ dữ liệu thì thấy các bảng dựng từ 05/10 trở đi và cả
+  // phân hệ Tờ khai CHƯA có trong bản backup hằng tuần. Bảng nào thiếu (bản clone) sẽ tự bỏ qua.
+  'other_services', 'other_service_payments', 'debt_writeoffs', 'kpi_violations', 'hcns_headcount',
+  'tax_accounts', 'tax_filing_types', 'tax_filings', 'tax_notices', 'tax_obligations', 'tax_holidays',
+  'tax_client_filings', 'tax_sync_jobs', 'tax_access_logs',
 ]
 
 // Bảng không tồn tại (bản clone thiếu module HCNS/Kinh doanh) KHÔNG được làm hỏng cả bản backup

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -65,7 +65,13 @@ function SectionLabel({ children }) {
 let _sidebarCache = null // { user, rooms }
 export function clearSidebarCache() { _sidebarCache = null }
 
+// Vị trí cuộn của menu lúc người dùng bấm một mục. Mỗi trang tự dựng lại Sidebar (AppShell nằm trong
+// từng trang) nên menu nhảy về đầu sau khi chuyển trang — bấm mục ở khu Quản trị xong phải lướt xuống
+// lại. Nhớ ở biến module: sống qua các lần chuyển trang, tải lại cả trang thì về đầu như thường.
+let _navScroll = 0
+
 export default function Sidebar({ onClose }) {
+  const navRef = useRef(null)
   const router   = useRouter()
   const pathname = usePathname()
   const [user,       setUser]       = useState(_sidebarCache ? _sidebarCache.user : null)
@@ -76,6 +82,12 @@ export default function Sidebar({ onClose }) {
   const [roomsOpen,  setRoomsOpen]  = useState(false)
   const [logoError,  setLogoError]  = useState(false)
   const [permData,   setPermData]   = useState(null)
+
+  // Trả menu về đúng chỗ đang đứng. Chạy lại mỗi khi danh sách mục dài ra (quyền / phòng tải xong):
+  // lúc mới dựng, khu Quản trị chưa hiện nên menu còn ngắn, đặt một lần là bị cắt cụt.
+  useLayoutEffect(() => {
+    if (navRef.current && _navScroll > 0) navRef.current.scrollTop = _navScroll
+  }, [permData, user, roles, rooms, noAccounting])
 
   useEffect(() => {
     let cancelled = false
@@ -286,7 +298,8 @@ export default function Sidebar({ onClose }) {
       </div>
 
       {/* ── Nav ── */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
+      <nav ref={navRef} onClickCapture={() => { _navScroll = navRef.current ? navRef.current.scrollTop : 0 }}
+        className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
 
         <NavItem href="/dashboard"  icon="🏠" label="Trang chủ"           pathname={pathname} onClose={onClose} />
         <NavItem href="/clients"    icon="🏢" label="Danh sách công ty"   pathname={pathname} onClose={onClose} />
