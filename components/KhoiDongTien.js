@@ -202,9 +202,15 @@ export default function KhoiDongTien({ dongTien, hcnsOn, open, setOpen, staffNam
                           </p>
                           <button onClick={() => setOpen(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Đóng</button>
                         </div>
-                        <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 grid grid-cols-[1fr_96px_96px_96px_104px] gap-2 text-xs text-gray-400">
+                        {/* Bảng tồn đầu kỳ có thêm cột "Đã thu" — anh nêu 14/10/2026: thẻ chỉ hiện
+                            một con số tổng nên không biết đã thu của công ty nào. Bảng "chuyển kỳ
+                            sau" KHÔNG có cột này: đó là số dư CÒN LẠI, thu rồi thì đã trừ đi rồi,
+                            thêm cột nữa chỉ gây hiểu nhầm là còn nợ thêm. */}
+                        <div className={'px-4 py-2 bg-gray-50 border-b border-gray-100 gap-2 text-xs text-gray-400 grid '
+                          + (ton ? 'grid-cols-[1fr_88px_88px_88px_96px_124px]' : 'grid-cols-[1fr_96px_96px_96px_104px]')}>
                           <span>Công ty</span><span className="text-right">Kế toán</span><span className="text-right">HCNS</span>
                           <span className="text-right">DV khác</span><span className="text-right">Tổng</span>
+                          {ton && <span className="text-right">Đã thu</span>}
                         </div>
                         {k.theoCty.length === 0 ? (
                           <p className="px-4 py-4 text-xs text-gray-400">{ton ? 'Đầu kỳ không công ty nào còn nợ 🎉' : 'Tất cả đã thu đủ, không có gì chuyển kỳ sau 🎉'}</p>
@@ -214,8 +220,14 @@ export default function KhoiDongTien({ dongTien, hcnsOn, open, setOpen, staffNam
                               <p className="text-xs font-semibold text-gray-700">{g.name}</p>
                               <p className={'text-xs font-semibold ' + (ton ? 'text-orange-600' : 'text-red-600')}>{g.items.length} cty · {fmt(g.total)}đ</p>
                             </div>
-                            {g.items.map((x, i) => (
-                              <div key={x.clientId} className={'px-4 py-2 pl-7 border-b border-gray-50 grid grid-cols-[1fr_96px_96px_96px_104px] gap-2 items-center text-xs ' + zebra(i)}>
+                            {g.items.map((x, i) => {
+                              const thu = Number(x.daThuTon) || 0, xoa = Number(x.daXoaTon) || 0
+                              // "Đủ" tính cả phần xoá nợ — công ty được xoá nợ thì khoản tồn đó cũng
+                              // không còn phải đi đòi nữa, để nó nằm trong nhóm "chưa thu" là sai.
+                              const du = thu + xoa > 0 && thu + xoa >= x.total
+                              return (
+                              <div key={x.clientId} className={'px-4 py-2 pl-7 border-b border-gray-50 gap-2 items-center text-xs grid '
+                                + (ton ? 'grid-cols-[1fr_88px_88px_88px_96px_124px]' : 'grid-cols-[1fr_96px_96px_96px_104px]') + ' ' + zebra(i)}>
                                 <span className="text-gray-700 truncate">
                                   {x.name}
                                   {x.ngung && <span className="ml-1.5 text-[10px] font-semibold bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">Ngưng DV</span>}
@@ -224,10 +236,26 @@ export default function KhoiDongTien({ dongTien, hcnsOn, open, setOpen, staffNam
                                 <span className="text-right text-violet-600">{x.hcns > 0 ? fmt(x.hcns) : '—'}</span>
                                 <span className="text-right text-teal-600">{x.dvk > 0 ? fmt(x.dvk) : '—'}</span>
                                 <span className="text-right font-semibold text-gray-900">{fmt(x.total)}đ</span>
+                                {ton && (
+                                  thu + xoa <= 0
+                                    ? <span className="text-right text-gray-300">—</span>
+                                    : <span className={'text-right font-semibold ' + (du ? 'text-green-600' : 'text-amber-600')}
+                                        title={(thu > 0 ? 'Đã thu ' + fmt(thu) + 'đ' : '')
+                                          + (xoa > 0 ? (thu > 0 ? ' · ' : '') + 'Đã xoá nợ ' + fmt(xoa) + 'đ' : '')
+                                          + (du ? ' — hết nợ đầu kỳ' : ' — còn ' + fmt(x.total - thu - xoa) + 'đ')}>
+                                        {du ? '✓ ' : ''}{fmt(thu + xoa)}{xoa > 0 ? '*' : ''}
+                                      </span>
+                                )}
                               </div>
-                            ))}
+                              )
+                            })}
                           </div>
                         ))}
+                        {ton && k.theoCty.some(x => Number(x.daXoaTon) > 0) && (
+                          <p className="px-4 py-2 text-xs text-gray-500 border-t border-gray-100">
+                            <span className="font-semibold">*</span> số đã thu có gồm cả khoản được xoá nợ — rê chuột vào để xem tách ra.
+                          </p>
+                        )}
                         {ton && !dongTien.tonDau.hcnsCoSoLieu && (
                           <p className="px-4 py-2.5 text-xs text-gray-500 bg-amber-50 border-t border-amber-100">
                             Cột HCNS trống vì phí HCNS mới tách riêng từ T9/2026 — các kỳ trước đó không có số HCNS để chuyển sang.

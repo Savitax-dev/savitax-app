@@ -141,6 +141,18 @@ for (const room of list) {
   const am = [d.tonDau, d.chuyenKySau].some(x => x.ketoan < 0 || x.hcns < 0 || x.dvk < 0)
   am ? bad('có số âm') : ok('không có số âm')
 
+  // --- bất biến 2b: cột "Đã thu" cộng lại phải đúng bằng con số trên thẻ ---
+  // Anh nêu 14/10/2026: thẻ chỉ hiện tổng đã thu, không biết thu của công ty nào. Nay mỗi dòng có
+  // `daThuTon` riêng. Hai số này lệch nhau là kế toán nhìn bảng đi đòi nhầm công ty.
+  // Chỉ cộng các công ty CÒN TRONG DANH SÁCH tồn đầu kỳ — tiền thu của công ty đã hết nợ từ kỳ
+  // trước thì không nằm trong bảng này.
+  const tongThuDong = d.tonDau.theoCty.reduce((a, x) => a + (Number(x.daThuTon) || 0), 0)
+  tongThuDong > d.tonDau.daThuTrongKy
+    ? bad('cột "Đã thu" cộng lại (' + fmt(tongThuDong) + ') VƯỢT số trên thẻ (' + fmt(d.tonDau.daThuTrongKy) + ')')
+    : ok('cột "Đã thu" cộng lại không vượt số trên thẻ (' + fmt(tongThuDong) + ' / ' + fmt(d.tonDau.daThuTrongKy) + ')')
+  const thuAm = d.tonDau.theoCty.filter(x => (Number(x.daThuTon) || 0) < 0 || (Number(x.daXoaTon) || 0) < 0)
+  thuAm.length ? bad('có dòng "Đã thu" âm: ' + thuAm[0].name) : ok('không dòng "Đã thu" nào âm')
+
   // --- bất biến 3: tồn đầu kỳ KHÔNG được vượt tổng nợ tồn hiện có của các công ty ---
   const { data: od } = await sb.from('clients').select('other_debt').in('id', dl.clients.map(c => c.id))
   const tongNoTon = (od || []).reduce((a, x) => a + Number(x.other_debt || 0), 0)
