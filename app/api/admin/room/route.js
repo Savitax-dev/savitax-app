@@ -130,9 +130,44 @@ export async function GET(request) {
       .in('client_id', clientIds).eq('year', year).eq('month', month)),
   ])
 
+  // Dấu "TP đã kiểm tra" của đúng tháng đang xem (sql/27). Bản clone chưa chạy file SQL đó thì
+  // chưa có bảng — nuốt lỗi, coi như chưa công ty nào được đóng dấu, cả trang vẫn chạy nguyên vẹn.
+  // (fetchAllRows NÉM lỗi chứ không trả rỗng, nên bắt buộc phải bọc try.)
+  let reviewRows = []
+  try {
+    reviewRows = await fetchAllRows(() => supabase.from('checklist_reviews')
+      .select('client_id, reviewed_by, reviewed_at, done_count')
+      .in('client_id', clientIds).eq('year', year).eq('month', month))
+  } catch (_) { reviewRows = [] }
+
   // Build lookup maps
   const taskRecMap = {}  // clientId_taskDefId → record
   for (const r of (taskRecords || [])) taskRecMap[r.client_id + '_' + r.task_def_id] = r
+
+  // Số việc ĐANG xong của từng công ty — đếm thẳng dòng task_records có is_done, đúng cách mà
+  // /api/admin/checklist-review đếm lúc đóng dấu. Hai chỗ đếm lệch nhau thì dấu vừa đóng xong đã
+  // tự báo "đã đổi".
+  const doneCountMap = {}
+  for (const r of (taskRecords || [])) if (r.is_done) doneCountMap[r.client_id] = (doneCountMap[r.client_id] || 0) + 1
+
+  const staffNameMap = {}
+  for (const s of staffList) staffNameMap[s.id] = s.full_name
+  // CÙNG HÌNH DẠNG với /api/admin/checklist-review — ClientChecklist nhận dấu từ đây làm giá trị
+  // ban đầu để nút hiện ra ngay, khỏi phải chờ thêm một lượt gọi API nữa (anh báo 14/10/2026: nút
+  // này ra chậm hơn các nút còn lại). Đổi tên trường ở một bên mà quên bên kia là nút tắt ngúm.
+  const reviewMap = {}
+  for (const r of reviewRows) {
+    reviewMap[r.client_id] = {
+      reviewedBy: r.reviewed_by,
+      // Trưởng phòng đã chuyển phòng khác thì không còn trong staffList -> để null, giao diện chỉ
+      // hiện ngày kiểm. Vẫn hơn là giấu luôn cái dấu đi.
+      reviewedName: staffNameMap[r.reviewed_by] || null,
+      reviewedAt: r.reviewed_at,
+      doneCount: r.done_count,
+      currentCount: doneCountMap[r.client_id] || 0,
+      changed: (doneCountMap[r.client_id] || 0) !== r.done_count,
+    }
+  }
 
   const feeMap = {}
   for (const f of (feeCollections || [])) feeMap[f.client_id] = Number(f.amount) || 0
@@ -217,6 +252,8 @@ export async function GET(request) {
       hcnsDue: hcnsByClient[c.id]?.due || false,
       tasks: tasksWithStatus, taskTotal: tasksWithStatus.length,
       taskDone: tasksWithStatus.filter(t => t.status.startsWith('done')).length,
+      // null = trưởng phòng chưa soát tháng này của công ty này.
+      review: reviewMap[c.id] || null,
     }
   }
 

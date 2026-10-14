@@ -43,7 +43,14 @@ const CRED_CATS = [
 // `canUncheck` = được bỏ tick việc đã hoàn thành (quyền `uncheck_task`, xem lib/checklistScope.js).
 // Tách khỏi `isTrueAdmin` vì từ 01/10/2026 trưởng phòng cũng có thể được cấp quyền này; còn
 // `isTrueAdmin` vẫn giữ riêng cho việc nặng hơn là sửa "trễ hạn" thành "đúng hạn".
-export default function ClientChecklist({ client, clientMonth, onMonthChange, onDebtSaved, defaultPanel = 'work', isAdmin = false, isTrueAdmin = false, canUncheck = false, hcnsClient: hcnsClientProp = null, context = 'ketoan', toolbarExtra = null }) {
+// `canReview` = được đóng/gỡ dấu "TP đã kiểm tra" (quyền `review_checklist` + đang làm trưởng
+// đúng phòng của công ty này, xem lib/checklistScope.js). Người không có quyền vẫn THẤY dấu —
+// nhân viên biết tháng của mình đã được soát chưa — chỉ là bấm không được.
+// `onReviewed` = báo trang cha nạp lại, để huy hiệu "✔ TP" ngoài danh sách công ty đổi theo ngay.
+// `reviewInit` = dấu kiểm tra trang cha đã nạp sẵn (undefined = không có, component tự đi hỏi).
+// Phải kèm `reviewMonth`/`reviewYear` là kỳ mà dấu đó thuộc về — người dùng đổi tháng ngay trong
+// component này được, lúc đó dấu truyền xuống không còn đúng kỳ nữa.
+export default function ClientChecklist({ client, clientMonth, onMonthChange, onDebtSaved, defaultPanel = 'work', isAdmin = false, isTrueAdmin = false, canUncheck = false, canReview = false, onReviewed = null, reviewInit = undefined, reviewMonth = null, reviewYear = null, hcnsClient: hcnsClientProp = null, context = 'ketoan', toolbarExtra = null }) {
   const hcnsOnly = context === 'hcns'
   // Tab "Công việc HCNS" chỉ dành cho người làm HCNS. Kế toán mở hồ sơ công ty có tick DV HCNS
   // mà thấy tab này thì rất dễ tick nhầm việc của phòng khác.
@@ -110,6 +117,79 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   const selYear = selOpt.y
 
   useEffect(() => { loadTasks() }, [clientMonth, client.id])
+
+  // Dấu "TP đã kiểm tra" của ĐÚNG (công ty, tháng) đang mở. null = chưa ai soát; undefined = chưa
+  // đọc xong.
+  //
+  // Trang phòng đã nạp sẵn dấu của cả phòng trong /api/admin/room và truyền xuống `reviewInit`,
+  // nên nút hiện ra NGAY cùng lúc với các nút khác. Chỉ khi không có sẵn (trang khác), hoặc khi
+  // người dùng tự đổi tháng trong ô chọn ở đây, mới phải đi hỏi riêng.
+  const initDungKy = reviewInit !== undefined && reviewMonth === clientMonth && reviewYear === selYear
+  const [review, setReview] = useState(initDungKy ? reviewInit : undefined)
+  const [reviewBusy, setReviewBusy] = useState(false)
+  // So sánh theo GIÁ TRỊ, không theo định danh object: trang cha dựng lại object mới mỗi lần
+  // render, nếu phụ thuộc vào định danh thì mỗi lần cha render lại là dấu vừa bấm xong bị ghi đè
+  // ngược về giá trị cũ cho tới khi cha tải lại xong.
+  const initKey = JSON.stringify(reviewInit ?? null)
+  useEffect(() => {
+    if (initDungKy) { setReview(reviewInit); return }
+    let alive = true
+    setReview(undefined)
+    fetch('/api/admin/checklist-review?clientId=' + client.id + '&year=' + selYear + '&month=' + clientMonth,
+      { cache: 'no-store' })
+      .then(r => r.json())
+      .then(j => { if (alive) setReview(j.data || null) })
+      .catch(() => { if (alive) setReview(null) })
+    return () => { alive = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client.id, clientMonth, selYear, initDungKy, initKey])
+
+  const toggleReview = async () => {
+    if (!canReview || reviewBusy) return
+
+    // Hộp thoại xác nhận — anh chốt 14/10/2026: dấu này phải có tính RÀNG BUỘC với trưởng phòng,
+    // không phải một cú bấm cho xong. Nên nói rõ đang xác nhận điều gì, trên công ty nào, kỳ nào,
+    // và lúc này đang có mấy việc xong — bấm nhầm công ty hay nhầm tháng là lộ ra ngay ở dòng đó.
+    // Đếm y như chỗ hiển thị trong chính bảng checklist bên dưới (status 'done_*'), để con số
+    // trong hộp thoại khớp với cái trưởng phòng đang nhìn thấy.
+    const soXong = tasks.filter(t => t.status && t.status.startsWith('done')).length
+    if (!review) {
+      // Checklist chưa tải xong thì BỎ HẲN dòng "Hiện có" — thà thiếu một dòng còn hơn bắt trưởng
+      // phòng ký vào "0/0 việc" trong khi công ty đang có 4/14 (anh gặp thật 14/10/2026).
+      const dongSoViec = tasks.length
+        ? 'Hiện có : ' + soXong + '/' + tasks.length + ' việc được đánh dấu hoàn thành\n'
+        : ''
+      const dongY = window.confirm(
+        'XÁC NHẬN KIỂM TRA CÔNG VIỆC\n'
+        + 'Công ty : ' + (client.name || '') + '\n'
+        + 'Kỳ      : T' + clientMonth + '/' + selYear + '\n'
+        + dongSoViec
+        + '\n'
+        + 'Xác nhận ĐÃ KIỂM TRA checklist công việc của công ty trong kỳ này, và các việc đang'
+        + ' được đánh dấu hoàn thành là chính xác.\n'
+        + 'Hệ thống sẽ ghi lại tên và thời điểm xác nhận của bạn.')
+      if (!dongY) return
+    } else {
+      // Gỡ dấu thì nhẹ hơn, nhưng vẫn hỏi: gỡ xong là mất tên và thời điểm của lần xác nhận trước,
+      // không xem lại được.
+      if (!window.confirm('Gỡ dấu đã kiểm tra của T' + clientMonth + '/' + selYear + '?\n'
+        + '\nTên và thời điểm của lần xác nhận trước sẽ bị xoá.')) return
+    }
+
+    setReviewBusy(true)
+    try {
+      const res = await fetch('/api/admin/checklist-review', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: client.id, year: selYear, month: clientMonth, reviewed: !review }),
+      })
+      const json = await res.json()
+      if (json.error) { alert(json.error); return }
+      setReview(json.data || null)
+      if (onReviewed) onReviewed()
+    } catch (_) {
+      alert('Không lưu được dấu kiểm tra. Kiểm tra lại đường truyền rồi bấm lại.')
+    } finally { setReviewBusy(false) }
+  }
 
   // Quyền xem tab "Công việc HCNS". Hỏi ngay trong component thay vì bắt 3 trang gọi nó (Checklist
   // công việc, Công nợ của tôi, Phòng nghiệp vụ) cùng nạp dữ liệu phân quyền — ba chỗ là ba chỗ
@@ -720,6 +800,43 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
         {btn('files', '📁', 'Tài liệu',
           'bg-amber-600 text-white border-amber-600',
           'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100')}
+        {/* Dấu "TP đã kiểm tra" của tháng đang xem — anh chốt 14/10/2026: "công ty nào trưởng
+            phòng kiểm tra sẽ có nút tick để admin biết và kiểm tra lại".
+            Ba trạng thái phân biệt bằng CẢ viền lẫn màu (viền đứt = chưa kiểm), không chỉ bằng
+            màu — nhìn lướt qua hàng nút nhiều màu này vẫn đọc ra ngay.
+            Ẩn trong Phòng HCNS: dấu nói về checklist KẾ TOÁN, hiện ở đó chỉ gây nhầm. */}
+        {!hcnsOnly && (
+          <button type="button" onClick={toggleReview}
+            disabled={!canReview || reviewBusy || review === undefined || loading}
+            title={review
+              ? 'TP đã kiểm tra' + (review.reviewedName ? ': ' + review.reviewedName : '')
+                + ' lúc ' + fmtDate(review.reviewedAt)
+                + (review.changed
+                  ? '\nLúc kiểm có ' + review.doneCount + ' việc xong, hiện là ' + review.currentCount
+                    + ' — checklist đã đổi sau khi kiểm.'
+                  : '')
+                + (canReview ? '\nBấm để gỡ dấu.' : '')
+              : (canReview ? 'Bấm để đóng dấu đã kiểm tra tháng này' : 'Trưởng phòng của phòng này chưa kiểm tra tháng này')}
+            className={'text-xs font-bold px-2.5 py-1.5 rounded-lg leading-none flex-shrink-0 border transition-colors '
+              + (!canReview ? 'cursor-default ' : 'hover:opacity-90 ')
+              // Lúc còn chờ đọc thì vẫn CHIẾM ĐÚNG CHỖ với màu nhạt, không ẩn đi rồi hiện ra —
+              // ẩn/hiện làm cả hàng nút nhảy một nhịp (anh báo 14/10/2026).
+              + (review === undefined
+                ? 'bg-gray-50 text-gray-400 border-gray-200 border-dashed'
+                : !review
+                  ? 'bg-white text-teal-700 border-teal-300 border-dashed'
+                  : review.changed
+                    ? 'bg-amber-100 text-amber-800 border-amber-300'
+                    : 'bg-teal-600 text-white border-teal-600')}>
+            {review === undefined
+              ? '🔎 TP kiểm tra'
+              : !review
+                ? '🔎 TP kiểm tra'
+                : review.changed
+                  ? '⚠ TP kiểm ' + fmtDate(review.reviewedAt) + ' · đã đổi sau đó'
+                  : '✔ TP đã kiểm' + (review.reviewedName ? ' · ' + review.reviewedName : '') + ' ' + fmtDate(review.reviewedAt)}
+          </button>
+        )}
         {/* Nút do trang cha gắn thêm (Phòng HCNS: Sửa phí HCNS / Ngưng DV HCNS). */}
         {toolbarExtra}
         <div className="flex-1" />

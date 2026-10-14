@@ -11,6 +11,7 @@ import { feeCountsForMonth } from '@/lib/feeDue'
 import { isSharedRoom } from '@/lib/specialRooms'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
+const fmtNgay = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : ''
 const pctClr = (v) => v >= 90 ? 'text-green-600' : v >= 70 ? 'text-yellow-500' : 'text-red-500'
 const barClr = (v) => v >= 90 ? 'bg-green-500'   : v >= 70 ? 'bg-yellow-400'   : 'bg-red-400'
 
@@ -106,6 +107,9 @@ export default function RoomPage({ params }) {
   const [isAdmin,   setIsAdmin]   = useState(false)
   const [isTrueAdmin, setIsTrueAdmin] = useState(false)
   const [canUncheck, setCanUncheck] = useState(false)
+  // Được đóng dấu "TP đã kiểm tra" ở ĐÚNG phòng này không (quyền `review_checklist` + đang làm
+  // trưởng phòng này). Máy chủ chặn độc lập ở lib/checklistScope.js — đây chỉ là lớp giao diện.
+  const [canReview, setCanReview] = useState(false)
   const [openStaff,   setOpenStaff]   = useState({})  // staffId → bool
   const [openClient,  setOpenClient]  = useState({})  // clientId → bool
   const [clientMonth, setClientMonth] = useState({})  // clientId → month number
@@ -144,7 +148,12 @@ export default function RoomPage({ params }) {
       const laTruongOday = (me.leaderRoomIds || []).includes(roomId) || ((me.leaderRoomIds || []).length > 0 && isSharedRoom(roomId))
       setIsAdmin(roles.includes('admin') || laTruongOday)
       setIsTrueAdmin(roles.includes('admin'))
-      setCanUncheck(await hasPermission(me.roomRoles?.[roomId] || [me.role].filter(Boolean), 'uncheck_task'))
+      const vaiTroOday = me.roomRoles?.[roomId] || [me.role].filter(Boolean)
+      setCanUncheck(await hasPermission(vaiTroOday, 'uncheck_task'))
+      // Đóng dấu đã kiểm còn cần ĐANG LÀ TRƯỞNG phòng này nữa — có quyền thôi chưa đủ. Nhân viên
+      // thuộc vai trò được cấp quyền vẫn không tự đóng dấu lên công ty mình được, vì cả điểm của
+      // dấu là có người thứ hai nhìn vào.
+      setCanReview((roles.includes('admin') || laTruongOday) && await hasPermission(vaiTroOday, 'review_checklist'))
       setReady(true)
     }
     check()
@@ -398,11 +407,14 @@ export default function RoomPage({ params }) {
                                   <span className="ml-2 font-semibold text-white bg-red-500 px-1.5 py-0.5 rounded-full" title={s.viPham.reason}>Vi phạm −20%</span>
                                   <span className="ml-1.5 text-red-500">gốc {s.taskPctGoc}% · {s.viPham.reason}</span>
                                   {isAdmin && (
-                                    <button disabled={viPhamBusy === s.id} onClick={() => goViPham(s)} className="ml-2 text-blue-600 underline disabled:opacity-40">gỡ</button>
+                                    <button disabled={viPhamBusy === s.id} onClick={() => goViPham(s)}
+                                      className="ml-2 align-middle text-xs font-bold px-2 py-0.5 rounded-md border bg-white text-blue-700 border-blue-200 hover:bg-blue-50 disabled:opacity-40">Gỡ vi phạm</button>
                                   )}
                                 </>) : isAdmin && s.clientCount > 0 && (
+                                  // Dạng NÚT chứ không phải chữ gạch chân (anh chốt 14/10/2026): nằm lẫn trong
+                                  // dòng chữ xám "13 cty" thì rất dễ bấm nhầm, mà đây là thao tác trừ thẳng 20% KPI.
                                   <button disabled={viPhamBusy === s.id} onClick={() => danhDauViPham(s)}
-                                    className="ml-2 text-gray-400 underline hover:text-red-600 disabled:opacity-40">đánh dấu vi phạm</button>
+                                    className="ml-2 align-middle text-xs font-bold px-2 py-0.5 rounded-md border bg-white text-gray-500 border-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-300 disabled:opacity-40">Đánh dấu vi phạm</button>
                                 )}
                               </p>
                             </div>
@@ -486,6 +498,19 @@ export default function RoomPage({ params }) {
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                                {/* Dấu "TP đã kiểm tra" — để quản trị quét một lượt cả phòng là
+                                    thấy công ty nào còn chưa được soát, khỏi phải mở từng cái. */}
+                                {c.review && (
+                                  <span title={'TP đã kiểm tra' + (c.review.reviewedName ? ': ' + c.review.reviewedName : '')
+                                      + ' · ' + fmtNgay(c.review.reviewedAt)
+                                      + (c.review.changed ? ' — checklist đã đổi sau khi kiểm' : '')}
+                                    className={'text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ' +
+                                      (c.review.changed
+                                        ? 'bg-amber-100 text-amber-700 border-amber-300'
+                                        : 'bg-teal-600 text-white border-teal-600')}>
+                                    {c.review.changed ? '⚠ TP' : '✔ TP'}
+                                  </span>
+                                )}
                                 {/* Mini task dots */}
                                 <div className="flex gap-0.5">
                                   {c.tasks.slice(0, 8).map(t => (
@@ -509,6 +534,11 @@ export default function RoomPage({ params }) {
                                 isAdmin={isAdmin}
                                 isTrueAdmin={isTrueAdmin}
                                 canUncheck={canUncheck}
+                                canReview={canReview}
+                                onReviewed={load}
+                                reviewInit={c.review}
+                                reviewMonth={selMonth}
+                                reviewYear={selYear}
                               />
                             )}
                           </div>
@@ -679,6 +709,8 @@ export default function RoomPage({ params }) {
                             isAdmin={isAdmin}
                             isTrueAdmin={isTrueAdmin}
                             canUncheck={canUncheck}
+                            canReview={canReview}
+                            onReviewed={load}
                           />
                         )}
                         </div>

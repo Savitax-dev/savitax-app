@@ -15,6 +15,9 @@
 
 # next.js
 /.next/
+# Thu muc build rieng cho `next build` luc dang chay `next dev` — build chung .next se
+# lam may chu dev tra 404 kem HTML (xem AGENTS.md).
+/.next-build/
 /out/
 
 # production
