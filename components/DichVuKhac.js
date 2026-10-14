@@ -12,6 +12,11 @@ const fmtDate = (iso) => {
   return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear()
 }
 
+// Kỳ làm việc với dạng chuỗi 'YYYY-MM' cho ô chọn.
+const maKy = (y, m) => y + '-' + String(m).padStart(2, '0')
+const tachKy = (s) => { const [y, m] = String(s).split('-'); return { year: Number(y), month: Number(m) } }
+const nhanKy = (s) => { const k = tachKy(s); return 'T' + k.month + '/' + k.year }
+
 export default function DichVuKhac({ client, year, month, canCloseEarly = false, onChanged }) {
   const [list, setList] = useState(null)
   const [err, setErr] = useState('')
@@ -20,7 +25,44 @@ export default function DichVuKhac({ client, year, month, canCloseEarly = false,
   const [ten, setTen] = useState('')
   const [tien, setTien] = useState('')
   const [open, setOpen] = useState({})
-  const [thu, setThu] = useState({})      // id hồ sơ -> { so, ghiChu }
+  const [thu, setThu] = useState({})      // id hồ sơ -> { so, ghiChu, ky }
+
+  // KỲ ghi nhận — anh chốt 14/10/2026 sau hai ca sai liền trong một ngày (SOHNEX, VIỆT ÚC).
+  //
+  // Trước đây kỳ lấy cứng theo ô chọn tháng ở GÓC TRÊN của công ty, còn trong bảng này chỉ có một
+  // dòng chữ "Kỳ phát sinh: T10/2026". Nhân viên mở bảng, điền tên và số tiền, không biết phải đi
+  // lên trên đổi tháng trước — thành ra dịch vụ của tháng 9 bị ghi vào tháng 10, phải nhờ sửa tay
+  // cơ sở dữ liệu, mà việc đó không để lại dấu vết nào cho anh soát.
+  //
+  // `null` = theo đúng tháng đang xem. Giữ null thay vì chép giá trị ra state để khi anh đổi tháng
+  // ở trên thì ô này tự đi theo, không kẹt ở tháng cũ.
+  const kyMacDinh = maKy(year, month)
+  const [moKy, setMoKy] = useState(null)
+  useEffect(() => {
+    setMoKy(null)
+    setThu(x => Object.fromEntries(Object.entries(x).map(([k, v]) => [k, { ...v, ky: null }])))
+  }, [kyMacDinh])
+
+  // 12 tháng gần nhất, cộng thêm tháng đang xem nếu anh đang xem kỳ cũ hơn thế.
+  const kyOpts = (() => {
+    const n = new Date(); const out = []
+    let y = n.getFullYear(), m = n.getMonth() + 1
+    for (let i = 0; i < 12; i++) { out.push(maKy(y, m)); m--; if (m === 0) { m = 12; y-- } }
+    if (!out.includes(kyMacDinh)) out.unshift(kyMacDinh)
+    return out
+  })()
+
+  const oChonKy = (giaTri, doi, mau) => (
+    <select value={giaTri} onChange={e => doi(e.target.value)}
+      className={'w-full px-2 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-1 ' + mau}>
+      {kyOpts.map(k => <option key={k} value={k}>{nhanKy(k)}</option>)}
+    </select>
+  )
+  const nhacKhacThang = (ky) => ky !== kyMacDinh && (
+    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+      Đang ghi vào <b>{nhanKy(ky)}</b>, khác tháng đang xem ({nhanKy(kyMacDinh)}). Số sẽ nằm trong báo cáo {nhanKy(ky)}.
+    </p>
+  )
 
   const load = useCallback(async () => {
     try {
@@ -94,17 +136,23 @@ export default function DichVuKhac({ client, year, month, canCloseEarly = false,
                 onChange={e => setTien(e.target.value.replace(/\D/g, ''))}
                 className="w-full px-2.5 py-1.5 border border-blue-200 rounded-lg text-sm text-right focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
+            <div className="w-32">
+              <label className="text-xs text-gray-500 mb-0.5 block">Kỳ phát sinh</label>
+              {oChonKy(moKy || kyMacDinh, setMoKy, 'border-blue-200 focus:ring-blue-400')}
+            </div>
             <button disabled={busy || !ten.trim() || !tien}
               onClick={async () => {
-                if (await goi({ action: 'open', clientId: client.id, name: ten.trim(), amount: Number(tien), year, month })) {
-                  setTen(''); setTien(''); setMoForm(false)
+                const k = tachKy(moKy || kyMacDinh)
+                if (await goi({ action: 'open', clientId: client.id, name: ten.trim(), amount: Number(tien), year: k.year, month: k.month })) {
+                  setTen(''); setTien(''); setMoKy(null); setMoForm(false)
                 }
               }}
               className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
               Mở hồ sơ
             </button>
           </div>
-          <p className="text-xs text-gray-400">Kỳ phát sinh: T{month}/{year} · số tiền nhập ĐÃ gồm VAT, giống phí dịch vụ</p>
+          {nhacKhacThang(moKy || kyMacDinh)}
+          <p className="text-xs text-gray-400">Số tiền nhập ĐÃ gồm VAT, giống phí dịch vụ</p>
         </div>
       )}
 
@@ -139,6 +187,17 @@ export default function DichVuKhac({ client, year, month, canCloseEarly = false,
                     {s.payments.map(p => (
                       <div key={p.id} className="flex items-center gap-2 text-xs py-1 px-2 bg-gray-50 rounded">
                         <span className="text-gray-400 w-20 flex-shrink-0">{fmtDate(p.created_at)}</span>
+                        {/* KỲ ghi thu, không phải ngày nhập. Hai ca sai ngày 14/10/2026 nằm im
+                            được là vì bảng chỉ hiện ngày nhập — nhìn vào không thấy khoản thu
+                            của tháng 9 đang bị tính vào tháng 10. */}
+                        <span className={'w-16 flex-shrink-0 px-1.5 py-0.5 rounded text-center ' +
+                          (maKy(p.year, p.month) === maKy(s.year, s.month)
+                            ? 'bg-gray-100 text-gray-500' : 'bg-amber-100 text-amber-700 font-semibold')}
+                          title={maKy(p.year, p.month) === maKy(s.year, s.month)
+                            ? 'Kỳ ghi thu, cùng kỳ với hồ sơ'
+                            : 'Khoản thu này ghi vào kỳ KHÁC kỳ phát sinh của hồ sơ (T' + s.month + '/' + s.year + ')'}>
+                          T{p.month}/{p.year}
+                        </span>
                         <span className="font-bold text-green-600 w-24 flex-shrink-0">{fmt(p.amount)}đ</span>
                         <span className="text-gray-400 truncate flex-1 italic">{p.note || ''} · {p.by}</span>
                         <button onClick={() => goi({ action: 'delPay', id: p.id }, 'Xoá khoản thu ' + fmt(p.amount) + 'đ?')}
@@ -149,6 +208,7 @@ export default function DichVuKhac({ client, year, month, canCloseEarly = false,
                 ) : <p className="text-xs text-gray-400">Chưa ghi khoản thu nào</p>}
 
                 {s.status !== 'done' && (
+                  <div className="space-y-1.5">
                   <div className="flex gap-2 items-end flex-wrap">
                     <div className="w-36">
                       <label className="text-xs text-gray-500 mb-0.5 block">Thu thêm (đ)</label>
@@ -162,15 +222,24 @@ export default function DichVuKhac({ client, year, month, canCloseEarly = false,
                       onChange={e => setThu(x => ({ ...x, [s.id]: { ...t, ghiChu: e.target.value } }))}
                       placeholder="Ghi chú: ngày chuyển khoản, kênh thu..."
                       className="flex-1 min-w-[160px] px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-green-400" />
+                    <div className="w-32">
+                      <label className="text-xs text-gray-500 mb-0.5 block">Kỳ ghi thu</label>
+                      {oChonKy(t.ky || kyMacDinh,
+                        v => setThu(x => ({ ...x, [s.id]: { ...t, ky: v } })),
+                        'border-green-300 focus:ring-green-400')}
+                    </div>
                     <button disabled={busy || !t.so}
                       onClick={async () => {
-                        if (await goi({ action: 'pay', id: s.id, amount: Number(t.so), note: t.ghiChu || null, year, month })) {
-                          setThu(x => ({ ...x, [s.id]: { so: '', ghiChu: '' } }))
+                        const k = tachKy(t.ky || kyMacDinh)
+                        if (await goi({ action: 'pay', id: s.id, amount: Number(t.so), note: t.ghiChu || null, year: k.year, month: k.month })) {
+                          setThu(x => ({ ...x, [s.id]: { so: '', ghiChu: '', ky: null } }))
                         }
                       }}
                       className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
                       Ghi thu
                     </button>
+                  </div>
+                  {nhacKhacThang(t.ky || kyMacDinh)}
                   </div>
                 )}
 
