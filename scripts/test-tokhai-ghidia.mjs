@@ -296,5 +296,43 @@ kiem('file nằm đúng chỗ', liet(C.goc).filter(x => x.endsWith('.xml')), [
 kiem('KHÔNG đụng vào thư mục công ty khác',
   liet(C.nv.con.get('1.CAPULL')), ['2. HỒ SƠ KẾ TOÁN/', '2. HỒ SƠ KẾ TOÁN/Năm 2026/', '2. HỒ SƠ KẾ TOÁN/Năm 2026/7. BỘ BÁO CÁO/'])
 
+
+console.log('')
+console.log('Lỗi ghi phải nói rõ HỎNG Ở BƯỚC NÀO:')
+// Ca thật 14/10/2026 (ĐẠI KHANG PHÁT): 7 file hỏng, chỉ hiện câu của Windows "A requested file or
+// directory could not be found" — không ai biết hỏng ở mở thư mục hay ghi file, ở thư mục nào.
+const thuMucHong = () => ({
+  kind: 'directory', name: 'hong',
+  async *entries() {},
+  async getDirectoryHandle() { throw new Error('A requested file or directory could not be found at the time an operation was processed.') },
+  async getFileHandle() { throw new Error('A requested file or directory could not be found at the time an operation was processed.') },
+})
+let loi = ''
+try {
+  await ghiVaoDia({ goc: thuMucHong(), duongDan: ['BAOCAOTHUE_Q3_2026_X', 'TỜ KHAI THUẾ'],
+    tenFile: 'TK_TNCN_Q3.2026_X.zip', duLieu: chu('x') })
+} catch (e) { loi = e.message }
+kiem('nói rõ là không mở/tạo được thư mục', /Không mở\/tạo được thư mục/.test(loi), true)
+kiem('nêu đúng đường dẫn đang mở', /BAOCAOTHUE_Q3_2026_X/.test(loi), true)
+kiem('gợi ý đúng hướng xử lý (đổi lại thư mục / Drive chưa sẵn sàng)',
+  /đổi tên\/xoá|Google Drive/.test(loi), true)
+
+const thuMucKhongChoGhi = () => {
+  const con = new Map()
+  const tao = ten => ({
+    kind: 'directory', name: ten,
+    async *entries() { yield* con },
+    async getDirectoryHandle(t) { if (!con.has(t)) con.set(t, tao(t)); return con.get(t) },
+    async getFileHandle() { throw new Error('NotAllowedError: The request is not allowed by the user agent') },
+  })
+  return tao('goc')
+}
+loi = ''
+try {
+  await ghiVaoDia({ goc: thuMucKhongChoGhi(), duongDan: ['A', 'B'], tenFile: 'x.xml', duLieu: chu('x') })
+} catch (e) { loi = e.message }
+kiem('thiếu quyền ghi → nói đúng là thiếu quyền', /chưa được cấp quyền GHI/.test(loi), true)
+kiem('và chỉ đúng nút phải bấm', /Cấp lại quyền/.test(loi), true)
+
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)
