@@ -7,7 +7,7 @@
 // hệt dấu tick tay. Nên mọi ca mơ hồ phải ra KHÔNG TICK, và bộ kiểm canh đúng chuyện đó.
 //
 // Tiêu đề dưới đây lấy nguyên văn từ ảnh anh gửi ngày 14/10/2026.
-import { docTieuDe, docKy, kyGuiMail, timViecGuiMail, khopCongTy, docMail, laTraLoi }
+import { docTieuDe, docKy, kyGuiMail, timViecGuiMail, khopCongTy, khopMaKH, docMail, laTraLoi }
   from '../lib/mailBaoCao.js'
 
 let dat = 0, hong = 0
@@ -23,11 +23,11 @@ const dung = (ten, dk, them) => {
 
 console.log('\n[1] Tách tiêu đề thật — ba kiểu phân cách khác nhau:')
 const t1 = docTieuDe('CÔNG TY TNHH ĐẦU TƯ QQ PROPERTY - BÁO CÁO THUẾ Q3.2026')
-kiem('dấu " - " · tên công ty', t1.tenCty, 'CÔNG TY TNHH ĐẦU TƯ QQ PROPERTY')
+kiem('dấu " - " · tên công ty', t1.tenTruoc, 'CÔNG TY TNHH ĐẦU TƯ QQ PROPERTY')
 kiem('dấu " - " · kỳ', t1.ky, { loai: 'quy', so: 3, nam: 2026 })
 
 const t2 = docTieuDe('STUDIO BY DREW_BÁO CÁO THUẾ QUÝ 3/2026')
-kiem('dấu "_" · tên công ty', t2.tenCty, 'STUDIO BY DREW')
+kiem('dấu "_" · tên công ty', t2.tenTruoc, 'STUDIO BY DREW')
 kiem('dấu "_" · kỳ', t2.ky, { loai: 'quy', so: 3, nam: 2026 })
 
 const t3 = docTieuDe('CÔNG TY TNHH TM DV ĐẦU TƯ TỔNG HỢP TƯỜNG VY_BÁO CÁO THUẾ THÁNG 9/2026')
@@ -161,5 +161,56 @@ dung('null', docTieuDe(null).ky === null)
 dung('số', docTieuDe(12345).ky === null)
 dung('chuỗi dài toàn ký tự lạ', docTieuDe('###@@@!!!').ky === null)
 
+console.log('')
+console.log('[11] TÊN ĐỨNG SAU cụm "BÁO CÁO" — 3/6 lá mail thật viết kiểu này:')
+// Đo thật trên hộp thư congnosavitax@gmail.com ngày 15/10/2026: hai nhân viên dùng hai quy ước
+// ngược nhau. Chỉ đọc một phía là mất trắng một nửa số mail, mà lỗi đó IM LẶNG — người gửi rồi
+// vẫn bị báo chưa làm.
+const sau1 = docTieuDe('BÁO CÁO THUẾ _QUÝ 3.2026_KIMOANH')
+kiem('lấy được tên ở phía sau', sau1.tenSau, 'KIMOANH')
+kiem('và vẫn đọc đúng kỳ', sau1.ky, { loai: 'quy', so: 3, nam: 2026 })
+const sau2 = docTieuDe('BÁO CÁO THUẾ QUÝ 3.2026 _HKD NGUYENTRONGDUC')
+kiem('bỏ được chữ THUẾ và kỳ, còn lại phần tên/mã', sau2.tenSau, 'HKD NGUYENTRONGDUC')
+const truoc1 = docTieuDe('HKD NGÔ THỊ THANH THẢO_BÁO CÁO THUẾ QUÝ 3/2026')
+kiem('kiểu cũ (tên đứng trước) vẫn nguyên vẹn', truoc1.tenTruoc, 'HKD NGÔ THỊ THANH THẢO')
+
+console.log('')
+console.log('[12] Khớp theo MÃ KHÁCH HÀNG — đường duy nhất gỡ được ca trùng tên:')
+// Hai HỘ KINH DOANH ĐỨC DESIGN khác MST nhưng TRÙNG KHÍT tên thương mại. Khớp theo tên thì vĩnh
+// viễn mơ hồ; mã khách hàng phân biệt sạch sẽ.
+const dsMa = [
+  { id: 'd1', name: 'HỘ KINH DOANH ĐỨC DESIGN', client_code: 'NGUYENTRONGDUC', tax_code: '052095010595', report_type: 'quarterly' },
+  { id: 'd2', name: 'HỘ KINH DOANH ĐỨC DESIGN', client_code: 'TRANTHIHOAKY',   tax_code: '075197009328', report_type: 'quarterly' },
+  { id: 'd3', name: 'HỘ KINH DOANH NGUYỄN THỊ KIM OANH', client_code: 'KIMOANH', tax_code: '0366666666', report_type: 'quarterly' },
+  { id: 'd4', name: 'CÔNG TY TNHH TAM ABC', client_code: 'TAM', tax_code: '0377777777', report_type: 'quarterly' },
+]
+dung('mã NGUYENTRONGDUC → đúng hộ thứ nhất', khopMaKH('HKD NGUYENTRONGDUC', dsMa).client?.id === 'd1')
+dung('mã TRANTHIHOAKY → đúng hộ thứ hai', khopMaKH('HKD TRANTHIHOAKY', dsMa).client?.id === 'd2')
+dung('hai hộ TRÙNG TÊN vẫn tách được bằng mã',
+  khopMaKH('HKD NGUYENTRONGDUC', dsMa).client?.id !== khopMaKH('HKD TRANTHIHOAKY', dsMa).client?.id)
+dung('mã dưới 4 ký tự KHÔNG nhận (dễ trùng chữ thường)', khopMaKH('BÁO CÁO TAM', dsMa).client === null)
+dung('hai mã trong cùng tiêu đề → không dám chọn',
+  khopMaKH('KIMOANH và TRANTHIHOAKY', dsMa).client === null)
+dung('không có mã nào → trả null, không nổ', khopMaKH('abc def', dsMa).client === null)
+
+console.log('')
+console.log('[13] Sáu tiêu đề THẬT lấy từ hộp thư ngày 15/10/2026:')
+const dsThat = [...dsMa,
+  { id: 'd5', name: 'HỘ KINH DOANH NGÔ THỊ THANH THẢO', client_code: 'NTTTHAO', tax_code: '0388888888', report_type: 'quarterly' },
+  { id: 'd6', name: 'HỘ KINH DOANH MÌ CAY SEOUL TÂN SƠN NHÌ 86', client_code: 'MICAY86', tax_code: '0399999999', report_type: 'quarterly' },
+  { id: 'd7', name: 'HỘ KINH DOANH NGÔ ĐÌNH DŨNG', client_code: 'NDDUNG', tax_code: '0300000001', report_type: 'quarterly' },
+]
+for (const [tieuDe, mongDoi] of [
+  ['HKD NGÔ THỊ THANH THẢO_BÁO CÁO THUẾ QUÝ 3/2026', 'd5'],
+  ['HKD MÌ CAY SEOUL TÂN SƠN NHÌ 86_BÁO CÁO THUẾ QUÝ 3/2026', 'd6'],
+  ['BÁO CÁO THUẾ _QUÝ 3.2026_KIMOANH', 'd3'],
+  ['BÁO CÁO THUẾ QUÝ 3.2026 _HKD NGUYENTRONGDUC', 'd1'],
+  ['BÁO CÁO THUẾ QUÝ 3.2026_HKD TRANTHIHOAKY', 'd2'],
+  ['HKD NGÔ ĐÌNH DŨNG_BÁO CÁO THUẾ QUÝ 3.2026', 'd7'],
+]) {
+  const r = docMail({ tieuDe, ngayGui: '2026-10-15', dsCty: dsThat, taskDefs: DANH_MUC })
+  dung(tieuDe.slice(0, 48), r.ok && r.client?.id === mongDoi,
+    r.ok ? 'ra ' + r.client?.id : JSON.stringify(r.lyDo))
+}
 console.log(hong === 0 ? `\nTẤT CẢ ${dat} MỤC ĐỀU ĐẠT.` : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)
