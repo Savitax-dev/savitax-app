@@ -17,7 +17,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import TabToKhai from '@/components/TabToKhai'
-import NhacHanNop from '@/components/NhacHanNop'
 import { OTong } from '@/components/tokhaiUI'
 import { kiemTraTienIch } from '@/lib/portalBridge'
 import { chayTaiFile } from '@/lib/tokhaiTaiFileClient'
@@ -339,7 +338,6 @@ export default function TrangTaiFile() {
     <AppShell>
       <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
         <TabToKhai />
-        <NhacHanNop />
 
         <h1 className="text-xl font-bold text-gray-900 mb-1">Tải file về thư mục</h1>
         <p className="text-sm text-gray-500 mb-1">

@@ -8,7 +8,7 @@
 // quá hạn là thứ càng phải nhắc, không được im lặng.
 import { createClient } from '@supabase/supabase-js'
 import { roomsWithRole } from '@/lib/roleUnion'
-import { requireLogin } from '@/lib/serverAuth'
+import { callerHasPermission } from '@/lib/serverAuth'
 import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
 import { nhanKy } from '@/lib/taxDeadline'
 
@@ -34,8 +34,19 @@ const CAC_MOC = [10, 5, 3, 2, 1, 0]
 const NGAY_NHAC_TRUOC = 10
 
 export async function GET() {
-  const auth = await requireLogin()
-  if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
+  // TỪ 15/10/2026 DẢI NHẮC NẰM Ở ĐẦU MỌI TRANG của app (như bảng tin MISA), không chỉ trong Phân hệ
+  // Tờ khai. Nên route này được gọi bởi CẢ người không làm tờ khai — phòng HCNS, kinh doanh.
+  //
+  // Kiểm quyền TRƯỚC khi chạy truy vấn: phần dưới đọc toàn bộ công ty, nhân viên và nghĩa vụ
+  // thuế, không có lý do gì chạy nó cho người không xem được Tờ khai.
+  //
+  // Không có quyền thì trả 200 kèm danh sách RỖNG, không trả 403: dải này tự gọi ở mọi trang, trả
+  // lỗi thì bảng điều khiển trình duyệt của mọi người ngoài phòng kế toán đỏ lòm suốt ngày.
+  const auth = await callerHasPermission('view_tax_filings')
+  if (!auth.ok) {
+    if (auth.status === 401) return Response.json({ error: auth.error }, { status: 401 })
+    return Response.json({ nhac: [] })
+  }
 
   const supabase = getAdmin()
   const caller = auth.caller

@@ -41,3 +41,25 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .chay-ngang { animation: none; }
 }
+
+/* Chạy kiểu bảng tin MISA (anh chốt 15/10/2026): chữ ĐI VÀO TỪ MÉP PHẢI, chạy hết ra mép trái rồi
+   mới vào lại. Khác .chay-ngang ở trên (nhân đôi nội dung để nối vòng) — kiểu đó với 2 tin thì
+   bản sao nằm sát cạnh, trông như app in trùng dòng. Ở đây không bao giờ có hai bản cùng lúc.
+
+   padding-left: 100% tính theo bề rộng KHUNG CHỨA (không phải của chính nó), nên điểm xuất phát
+   luôn đúng mép phải dù màn hình rộng hẹp thế nào. Thời gian chạy đặt bằng biến --giay từ JS, tính
+   theo quãng đường thật để tốc độ đọc luôn như nhau. */
+@keyframes chay-vao {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-100%); }
+}
+.chay-vao {
+  display: inline-block;
+  white-space: nowrap;
+  padding-left: 100%;
+  animation: chay-vao var(--giay, 30s) linear infinite;
+}
+.chay-vao:hover { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .chay-vao { animation: none; padding-left: 0; white-space: normal; }
+}

@@ -17,7 +17,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import TabToKhai from '@/components/TabToKhai'
-import NhacHanNop from '@/components/NhacHanNop'
 import { OTong, Chip } from '@/components/tokhaiUI'
 import { kiemTraTienIch } from '@/lib/portalBridge'
 import { chayDongBo } from '@/lib/tokhaiSyncClient'
@@ -191,7 +190,6 @@ export default function TrangDongBoLo() {
     <AppShell>
       <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
         <TabToKhai />
-        <NhacHanNop />
 
         <h1 className="text-xl font-bold text-gray-900 mb-3">Đồng bộ theo lô</h1>
 

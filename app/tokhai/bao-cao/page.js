@@ -8,7 +8,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
-import NhacHanNop from '@/components/NhacHanNop'
 import TabToKhai from '@/components/TabToKhai'
 import { OTong, ThanhPhanTram, soHoacGach, gioVN } from '@/components/tokhaiUI'
 
@@ -55,7 +54,6 @@ export default function TrangBaoCao() {
     <AppShell>
       <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
         <TabToKhai />
-        <NhacHanNop />
 
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <h1 className="text-xl font-bold text-gray-900">Báo cáo tờ khai</h1>

@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Sidebar from './Sidebar'
+import NhacHanNop from './NhacHanNop'
 
 const IconMenu = () => (
   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -51,6 +52,11 @@ export default function AppShell({ children }) {
             <span className="text-sm font-semibold text-gray-900">Savitax</span>
           </div>
         </div>
+
+        {/* Dải nhắc hạn nộp tờ khai — đầu MỌI trang như bảng tin MISA (anh chốt 15/10/2026).
+            Tự ẩn khi không có gì để nhắc, và với người không có quyền xem Tờ khai (phòng HCNS,
+            kinh doanh) — máy chủ trả rỗng, xem app/api/admin/tokhai/nhac-han. */}
+        <NhacHanNop />
 
         <main className="flex-1">
           {children}
