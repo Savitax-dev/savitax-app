@@ -5,6 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import { loadPermissionData, can, clearPermissionCache } from '@/lib/permissions'
+import { xoaBoNhoNhacHan } from './NhacHanNop'
+import { xoaDauNhacNho } from './NotificationBell'
 
 /* ─── Brand colors ───────────────────────────────────────────────
    Đỏ chủ đạo : #8B1A1A   Gold chủ đạo : #C9A84C
@@ -209,6 +211,10 @@ export default function Sidebar({ onClose }) {
     await supabase.auth.signOut()
     clearSidebarCache()
     clearPermissionCache()
+    // Dải nhắc hạn nộp giữ số liệu 5 phút trong bộ nhớ — không xoá thì người đăng nhập SAU trên cùng
+    // máy thấy số công ty chưa nộp của người trước, ngoài phạm vi của mình.
+    xoaBoNhoNhacHan()
+    xoaDauNhacNho()
     router.push('/login')
   }
 

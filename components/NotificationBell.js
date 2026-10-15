@@ -7,6 +7,27 @@ const IconBell = () => (
   </svg>
 )
 
+// TỰ MỞ SẴN khi mới vào app (anh chốt 15/10/2026): "lần đầu đăng nhập lại hay mở lại app, thông
+// báo mặc định hiện ra nếu có, để nhân viên xem liền".
+//
+// Mở MỘT LẦN mỗi phiên, không phải mỗi lần quay về Trang chủ — không thì bấm qua lại vài trang là
+// bảng cứ bật mãi, và chỉ sau một ngày người ta sẽ quen tay đóng nó không thèm đọc.
+//
+// Dấu "đã mở" lưu NGÀY chứ không lưu có/không: tab để qua đêm không tắt thì sáng hôm sau vẫn mở
+// lại, vì nhắc nhở hôm nay khác hôm qua. sessionStorage tự mất khi đóng trình duyệt, nên "mở lại
+// app" là tự có lại.
+const KHOA_DA_MO = 'savitax:nhacNho:daMo'
+const homNay = () => {
+  const d = new Date()
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+}
+
+// GỌI KHI ĐĂNG NHẬP THÀNH CÔNG (app/login/page.js) và khi đăng xuất. Đăng xuất rồi đăng nhập lại
+// trên cùng tab thì sessionStorage vẫn còn — không xoá thì lần đăng nhập thứ hai không bật.
+export function xoaDauNhacNho() {
+  try { sessionStorage.removeItem(KHOA_DA_MO) } catch (_) { /* ẩn danh chặn bộ nhớ: bỏ qua */ }
+}
+
 export default function NotificationBell({ className = '' }) {
   const [open, setOpen] = useState(false)
   const [reminders, setReminders] = useState([])
@@ -18,7 +39,18 @@ export default function NotificationBell({ className = '' }) {
       try {
         const res = await fetch('/api/admin/today-reminders', { cache: 'no-store' })
         const json = await res.json()
-        setReminders(json.reminders || [])
+        const ds = json.reminders || []
+        setReminders(ds)
+        // Chỉ bật khi CÓ việc để nhắc — bảng trống "không có gì đến hạn" mà cũng bật lên thì chỉ
+        // dạy người ta thói quen đóng nó đi.
+        if (ds.length > 0) {
+          let daMo = null
+          try { daMo = sessionStorage.getItem(KHOA_DA_MO) } catch (_) {}
+          if (daMo !== homNay()) {
+            setOpen(true)
+            try { sessionStorage.setItem(KHOA_DA_MO, homNay()) } catch (_) {}
+          }
+        }
       } catch (_) {}
       setLoading(false)
     }

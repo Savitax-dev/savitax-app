@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
+import { xoaDauNhacNho } from '@/components/NotificationBell'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -24,6 +25,9 @@ export default function LoginPage() {
       setError('Email hoặc mật khẩu không đúng')
       setLoading(false)
     } else {
+      // Mỗi lần đăng nhập là một lần "mới vào app": bảng nhắc nhở checklist ở Trang chủ phải tự mở
+      // lại. Xoá ở đây (không chỉ lúc đăng xuất) để bắt cả ca phiên hết hạn bị đẩy về trang này.
+      xoaDauNhacNho()
       router.push('/dashboard')
     }
   }
