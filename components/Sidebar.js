@@ -313,6 +313,11 @@ export default function Sidebar({ onClose }) {
         {canViewToKhai && !noAccounting && (
           <NavItem href="/tokhai" icon="🧾" label="Tờ khai & Hạn nộp" pathname={pathname} onClose={onClose} />
         )}
+        {/* Nhật ký mail báo cáo: ai cũng vào được, nhưng API tự giới hạn phạm vi — nhân viên chỉ
+            thấy mail mình gửi hoặc mail của công ty mình phụ trách (app/api/admin/mail-log). */}
+        {!noAccounting && (
+          <NavItem href="/mail-log" icon="📧" label="Nhật ký mail báo cáo" pathname={pathname} onClose={onClose} />
+        )}
         {/* Nhật ký làm việc: để ở menu chính cho người KHÔNG có mục Quản trị (nhân viên/trưởng phòng);
             với tài khoản quản trị thì hiện trong mục Quản trị bên dưới cho đồng bộ */}
         {!showAdminSection && !noAccounting && (
