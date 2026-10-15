@@ -55,7 +55,7 @@ export async function GET(request) {
   const supabase = getAdmin()
 
   // 2. Toàn bộ staff (để map tên + tính scope)
-  const { data: allStaff } = await supabase.from('staff').select('id, full_name, room_id')
+  const { data: allStaff } = await supabase.from('staff').select('id, full_name, room_id, email')
   const staffById = {}
   for (const s of (allStaff || [])) staffById[s.id] = s
 
@@ -91,8 +91,22 @@ export async function GET(request) {
     } catch (_) { return [] }
   }
 
-  // 4. Truy vấn 4 nguồn song song (lọc actor ∈ scope + thời gian trong tháng)
-  const [tasks, fees, changes, bankLogs, { data: rooms }, { data: clients }, { data: taskDefs }] = await Promise.all([
+  // Mail "bộ báo cáo thuế" nhân viên gửi khách (sql/30_mail_bao_cao.sql) — VPS đọc hộp thư rồi đẩy
+  // lên /api/mail/incoming. Lọc theo GIỜ GỬI, không phải giờ VPS ghi nhận. Bảng chưa tạo (bản clone
+  // không có module này) -> trả rỗng, không làm hỏng cả trang nhật ký.
+  //
+  // KHÔNG lọc theo người ở câu truy vấn: bảng này lưu EMAIL người gửi chứ không lưu staff_id, nên
+  // phải tra email -> nhân viên ở bước sau rồi mới áp phạm vi.
+  const fetchMailLogs = async () => {
+    try {
+      return await fetchAllRows(() => supabase.from('mail_evidence')
+        .select('id, subject, from_email, sent_at, client_id, year, month, matched, reason, ticked')
+        .gte('sent_at', start).lt('sent_at', end))
+    } catch (_) { return [] }
+  }
+
+  // 4. Truy vấn 5 nguồn song song (lọc actor ∈ scope + thời gian trong tháng)
+  const [tasks, fees, changes, bankLogs, mailLogs, { data: rooms }, { data: clients }, { data: taskDefs }] = await Promise.all([
     fetchAllRows(() => supabase.from('task_records')
       .select('id, client_id, task_def_id, done_by, done_at, note')
       .eq('is_done', true).gte('done_at', start).lt('done_at', end).in('done_by', scopeStaffIds)),
@@ -103,6 +117,7 @@ export async function GET(request) {
       .select('id, client_id, entity_label, field, old_value, new_value, action, changed_by, changed_at')
       .gte('changed_at', start).lt('changed_at', end).in('changed_by', scopeStaffIds)),
     fetchBankLogs(),
+    fetchMailLogs(),
     supabase.from('rooms').select('id, name'),
     supabase.from('clients').select('id, name, client_code'),
     supabase.from('task_definitions').select('id, name'),
@@ -192,6 +207,40 @@ export async function GET(request) {
       ...clientMeta(b.client_id),
       title: BANK_ACTION_LABEL[b.action] || 'Đối soát ngân hàng',
       detail: [b.detail, b.note ? '“' + b.note + '”' : ''].filter(Boolean).join(' · '),
+    })
+  }
+
+  // Gửi mail báo cáo — mỗi lá mail VPS đọc được là một dòng. Ba kết quả nói ba chuyện khác nhau:
+  //   app tự tick  : chính lá mail này tạo ra dấu tick
+  //   khớp         : khớp được, nhưng việc đã tick tay từ trước — mail là bằng chứng thêm
+  //   CHƯA KHỚP    : mail đã gửi thật mà app không nhận ra -> phải tick tay, kèm lý do để sửa tiêu đề
+  // Tách "tự tick" khỏi "khớp" là cách duy nhất đo được tính năng thực sự giúp được bao nhiêu.
+  const scopeMail = new Set(scopeStaffIds)
+  const staffByEmail = {}
+  for (const s of (allStaff || [])) {
+    if (s.email) staffByEmail[String(s.email).trim().toLowerCase()] = s.id
+  }
+  for (const m of (mailLogs || [])) {
+    const actorId = m.from_email ? staffByEmail[String(m.from_email).trim().toLowerCase()] : null
+    // Nhân viên / trưởng phòng: chỉ mail do người TRONG PHẠM VI gửi. Quản trị: thấy cả mail người gửi
+    // không tra ra được nhân viên nào — đó thường là dấu hiệu cấu hình CC sai, càng phải thấy.
+    if (role !== 'admin' && !(actorId && scopeMail.has(actorId))) continue
+    const ketQua = m.ticked ? 'app tự tick' : m.matched ? 'khớp (đã tick tay từ trước)' : 'CHƯA KHỚP'
+    const meta = actorId ? actorMeta(actorId)
+      : { actorId: null, actorName: m.from_email || '(không rõ người gửi)', roomId: '', roomName: '' }
+    entries.push({
+      id: 'mail_' + m.id,
+      type: 'mail_report',
+      happenedAt: m.sent_at,
+      ...meta,
+      ...(m.client_id ? clientMeta(m.client_id) : { clientId: null, clientName: null }),
+      title: 'Gửi mail báo cáo — ' + ketQua,
+      detail: [
+        m.subject,
+        m.matched && m.year && m.month ? 'kỳ T' + m.month + '/' + m.year : '',
+        !m.matched && m.reason ? '⚠ ' + m.reason : '',
+      ].filter(Boolean).join(' · '),
+      mailOk: !!m.matched,
     })
   }
 

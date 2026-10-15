@@ -9,6 +9,7 @@ const TYPE_META = {
   debt_update: { icon: '💰', label: 'Công nợ',         dot: 'bg-amber-500',  chip: 'bg-amber-50 text-amber-700 border-amber-200' },
   info_change: { icon: '✏️', label: 'Sửa thông tin',   dot: 'bg-blue-500',   chip: 'bg-blue-50 text-blue-700 border-blue-200' },
   bank_reconcile: { icon: '🏦', label: 'Đối soát ngân hàng', dot: 'bg-teal-500', chip: 'bg-teal-50 text-teal-700 border-teal-200' },
+  mail_report: { icon: '📧', label: 'Gửi mail báo cáo', dot: 'bg-indigo-500', chip: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
 }
 
 const TYPE_CHIPS = [
@@ -17,6 +18,7 @@ const TYPE_CHIPS = [
   { v: 'debt_update', l: '💰 Công nợ' },
   { v: 'info_change', l: '✏️ Sửa thông tin' },
   { v: 'bank_reconcile', l: '🏦 Đối soát ngân hàng' },
+  { v: 'mail_report', l: '📧 Gửi mail báo cáo' },
 ]
 
 export default function WorkLogPage() {
@@ -135,12 +137,13 @@ export default function WorkLogPage() {
         </div>
 
         {/* Tóm tắt */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
           {[
             { type: 'task_done',   label: 'Hoàn thành việc' },
             { type: 'debt_update', label: 'Cập nhật công nợ' },
             { type: 'info_change', label: 'Sửa thông tin' },
             { type: 'bank_reconcile', label: 'Đối soát ngân hàng' },
+            { type: 'mail_report', label: 'Gửi mail báo cáo' },
           ].map(c => (
             <div key={c.type} className="bg-white border border-gray-100 rounded-2xl px-4 py-3">
               <p className="text-xs text-gray-400 mb-1">{TYPE_META[c.type].icon} {c.label}</p>
@@ -215,12 +218,18 @@ export default function WorkLogPage() {
                             <span className="text-xs text-gray-400 flex-shrink-0">{timeLabel(e.happenedAt)}</span>
                             <span className="text-sm font-medium text-gray-800 break-words">{e.actorName}</span>
                           </div>
-                          <p className="text-sm text-gray-700 break-words mt-0.5">{e.title}</p>
+                          {/* Mail CHƯA KHỚP tô cam: đó là mail đã gửi thật mà app không tự tick được,
+                              người xem phải tick tay — để nó lẫn màu với các dòng khác là bị bỏ qua. */}
+                          <p className={'text-sm break-words mt-0.5 ' + (e.type === 'mail_report' && e.mailOk === false
+                            ? 'text-orange-600 font-semibold' : 'text-gray-700')}>{e.title}</p>
                           {e.detail && <p className="text-xs text-gray-400 break-words mt-0.5 italic">{e.detail}</p>}
                           <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                            <span className="text-xs bg-gray-50 text-gray-600 px-1.5 py-0.5 rounded-full border border-gray-200 break-words">
-                              🏢 {e.clientName}
-                            </span>
+                            {/* Mail chưa khớp thì không có công ty — không vẽ nhãn rỗng. */}
+                            {e.clientName && (
+                              <span className="text-xs bg-gray-50 text-gray-600 px-1.5 py-0.5 rounded-full border border-gray-200 break-words">
+                                🏢 {e.clientName}
+                              </span>
+                            )}
                             {role === 'admin' && e.roomName && (
                               <span className="text-xs bg-gray-50 text-gray-500 px-1.5 py-0.5 rounded-full border border-gray-200">
                                 Phòng {e.roomName}
