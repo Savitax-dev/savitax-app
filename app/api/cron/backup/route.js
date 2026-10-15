@@ -34,7 +34,42 @@ const TABLES = [
   'other_services', 'other_service_payments', 'debt_writeoffs', 'kpi_violations', 'hcns_headcount',
   'tax_accounts', 'tax_filing_types', 'tax_filings', 'tax_notices', 'tax_obligations', 'tax_holidays',
   'tax_client_filings', 'tax_sync_jobs', 'tax_access_logs',
+  // Thêm 15/10/2026 — dấu "TP đã kiểm tra" (sql/27) và bằng chứng mail báo cáo tự tick (sql/30).
+  'checklist_reviews', 'mail_evidence',
+  // Phân hệ Hóa đơn điện tử — anh gác lại 13/10/2026, bảng đã tạo nhưng chưa có dữ liệu. Liệt kê
+  // sẵn để lúc mở lại khỏi quên; bản clone không có thì tự bỏ qua.
+  'hoadon_tai_khoan', 'hoadon_dau_vao',
 ]
+
+// VIEW, không phải bảng — đọc lại từ chính bảng gốc đã có ở trên, backup thêm chỉ nhân đôi dữ
+// liệu. Phải liệt kê ở đây để bước TỰ KIỂM bên dưới không tưởng là bảng bị bỏ sót.
+const VIEWS = ['client_change_log_readable', 'client_credentials_readable']
+
+// TỰ KIỂM DANH SÁCH BẢNG — thêm 15/10/2026.
+//
+// Danh sách TABLES ở trên viết tay, nên tạo bảng mới mà quên thêm vào là backup IM LẶNG bỏ sót.
+// Chuyện này đã xảy ra BA LẦN: 13/10 (cả loạt bảng từ 05/10 và toàn bộ phân hệ Tờ khai), rồi
+// tax_access_logs, rồi 15/10 (checklist_reviews, mail_evidence). Lần nào cũng chỉ phát hiện nhờ
+// có người ngồi soát tay.
+//
+// Nay mỗi lần chạy, hỏi thẳng PostgREST xem đang phục vụ những bảng nào. Bảng nào CHƯA có trong
+// TABLES thì VẪN BACKUP LUÔN cho đủ, đồng thời CẢNH BÁO trong email để có người thêm vào danh sách
+// một cách có chủ đích. Thà backup thừa một bảng còn hơn thiếu dữ liệu đúng lúc cần khôi phục.
+// Hỏi không được thì chạy với TABLES như cũ và cũng cảnh báo — không vì bước này mà mất backup.
+async function bangChuaLietKe() {
+  try {
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const res = await fetch(process.env.NEXT_PUBLIC_SUPABASE_URL + '/rest/v1/', {
+      headers: { apikey: key, Authorization: 'Bearer ' + key },
+    })
+    if (!res.ok) return { ds: [], loi: 'HTTP ' + res.status }
+    const spec = await res.json()
+    const tatCa = Object.keys(spec?.definitions || {})
+    return { ds: tatCa.filter(t => !TABLES.includes(t) && !VIEWS.includes(t)).sort(), loi: null }
+  } catch (e) {
+    return { ds: [], loi: e.message }
+  }
+}
 
 // Bảng không tồn tại (bản clone thiếu module HCNS/Kinh doanh) KHÔNG được làm hỏng cả bản backup
 // — trước đây chỉ 1 bảng lỗi là route trả 500 và không lưu gì cả. Các mã này = "bảng/quan hệ
@@ -78,8 +113,12 @@ export async function GET(request) {
   const supabase = getAdmin()
   const now = new Date()
 
+  // 0. Tự kiểm: bảng nào có trong cơ sở dữ liệu mà chưa liệt kê -> backup luôn, và cảnh báo.
+  const { ds: bangThem, loi: loiTuKiem } = await bangChuaLietKe()
+  const canBackup = [...TABLES, ...bangThem]
+
   // 1. Đọc toàn bộ bảng song song (phân trang từng bảng để không bị cắt bớt dữ liệu)
-  const results = await Promise.all(TABLES.map(t => fetchAllRows(supabase, t)))
+  const results = await Promise.all(canBackup.map(t => fetchAllRows(supabase, t)))
   // Bảng KHÔNG TỒN TẠI -> bỏ qua và ghi vào tóm tắt (bản clone không cài HCNS/Kinh doanh).
   // Lỗi THẬT (mất quyền, sập DB...) vẫn phải dừng, không được lặng lẽ backup thiếu dữ liệu.
   const skippedTables = results.filter(r => r.error && isMissingTable(r.error)).map(r => r.table)
@@ -145,6 +184,9 @@ export async function GET(request) {
     auth_users: authUsers,
     client_files: storageFiles,
     skipped_tables: skippedTables,
+    // Bảng tự bổ sung nhờ bước tự kiểm — có mặt trong `tables` ở trên nhưng chưa có trong danh
+    // sách viết tay. Ghi lại để lúc khôi phục biết tuần đó danh sách đang lệch.
+    tu_bo_sung: bangThem,
   }
   const jsonBuffer = Buffer.from(JSON.stringify(backupPayload), 'utf8')
   const fileName = 'backup-' + dateStr(now) + '.json'
@@ -217,10 +259,15 @@ export async function GET(request) {
   if (process.env.RESEND_API_KEY) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
-      const rowsHtml = TABLES
+      const rowsHtml = canBackup
         .filter(t => rowCounts[t] !== undefined)
         .map(t => '<li>' + t + ': ' + rowCounts[t] + ' dòng</li>').join('')
       const canhBao = []
+      // Đặt ĐẦU TIÊN: đây là cảnh báo duy nhất trong danh sách cần người SỬA MÃ NGUỒN.
+      if (bangThem.length) canhBao.push('Có ' + bangThem.length + ' bảng CHƯA được liệt kê trong danh sách backup — '
+        + 'tuần này đã tự backup giúp, nhưng cần thêm vào TABLES trong app/api/cron/backup/route.js: '
+        + bangThem.join(', '))
+      if (loiTuKiem) canhBao.push('Không tự kiểm được danh sách bảng (' + loiTuKiem + ') — tuần này chỉ backup theo danh sách viết tay')
       if (skippedTables.length) canhBao.push('Bỏ qua ' + skippedTables.length + ' bảng không có trong database: ' + skippedTables.join(', '))
       if (copyError)    canhBao.push('Sao chép file đính kèm lỗi: ' + copyError)
       if (authError)    canhBao.push('Xuất danh sách tài khoản lỗi: ' + authError)
@@ -253,6 +300,8 @@ export async function GET(request) {
     totalRows,
     rowCounts,
     skippedTables,
+    bangChuaLietKe: bangThem,
+    loiTuKiem,
     authUserCount: authUsers.length,
     authError,
     clientFileCount: storageFiles.length,
