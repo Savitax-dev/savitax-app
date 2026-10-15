@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { ensureRollovers } from '@/lib/debtRollover'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { countsForMonth } from '@/lib/contractDates'
+import { docDvkOnly } from '@/lib/dvkOnly'
 import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireRoomAccess } from '@/lib/serverAuth'
 import { tinhDongTienPhong } from '@/lib/dongTienPhong'
@@ -136,6 +137,9 @@ export async function GET(request) {
       .or('source.is.null,source.eq.ketoan')),
   ])
 
+  // Công ty CHỈ dùng Dịch vụ khác — đọc riêng, thiếu cột thì coi như không có ai (lib/dvkOnly.js).
+  const dvkOnly = await docDvkOnly(supabase, clientIds)
+
   // Dấu "TP đã kiểm tra" của đúng tháng đang xem (sql/27). Bản clone chưa chạy file SQL đó thì
   // chưa có bảng — nuốt lỗi, coi như chưa công ty nào được đóng dấu, cả trang vẫn chạy nguyên vẹn.
   // (fetchAllRows NÉM lỗi chứ không trả rỗng, nên bắt buộc phải bọc try.)
@@ -208,7 +212,7 @@ export async function GET(request) {
   }
 
   // Tasks applicable for a client in the selected month
-  const getApplicableTasks = (client) => (taskDefs || []).filter(t => {
+  const getApplicableTasks = (client) => dvkOnly.has(client.id) ? [] : (taskDefs || []).filter(t => {
     if (t.is_active === false) return false
     // Only tasks for this specific month
     if (t.month && Number(t.month) !== month) return false
@@ -260,6 +264,8 @@ export async function GET(request) {
       taskDone: tasksWithStatus.filter(t => t.status.startsWith('done')).length,
       // null = trưởng phòng chưa soát tháng này của công ty này.
       review: reviewMap[c.id] || null,
+      // Giao diện đọc cờ này để hiện nhãn "Dịch vụ khác" và ẩn dòng đếm việc.
+      dvk_only: dvkOnly.has(c.id),
     }
   }
 
@@ -311,10 +317,13 @@ export async function GET(request) {
     // (Trang chủ, Báo cáo KPI), KHÔNG dồn tổng số việc/tổng phí rồi chia (cách cũ làm công ty
     // nhiều việc/phí lấn át công ty ít việc/phí, ra số khác 2 trang kia dù cùng 1 nhân viên/tháng).
     // Công ty phụ trách phụ vẫn hiện trong danh sách (clientsWithTasks) nhưng không tính vào %.
-    const taskPcts = ownedWithTasks.map(clientTaskPct)
+    // Cong ty CHI dung Dich vu khac: khong co checklist nen LOAI HAN khoi trung binh. De nguyen
+    // thi no roi vao nhanh `tasks.length === 0 ? 100` cua clientTaskPct, thanh 100% cho khong.
+    const ctyChamViec = ownedWithTasks.filter(c => !dvkOnly.has(c.id))
+    const taskPcts = ctyChamViec.map(clientTaskPct)
     const debtCountedClients = ownedWithTasks.filter(c => feeCountsForMonth(c.fee_period, year, month))
     // %-công việc GỐC rồi mới trừ vi phạm (lib/viPham.js) — trả cả hai để trang ghi rõ đã trừ bao nhiêu.
-    const taskPctGoc = myOwnedClients.length === 0 ? 0 : mean(taskPcts)
+    const taskPctGoc = ctyChamViec.length === 0 ? 0 : mean(taskPcts)
     const taskPct = truViPham(taskPctGoc, viPham.get(s.id))
     // %-công nợ nhân viên (2026-08-24, đổi theo yêu cầu) = TỔNG tiền đã thu / TỔNG phí phải thu
     // gộp tất cả công ty đến hạn của người đó — totalFee/collectedFee đã dồn sẵn ở vòng lặp

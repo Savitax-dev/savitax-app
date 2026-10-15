@@ -570,7 +570,7 @@ export default function ClientsPage() {
   const [expanded, setExpanded] = useState(null)
   const [feeHistory, setFeeHistory] = useState({})
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '', uses_hcns: false, hcns_fee: '', is_hkd: false })
+  const [form, setForm] = useState({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '', uses_hcns: false, hcns_fee: '', is_hkd: false, dvk_only: false })
   const [editClientId, setEditClientId] = useState(null)
   const [editClientForm, setEditClientForm] = useState({})
   const [formRoom, setFormRoom] = useState('')
@@ -787,7 +787,7 @@ export default function ClientsPage() {
       setSaving(false)
       return
     }
-    setForm({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '', uses_hcns: false, hcns_fee: '', is_hkd: false })
+    setForm({ name: '', tax_code: '', report_type: 'monthly', fee_period: 'monthly', monthly_fee: '', fee_start: '', other_debt: '', assigned_to: '', address: '', tax_status: '', client_code: '', representative: '', status: 'pending', contract_start: '', uses_hcns: false, hcns_fee: '', is_hkd: false, dvk_only: false })
     setLookupError('')
     setFormRoom('')
     setShowForm(false)
@@ -891,6 +891,7 @@ export default function ClientsPage() {
         representative: editClientForm.representative,
         contract_start: editClientForm.contract_start || null,
         is_hkd:         editClientForm.is_hkd === true,
+        dvk_only:       editClientForm.dvk_only === true,
       }),
     })
     setEditClientId(null)
@@ -1102,6 +1103,26 @@ export default function ClientsPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+              {/* Chỉ dùng Dịch vụ khác — anh chốt 14/10/2026. Công ty dạng này không làm dịch vụ
+                  kế toán: không phí định kỳ, không checklist tháng, không tờ khai. Việc duy nhất
+                  cần theo dõi là công nợ từng hồ sơ Dịch vụ khác.
+                  BẪY đã chặn ở máy chủ: công ty 0 việc vốn được chấm 100% công việc, nên nhóm này
+                  phải bị LOẠI khỏi mẫu số %-KPI chứ không phải cho 0 việc rồi thôi — xem sql/29. */}
+              <div className="border border-teal-200 bg-teal-50 rounded-lg p-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={form.dvk_only}
+                    onChange={e => setForm(f => ({ ...f, dvk_only: e.target.checked }))}
+                    className="w-4 h-4 accent-teal-600" />
+                  <span className="text-sm font-semibold text-teal-900">Chỉ dùng Dịch vụ khác</span>
+                </label>
+                <p className="text-[11px] text-teal-800 mt-1.5 leading-relaxed">
+                  Công ty <b>không làm dịch vụ kế toán</b>, chỉ phát sinh từng hồ sơ dịch vụ lẻ.
+                  Tick ô này thì <b>không có checklist công việc</b>, không tính vào %-công việc của
+                  nhân viên, và <b>Tờ khai &amp; Hạn nộp</b> bỏ qua công ty. Phí kế toán để 0 —
+                  theo dõi tiền ở mục <b>Công nợ → Dịch vụ khác</b>, phần chưa thu tự chuyển kỳ sau
+                  như nợ tồn.
+                </p>
               </div>
               {/* Hộ kinh doanh — chỉ ảnh hưởng Phân hệ Tờ khai, KHÔNG đụng checklist hay công nợ.
                   Hộ kinh doanh nộp 01/CNKD (TT40/2021), không nộp 01/GTGT, 05/KK-TNCN, 03/TNDN,
@@ -1446,6 +1467,19 @@ export default function ClientsPage() {
                             <p className="text-xs text-gray-400 mt-0.5">Dùng cho hợp đồng + mốc bắt đầu tính tỉ lệ.</p>
                           </div>
                         )}
+                        {/* Chỉ dùng Dịch vụ khác: xem chú thích đầy đủ ở form thêm công ty. */}
+                        <label className="flex items-start gap-2 cursor-pointer border border-teal-200 bg-teal-50 rounded-lg p-2.5">
+                          <input type="checkbox" checked={editClientForm.dvk_only === true}
+                            onChange={e => setEditClientForm(f => ({ ...f, dvk_only: e.target.checked }))}
+                            className="w-4 h-4 accent-teal-600 mt-0.5" />
+                          <span>
+                            <span className="text-sm font-semibold text-teal-900">Chỉ dùng Dịch vụ khác</span>
+                            <span className="block text-[11px] text-teal-800 leading-relaxed">
+                              Không checklist công việc, không tính %-công việc, <b>Tờ khai &amp; Hạn nộp</b>
+                              bỏ qua. Theo dõi tiền ở <b>Công nợ → Dịch vụ khác</b>.
+                            </span>
+                          </span>
+                        </label>
                         {/* Hộ kinh doanh: chỉ ảnh hưởng Phân hệ Tờ khai, không đụng checklist
                             hay công nợ. Xem chú thích ở form thêm công ty phía trên. */}
                         <label className="flex items-start gap-2 cursor-pointer border border-amber-200 bg-amber-50 rounded-lg p-2.5">
@@ -1480,6 +1514,12 @@ export default function ClientsPage() {
                             </span>
                           )}
                           {/* Nhìn thẻ công ty là biết ngay công ty nào KHÔNG có lịch hạn nộp. */}
+                          {client.dvk_only && (
+                            <span className="text-xs bg-teal-50 text-teal-800 border border-teal-200 px-2 py-1 rounded-lg font-semibold"
+                              title="Chỉ dùng Dịch vụ khác — không checklist, không tờ khai, chỉ theo dõi công nợ dịch vụ lẻ">
+                              Dịch vụ khác
+                            </span>
+                          )}
                           {client.is_hkd && (
                             <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2 py-1 rounded-lg font-semibold"
                               title="Hộ kinh doanh — nộp 01/CNKD, Tờ khai & Hạn nộp bỏ qua công ty này">
@@ -1490,7 +1530,7 @@ export default function ClientsPage() {
                         </div>
                         {canEditThis && (
                           <button
-                            onClick={() => { setEditClientId(client.id); setEditClientForm({ name: client.name, tax_code: client.tax_code, address: client.address || '', tax_status: client.tax_status || '', client_code: client.client_code || '', representative: client.representative || '', contract_start: client.contract_start ? String(client.contract_start).slice(0,10) : '', is_hkd: client.is_hkd === true }) }}
+                            onClick={() => { setEditClientId(client.id); setEditClientForm({ name: client.name, tax_code: client.tax_code, address: client.address || '', tax_status: client.tax_status || '', client_code: client.client_code || '', representative: client.representative || '', contract_start: client.contract_start ? String(client.contract_start).slice(0,10) : '', is_hkd: client.is_hkd === true, dvk_only: client.dvk_only === true }) }}
                             className="text-xs text-blue-600 hover:underline font-medium bg-blue-50 px-3 py-1.5 rounded-lg flex-shrink-0">
                             ✏️ Sửa thông tin
                           </button>

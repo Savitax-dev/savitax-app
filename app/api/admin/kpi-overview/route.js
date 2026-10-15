@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { docDvkOnly } from '@/lib/dvkOnly'
 import { countsForMonth } from '@/lib/contractDates'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
@@ -123,11 +124,18 @@ export async function GET(request) {
   }
 
   // Vi phạm của tháng (lib/viPham.js): trừ 20 điểm %-công việc của nhân viên đó, một lần.
+  // Công ty CHỈ dùng Dịch vụ khác — không có checklist nên phải LOẠI khỏi mẫu số %-công việc,
+  // không được để rơi vào nhánh `tasks.length === 0 ? 100` thành 100% cho không (sql/29).
+  const dvkOnly = await docDvkOnly(supabase)
+
   const viPham = await docViPham(supabase, year, month)
 
   const staffResults = (staffList || []).map(s => {
     const myClients = clientsByStaff[s.id] || []
-    const taskPcts = myClients.map(clientTaskPct)
+    // Cong ty CHI dung Dich vu khac khong co checklist -> LOAI HAN khoi trung binh, khong duoc
+    // de no roi vao nhanh `tasks.length === 0 ? 100` cua clientTaskPct. Xem sql/29.
+    const ctyChamViec = myClients.filter(c => !dvkOnly.has(c.id))
+    const taskPcts = ctyChamViec.map(clientTaskPct)
     // Công ty quý chưa tới hạn thu (hoặc còn trong hạn khoan) không tính vào công nợ tháng này.
     const debtCountedClients = myClients.filter(c => feeCountsForMonth(c.fee_period, year, month))
     const totalDebtFee       = debtCountedClients.reduce((a, c) => a + resolveClientFee(c), 0)
@@ -139,8 +147,10 @@ export async function GET(request) {
       role:         s.role,
       client_count: myClients.length,
       // Nhân viên không phụ trách công ty nào thì % công việc = 0%, không phải 100%.
-      task_pct:     truViPham(myClients.length ? mean(taskPcts) : 0, viPham.get(s.id)),
-      task_pct_goc: myClients.length ? mean(taskPcts) : 0,
+      // Mẫu số là `ctyChamViec` chứ không phải `myClients`: người chỉ ôm công ty Dịch vụ khác
+      // thì không có việc nào để chấm, cho 100% là chấm khống.
+      task_pct:     truViPham(ctyChamViec.length ? mean(taskPcts) : 0, viPham.get(s.id)),
+      task_pct_goc: ctyChamViec.length ? mean(taskPcts) : 0,
       vi_pham:      viPham.get(s.id) || null,
       debt_pct:     myClients.length
         ? (debtCountedClients.length ? (totalDebtFee === 0 ? 100 : Math.round(totalDebtCollected / totalDebtFee * 100)) : 100)

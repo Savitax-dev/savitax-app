@@ -35,6 +35,7 @@ const TRACKED = {
   other_debt:     'Nợ tồn cũ',
   uses_hcns:      'Có dùng dịch vụ HCNS',
   is_hkd:         'Là hộ kinh doanh',
+  dvk_only:       'Chỉ dùng Dịch vụ khác',
 }
 const STATUS_LABEL = { pending: 'Trình ký', active: 'Đang sử dụng', inactive: 'Ngưng dịch vụ', transferred: 'Chuyển NV' }
 const PERIOD_LABEL = { monthly: 'Tháng', quarterly: 'Quý' }
@@ -46,7 +47,7 @@ function readable(field, value, staffNames) {
   if (field === 'status') return STATUS_LABEL[value] || String(value)
   if (field === 'fee_period' || field === 'report_type') return PERIOD_LABEL[value] || String(value)
   if (field === 'other_debt') return Number(value).toLocaleString('vi-VN') + 'đ'
-  if (field === 'uses_hcns' || field === 'is_hkd') return value === true ? 'Có' : 'Không'
+  if (field === 'uses_hcns' || field === 'is_hkd' || field === 'dvk_only') return value === true ? 'Có' : 'Không'
   return String(value)
 }
 
@@ -113,6 +114,7 @@ export async function GET() {
     fee_period: c.fee_period || 'monthly',
     uses_hcns: c.uses_hcns === true,
     is_hkd: c.is_hkd === true,
+    dvk_only: c.dvk_only === true,
     hcns_fee: c.uses_hcns === true ? Number(hcnsMap.get(c.id)?.hcns_fee) || 0 : 0,
     // Đã từng dùng HCNS rồi ngừng: lần bật lại chỉ nhập phí mới, KHÔNG trừ vào phí kế toán lần
     // nữa — lần tách đầu tiên đã trừ rồi, trừ tiếp là cắt oan tiền của công ty.
@@ -127,7 +129,7 @@ export async function POST(request) {
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
   const body = await request.json()
-  const { name, tax_code, report_type, monthly_fee, assigned_to, address, tax_status, fee_period, fee_start, other_debt, client_code, representative, status, contract_start, uses_hcns, hcns_fee, is_hkd } = body
+  const { name, tax_code, report_type, monthly_fee, assigned_to, address, tax_status, fee_period, fee_start, other_debt, client_code, representative, status, contract_start, uses_hcns, hcns_fee, is_hkd, dvk_only } = body
   if (!name || !tax_code || !assigned_to) {
     return Response.json({ error: 'Thiếu thông tin bắt buộc' }, { status: 400 })
   }
@@ -165,6 +167,10 @@ export async function POST(request) {
   // Ghi ngay lúc TẠO, không đợi sửa: Phân hệ Tờ khai đọc cờ này để bỏ qua hộ kinh doanh khi sinh
   // lịch hạn nộp. Thiếu ở đây thì công ty mới thêm sẽ lãnh nguyên bộ nghĩa vụ của doanh nghiệp.
   if (is_hkd)         insertData.is_hkd         = true
+  // Cong ty CHI dung Dich vu khac: khong checklist, khong to khai, khong phi dinh ky.
+  // Ghi ngay luc TAO giong is_hkd — thieu o day thi thang dau tien cong ty da bi tinh
+  // nguyen bo checklist va keo %-cong viec cua nhan vien xuong. Xem sql/29.
+  if (dvk_only)       insertData.dvk_only       = true
 
   let { data, error } = await supabase.from('clients').insert(insertData).select().single()
 
@@ -239,7 +245,7 @@ export async function PATCH(request) {
   if (!permCheck.caller) return Response.json({ error: permCheck.error }, { status: permCheck.status })
 
   const body = await request.json()
-  const { id, assigned_to, address, tax_status, fee_period, status, monthly_fee, fee_history, other_debt, client_code, name, tax_code, representative, contract_start, report_type, updatedBy, uses_hcns, hcns_fee, hcns_from, hcns_stop_from, is_hkd, service_end } = body
+  const { id, assigned_to, address, tax_status, fee_period, status, monthly_fee, fee_history, other_debt, client_code, name, tax_code, representative, contract_start, report_type, updatedBy, uses_hcns, hcns_fee, hcns_from, hcns_stop_from, is_hkd, dvk_only, service_end } = body
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })
   const supabase = getAdmin()
 
@@ -272,6 +278,7 @@ export async function PATCH(request) {
   // Hộ kinh doanh nộp 01/CNKD (TT40/2021), không nộp 01/GTGT, 05/KK-TNCN, 03/TNDN, BCTC — nên
   // Phân hệ Tờ khai BỎ QUA nhóm này khi sinh lịch hạn nộp. Xem scripts/soat-hkd.mjs.
   if (is_hkd       !== undefined) updateData.is_hkd       = is_hkd === true
+  if (dvk_only     !== undefined) updateData.dvk_only     = dvk_only === true
 
   // Áp phí LÙI về tháng cũ: chỉ ghi mốc fee_plan cho tháng đó, KHÔNG được đụng vào
   // clients.monthly_fee (phí "sống" hiện tại). Nếu đã có mốc phí ở tháng SAU tháng đang áp thì

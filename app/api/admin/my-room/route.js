@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { docDvkOnly } from '@/lib/dvkOnly'
 import { ensureRollovers } from '@/lib/debtRollover'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { getPeriodMonths } from '@/lib/period'
@@ -173,6 +174,8 @@ export async function GET(request) {
   ]
 
   const clientIds = clients.map(c => c.id)
+  // Công ty CHỈ dùng Dịch vụ khác: không checklist, và phải loại khỏi mẫu số %-công việc (sql/29).
+  const dvkOnly = await docDvkOnly(supabase, clientIds)
 
   if (clientIds.length === 0) {
     return Response.json({
@@ -244,7 +247,8 @@ export async function GET(request) {
     return 'done_late3'
   }
 
-  const getApplicableTasks = (client) => (taskDefs || []).filter(t => {
+  // Cong ty CHI dung Dich vu khac khong co checklist thang (sql/29).
+  const getApplicableTasks = (client) => dvkOnly.has(client.id) ? [] : (taskDefs || []).filter(t => {
     if (t.is_active === false) return false
     if (t.month && Number(t.month) !== month) return false
     const taskType   = t.report_type || 'monthly'
@@ -294,7 +298,10 @@ export async function GET(request) {
   const totalCol   = dueClients.reduce((a, c) => a + c.collected, 0)
 
   // Vi phạm của tháng đang xem (lib/viPham.js) — trừ 20 điểm %-công việc, nhân viên thấy rõ lý do.
-  const taskPctGoc = clientsWithTasks.length === 0 ? 0 : (totalTasks === 0 ? 100 : Math.round(doneTasks / totalTasks * 100))
+  // Mau so bo cong ty Dich vu khac: nguoi chi om nhom nay khong co viec nao de cham, cho 100%
+  // la cham khong (xem sql/29).
+  const ctyChamViec = clientsWithTasks.filter(c => !dvkOnly.has(c.id))
+  const taskPctGoc = ctyChamViec.length === 0 ? 0 : (totalTasks === 0 ? 100 : Math.round(doneTasks / totalTasks * 100))
   const viPhamCuaToi = isMonthOnly ? (await docViPham(supabase, year, month, [staffRecord.id])).get(staffRecord.id) : null
 
   return Response.json({

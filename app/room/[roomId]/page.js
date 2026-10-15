@@ -482,19 +482,32 @@ export default function RoomPage({ params }) {
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <p className="text-sm font-medium text-gray-800 break-words">{c.name}</p>
+                                  {/* Cong ty chi dung Dich vu khac khong co checklist -> noi ro ly do,
+                                      keo theo an luon nhan Thang/Quy vi ky bao cao vo nghia voi nhom nay. */}
+                                  {c.dvk_only ? (
+                                    <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 border bg-teal-100 text-teal-700 border-teal-300"
+                                      title="Chỉ dùng Dịch vụ khác — không có checklist, không tính %-công việc">
+                                      Dịch vụ khác
+                                    </span>
+                                  ) : (
                                   <span className={'text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 border ' +
                                     (c.report_type === 'quarterly'
                                       ? 'bg-purple-100 text-purple-700 border-purple-300'
                                       : 'bg-blue-100 text-blue-700 border-blue-300')}>
                                     {c.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
                                   </span>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                   <span className="text-xs text-gray-400">{c.tax_code}</span>
                                   <span className="text-xs text-blue-600 font-medium">{fmt(c.monthly_fee)}đ/{c.fee_period === 'quarterly' ? 'Quý' : 'Tháng'}</span>
+                                  {c.dvk_only ? (
+                                    <span className="text-xs text-teal-600 font-semibold">không có checklist</span>
+                                  ) : (
                                   <span className={'text-xs font-semibold ' + pctClr(c.taskTotal > 0 ? Math.round(c.taskDone/c.taskTotal*100) : 100)}>
                                     {c.taskDone}/{c.taskTotal} việc T{selMonth}
                                   </span>
+                                  )}
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0 ml-2">

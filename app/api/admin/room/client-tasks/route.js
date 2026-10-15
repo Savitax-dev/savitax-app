@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { laDvkOnly } from '@/lib/dvkOnly'
 import { effectiveDeadlineDate } from '@/lib/deadline'
 import { countsForMonth } from '@/lib/contractDates'
 import { requireLogin } from '@/lib/serverAuth'
@@ -25,6 +26,9 @@ export async function GET(request) {
   // Công ty chưa tới mốc bắt đầu hợp đồng (hoặc đang Trình ký) → không có công việc tháng này
   const { data: cli } = await supabase.from('clients').select('status, contract_start, created_at').eq('id', clientId).single()
   if (cli && cli.status === 'pending') return Response.json({ tasks: [] })
+  // Công ty CHỈ dùng Dịch vụ khác: không làm dịch vụ kế toán nên checklist tháng không áp dụng.
+  // Chặn ngay ở máy chủ chứ không ẩn ngoài giao diện — xem sql/29.
+  if (await laDvkOnly(supabase, clientId)) return Response.json({ tasks: [] })
   if (cli && !countsForMonth(cli, year, month)) return Response.json({ tasks: [] })
 
   // Get tasks for this month + report type

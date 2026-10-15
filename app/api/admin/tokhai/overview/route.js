@@ -6,6 +6,7 @@
 //     phụ trách (chính hoặc phụ). Giống lib/credentialScope.js nhưng lọc theo lô cho nhanh,
 //     không hỏi từng công ty một.
 import { createClient } from '@supabase/supabase-js'
+import { docDvkOnly } from '@/lib/dvkOnly'
 import { roomsWithRole } from '@/lib/roleUnion'
 import { requireLogin } from '@/lib/serverAuth'
 import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
@@ -68,7 +69,10 @@ export async function GET(request) {
     ])
 
     // 1. Công ty trong phạm vi
-    let clients = dsClients.filter(c => c.is_active !== false && c.status !== 'inactive')
+    // Công ty CHỈ dùng Dịch vụ khác không làm dịch vụ kế toán nên không nộp tờ khai hộ -> bỏ hẳn
+    // khỏi phân hệ này, đúng như checklist. Đọc riêng để thiếu cột không làm hỏng cả trang (sql/29).
+    const dvkOnly = await docDvkOnly(supabase)
+    let clients = dsClients.filter(c => c.is_active !== false && c.status !== 'inactive' && !dvkOnly.has(c.id))
 
     // Phòng của công ty suy từ NHÂN VIÊN PHỤ TRÁCH (clients.room_id gần như luôn trống) — tính
     // cho MỌI vai trò, vì màn hình Đồng bộ theo lô cần tên phòng kể cả khi người xem là quản trị.
