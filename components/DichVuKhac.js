@@ -38,8 +38,12 @@ export default function DichVuKhac({ client, year, month, canCloseEarly = false,
   // ở trên thì ô này tự đi theo, không kẹt ở tháng cũ.
   const kyMacDinh = maKy(year, month)
   const [moKy, setMoKy] = useState(null)
+  // Mở rộng xem cả hồ sơ đã xong của kỳ khác. Đổi tháng thì thu lại, không thì xem một lần rồi
+  // tháng nào cũng thấy lẫn lộn y như trước.
+  const [xemHetKy, setXemHetKy] = useState(false)
   useEffect(() => {
     setMoKy(null)
+    setXemHetKy(false)
     setThu(x => Object.fromEntries(Object.entries(x).map(([k, v]) => [k, { ...v, ky: null }])))
   }, [kyMacDinh])
 
@@ -97,7 +101,19 @@ export default function DichVuKhac({ client, year, month, canCloseEarly = false,
   const tongPhaiThu = dangMo.reduce((a, s) => a + s.amount, 0)
   const tongDaThu = dangMo.reduce((a, s) => a + s.paid, 0)
   const tongConLai = dangMo.reduce((a, s) => a + s.remain, 0)
-  const tongDaXong = daDong.reduce((a, s) => a + s.paid, 0)
+
+  // LỌC THEO KỲ — anh nêu 14/10/2026: chọn T10 mà vẫn thấy hồ sơ của T9, tưởng là số của T10.
+  //
+  //   - Hồ sơ ĐANG THU: hiện ở MỌI kỳ. Đây là chỗ dễ làm sai nhất nếu lọc cứng theo tháng — hồ sơ
+  //     VIỆT ÚC phát sinh T9 còn thiếu 74 triệu, lọc theo tháng thì sang T10 nó biến mất và không
+  //     ai ghi thu được nữa, trong khi tiền vẫn đang nợ.
+  //   - Hồ sơ ĐÃ HOÀN THÀNH: chỉ hiện của ĐÚNG kỳ đang xem. Đó là việc đã xong của tháng này, kỳ
+  //     khác là lịch sử — bấm "xem tất cả" khi cần tra lại.
+  const dungKy = (x) => Number(x.year) === Number(year) && Number(x.month) === Number(month)
+  const daDongKy = daDong.filter(dungKy)
+  const daDongKhacKy = daDong.filter(x => !dungKy(x))
+  const tongDaXongKy = daDongKy.reduce((a, s) => a + s.paid, 0)
+  const hienThi = xemHetKy ? (list || []) : (list || []).filter(s => s.status !== 'done' || dungKy(s))
 
   if (list === null) return <div className="p-3 text-xs text-gray-400">Đang tải hồ sơ dịch vụ khác...</div>
 
@@ -105,12 +121,12 @@ export default function DichVuKhac({ client, year, month, canCloseEarly = false,
     <div className="p-3 space-y-2">
       <div className="flex items-center justify-between gap-2">
         <div className="flex gap-3 text-xs flex-wrap">
-          <span className="text-gray-500">Đang mở <b className="text-gray-700">{dangMo.length}</b> hồ sơ:</span>
+          <span className="text-gray-500">Đang mở <b className="text-gray-700">{dangMo.length}</b> hồ sơ <span className="text-gray-400">(mọi kỳ)</span>:</span>
           <span className="text-gray-500">phải thu <b className="text-gray-700">{fmt(tongPhaiThu)}đ</b></span>
           <span className="text-gray-500">đã thu <b className="text-green-600">{fmt(tongDaThu)}đ</b></span>
           <span className="text-gray-500">còn lại <b className={tongConLai > 0 ? 'text-orange-500' : 'text-green-600'}>{fmt(tongConLai)}đ</b></span>
-          {daDong.length > 0 && (
-            <span className="text-gray-400">· đã xong {daDong.length} hồ sơ ({fmt(tongDaXong)}đ)</span>
+          {daDongKy.length > 0 && (
+            <span className="text-gray-400">· đã xong {daDongKy.length} hồ sơ {nhanKy(kyMacDinh)} ({fmt(tongDaXongKy)}đ)</span>
           )}
         </div>
         <button onClick={() => { setMoForm(v => !v); setErr('') }}
@@ -156,9 +172,13 @@ export default function DichVuKhac({ client, year, month, canCloseEarly = false,
         </div>
       )}
 
-      {list.length === 0 ? (
-        <p className="text-xs text-gray-400 text-center py-4">Chưa có hồ sơ dịch vụ khác nào</p>
-      ) : list.map(s => {
+      {hienThi.length === 0 ? (
+        <p className="text-xs text-gray-400 text-center py-4">
+          {list.length === 0
+            ? 'Chưa có hồ sơ dịch vụ khác nào'
+            : 'Không có hồ sơ nào của ' + nhanKy(kyMacDinh) + ', và không còn khoản nào đang thu'}
+        </p>
+      ) : hienThi.map(s => {
         const duTien = s.remain === 0
         const nhan = s.status === 'done'
           ? ['Đã hoàn thành', 'bg-green-100 text-green-700']
@@ -173,7 +193,14 @@ export default function DichVuKhac({ client, year, month, canCloseEarly = false,
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-800 truncate">{s.name}</p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Kỳ T{s.month}/{s.year} · phải thu {fmt(s.amount)}đ · đã thu <span className="text-green-600">{fmt(s.paid)}đ</span>
+                  Kỳ T{s.month}/{s.year}
+                  {/* Ho so dang thu tu ky CU hon: noi ro de khong tuong day la phat sinh thang nay. */}
+                  {s.status !== 'done' && !dungKy(s) && (
+                    <span className="ml-1 text-[10px] font-semibold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full">
+                      không phải kỳ này
+                    </span>
+                  )}
+                  {' · '}phải thu {fmt(s.amount)}đ · đã thu <span className="text-green-600">{fmt(s.paid)}đ</span>
                   {s.status !== 'done' && s.remain > 0 && <> · còn <span className="text-orange-500">{fmt(s.remain)}đ</span></>}
                 </p>
               </div>
@@ -284,6 +311,17 @@ export default function DichVuKhac({ client, year, month, canCloseEarly = false,
           </div>
         )
       })}
+
+      {/* Ho so DA XONG cua ky khac — giau di cho do lan, nhung phai noi ro la co, khong thi lai
+          thanh "mat ho so" o chieu nguoc lai. */}
+      {daDongKhacKy.length > 0 && (
+        <button onClick={() => setXemHetKy(v => !v)}
+          className="w-full text-xs text-gray-500 hover:text-gray-700 py-1.5 border border-dashed border-gray-200 rounded-lg hover:bg-gray-50">
+          {xemHetKy
+            ? '▲ Thu gọn — chỉ xem hồ sơ của ' + nhanKy(kyMacDinh)
+            : '▼ Còn ' + daDongKhacKy.length + ' hồ sơ đã xong ở kỳ khác — xem tất cả'}
+        </button>
+      )}
     </div>
   )
 }
