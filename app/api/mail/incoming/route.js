@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { timingSafeEqual } from 'node:crypto'
-import { docMail } from '@/lib/mailBaoCao'
+import { docMail, khopCty } from '@/lib/mailBaoCao'
 
 // POST /api/mail/incoming — VPS (/root/acb_zalo/mail_sync.py) đẩy tiêu đề mail "bộ báo cáo thuế"
 // nhân viên gửi khách lên đây. App đối chiếu rồi TỰ TICK việc "Gửi mail bộ báo cáo thuế ..." trong
@@ -59,13 +59,20 @@ export async function POST(request) {
   }
   const daXuLy = new Set((daCo || []).map(r => r.message_id))
 
-  // CHỈ công ty ĐANG HOẠT ĐỘNG: công ty đã ngưng không còn checklist để tick, mà để lẫn vào thì
-  // gây mơ hồ với công ty cùng tên (xem lib/mailBaoCao.js).
-  const [{ data: clients }, { data: taskDefs }, { data: staffRows }] = await Promise.all([
-    supabase.from('clients').select('id, name, client_code, tax_code, report_type').eq('status', 'active'),
+  // TICK chỉ đối chiếu với công ty ĐANG HOẠT ĐỘNG: công ty đã ngưng không còn checklist để tick,
+  // mà để lẫn vào thì gây mơ hồ với công ty cùng tên (xem lib/mailBaoCao.js).
+  //
+  // Nhưng VẪN đọc cả nhóm đã ngưng — chỉ để NÓI ĐÚNG LÝ DO. Ca thật 15/10/2026: hai mail báo cáo
+  // tháng 9 gửi cho PHỤ LIỆU TPD và PHỤ LIỆU TÂN NGUYÊN PHÚC, tên viết đúng từng chữ, mà nhật ký ghi
+  // "không tìm thấy công ty khớp tên" — vì cả hai đã ngưng dịch vụ. Lý do sai thì người đọc đi sửa
+  // nhầm chỗ (đi soi tiêu đề), trong khi tiêu đề không có gì sai.
+  const [{ data: tatCaCty }, { data: taskDefs }, { data: staffRows }] = await Promise.all([
+    supabase.from('clients').select('id, name, client_code, tax_code, report_type, status'),
     supabase.from('task_definitions').select('id, name, month, report_type, is_active').eq('is_active', true),
     supabase.from('staff').select('id, email'),
   ])
+  const clients = (tatCaCty || []).filter(c => (c.status || 'active') === 'active')
+  const ctyNgung = (tatCaCty || []).filter(c => (c.status || 'active') !== 'active')
   const staffByEmail = new Map((staffRows || [])
     .filter(s => s.email).map(s => [String(s.email).trim().toLowerCase(), s.id]))
 
@@ -97,6 +104,15 @@ export async function POST(request) {
     if (!r.ok) {
       dong.client_id = r.client?.id || null
       dong.reason = r.lyDo || 'không khớp'
+      // Không ra công ty đang hoạt động nào -> thử nhóm ĐÃ NGƯNG, CHỈ ĐỂ NÓI ĐÚNG LÝ DO, không tick.
+      // Gắn luôn client_id để nhật ký hiện được tên công ty, người xem khỏi phải đoán.
+      if (!r.client && (r.tenTruoc || r.tenSau)) {
+        const ngung = khopCty(r, ctyNgung)
+        if (ngung.client) {
+          dong.client_id = ngung.client.id
+          dong.reason = 'công ty đã ngưng dịch vụ — không còn checklist để tick'
+        }
+      }
       ghi.push(dong); ketQua.khongKhop++; continue
     }
 

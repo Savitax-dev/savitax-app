@@ -35,14 +35,14 @@ export async function GET(request) {
   const dau = new Date(Date.UTC(nam, thang - 1, 1)).toISOString()
   const cuoi = new Date(Date.UTC(thang === 12 ? nam + 1 : nam, thang === 12 ? 0 : thang, 1)).toISOString()
 
-  let q = supabase.from('mail_evidence')
+  // ĐỌC HẾT CẢ KỲ, KHÔNG LỌC THEO `loc` Ở ĐÂY. Ba con số trên ba thẻ phải là số của CẢ KỲ — lọc ở
+  // truy vấn thì thẻ đang KHÔNG chọn sẽ báo 0. Ca thật 15/10/2026: trang mặc định mở ở "Chưa khớp",
+  // nên lần đầu vào thấy "Tất cả 2 · Khớp được 0", phải bấm "Tất cả" mới hiện số thật 9 · 7.
+  // Lọc theo `loc` làm SAU, chỉ cho danh sách.
+  const { data: rows, error } = await supabase.from('mail_evidence')
     .select('id, message_id, subject, from_email, sent_at, client_id, task_def_id, year, month, matched, reason, ticked')
     .gte('sent_at', dau).lt('sent_at', cuoi)
     .order('sent_at', { ascending: false })
-  if (loc === 'khop') q = q.eq('matched', true)
-  if (loc === 'chua') q = q.eq('matched', false)
-
-  const { data: rows, error } = await q
   // Chưa chạy sql/30 -> trả danh sách rỗng kèm cờ, giao diện tự nói "chưa cài", không vỡ trang.
   if (error) return Response.json({ data: [], chuaCaiDat: true, loi: error.message })
 
@@ -71,8 +71,19 @@ export async function GET(request) {
       (r.client_id && tenCty.get(r.client_id)?.assigned_to === caller.staffId))
   }
 
+  // `ds` lúc này là CẢ KỲ trong phạm vi người xem -> đếm ở đây. Rồi mới cắt theo thẻ đang chọn.
+  const tong = {
+    tatCa: ds.length,
+    khop: ds.filter(r => r.matched).length,
+    tick: ds.filter(r => r.ticked).length,
+    chua: ds.filter(r => !r.matched).length,
+  }
+  const hienThi = loc === 'khop' ? ds.filter(r => r.matched)
+    : loc === 'chua' ? ds.filter(r => !r.matched)
+    : ds
+
   return Response.json({
-    data: ds.map(r => ({
+    data: hienThi.map(r => ({
       id: r.id,
       subject: r.subject,
       fromEmail: r.from_email,
@@ -85,12 +96,7 @@ export async function GET(request) {
       taskName: r.task_def_id ? (tenViec.get(r.task_def_id) || null) : null,
       ky: r.year && r.month ? ('T' + r.month + '/' + r.year) : null,
     })),
-    tong: {
-      tatCa: ds.length,
-      khop: ds.filter(r => r.matched).length,
-      tick: ds.filter(r => r.ticked).length,
-      chua: ds.filter(r => !r.matched).length,
-    },
+    tong,
     laQuanLy,
   })
 }
