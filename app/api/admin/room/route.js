@@ -331,7 +331,9 @@ export async function GET(request) {
     // ownedWithTasks.map bên trên, KHÔNG phải trung bình cộng % từng công ty (khác task ở trên).
     const debtPct = myOwnedClients.length === 0 ? 0 : (debtCountedClients.length ? (totalFee === 0 ? 100 : Math.round(collectedFee / totalFee * 100)) : 100)
 
-    return { ...s, clientCount: myOwnedClients.length, clients: clientsWithTasks, taskPct, taskPctGoc, viPham: viPham.get(s.id) || null, debtPct, totalTasks, doneTasks, totalFee, collectedFee }
+    const chamViec = ctyChamViec.length > 0
+    const chamNo = myOwnedClients.some(c => !dvkOnly.has(c.id))
+    return { ...s, clientCount: myOwnedClients.length, clients: clientsWithTasks, taskPct, taskPctGoc, viPham: viPham.get(s.id) || null, debtPct, totalTasks, doneTasks, totalFee, collectedFee, chamViec, chamNo }
   })
 
   const sumKpiTotal = staffData.reduce((a, s) => a + s.clients.reduce((b, c) => b + c.tasks.length, 0), 0)
@@ -342,8 +344,12 @@ export async function GET(request) {
   const totals = {
     // Trung bình cộng theo nhân viên trong phòng — khớp avg_task_pct/avg_debt_pct của
     // kpi-overview (Trang chủ) cho cùng phòng, thay vì dồn tổng việc/phí toàn phòng rồi chia.
-    taskPct:     staffData.length ? mean(staffData.map(s => s.taskPct)) : 0,
-    debtPct:     staffData.length ? mean(staffData.map(s => s.debtPct)) : 0,
+    // Người KHÔNG có công ty nào để chấm trong tháng (chưa nhận công ty, tài khoản dùng chung kiểu
+    // "TP Dakshin", hay chỉ ôm công ty "chỉ Dịch vụ khác") vẫn hiện 0% ở danh sách nhân viên nhưng
+    // KHÔNG được tính vào trung bình phòng — tính 0% là kéo oan cả phòng (anh duyệt 17/10/2026:
+    // Danxia T8 43% → 65%, Grand 85% → 95%). Áp cho cả %-công việc lẫn %-công nợ.
+    taskPct:     mean(staffData.filter(s => s.chamViec).map(s => s.taskPct)),
+    debtPct:     mean(staffData.filter(s => s.chamNo).map(s => s.debtPct)),
     totalTasks:  sumKpiTotal,
     doneTasks:   sumKpiDone,
     totalFee:    sumFee,
