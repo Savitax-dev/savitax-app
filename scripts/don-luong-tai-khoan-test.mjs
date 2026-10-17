@@ -1,4 +1,4 @@
-// Dọn dữ liệu Tiền lương của MỘT tài khoản thử (lương, chấm công, nhật ký sửa công).
+// Dọn dữ liệu Tiền lương của MỘT tài khoản thử (lương, chấm công, nhật ký sửa công, khai thưởng DVK).
 // Mặc định chỉ XEM sẽ xoá gì; thêm --apply mới xoá.
 //   node --env-file=.env.local scripts/don-luong-tai-khoan-test.mjs <email>
 //   node --env-file=.env.local scripts/don-luong-tai-khoan-test.mjs <email> --apply
@@ -21,9 +21,11 @@ const [luong, cong, logTheoNv, logDoNvSua] = await Promise.all([
   sb.from('luong_cham_cong_log').select('id, hanh_dong').eq('staff_id', nv.id),
   sb.from('luong_cham_cong_log').select('id, hanh_dong, staff_id').eq('boi', nv.id).neq('staff_id', nv.id),
 ])
+const dvk = await sb.from('luong_dvk_khai').select('id, ten_dv, trang_thai').eq('staff_id', nv.id)
 console.log('  lương:', luong.data.length, JSON.stringify(luong.data.map(x => x.ap_dung_tu + ' ' + x.cap_bac + ' ' + x.luong_co_ban)))
 console.log('  chấm công:', cong.data.length, JSON.stringify(cong.data.map(x => x.thang + '/' + x.nam + ' ' + x.trang_thai)))
 console.log('  nhật ký công của tài khoản này:', logTheoNv.data.length)
+console.log('  khai thưởng DVK:', dvk.error ? '(chưa có bảng sql/32)' : dvk.data.length + ' ' + JSON.stringify(dvk.data.map(x => x.ten_dv + ' · ' + x.trang_thai)))
 if (logDoNvSua.data.length) console.log('  ⚠ tài khoản này từng sửa công của', logDoNvSua.data.length, 'người khác — KHÔNG xoá các dòng đó')
 
 if (!apply) { console.log('\nChỉ xem. Thêm --apply để xoá.'); process.exit(0) }
@@ -34,3 +36,4 @@ const xoa = async (bang, cot) => {
 await xoa('luong_cham_cong_log', 'staff_id')
 await xoa('luong_cham_cong', 'staff_id')
 await xoa('luong_nhan_vien', 'staff_id')
+if (!dvk.error) await xoa('luong_dvk_khai', 'staff_id')
