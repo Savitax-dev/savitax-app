@@ -236,6 +236,8 @@ export default function Sidebar({ onClose }) {
   // Đối soát ngân hàng — quyền riêng `bank_reconcile` (sql/21_bank_transactions.sql), nằm ở phân
   // khu Kế toán để tích thêm cho kế toán / trưởng phòng kế toán.
   const canBankReconcile   = can(role, 'bank_reconcile', permData)
+  // Chấm công & Lương (sql/31) — `cham_cong` gán sẵn cho mọi vai trò; chưa chạy SQL thì quyền không tồn tại, mục tự ẩn.
+  const canChamCong        = can(role, 'cham_cong', permData) || can(role, 'view_payroll', permData)
   const showAdminSection = canManageRooms || canManageStaff || canManageClients || canManageChecklist || canViewAllDebt || canManageDatabase || canManageRoles
   // Khu HCNS tự ẩn với người không có quyền — bản clone không cài module thì quyền này không tồn
   // tại nên can() trả false, khu biến mất mà không phải sửa code.
@@ -309,6 +311,7 @@ export default function Sidebar({ onClose }) {
 
         <NavItem href="/dashboard"  icon="🏠" label="Trang chủ"           pathname={pathname} onClose={onClose} />
         <NavItem href="/clients"    icon="🏢" label="Danh sách công ty"   pathname={pathname} onClose={onClose} />
+        {canChamCong && <NavItem href="/luong" icon="🗓️" label="Chấm công & Lương" pathname={pathname} onClose={onClose} />}
 
         {!noAccounting && <SectionLabel>Kế toán</SectionLabel>}
         {!noAccounting && <NavItem href="/checklist"  icon="📋" label="Checklist công việc" pathname={pathname} onClose={onClose} />}

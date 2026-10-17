@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import { hasPermission } from '@/lib/permissions'
+import OLuongNhanVien from '@/components/luong/OLuongNhanVien'
+import { luongCuaThang } from '@/lib/luong/ngayCong'
 
 const ROLE_BADGE_FALLBACK = [
   'bg-purple-100 text-purple-700', 'bg-blue-100 text-blue-700',
@@ -46,6 +48,25 @@ export default function AdminStaffPage() {
   const [roleOpts, setRoleOpts]   = useState([]) // [{v, l}] tải động từ bảng roles
 
   const isAdmin = myRole === 'admin'
+
+  // Phân hệ Tiền lương (sql/31): cột "Cấp bậc · Lương" chỉ hiện với view_payroll / manage_payroll.
+  // Chưa chạy SQL thì API báo lỗi → cột tự ẩn, trang chạy như cũ.
+  const [luong, setLuong] = useState(null)   // { sua, capBac, lichSu }
+  const taiLuong = async () => {
+    try {
+      const q = await fetch('/api/admin/luong?viec=quyen', { cache: 'no-store' }).then(r => r.json())
+      if (q.error || !q.view) { setLuong(null); return }
+      const [cb, ls] = await Promise.all([
+        fetch('/api/admin/luong?viec=cap_bac', { cache: 'no-store' }).then(r => r.json()),
+        fetch('/api/admin/luong?viec=luong_nv', { cache: 'no-store' }).then(r => r.json()),
+      ])
+      if (cb.error || ls.error) { setLuong(null); return }
+      setLuong({ sua: !!q.manage, capBac: cb.data || [], lichSu: ls.data || [] })
+    } catch { setLuong(null) }
+  }
+  useEffect(() => { taiLuong() }, [])
+  const thangNayVN = (() => { const d = new Date(Date.now() + 7 * 3600e3); return { nam: d.getUTCFullYear(), thang: d.getUTCMonth() + 1 } })()
+  const soCot = luong ? 8 : 7
 
   const loadExtraRoles = async () => {
     try {
@@ -353,7 +374,7 @@ export default function AdminStaffPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  {['Họ tên', 'Email / SĐT', 'Phòng', 'Vai trò', 'Số CT', 'Trạng thái', ''].map((h, i) => (
+                  {['Họ tên', 'Email / SĐT', 'Phòng', ...(luong ? ['Cấp bậc · Lương'] : []), 'Vai trò', 'Số CT', 'Trạng thái', ''].map((h, i) => (
                     <th key={i} className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -361,7 +382,7 @@ export default function AdminStaffPage() {
               <tbody className="divide-y divide-gray-50">
                 {displayed.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">
+                    <td colSpan={soCot} className="px-4 py-8 text-center text-sm text-gray-400">
                       Không có nhân viên nào
                     </td>
                   </tr>
@@ -468,6 +489,14 @@ export default function AdminStaffPage() {
                         })()}
                       </td>
 
+                      {luong && (
+                        <td className="px-4 py-3 align-top">
+                          <OLuongNhanVien staffId={s.id} tenNv={s.full_name} capBac={luong.capBac} sua={luong.sua} onDaLuu={taiLuong}
+                            hienHanh={luongCuaThang(luong.lichSu.filter(x => x.staff_id === s.id), thangNayVN.nam, thangNayVN.thang)
+                              || luong.lichSu.filter(x => x.staff_id === s.id).sort((a, b) => String(a.ap_dung_tu).localeCompare(String(b.ap_dung_tu)))[0] || null} />
+                        </td>
+                      )}
+
                       {/* Vai trò — chỉ admin được đổi, trưởng phòng chỉ xem */}
                       <td className="px-4 py-3">
                         {isEditing && isAdmin ? (
@@ -552,7 +581,7 @@ export default function AdminStaffPage() {
                     </tr>
                     {resetId === s.id && (
                       <tr className="bg-amber-50/40">
-                        <td colSpan={7} className="px-4 py-3">
+                        <td colSpan={soCot} className="px-4 py-3">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs text-gray-600 font-medium">Đặt lại mật khẩu cho {s.full_name}:</span>
                             <input type="password" value={resetPass} autoFocus
