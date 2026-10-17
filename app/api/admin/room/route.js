@@ -332,7 +332,8 @@ export async function GET(request) {
     const debtPct = myOwnedClients.length === 0 ? 0 : (debtCountedClients.length ? (totalFee === 0 ? 100 : Math.round(collectedFee / totalFee * 100)) : 100)
 
     const chamViec = ctyChamViec.length > 0
-    const chamNo = myOwnedClients.some(c => !dvkOnly.has(c.id))
+    // Công ty "chỉ Dịch vụ khác" vẫn tính vào %-công nợ (thu hằng tháng) — chỉ bỏ khỏi %-công việc.
+    const chamNo = myOwnedClients.length > 0
     return { ...s, clientCount: myOwnedClients.length, clients: clientsWithTasks, taskPct, taskPctGoc, viPham: viPham.get(s.id) || null, debtPct, totalTasks, doneTasks, totalFee, collectedFee, chamViec, chamNo }
   })
 
