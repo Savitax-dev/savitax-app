@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import * as XLSX from 'xlsx'
+import { soExcelMoi, themSheetMang, taiVeExcel } from '@/lib/excelDep'
 import KhoiDongTien from '@/components/KhoiDongTien'
 
 // Tab "Phí đã thu" của trang Báo cáo KPI — tiền đã ghi nhận trong một khoảng ngày, chọn nhiều
@@ -89,9 +89,9 @@ export default function BaoCaoPhiDaThu() {
     ? (data.kyDongTien.tuThang === data.kyDongTien.denThang ? 'T' + data.kyDongTien.tuThang : 'T' + data.kyDongTien.tuThang + '–T' + data.kyDongTien.denThang) + '/' + data.kyDongTien.year
     : ''
 
-  const xuatExcel = () => {
+  const xuatExcel = async () => {
     if (!data?.summary?.length) return
-    const wb = XLSX.utils.book_new()
+    const wb = await soExcelMoi()
     const ky = 'Từ ' + ngayVN(data.from) + ' đến ' + ngayVN(data.to)
     const ghiChuKy = kyTxt
       ? 'Tồn đầu kỳ / phải thu / đã thu của kỳ / chuyển kỳ sau tính theo kỳ ' + kyTxt + ' (các tháng mà khoảng ngày chạm tới). "Đã ghi trong khoảng ngày" là tiền thực ghi vào app trong khoảng ngày.'
@@ -105,9 +105,7 @@ export default function BaoCaoPhiDaThu() {
       ...data.summary.map(g => { const f = flow(g.staffId); return [g.roomName, g.staffName, f.soCty || g.clientCount, g.count, f.ton, f.phiKt, f.phiHcns, f.phiKhac, f.thuKy, g.total, f.chuyen] }),
       ['TỔNG CỘNG', '', T.soCty, data.totals.count, T.ton, T.phiKt, T.phiHcns, T.phiKhac, T.thuKy, data.totals.total, T.chuyen],
     ]
-    const ws = XLSX.utils.aoa_to_sheet(tong)
-    ws['!cols'] = [14, 26, 10, 11, 20, 18, 14, 14, 17, 20, 22].map(w => ({ wch: w }))
-    XLSX.utils.book_append_sheet(wb, ws, 'Tổng hợp')
+    themSheetMang(wb, 'Tổng hợp', tong, { doRong: [14, 26, 10, 11, 20, 18, 14, 14, 17, 20, 22], cotTien: [4, 5, 6, 7, 8, 9, 10] })
 
     const daDung = new Set(['tổng hợp'])
     const tg = (x) => (x?.ketoan || 0) + (x?.hcns || 0) + (x?.dvk || 0)
@@ -128,11 +126,9 @@ export default function BaoCaoPhiDaThu() {
         ['', '', 'TỔNG', '', '', '', '', g.total, '', ''],
         [], ['', '', 'Phí kế toán', '', '', '', '', g.ketoan], ['', '', 'Thu nợ tồn', '', '', '', '', g.no_ton], ['', '', 'Thu khác', '', '', '', '', g.khach],
       ]
-      const w = XLSX.utils.aoa_to_sheet(rows)
-      w['!cols'] = [5, 12, 46, 13, 22, 15, 13, 13, 17, 24].map(x => ({ wch: x }))
-      XLSX.utils.book_append_sheet(wb, w, tenSheet(g.staffName, daDung))
+      themSheetMang(wb, tenSheet(g.staffName, daDung), rows, { doRong: [5, 12, 46, 13, 22, 15, 13, 13, 17, 24], cotTien: [4, 5, 6, 7, 8] })
     }
-    XLSX.writeFile(wb, 'BaoCaoDongTien_' + data.from + '_' + data.to + '.xlsx')
+    await taiVeExcel(wb, 'BaoCaoDongTien_' + data.from + '_' + data.to + '.xlsx')
   }
 
   const theoPhong = useMemo(() => {

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { loadPermissionData, can } from '@/lib/permissions'
 import AppShell from '@/components/AppShell'
 import ClientChecklist from '@/components/ClientChecklist'
-import * as XLSX from 'xlsx'
+import { soExcelMoi, themSheetMang, taiVeExcel } from '@/lib/excelDep'
 import { HCNS_PER_HEAD } from '@/lib/salesPricing'
 import { HCNS_STATUSES, HCNS_STATUS_LABEL } from '@/lib/hcnsStatus'
 import { hcnsDueState, hcnsDueDate } from '@/lib/hcnsDue'
@@ -169,19 +169,10 @@ export default function HcnsPage() {
     const periodLabel = mode === 'year' ? 'Năm ' + selYear : mode === 'quarter' ? 'Quý ' + q + '/' + selYear : 'T' + selMonth + '/' + selYear
     const fileTag = mode === 'year' ? 'Nam' + selYear : mode === 'quarter' ? 'Q' + q + '-' + selYear : 'T' + selMonth + '-' + selYear
     const pct = (v) => v === null || v === undefined ? '' : v / 100
-    const wb = XLSX.utils.book_new()
-    const addSheet = (name, rows, widths, pctCols = [], moneyCols = []) => {
-      const ws = XLSX.utils.aoa_to_sheet(rows)
-      ws['!cols'] = widths.map(w => ({ wch: w }))
-      // Định dạng ô số / % (bỏ qua các dòng tiêu đề chữ).
-      for (let r = 0; r < rows.length; r++) {
-        for (const c of [...pctCols, ...moneyCols]) {
-          const cell = ws[XLSX.utils.encode_cell({ r, c })]
-          if (cell && typeof cell.v === 'number') cell.z = pctCols.includes(c) ? '0%' : '#,##0'
-        }
-      }
-      XLSX.utils.book_append_sheet(wb, ws, name)
-    }
+    // File có định dạng (lib/excelDep.js — đồng bộ kiểu với bảng lương).
+    const wb = await soExcelMoi()
+    const addSheet = (name, rows, widths, pctCols = [], moneyCols = []) =>
+      themSheetMang(wb, name, rows, { doRong: widths, cotPhanTram: pctCols, cotTien: moneyCols })
 
     if (kind === 'thoi_ky') {
       const tk = report.thoiKy
@@ -290,7 +281,7 @@ export default function HcnsPage() {
       ]
       addSheet('Chi tiết dịch vụ', s2, [5, 26, 45, 22, 32, 12, 14, 18, 18, 13, 15], [], [10])
     }
-    XLSX.writeFile(wb, 'HCNS_' + (kind === 'thoi_ky' ? 'ThoiKy' : 'ThoiDiem') + '_' + fileTag + '.xlsx')
+    await taiVeExcel(wb, 'HCNS_' + (kind === 'thoi_ky' ? 'ThoiKy' : 'ThoiDiem') + '_' + fileTag + '.xlsx')
   }
 
   const TABS = [
