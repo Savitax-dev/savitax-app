@@ -90,8 +90,18 @@ const PAGE_SIZE = 1000
 async function fetchAllRows(supabase, table) {
   const rows = []
   let from = 0
+  // Sắp theo id để lật trang ổn định: không sắp thì Postgres trả mỗi trang một thứ tự, bản backup
+  // của bảng lớn (task_records hơn 11.000 dòng) vừa có dòng lặp vừa sót dòng (soát 17/10/2026).
+  // Bảng không có cột id (role_permissions…) thì đọc không sắp — các bảng đó đều dưới 1.000 dòng.
+  let coSap = true
   while (true) {
-    const { data, error } = await supabase.from(table).select('*').range(from, from + PAGE_SIZE - 1)
+    let q = supabase.from(table).select('*')
+    if (coSap) q = q.order('id')
+    let { data, error } = await q.range(from, from + PAGE_SIZE - 1)
+    if (error && coSap && from === 0 && /column .*id.* does not exist|id/i.test(error.message || '')) {
+      coSap = false
+      ;({ data, error } = await supabase.from(table).select('*').range(from, from + PAGE_SIZE - 1))
+    }
     if (error) return { table, error }
     rows.push(...(data || []))
     if (!data || data.length < PAGE_SIZE) break

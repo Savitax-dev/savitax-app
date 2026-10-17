@@ -16,7 +16,8 @@ async function fetchAllRows(buildQuery, pageSize = 1000) {
   let all = []
   let from = 0
   while (true) {
-    const { data, error } = await buildQuery().range(from, from + pageSize - 1)
+    // Sắp theo id để lật trang ổn định — không sắp thì trang sau lặp / bỏ sót dòng (đo thật 17/10/2026).
+    const { data, error } = await buildQuery().order('id').range(from, from + pageSize - 1)
     if (error) throw error
     all = all.concat(data || [])
     if (!data || data.length < pageSize) break
