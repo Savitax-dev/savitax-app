@@ -100,7 +100,9 @@ export async function GET(request) {
       const day = dayOf.get(r.template_task_id)
       if (day) {
         const deadline = effectiveDeadlineDate(r.year, r.month, day)
-        if (r.done_at && new Date(r.done_at) > deadline) continue
+        // Trễ = tích SAU khi qua HẾT ngày hạn (từ 0h ngày kế, giờ VN) — đúng luật checklist kế toán. Trước
+        // 17/10/2026 dùng `> deadline` (0h ĐẦU ngày hạn) nên tích ngay trong ngày hạn cũng bị coi là trễ.
+        if (r.done_at && new Date(r.done_at) >= new Date(deadline.getTime() + 86400000)) continue
       }
       const k = r.hcns_client_id + '_' + r.year + '_' + r.month
       recDone.set(k, (recDone.get(k) || 0) + 1)
