@@ -7,7 +7,7 @@
 //
 // HTML dưới đây dựng lại theo đúng bảng anh chụp ngày 11/10/2026 (3 bản ghi của PAPER ART VIỆT).
 import { docBangKetQuaEtax, doanLoaiToKhaiTuTen, chuanHoaTrangThai } from '../lib/dvcPortal.js'
-import { chuanHoaKy } from '../lib/taxDeadline.js'
+import { chuanHoaKy, chuanHoaKyBang } from '../lib/taxDeadline.js'
 
 let dat = 0, hong = 0
 const kiem = (ten, thucTe, mongDoi) => {
@@ -96,10 +96,29 @@ console.log('')
 console.log('Kỳ tính thuế: cổng ghi quý có tiền tố, THÁNG để trần:')
 // Ca thật 11/10/2026 (PAPER ART VIỆT): 'Văn bản đề nghị hủy hồ sơ hoàn thuế' kỳ 03/2025 bị đọc
 // thành Q3.2025 vì chưa khớp loại tờ khai nên mặc định coi là quý.
-kiem("'Q4/2024' → quý 4", chuanHoaKy('Q4/2024', 'month'), 'Q4.2024')
-kiem("'2024' → năm", chuanHoaKy('2024', 'month'), 'NAM.2024')
-kiem("'03/2025' chưa biết loại → THÁNG 3, không phải quý 3", chuanHoaKy('03/2025', 'month'), 'T03.2025')
-kiem('loại tờ khai theo quý thì vẫn ra quý', chuanHoaKy('3/2025', 'quarter'), 'Q3.2025')
+kiem("'Q4/2024' → quý 4", chuanHoaKyBang('Q4/2024', 'month'), 'Q4.2024')
+kiem("'2024' → năm", chuanHoaKyBang('2024', 'month'), 'NAM.2024')
+kiem("'03/2025' chưa biết loại → THÁNG 3, không phải quý 3", chuanHoaKyBang('03/2025', undefined), 'T03.2025')
+
+console.log('')
+console.log('Bảng tra cứu: dạng trần MM/YYYY LUÔN là THÁNG, kể cả khi danh mục ghi tờ khai là "quý":')
+// Ca thật 19/10/2026 (VINA HSIN GON, CHARGEPOINT — hạn nộp 20/10, lộ ra trước đúng một ngày).
+// Danh mục ghi 01/GTGT và 05/KK-TNCN là 'quarter' — chỉ là MẶC ĐỊNH để sinh lịch. Bản cũ ở đây
+// từng khẳng định "loại tờ khai theo quý thì vẫn ra quý" — đúng với XML, SAI với bảng tra cứu:
+// mọi tờ khai THÁNG '09/2026' của công ty kê tháng bị đọc thành "quý 9", rơi xuống kỳ PS.<ngày>,
+// không gắn được nghĩa vụ, lịch báo "Chưa nộp" cho tờ khai đã được chấp nhận.
+// Hai dòng dưới chép NGUYÊN VĂN từ bảng tra cứu của HSIN, nộp liền nhau ngày 15/10/2026.
+kiem("01/GTGT '09/2026', danh mục ghi 'quý' → THÁNG 9 (không phải 'quý 9' rồi rơi xuống PS.)",
+  chuanHoaKyBang('09/2026', 'quarter'), 'T09.2026')
+kiem("05/KK-TNCN 'Q3/2026' có tiền tố → QUÝ 3", chuanHoaKyBang('Q3/2026', 'quarter'), 'Q3.2026')
+kiem("'3/2025' trần, danh mục ghi 'quý' → vẫn là THÁNG 3", chuanHoaKyBang('3/2025', 'quarter'), 'T03.2025')
+kiem("tờ khai quyết toán năm ghi trần '12/2025' → kỳ NĂM", chuanHoaKyBang('12/2025', 'settlement'), 'NAM.2025')
+kiem("tháng không hợp lệ '13/2026' → null, không bịa", chuanHoaKyBang('13/2026', 'month'), null)
+kiem('chuỗi rỗng → null', chuanHoaKyBang('', 'quarter'), null)
+
+console.log('')
+console.log('Hàm của XML (chuanHoaKy) GIỮ NGUYÊN ngữ nghĩa cũ — trong XML "2/2026" trần đúng là có thể là quý:')
+kiem('XML: "3/2025" với tờ khai quý → Q3.2025', chuanHoaKy('3/2025', 'quarter'), 'Q3.2025')
 
 console.log('')
 console.log('Trạng thái: nhãn nào CHỨA "chấp nhận" cũng phải ra đúng nghĩa của nó')

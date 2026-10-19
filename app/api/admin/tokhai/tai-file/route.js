@@ -18,7 +18,7 @@ import { ghiHoSoVaThongBao } from '@/lib/tokhaiGhi'
 import { decrypt } from '@/lib/taxCrypto'
 import { docBangKetQua, docBangKetQuaEtax, docChiTiet, doanLoaiToKhaiTuTen } from '@/lib/dvcPortal'
 import { chiaCuaSo } from '@/lib/tokhaiCuaSo'
-import { chuanHoaKy } from '@/lib/taxDeadline'
+import { chuanHoaKyBang } from '@/lib/taxDeadline'
 import {
   duongDanToKhai, duongDanThongBao, tenFileToKhai, tenFileThongBao, macSacThue, tachKy,
   soLanBoSung,
@@ -444,7 +444,7 @@ function duongDanFileToKhai(p, hs, noiDungJson) {
     // trần ('2024'), tháng cũng để trần ('03/2025'). Chuỗi trần rơi xuống nhánh đoán gần như
     // chắc chắn là tháng. Phải khớp y hệt lib/tokhaiGhi.js, nếu không TÊN FILE và KỲ TRONG APP
     // lệch nhau — file nằm một thư mục, app ghi một kỳ khác.
-    const ky = chuanHoaKy(hs.kyTinhThue, loai?.period_kind || 'month') || 'PS.' + (hs.ngayNop || '').slice(0, 10)
+    const ky = chuanHoaKyBang(hs.kyTinhThue, loai?.period_kind) || 'PS.' + (hs.ngayNop || '').slice(0, 10)
     const boSung = soLanBoSung(hs)
     p.soFile++
     return {
@@ -466,7 +466,7 @@ function duongDanFileThongBao(p, hs, tb, noiDungJson) {
     const j = JSON.parse(noiDungJson)
     if (!j?.content) return null
     const loai = timLoai(p, hs)
-    const ky = chuanHoaKy(hs.kyTinhThue, loai?.period_kind || 'month') || 'PS.' + (hs.ngayNop || '').slice(0, 10)
+    const ky = chuanHoaKyBang(hs.kyTinhThue, loai?.period_kind) || 'PS.' + (hs.ngayNop || '').slice(0, 10)
     const boSung = soLanBoSung(hs)
     p.soFile++
     return {
