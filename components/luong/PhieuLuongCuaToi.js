@@ -104,8 +104,8 @@ export default function PhieuLuongCuaToi() {
               </> : <div className="text-xs text-gray-500 py-2">Không tham gia BHXH — không có khoản trừ.</div>}
             </div>
           </div>
-          <div className="mx-5 mb-5 rounded-xl bg-gray-900 text-white px-5 py-4 flex items-center justify-between">
-            <span className="text-sm opacity-80">THỰC LĨNH</span>
+          <div className="mx-5 mb-5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 text-white px-5 py-4 flex items-center justify-between shadow-sm">
+            <span className="text-sm font-semibold tracking-wide">THỰC LĨNH</span>
             <span className="text-3xl font-bold">{fmt(x.thucLinh)}</span>
           </div>
         </div>
