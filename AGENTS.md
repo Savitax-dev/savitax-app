@@ -24,6 +24,24 @@ công việc hàng tháng/quý, công nợ dịch vụ, KPI nhân viên/phòng b
   ảnh hưởng đúng theo tỉ trọng tiền) → sau đó mới trung bình cộng theo nhân viên lên mức phòng
   (bước phòng→cty vẫn trung bình cộng như %-công việc, không đổi). Không tính điểm KPI gộp (%
   công việc + % công nợ) — đã bỏ theo yêu cầu, chỉ hiển thị 2 chỉ số riêng.
+  - **Một hàm duy nhất** `lib/kpiTongQuan.js` (`tinhKpiToanCty`) — Báo cáo KPI, Trang chủ và phân hệ
+    Tiền lương đều gọi hàm này; trang Phòng (`/api/admin/room`) tự tính nhưng phải giữ cùng quy tắc.
+  - **Trung bình phòng BỎ QUA người không có gì để chấm** (anh duyệt 17/10/2026): không có công ty
+    nào trong tháng (tài khoản dùng chung "TP …", chưa nhận công ty) thì không vào trung bình cả hai
+    chỉ số; chỉ ôm công ty "chỉ Dịch vụ khác" thì bỏ khỏi %-công việc nhưng VẪN tính %-công nợ (loại
+    này thu phí hằng tháng). Riêng người đó vẫn hiện 0% ở danh sách nhân viên.
+  - **Hạn công việc theo GIỜ VIỆT NAM** (`lib/deadline.js`): `effectiveDeadlineDate` trả 0h ngày hạn
+    giờ VN bất kể máy chạy ở múi giờ nào — Vercel chạy giờ quốc tế, trước 17/10/2026 việc tích từ 0h
+    tới 7h sáng hôm sau vẫn bị tính đúng hạn. Lấy ngày/tháng của kết quả dùng `ngayVN()`, đừng
+    `getDate()`. Phòng HCNS dùng đúng luật này (tích trong ngày hạn = đúng hạn).
+- **Lật trang PHẢI `.order('id')`** — PostgREST cắt im lặng ở 1000 dòng, và lật trang không sắp thứ tự
+  thì trang sau lặp / sót dòng (17/10/2026: %-KPI tháng 8 mỗi lần tính ra một số). Có order theo cột
+  khác thì thêm `.order('id')` làm khoá phụ. Soát: chạy cùng hàm 2–3 lần trên tháng nhiều dữ liệu,
+  kết quả phải giống hệt.
+- **Xuất Excel dùng exceljs qua `lib/excelDep.js`** (`soExcelMoi` → `themSheetMang(wb, ten, mảngHàng,
+  {doRong, cotTien, cotPhanTram})` → `taiVeExcel`): tự tô tiêu đề, hàng tên cột, dòng tổng, kẻ khung,
+  cố định tiêu đề. KHÔNG dùng SheetJS (`xlsx`) để XUẤT nữa — anh chê xấu; SheetJS còn bỏ mất ô công
+  thức nếu không kèm giá trị. Trang mới có nút Excel thì dùng helper này cho đồng bộ.
 - Công nợ: `service_fees.type` phân biệt `ketoan` (phí dịch vụ kế toán chính), `khach` (dịch vụ
   khác), `no_ton` (tiền thu hồi nợ tồn cũ), `fee_plan` (lịch sử thay đổi mức phí, không phải
   tiền đã thu).
@@ -235,6 +253,40 @@ hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công 
 - Bộ kiểm: `test-tokhai-xml | -thumuc | -ghidia | -thongke | -tienich | -pdf`.
 - ⏸ **Đang chờ người dùng, đừng tự làm**: GĐ 5 Checklist + KPI (hoãn tới sau khi chạy demo), danh
   mục tờ khai 01/CNKD, và bản PDF thật do cổng xuất.
+
+## Phân hệ Tiền lương (`/luong`)
+
+Chấm công + thưởng + khoản trừ + chốt bảng lương + Excel, dựng 17–18/10/2026 (lên production
+`c4ebe81`), SQL `sql/31_tien_luong.sql`, `32_luong_thuong_dvk.sql`, `33_luong_chot.sql` (đã chạy).
+**Mã tách theo 3 bước — đọc `lib/luong/README.md` trước khi sửa** (bảng "bước nào ở file nào" + toàn
+bộ quy tắc). Anh yêu cầu tách cho dễ sửa: đổi quy tắc bước nào chỉ đụng file của bước đó.
+
+- Bước 1 `lib/luong/ngayCong.js` + `api/admin/luong`: cấp bậc (`luong_cap_bac`), lương từng người
+  có LỊCH SỬ theo tháng (`luong_nhan_vien`, đổi lương = dòng mới), ngày lễ (`luong_ngay_le`, lễ rơi
+  chủ nhật anh muốn BỎ khỏi danh sách), chấm công tự khai → xác nhận là khoá, TP sửa phải ghi lý do.
+- Bước 2 `thuong.js`, `bangLuong.js` + `api/admin/luong/thuong`: lương tháng N lấy %-việc N−1,
+  %-nợ N−2, doanh thu N−1. Doanh thu = `monthly_fee ÷ 1,08` (phí lưu GỒM VAT) của công ty phụ trách
+  chính, công ty quý ÷ 3 — đã khớp file lương mẫu của anh từng đồng (4/4 người). Thưởng KPI mỗi chỉ
+  số 0 / 300k / 500k; vượt doanh số × 20% (TP: 20% doanh thu tự làm, không cần tối thiểu). Thưởng
+  dịch vụ khác: nhân viên tự khai (tiền × %), TP duyệt; dịch vụ ngoài app bắt buộc ghi chú.
+- Bước 3 `khauTru.js`, `chot.js`, `excel.js` + `api/admin/luong/chot`: BHXH 10,5% + KPCĐ 0,5% ×
+  lương đóng BHXH + Đoàn phí 40.000 (chỉ người tick tham gia BHXH), KHÔNG thuế TNCN. Chốt = chụp
+  nguyên bảng lương vào `luong_bang_chot`; mở chốt bắt buộc lý do. Excel có công thức: KPI tác
+  phong, thưởng phòng, phụ cấp, điều chỉnh ngoại lệ (giám đốc duyệt) nhập trên file, file tự tính.
+- Quyền: `cham_cong` (mọi vai trò), `view_payroll` / `manage_payroll` (chỉ Nhân viên NB, anh tự cấp
+  thêm). Trưởng phòng thấy CÔNG của phòng mình nhưng KHÔNG thấy lương.
+- Bộ kiểm: `node scripts/test-luong-ngay-cong.mjs`, `node --env-file=.env.local
+  scripts/test-luong-thuong.mjs --that`. Dọn dữ liệu thử 1 tài khoản: `scripts/don-luong-tai-khoan-test.mjs`.
+- ⏳ Chưa làm (chờ anh thử): nạp cấp bậc + lương cho toàn bộ nhân viên (anh gửi file Excel nhân sự
+  gốc hoặc kế toán nội bộ tự đặt), chưa chốt tháng nào.
+
+## Phân hệ Hóa đơn điện tử — ĐANG GÁC (13/10/2026)
+
+Cổng hoadondientu.gdt.gov.vn **chặn** cả đăng nhập gửi từ tiện ích lẫn lượt đọc chạy trong tab đã
+đăng nhập ("Hệ thống phát hiện hành vi không hợp lệ"). Muốn qua phải giả dấu nhận diện = lách lớp
+chống tự động của cơ quan thuế → **không làm**. Mã thử nằm ở nhánh local `gac/hoa-don-dien-tu`
+(worktree D:\savitax-bank). Hướng còn lại nếu anh mở lại: app chỉ XẾP FILE nhân viên đã tải về
+(đọc XML, kiểm MST người mua, đổi tên, xếp thư mục tháng), hoặc hỏi kênh kết nối chính thức.
 
 ## Mật khẩu khách & khóa mã hóa
 

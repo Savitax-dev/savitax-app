@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import ClientChecklist from '@/components/ClientChecklist'
 import { hasPermission } from '@/lib/permissions'
-import * as XLSX from 'xlsx'
+import { soExcelMoi, themSheetMang, taiVeExcel } from '@/lib/excelDep'
 import KhoiDongTien from '@/components/KhoiDongTien'
 import { feeCountsForMonth } from '@/lib/feeDue'
 import { isSharedRoom } from '@/lib/specialRooms'
@@ -180,9 +180,9 @@ export default function RoomPage({ params }) {
   const toggleClient  = (id) => setOpenClient(p => ({ ...p, [id]: !p[id] }))
 
   // ── Export Excel: Báo cáo phòng ──────────────────────────────────────────
-  const exportBaoCao = () => {
+  const exportBaoCao = async () => {
     const roomName = room ? room.name : 'Phong'
-    const wb = XLSX.utils.book_new()
+    const wb = await soExcelMoi()
 
     // Sheet 1: Tổng hợp nhân viên
     const summaryRows = [
@@ -205,10 +205,7 @@ export default function RoomPage({ params }) {
     summaryRows.push([])
     summaryRows.push(['TỔNG PHÒNG', totals?.clientCount || 0, totals?.taskPct || 0, totals?.doneTasks || 0, totals?.totalTasks || 0, totals?.debtPct || 0, totals?.collected || 0, totals?.totalFee || 0])
 
-    const ws1 = XLSX.utils.aoa_to_sheet(summaryRows)
-    ws1['!cols'] = [{ wch: 25 }, { wch: 10 }, { wch: 20 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 16 }, { wch: 16 }]
-    ws1['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }]
-    XLSX.utils.book_append_sheet(wb, ws1, 'Tổng hợp')
+    themSheetMang(wb, 'Tổng hợp', summaryRows, { doRong: [25, 10, 20, 14, 10, 12, 16, 16], cotPhanTramSo: [2, 5], cotTien: [6, 7] })
 
     // Sheet 2: Chi tiết công việc từng công ty
     const detailRows = [
@@ -232,20 +229,17 @@ export default function RoomPage({ params }) {
         }
       }
     }
-    const ws2 = XLSX.utils.aoa_to_sheet(detailRows)
-    ws2['!cols'] = [{ wch: 22 }, { wch: 35 }, { wch: 14 }, { wch: 14 }, { wch: 40 }, { wch: 12 }, { wch: 14 }]
-    ws2['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }]
-    XLSX.utils.book_append_sheet(wb, ws2, 'Chi tiết công việc')
+    themSheetMang(wb, 'Chi tiết công việc', detailRows, { doRong: [22, 35, 14, 14, 40, 12, 14], cotTien: [3] })
 
-    XLSX.writeFile(wb, `BaoCaoPhong_${roomName}_T${selMonth}_${selYear}.xlsx`)
+    await taiVeExcel(wb, `BaoCaoPhong_${roomName}_T${selMonth}_${selYear}.xlsx`)
   }
 
   // ── Export Excel: Công nợ phòng ──────────────────────────────────────────
   // dueThisMonth: công ty quý chưa tới hạn thu (hoặc còn trong hạn khoan) không tính vào %/tổng
   // — xem lib/feeDue.js. isSecondary: công ty phụ trách phụ chỉ theo dõi, không cộng doanh thu.
-  const exportCongNo = () => {
+  const exportCongNo = async () => {
     const roomName = room ? room.name : 'Phong'
-    const wb = XLSX.utils.book_new()
+    const wb = await soExcelMoi()
 
     const rows = [
       ['CÔNG NỢ PHÒNG ' + roomName.toUpperCase() + ' — T' + selMonth + '/' + selYear],
@@ -287,13 +281,9 @@ export default function RoomPage({ params }) {
     rows.push([])
     rows.push(['Ghi chú: % thu hồi chỉ tính phí kế toán. Phí HCNS thu riêng, không vào KPI.'])
 
-    const ws = XLSX.utils.aoa_to_sheet(rows)
-    ws['!cols'] = [{ wch: 22 }, { wch: 35 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 16 },
-      { wch: 15 }, { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 30 }]
-    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }]
-    XLSX.utils.book_append_sheet(wb, ws, 'Công nợ')
+    themSheetMang(wb, 'Công nợ', rows, { doRong: [22, 35, 14, 16, 14, 16, 15, 16, 16, 14, 30], cotTien: [3, 4, 5, 6, 7, 8] })
 
-    XLSX.writeFile(wb, `CongNoPhong_${roomName}_T${selMonth}_${selYear}.xlsx`)
+    await taiVeExcel(wb, `CongNoPhong_${roomName}_T${selMonth}_${selYear}.xlsx`)
   }
 
   // Sau khi lưu công nợ → reload room data (dùng service role key, đảm bảo lấy đúng data)

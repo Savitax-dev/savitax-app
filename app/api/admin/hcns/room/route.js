@@ -100,7 +100,9 @@ export async function GET(request) {
       const day = dayOf.get(r.template_task_id)
       if (day) {
         const deadline = effectiveDeadlineDate(r.year, r.month, day)
-        if (r.done_at && new Date(r.done_at) > deadline) continue
+        // Trễ = tích SAU khi qua HẾT ngày hạn (từ 0h ngày kế, giờ VN) — đúng luật checklist kế toán. Trước
+        // 17/10/2026 dùng `> deadline` (0h ĐẦU ngày hạn) nên tích ngay trong ngày hạn cũng bị coi là trễ.
+        if (r.done_at && new Date(r.done_at) >= new Date(deadline.getTime() + 86400000)) continue
       }
       const k = r.hcns_client_id + '_' + r.year + '_' + r.month
       recDone.set(k, (recDone.get(k) || 0) + 1)
@@ -508,7 +510,8 @@ async function fetchAllRows(buildQuery, pageSize = 1000) {
   let all = []
   let from = 0
   while (true) {
-    const { data, error } = await buildQuery().range(from, from + pageSize - 1)
+    // Sắp theo id để lật trang ổn định — không sắp thì trang sau lặp / bỏ sót dòng (đo thật 17/10/2026).
+    const { data, error } = await buildQuery().order('id').range(from, from + pageSize - 1)
     if (error) throw error
     all = all.concat(data || [])
     if (!data || data.length < pageSize) break

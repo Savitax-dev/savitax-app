@@ -42,7 +42,8 @@ const LOAI = { ketoan: 'Phí kế toán', no_ton: 'Thu nợ tồn', khach: 'Thu 
 async function hetTrang(q) {
   let all = []
   for (let from = 0; ; from += 1000) {
-    const { data, error } = await q().range(from, from + 999)
+    // Sắp theo id để lật trang ổn định — không sắp thì trang sau lặp / bỏ sót dòng (đo thật 17/10/2026).
+    const { data, error } = await q().order('id').range(from, from + 999)
     if (error) throw error
     all = all.concat(data || [])
     if (!data || data.length < 1000) break

@@ -19,7 +19,9 @@ function getAdmin() {
 async function docHet(query) {
   let ra = [], tu = 0
   for (;;) {
-    const { data, error } = await query().range(tu, tu + 999)
+    // .order('id') để lật trang ổn định (thêm sau order sẵn có thì làm khoá phụ) — không sắp thì trang
+    // sau lặp / bỏ sót dòng; tax_obligations đã quá 1.000 dòng (đo 17/10/2026).
+    const { data, error } = await query().order('id').range(tu, tu + 999)
     if (error) throw new Error(error.message)
     ra = ra.concat(data)
     if (data.length < 1000) return ra

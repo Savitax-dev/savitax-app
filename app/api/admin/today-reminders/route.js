@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { effectiveDeadlineDate } from '@/lib/deadline'
+import { effectiveDeadlineDate, ngayVN } from '@/lib/deadline'
 import { requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
@@ -16,7 +16,8 @@ export async function GET() {
 
   const supabase = getAdmin()
   const now = new Date()
-  const year = now.getFullYear(), month = now.getMonth() + 1, today = now.getDate()
+  // "Hôm nay" theo giờ Việt Nam — máy chủ chạy giờ quốc tế, trước 7h sáng VN nó vẫn ở ngày hôm qua.
+  const { year, month, day: today } = ngayVN(now)
 
   const { data: defs } = await supabase
     .from('task_definitions')
@@ -25,8 +26,8 @@ export async function GET() {
     .or('month.eq.' + month + ',month.is.null')
 
   const reminders = (defs || []).filter(t => {
-    const eff = effectiveDeadlineDate(year, month, t.deadline_day)
-    return eff.getFullYear() === year && eff.getMonth() === month - 1 && eff.getDate() === today
+    const eff = ngayVN(effectiveDeadlineDate(year, month, t.deadline_day))
+    return eff.year === year && eff.month === month && eff.day === today
   }).map(t => ({ id: t.id, name: t.name, report_type: t.report_type || 'monthly' }))
 
   return Response.json({ date: now.toISOString(), year, month, day: today, reminders })
