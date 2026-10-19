@@ -10,7 +10,10 @@
 // Chạy lại nhiều lần vẫn an toàn: đã có (client, loại tờ khai, kỳ) thì bỏ qua, KHÔNG đụng tới
 // trạng thái của dòng đã có — tránh xóa mất kết quả đồng bộ hoặc dấu "Không phát sinh".
 import { createClient } from '@supabase/supabase-js'
-import { cacKyTrongNam, kyQuyetToanNam, hanNop, nhanKy } from '../lib/taxDeadline.js'
+import { nhanKy } from '../lib/taxDeadline.js'
+// Luật sinh lịch dùng CHUNG với nút "Lưu kỳ khai" trong app (19/10/2026). Đừng viết lại luật ở
+// đây — viết riêng là năm sau chạy script, nó lại sinh TNCN theo tháng cho công ty đã đổi sang quý.
+import { nghiaVuDinhKy, nghiaVuQuyetToan } from '../lib/tokhaiLich.js'
 
 const APPLY = process.argv.includes('--apply')
 const iNam = process.argv.indexOf('--nam')
@@ -71,42 +74,29 @@ const daCo = new Set(
     .map(o => `${o.client_id}|${o.filing_type_id}|${o.period_code}`)
 )
 
+// Kỳ khai ghi đè từng công ty (tax_client_filings) — vd kê GTGT theo tháng nhưng TNCN theo quý.
+const ghiDeTatCa = await docHet('tax_client_filings', 'client_id, filing_type_id, period_kind, effective_from')
+console.log(`Kỳ khai ghi đè   : ${ghiDeTatCa.length} dòng`)
+
 const canThem = []
 for (const c of dangPhucVu) {
-  const kieu = c.report_type === 'monthly' ? 'monthly' : 'quarterly'
-  const ky = cacKyTrongNam(kieu, NAM)
-
+  // Tờ khai định kỳ: kỳ khai lấy theo ghi đè nếu có, không có thì theo report_type. Hợp đồng ký
+  // giữa năm thì không sinh cho các kỳ TRƯỚC khi ký — đều đã nằm trong lib/tokhaiLich.js.
   for (const t of dinhKy) {
-    for (const k of ky) {
-      // Công ty ký hợp đồng giữa năm thì không sinh nghĩa vụ cho các kỳ TRƯỚC khi ký — nếu không
-      // app sẽ báo quá hạn hàng loạt cho những kỳ Savitax chưa hề nhận làm.
-      if (c.contract_start && k.period_end < c.contract_start) continue
-      const khoa = `${c.id}|${t.id}|${k.period_code}`
-      if (daCo.has(khoa)) continue
-      const han = hanNop(k.period_kind, k.period_end, ngayLe)
-      if (!CA_QUA_KHU && han <= HOM_NAY) continue
-      canThem.push({
-        client_id: c.id, filing_type_id: t.id,
-        period_code: k.period_code, period_start: k.period_start, period_end: k.period_end,
-        due_date: han,
-        state: 'not_filed',
-      })
+    const ghiDe = ghiDeTatCa.filter(g => g.client_id === c.id && g.filing_type_id === t.id)
+    for (const o of nghiaVuDinhKy({ client: c, loai: t, nam: NAM, ngayLe, ghiDe })) {
+      if (daCo.has(`${c.id}|${t.id}|${o.period_code}`)) continue
+      if (!CA_QUA_KHU && o.due_date <= HOM_NAY) continue
+      canThem.push(o)
     }
   }
 
-  const kyNam = kyQuyetToanNam(NAM)
   for (const t of quyetToan) {
-    if (c.contract_start && kyNam.period_end < c.contract_start) continue
-    const khoa = `${c.id}|${t.id}|${kyNam.period_code}`
-    if (daCo.has(khoa)) continue
-    const han = hanNop(kyNam.period_kind, kyNam.period_end, ngayLe)
-    if (!CA_QUA_KHU && han <= HOM_NAY) continue
-    canThem.push({
-      client_id: c.id, filing_type_id: t.id,
-      period_code: kyNam.period_code, period_start: kyNam.period_start, period_end: kyNam.period_end,
-      due_date: han,
-      state: 'not_filed',
-    })
+    for (const o of nghiaVuQuyetToan({ client: c, loai: t, nam: NAM, ngayLe })) {
+      if (daCo.has(`${c.id}|${t.id}|${o.period_code}`)) continue
+      if (!CA_QUA_KHU && o.due_date <= HOM_NAY) continue
+      canThem.push(o)
+    }
   }
 }
 

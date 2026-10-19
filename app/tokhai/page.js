@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import TabToKhai from '@/components/TabToKhai'
 import { Chip, OTong } from '@/components/tokhaiUI'
+import KyKhaiCongTy from '@/components/KyKhaiCongTy'
 
 const O_TONG = [
   { khoa: 'phaiNop',        nhan: 'Phải nộp trong kỳ', mau: 'text-blue-700 bg-blue-50 border-blue-200' },
@@ -34,6 +35,10 @@ export default function TrangToKhai() {
   const [dangTai, setDangTai] = useState(true)
   const [loi, setLoi]       = useState('')
   const [timKiem, setTimKiem] = useState('')
+  // Công ty đang mở bảng chỉnh kỳ khai riêng (hướng A, 19/10/2026), và bộ đếm để tải lại bảng sau
+  // khi lưu — lưu xong lịch đã đổi (xoá kỳ tháng, sinh kỳ quý) nên phải đọc lại.
+  const [moKyKhai, setMoKyKhai] = useState(null)
+  const [taiLai, setTaiLai] = useState(0)
 
   useEffect(() => {
     const supabase = createClient()
@@ -58,7 +63,7 @@ export default function TrangToKhai() {
       .catch(e => !huy && setLoi(e.message))
       .finally(() => !huy && setDangTai(false))
     return () => { huy = true }
-  }, [nam, kyChon])
+  }, [nam, kyChon, taiLai])
 
   // Ô chọn hiện kỳ người dùng chọn, hoặc kỳ server đã tự chốt.
   const kyDangXem = kyChon || dl?.ky || ''
@@ -137,7 +142,15 @@ export default function TrangToKhai() {
                       <p className="font-medium text-gray-800 leading-tight">{c.ten}</p>
                       <p className="text-xs text-gray-400">{c.maKH || '— chưa có mã KH —'}</p>
                     </td>
-                    <td className="px-2 py-2 text-xs text-gray-500 whitespace-nowrap">{c.kyKhai}</td>
+                    {/* Bấm để xem / đổi kỳ khai riêng từng loại tờ khai. Có ghi đè thì máy chủ trả
+                        nhãn kèm phần riêng, vd "Tháng · 05/KK-TNCN quý" — nhìn là biết công ty này khác. */}
+                    <td className="px-2 py-2 whitespace-nowrap">
+                      <button type="button" onClick={() => setMoKyKhai(c)}
+                        className="text-xs text-gray-600 hover:text-red-700 underline decoration-dotted underline-offset-2"
+                        title="Xem / đổi kỳ khai riêng từng loại tờ khai">
+                        {c.kyKhai}
+                      </button>
+                    </td>
                     <td className="px-2 py-2 whitespace-nowrap">
                       {c.trangThaiTaiKhoan === 'not_connected'
                         ? <span className="text-xs text-purple-700">Chưa nối</span>
@@ -151,6 +164,14 @@ export default function TrangToKhai() {
                           <Chip trangThai={o.trangThai}
                             title={o.trangThaiCong ? 'Cổng thuế: ' + o.trangThaiCong : ''} />
                           <span className="block text-[11px] text-gray-400 mt-0.5">
+                            {/* Ô của kỳ QUÝ hiện kèm khi xem theo tháng — công ty kê lẫn tháng và quý.
+                                Ghi rõ "Q3" để khỏi tưởng tháng này phải nộp thêm một tờ khai nữa. */}
+                            {o.baoTrum && (
+                              <span className="text-indigo-600 font-semibold"
+                                title="Công ty kê tờ khai này theo quý — hiện kèm vì quý bao trùm tháng đang xem">
+                                kỳ {String(o.ky).split('.')[0]} ·{' '}
+                              </span>
+                            )}
                             {/* Ô sinh từ hồ sơ thật (kỳ chưa có trong lịch hạn nộp) thì không có hạn để so. */}
                             {o.khongCoNghiaVu
                               ? 'ngoài lịch hạn nộp'
@@ -166,6 +187,10 @@ export default function TrangToKhai() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {moKyKhai && (
+          <KyKhaiCongTy congTy={moKyKhai} onDong={() => setMoKyKhai(null)} onDaLuu={() => setTaiLai(n => n + 1)} />
         )}
       </div>
     </AppShell>
