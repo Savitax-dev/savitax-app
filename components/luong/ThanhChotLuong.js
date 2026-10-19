@@ -49,7 +49,10 @@ export default function ThanhChotLuong({ d, ky, onXong }) {
             <button onClick={() => xuatExcelBangLuong(d)} className="text-sm px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold shadow-sm hover:bg-emerald-700">⬇ Xuất Excel</button>
             {d.duocChot && (d.daChot
               ? <><button onClick={gui} disabled={ban} className="text-sm px-4 py-2 rounded-xl bg-indigo-600 text-white font-semibold shadow-sm disabled:opacity-50">📨 {d.daChot.daGui ? 'Gửi lại phiếu' : 'Gửi nhân viên xác nhận'}</button><button onClick={() => chot(true)} disabled={ban} className="text-sm px-4 py-2 rounded-xl border border-rose-300 text-rose-700 bg-white disabled:opacity-50">Mở chốt</button></>
-              : <button onClick={() => chot(false)} disabled={ban} className="text-sm px-4 py-2 rounded-xl bg-[#8B1A1A] text-white font-semibold shadow-sm disabled:opacity-50">🔒 Chốt bảng lương</button>)}
+              : <><button onClick={() => chot(false)} disabled={ban} className="text-sm px-4 py-2 rounded-xl bg-[#8B1A1A] text-white font-semibold shadow-sm disabled:opacity-50">🔒 Chốt bảng lương</button>
+                {/* Nút gửi luôn hiện để dễ tìm; chưa chốt thì bấm chỉ nhắc — phiếu gửi đi phải là bản đã chốt. */}
+                <button onClick={() => setMsg('Bấm "🔒 Chốt bảng lương" trước — phiếu gửi cho nhân viên phải là bản đã chốt. Chốt xong nút này mới gửi được.')}
+                  title="Chốt bảng lương trước rồi mới gửi" className="text-sm px-4 py-2 rounded-xl bg-indigo-200 text-indigo-800 font-semibold cursor-not-allowed">📨 Gửi nhân viên xác nhận</button></>)}
           </div>
         </div>
       )}

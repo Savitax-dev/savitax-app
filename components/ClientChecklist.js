@@ -503,6 +503,27 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
       return
     }
     const paid = Number(String(debtAmount).replace(/\D/g, ''))
+    // Khách chuyển khoản GỘP phí kế toán + phí HCNS mà nhân viên ghi nguyên cục vào phí kế toán →
+    // %-công nợ vượt 100% và phí HCNS treo thành nợ oan (ca NĂM SAO, NGÂN KHIÊM PHÁT T9/2026).
+    if (debtType === 'ketoan' && hcnsClient) {
+      const feeKt = feeForSelected('ketoan')
+      const feeHc = feeForSelected('hcns')
+      if (feeHc > 0 && feeKt > 0 && paid > feeKt) {
+        const dungBangTong = paid === feeKt + feeHc
+        const ok = window.confirm(
+          'Số tiền ' + fmt(paid) + 'đ LỚN HƠN phí kế toán kỳ này (' + fmt(feeKt) + 'đ).\n\n' +
+          (dungBangTong
+            ? 'Số này ĐÚNG BẰNG phí kế toán ' + fmt(feeKt) + 'đ + phí HCNS ' + fmt(feeHc) + 'đ — '
+            : 'Công ty này có cả phí HCNS ' + fmt(feeHc) + 'đ — ') +
+          'nếu khách chuyển gộp cả hai thì phải tách ra:\n' +
+          '  • Phí kế toán: ' + fmt(feeKt) + 'đ\n' +
+          '  • Phí HCNS: ' + fmt(feeHc) + 'đ (chọn mục "🏢 Dịch vụ HCNS" để ghi)\n\n' +
+          'Bấm OK nếu đây ĐÚNG LÀ toàn bộ tiền phí kế toán.\n' +
+          'Bấm Hủy để sửa lại (app điền sẵn ' + fmt(feeKt) + 'đ cho phí kế toán).'
+        )
+        if (!ok) { setDebtAmount(String(feeKt)); return }
+      }
+    }
     const prevAmt = recordedAmount(debtType)
     // Sửa GIẢM số tiền đã ghi nhận (vd nhập nhầm công ty) — cảnh báo rõ trước khi lưu
     if (paid < prevAmt) {
