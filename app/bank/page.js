@@ -512,6 +512,11 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
               )}
               {r.state === 'open' && (<>
                 <button disabled={busy} onClick={async () => {
+                  // Xác nhận khớp sổ = KHÔNG ghi tiền. Bắt nhìn lại khoản đã ghi tay (số tiền + ngày)
+                  // so với tiền vừa về — ca B.H 14/10/2026 đóng nhầm khoản trả nợ tồn vì chỉ khớp số.
+                  if (g === 'done' && !confirm('Xác nhận khoản tiền này CHÍNH LÀ khoản nhân viên đã ghi tay?\n\n'
+                    + 'Tiền về: ' + fmt(r.amount) + ' ngày ' + vnTime(r.tx_time) + '\n' + r.reason
+                    + '\n\nApp sẽ KHÔNG ghi thêm tiền. Nếu đây là khoản trả nợ tồn / kỳ khác thì bấm Huỷ rồi chọn tay đúng kỳ.')) return
                   if (await act({ action: 'ignore', id: r.id, note: g === 'done' ? 'Nhân viên đã ghi tay' : 'Đã xử lý tay', userNote: note.trim() || undefined }, 'Đã đánh dấu')) setNote('')
                 }}
                   className="px-3 py-1 rounded-md border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40">

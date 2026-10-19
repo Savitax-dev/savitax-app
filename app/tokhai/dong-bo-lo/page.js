@@ -20,6 +20,7 @@ import TabToKhai from '@/components/TabToKhai'
 import { OTong, Chip } from '@/components/tokhaiUI'
 import { kiemTraTienIch } from '@/lib/portalBridge'
 import { chayDongBo } from '@/lib/tokhaiSyncClient'
+import { moTaTuDoiKy } from '@/lib/tokhaiLich'
 
 // Mở càng nhiều thì nhân viên gõ được càng xa, nhưng mỗi công ty đang mở là một phiên sống bên
 // cổng, để lâu quá có thể hết phiên. 2 là mức an toàn: gõ xong công ty này là có ngay công ty sau.
@@ -383,6 +384,19 @@ export default function TrangDongBoLo() {
                         {!dangLam && kq?.ket_qua === 'xong' && (
                           <span className="text-green-700">
                             ✓ {kq.themMoi} mới · {kq.capNhat} cập nhật · {kq.soThongBao || 0} thông báo
+                          </span>
+                        )}
+                        {/* Cổng cho thấy công ty khai kiểu khác app đang giữ -> app đã tự đổi kỳ khai và
+                            sinh lại lịch hạn nộp. Hiện rõ để người đồng bộ biết lịch vừa đổi. */}
+                        {!dangLam && kq?.tuDoiKy?.length > 0 && (
+                          <span className="block text-indigo-700 font-medium mt-0.5">
+                            Tự đổi kỳ khai theo cổng: {moTaTuDoiKy(kq.tuDoiKy)}
+                          </span>
+                        )}
+                        {!dangLam && kq?.kyCanXemTay?.length > 0 && (
+                          <span className="block text-amber-700 mt-0.5"
+                            title={kq.kyCanXemTay.map(x => x.code + ' ' + x.quy + ': ' + x.lyDo).join(' | ')}>
+                            Kỳ khai cần trưởng phòng xem: {kq.kyCanXemTay.map(x => x.code + ' ' + String(x.quy).replace('.', '/')).join(', ')}
                           </span>
                         )}
                         {!dangLam && kq?.ket_qua === 'loi' && <span className="text-red-700">{kq.moTa}</span>}

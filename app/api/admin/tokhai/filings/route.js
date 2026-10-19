@@ -6,6 +6,7 @@
 // công ty là hơn một nghìn dòng — vừa nặng đường truyền vừa không ai đọc nổi. Mỗi công ty trả về
 // một dòng tóm tắt kèm danh sách hồ sơ bên trong, và phân trang theo CÔNG TY.
 import { createClient } from '@supabase/supabase-js'
+import { quyBaoTrum } from '@/lib/tokhaiLich'
 import { roomsWithRole } from '@/lib/roleUnion'
 import { requireLogin } from '@/lib/serverAuth'
 import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
@@ -53,7 +54,9 @@ export async function GET(request) {
   try {
     // Tất cả đều không phụ thuộc nhau → MỘT vòng chờ. Bảng hồ sơ chỉ lọc theo kỳ, không dính
     // phạm vi người xem, nên lấy luôn ở đây rồi lọc phạm vi bằng JS.
-    const [dsClients, dsLoai, dsRooms, dsStaff, dsPhu, dsHoSo] = await Promise.all([
+    // Xem theo THÁNG thì đọc kèm QUÝ BAO TRÙM — cho công ty kê lẫn tháng và quý (xem dưới).
+    const quy = quyBaoTrum(ky)
+    const [dsClients, dsLoai, dsRooms, dsStaff, dsPhu, dsHoSo, dsKeLan] = await Promise.all([
       docHet(() => supabase.from('clients').select('id, name, client_code, tax_code, assigned_to, room_id, is_active, status')),
       docHet(() => supabase.from('tax_filing_types').select('id, code, name')),
       docHet(() => supabase.from('rooms').select('id, name')),
@@ -65,10 +68,13 @@ export async function GET(request) {
         let q = supabase.from('tax_filings')
           .select('id, client_id, portal_code, filing_type_id, period_code, form_kind, amend_no, submitted_at, received_at, portal_status, state, on_time, obligation_id')
           .order('submitted_at', { ascending: false })
-        if (ky) q = q.eq('period_code', ky)
+        if (ky) q = quy ? q.in('period_code', [ky, quy]) : q.eq('period_code', ky)
         return q
       }),
+      // Công ty có kỳ khai RIÊNG (tax_client_filings) = công ty kê LẪN tháng và quý. Bảng nhỏ.
+      quy ? docHet(() => supabase.from('tax_client_filings').select('client_id')) : Promise.resolve([]),
     ])
+    const keLan = new Set((dsKeLan || []).map(r => r.client_id))
 
     const phu = new Set(dsPhu.map(r => r.client_id))
     const dangPhucVu = dsClients.filter(c => c.is_active !== false && c.status !== 'inactive')
@@ -91,7 +97,12 @@ export async function GET(request) {
 
     const trongPhamVi = new Set(clients.map(c => c.id))
 
+    // Tờ khai QUÝ bao trùm tháng đang xem CHỈ hiện cho công ty kê LẪN — vd HSIN kê GTGT tháng, TNCN
+    // quý: xem tháng 9 phải thấy cả TNCN quý 3 nộp cùng ngày (anh nêu 19/10/2026). Công ty kê thuần
+    // quý thì KHÔNG kéo vào: chọn "T09.2026" mà hiện hồ sơ quý 3 của 240 công ty kê quý là đổi hẳn
+    // nghĩa của bộ lọc.
     let hoSo = dsHoSo.filter(h => trongPhamVi.has(h.client_id))
+      .filter(h => !quy || h.period_code !== quy || keLan.has(h.client_id))
     if (trangThai) hoSo = hoSo.filter(h => h.state === trangThai)
 
     // Tìm theo mã hồ sơ: cho gõ thẳng mã trên cổng để dò một hồ sơ cụ thể.
@@ -146,6 +157,8 @@ export async function GET(request) {
             trangThaiCong: h.portal_status,
             dungHan: h.on_time,
             daGanNghiaVu: !!h.obligation_id,
+            // Hiện kèm vì là kỳ QUÝ bao trùm tháng đang xem — giao diện ghi chú cho khỏi tưởng lạc kỳ.
+            baoTrum: !!quy && h.period_code === quy,
           })),
         }
       })
@@ -161,7 +174,8 @@ export async function GET(request) {
       tongSoHoSo: hoSo.length,
       trang,
       soTrang: Math.max(1, Math.ceil(tongSoCty / CTY_MOI_TRANG)),
-      cacKy: [...new Set(hoSo.map(h => h.period_code))].sort().reverse(),
+      // Kỳ quý chỉ "đi ké" khi xem tháng -> không đưa vào ô chọn kỳ, giữ ô chọn y như trước.
+      cacKy: [...new Set(hoSo.filter(h => !quy || h.period_code !== quy).map(h => h.period_code))].sort().reverse(),
       phong: dsRooms.filter(r => [...new Set([...phongCuaCty.values()])].includes(r.id))
         .map(r => ({ id: r.id, ten: r.name })),
     })

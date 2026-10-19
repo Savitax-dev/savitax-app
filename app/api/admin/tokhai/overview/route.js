@@ -11,6 +11,7 @@ import { roomsWithRole } from '@/lib/roleUnion'
 import { requireLogin } from '@/lib/serverAuth'
 import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
 import { cacKyTrongNam, kyQuyetToanNam, nhanKy } from '@/lib/taxDeadline'
+import { kyKhaiTai, quyBaoTrum } from '@/lib/tokhaiLich'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -69,12 +70,41 @@ export async function GET(request) {
       laAdmin ? Promise.resolve([]) : docHet(() => supabase.from('client_secondary_staff')
         .select('client_id, staff_id').eq('staff_id', caller.staffId)),
     ])
+    // Kỳ khai RIÊNG từng loại tờ khai (hướng A, 19/10/2026) — để nhãn ô "Kỳ khai" nói ra công ty nào
+    // khác mặc định. Bảng nhỏ (chỉ công ty có ngoại lệ), đọc một lượt. Lỗi thì coi như không có.
+    let dsGhiDe = []
+    try {
+      dsGhiDe = await docHet(() => supabase.from('tax_client_filings')
+        .select('client_id, filing_type_id, period_kind, effective_from, approved_by'))
+    } catch (_) { dsGhiDe = [] }
 
     // 1. Công ty trong phạm vi
     // Công ty CHỈ dùng Dịch vụ khác không làm dịch vụ kế toán nên không nộp tờ khai hộ -> bỏ hẳn
     // khỏi phân hệ này, đúng như checklist. Đọc riêng để thiếu cột không làm hỏng cả trang (sql/29).
     const dvkOnly = await docDvkOnly(supabase)
     let clients = dsClients.filter(c => c.is_active !== false && c.status !== 'inactive' && !dvkOnly.has(c.id))
+
+    // Nhãn ô "Kỳ khai": mặc định "Tháng"/"Quý" theo công ty; loại tờ khai nào ĐANG khai khác mặc định
+    // thì nối thêm, vd "Tháng · 05/KK-TNCN quý". Tính bằng đúng luật sinh lịch (kyKhaiTai) để nhãn
+    // không bao giờ nói khác cái lịch đang hiện bên cạnh.
+    const homNayKy = new Date().toISOString().slice(0, 10)
+    const loaiDinhKy = (dsLoai || []).filter(t => t.is_active && (t.period_kind === 'month' || t.period_kind === 'quarter'))
+    const nhanKyKhai = (c) => {
+      const macDinh = c.report_type === 'monthly' ? 'monthly' : 'quarterly'
+      const khac = []
+      for (const t of loaiDinhKy) {
+        const ghiDe = dsGhiDe.filter(g => g.client_id === c.id && g.filing_type_id === t.id)
+        if (!ghiDe.length) continue
+        const dang = kyKhaiTai(c, ghiDe, homNayKy)
+        // Dòng đang áp dụng không có người duyệt = APP TỰ ĐỔI theo hồ sơ trên cổng -> ghi rõ, để
+        // trưởng phòng phân biệt với lần chính mình bấm đổi.
+        const apDung = ghiDe.filter(g => g.effective_from <= homNayKy)
+          .sort((a, b) => (a.effective_from < b.effective_from ? 1 : -1))[0]
+        const tuDong = apDung && !apDung.approved_by ? ' (tự đổi)' : ''
+        if (dang !== macDinh) khac.push(t.code + ' ' + (dang === 'monthly' ? 'tháng' : 'quý') + tuDong)
+      }
+      return (macDinh === 'monthly' ? 'Tháng' : 'Quý') + (khac.length ? ' · ' + khac.join(', ') : '')
+    }
 
     // Phòng của công ty suy từ NHÂN VIÊN PHỤ TRÁCH (clients.room_id gần như luôn trống) — tính
     // cho MỌI vai trò, vì màn hình Đồng bộ theo lô cần tên phòng kể cả khi người xem là quản trị.
@@ -104,19 +134,28 @@ export async function GET(request) {
     //    route kéo nghĩa vụ của cả năm (2.175 dòng) rồi trình duyệt mới chọn kỳ và gọi lần hai.
     const ky = kyChon || kySapToi?.data?.[0]?.period_code || null
 
+    // Xem theo THÁNG thì đọc kèm QUÝ BAO TRÙM (T09 -> Q3), nhưng CHỈ giữ cho công ty kê LẪN tháng và
+    // quý — tức công ty có kỳ khai riêng. Ca HSIN 19/10/2026: kê GTGT tháng, TNCN quý; xem tháng 9 thì
+    // cột TNCN hiện "—" như thể biến mất. Công ty kê thuần quý KHÔNG kéo vào, không thì chọn tháng 9
+    // mà hiện quý 3 của 240 công ty kê quý — đổi hẳn nghĩa của màn hình.
+    const quy = quyBaoTrum(ky)
+    const cacMa = quy ? [ky, quy] : [ky]
+    const keLan = new Set(dsGhiDe.map(g => g.client_id))
+    const giuQuy = (x) => !quy || x.period_code !== quy || keLan.has(x.client_id)
+
     // 4. Nghĩa vụ của đúng kỳ đó.
     //    Quản trị viên xem tất cả → lọc theo kỳ là đủ, không cần liệt kê 293 mã công ty vào URL.
     const layNghiaVu = async () => {
       if (laAdmin) {
         return docHet(() => supabase.from('tax_obligations')
           .select('id, client_id, filing_type_id, period_code, due_date, state')
-          .eq('period_code', ky))
+          .in('period_code', cacMa))
       }
       let ra = []
       for (let i = 0; i < idCty.length; i += 300) {
         ra = ra.concat(await docHet(() => supabase.from('tax_obligations')
           .select('id, client_id, filing_type_id, period_code, due_date, state')
-          .eq('period_code', ky).in('client_id', idCty.slice(i, i + 300))))
+          .in('period_code', cacMa).in('client_id', idCty.slice(i, i + 300))))
       }
       return ra
     }
@@ -133,10 +172,10 @@ export async function GET(request) {
         layNghiaVu(),
         docHet(() => supabase.from('tax_filings')
           .select('id, client_id, filing_type_id, period_code, state, portal_status, submitted_at, received_at, on_time, obligation_id')
-          .eq('period_code', ky)),
+          .in('period_code', cacMa)),
       ])
-      nghiaVu = nv.filter(o => trongPhamVi.has(o.client_id))
-      hoSo = hs.filter(h => trongPhamVi.has(h.client_id))
+      nghiaVu = nv.filter(o => trongPhamVi.has(o.client_id) && giuQuy(o))
+      hoSo = hs.filter(h => trongPhamVi.has(h.client_id) && giuQuy(h))
     }
 
     // 5. Công ty nào đã nối tài khoản cổng thuế (đã lấy song song ở trên, lọc tại chỗ)
@@ -179,7 +218,7 @@ export async function GET(request) {
         ten: c.name,
         maKH: c.client_code || null,
         mst: c.tax_code || null,
-        kyKhai: c.report_type === 'monthly' ? 'Tháng' : 'Quý',
+        kyKhai: nhanKyKhai(c),
         laHKD: c.is_hkd === true,
         roomId: phongCuaCty.get(c.id) || null,
         phong: tenPhong.get(phongCuaCty.get(c.id)) || '(chưa xếp phòng)',
@@ -199,6 +238,8 @@ export async function GET(request) {
             hanNop: o.due_date,
             trangThai,
             khongCoNghiaVu: !!o.khongCoNghiaVu,
+            // Ô của kỳ QUÝ bao trùm tháng đang xem — giao diện ghi "kỳ Q3" để khỏi tưởng lạc kỳ.
+            baoTrum: !!quy && o.period_code === quy,
             trangThaiCong: h?.portal_status || o.portal_status || null,
             ngayNop: h?.submitted_at || null,
             ngayTiepNhan: h?.received_at || o.received_at || null,

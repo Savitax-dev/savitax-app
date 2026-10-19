@@ -142,6 +142,14 @@ export default function TrangHoSo() {
                             <td className="px-3 py-2 pl-10">
                               <span className="font-medium text-gray-800">{h.loai || 'chưa khớp danh mục'}</span>
                               <span className="text-gray-400"> · {h.ky}</span>
+                              {/* Tờ khai QUÝ hiện kèm khi xem theo tháng (công ty kê lẫn tháng và quý) —
+                                  ghi rõ để khỏi tưởng app lọc nhầm kỳ. */}
+                              {h.baoTrum && (
+                                <span className="ml-1.5 text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.5 rounded-full"
+                                  title="Công ty này kê tờ khai này theo quý — hiện kèm vì quý bao trùm tháng đang xem">
+                                  kỳ quý
+                                </span>
+                              )}
                               {h.boSung > 0 && <span className="text-amber-700"> · BS lần {h.boSung}</span>}
                             </td>
                             <td className="px-2 py-2 font-mono text-[11px] text-gray-400">{h.maHoSo}</td>

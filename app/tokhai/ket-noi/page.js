@@ -16,6 +16,7 @@ import AppShell from '@/components/AppShell'
 import TabToKhai from '@/components/TabToKhai'
 import { kiemTraTienIch, goiCong, donPhienCu } from '@/lib/portalBridge'
 import { kiemTraKetNoi } from '@/lib/tokhaiKetNoiClient'
+import { moTaTuDoiKy } from '@/lib/tokhaiLich'
 
 export default function TrangKetNoi() {
   const router = useRouter()
@@ -204,7 +205,10 @@ function DongCongTy({ cty, dangMo, onMo, onXong, coTienIch }) {
       if (buoc.viec === 'xong') {
         setBuocDongBo(null); setCaptcha({ maPhien: null, anh: null, ma: '' })
         setKetQua(buoc)
-        setThongBao({ loai: 'ok', chu: `✓ Xong ${buoc.khoangNgay}: ${buoc.themMoi} hồ sơ mới, ${buoc.capNhat} cập nhật, ${buoc.soThongBao} thông báo, ${buoc.khopNghiaVu} khớp lịch hạn nộp. Tốn ${buoc.soMaCaptcha} mã captcha.` })
+        // Kèm câu tự đổi kỳ khai (nếu có) — lịch hạn nộp vừa đổi, người đồng bộ phải biết.
+        const doiKy = moTaTuDoiKy(buoc.tuDoiKy)
+        setThongBao({ loai: 'ok', chu: `✓ Xong ${buoc.khoangNgay}: ${buoc.themMoi} hồ sơ mới, ${buoc.capNhat} cập nhật, ${buoc.soThongBao} thông báo, ${buoc.khopNghiaVu} khớp lịch hạn nộp. Tốn ${buoc.soMaCaptcha} mã captcha.`
+          + (doiKy ? ` Tự đổi kỳ khai theo cổng: ${doiKy}.` : '') })
         onXong()
         return
       }
