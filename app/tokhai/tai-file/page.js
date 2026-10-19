@@ -592,9 +592,11 @@ export default function TrangTaiFile() {
                           )}
                           {!dangLam && kq?.ket_qua === 'loi' && <span className="text-red-700">{kq.moTa}</span>}
                           {!dangLam && kq?.ket_qua === 'bo_qua' && <span className="text-gray-400">bỏ qua</span>}
-                          {!dangLam && kq?.loiGhi?.length > 0 && (
-                            <span className="block text-amber-700 mt-0.5">{kq.loiGhi[0]}</span>
-                          )}
+                          {/* Hiện ĐỦ mọi file lỗi, không chỉ cái đầu — ca DOEL 19/10/2026: file thông báo
+                              hỏng nằm lẫn giữa file tốt, chỉ thấy một dòng thì không biết còn bao nhiêu. */}
+                          {!dangLam && kq?.loiGhi?.length > 0 && kq.loiGhi.map((l, i) => (
+                            <span key={i} className="block text-amber-700 mt-0.5">{l}</span>
+                          ))}
                         </td>
                       </tr>
                     )
