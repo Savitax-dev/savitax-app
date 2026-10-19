@@ -99,13 +99,31 @@ for (const room of list) {
   const chuyenTheoCty = new Map(d.chuyenKySau.theoCty.map(x => [x.clientId, x]))
   const tonTheoCty = new Map(d.tonDau.theoCty.map(x => [x.clientId, x]))
   let lechKt = 0
+  const tenLech = []
   for (const [id, t] of tonTheoCty) {
     const c = chuyenTheoCty.get(id)
-    // công ty không phát sinh phí kỳ này và không thu gì -> chuyển kỳ sau phải Y NGUYÊN tồn đầu
+    // Công ty KHÔNG phát sinh phí mới kỳ này -> chuyển kỳ sau = tồn đầu − thu nợ tồn − xoá nợ.
+    //
+    // Bản trước chỉ so "chuyển kỳ sau = tồn đầu", quên mất khoản THU NỢ TỒN. Ca thật 16/10/2026:
+    // HẢI HIỀN trả 12.960.000 qua mục "Nợ tồn cũ" -> 25.920.000 − 12.960.000 = 12.960.000, đúng
+    // từng đồng, mà bộ kiểm báo "lệch". Nay KIỂM LUÔN phép trừ thay vì bỏ qua công ty có thu nợ tồn
+    // — chặt hơn, không phải nới ra. daThuTon / daXoaTon là cột "Đã thu" của bảng tồn đầu kỳ.
+    // Công ty trả hết thì rơi khỏi danh sách chuyển kỳ sau -> coi như 0.
     const coPhatSinh = (dl.feeKetoanMap[id] || 0) > 0 || (dl.hcnsByClient[id]?.fee || 0) > 0
-    if (!coPhatSinh && c && Math.abs(c.ketoan - t.ketoan) > 1 && !dl.clients.find(x => x.id === id && feeCountsForMonth(x.fee_period, nam, thang))) lechKt++
+    if (coPhatSinh || dl.clients.find(x => x.id === id && feeCountsForMonth(x.fee_period, nam, thang))) continue
+    const giam = (Number(t.daThuTon) || 0) + (Number(t.daXoaTon) || 0)
+    const kyVong = Math.max(0, t.ketoan - giam)
+    const thucTe = c ? c.ketoan : 0
+    if (Math.abs(thucTe - kyVong) > 1) {
+      lechKt++
+      tenLech.push(t.name + ': tồn đầu ' + fmt(t.ketoan) + (giam ? ' − thu/xoá nợ tồn ' + fmt(giam) : '')
+        + ' = ' + fmt(kyVong) + ', nhưng chuyển kỳ sau ' + fmt(thucTe))
+    }
   }
-  lechKt === 0 ? ok('công ty không phát sinh/không thu: tồn đầu = chuyển kỳ sau') : bad(lechKt + ' công ty lệch')
+  // In TÊN công ty lệch — trước đây chỉ báo "1 công ty lệch", phải viết script riêng mới tìm ra là
+  // công ty nào (19/10/2026).
+  lechKt === 0 ? ok('công ty không phát sinh phí mới: chuyển kỳ sau = tồn đầu − thu/xoá nợ tồn')
+    : bad(lechKt + ' công ty lệch:\n        ' + tenLech.join('\n        '))
 
   // --- bất biến 1b: tổng thẻ = tổng 3 dòng bên trong = tổng danh sách bấm vào ---
   for (const [ten, x] of [['tồn đầu kỳ', d.tonDau], ['chuyển kỳ sau', d.chuyenKySau]]) {
