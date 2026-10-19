@@ -4,8 +4,8 @@ Mục **Chấm công & Lương** ở menu trái dùng để mỗi người **t�
 thưởng dịch vụ khác** mình đã làm. Trưởng phòng dùng thêm để kiểm công của phòng và duyệt thưởng.
 Bảng lương do kế toán nội bộ tổng hợp từ chính những số này — khai đúng và đủ là lương ra đúng.
 
-Ba phần: [chấm công](#phần-1--chấm-công-của-tôi) · [thưởng dịch vụ khác](#phần-2--khai-thưởng-dịch-vụ-khác)
-· [dành cho trưởng phòng](#phần-3--dành-cho-trưởng-phòng) · [hỏi đáp](#hỏi-đáp).
+Các phần: [chấm công](#phần-1--chấm-công-của-tôi) · [thưởng dịch vụ khác](#phần-2--khai-thưởng-dịch-vụ-khác)
+· [phiếu lương](#phần-3--phiếu-lương-của-tôi) · [dành cho trưởng phòng](#phần-4--dành-cho-trưởng-phòng) · [hỏi đáp](#hỏi-đáp).
 
 ---
 
@@ -16,6 +16,7 @@ Ba phần: [chấm công](#phần-1--chấm-công-của-tôi) · [thưởng dị
 | Cuối tháng (ngày làm việc cuối) | Khai ngày công tháng đó rồi bấm **Xác nhận ngày công** | Mọi nhân viên |
 | Trong tháng, khi khách đã trả tiền | Khai **thưởng dịch vụ khác** cho kỳ lương tương ứng | Người làm dịch vụ |
 | Đầu tháng sau | Kiểm công cả phòng, sửa nếu sai; duyệt / trả lại dòng thưởng | Trưởng phòng |
+| Khi kế toán gửi phiếu lương | Mở tab **Phiếu lương của tôi**, bấm **Xác nhận** hoặc **Báo sai** | Mọi nhân viên |
 
 App chỉ cho tự khai **tháng này và tháng trước**. Quá hạn đó thì **không khai được nữa** (trưởng phòng
 chỉ sửa được bảng công đã có) — nhớ khai ngay trong tháng, ít nhất cũng **Lưu nháp** trước.
@@ -36,6 +37,7 @@ Vào menu **Chấm công & Lương** → tab **Chấm công của tôi**.
 | **Ngày đi làm** (xanh lá) | App **tự tính** = công chuẩn − nghỉ phép − nghỉ không lương. |
 | **Nghỉ phép (có lương)** (vàng) | Ngày nghỉ vẫn được trả lương. |
 | **Nghỉ không lương** (đỏ) | Ngày nghỉ không được trả lương. |
+| **Số lần vi phạm tác phong** (tím) | Tự khai số lần vi phạm tác phong trong tháng. Mỗi lần trừ 20% tác phong của bạn (0 lần = 100%, 2 lần = 60%). Tác phong của cả phòng là trung bình mọi người — ảnh hưởng thưởng KPI phòng của cả phòng. |
 
 Thanh màu bên dưới cho thấy tỉ lệ đi làm / phép / không lương so với công chuẩn, và dòng **Ngày tính
 lương** = ngày đi làm + nghỉ phép.
@@ -45,9 +47,10 @@ lương** = ngày đi làm + nghỉ phép.
 1. Chọn tháng cần khai (nút **Tháng này** / **Tháng trước** ở trên).
 2. Gõ số ngày **nghỉ phép** và **nghỉ không lương** (nếu có). Ô **Ngày đi làm tự giảm** theo, không
    cần tự trừ. Nghỉ nửa ngày thì gõ `0,5`.
-3. Ghi chú nếu cần (vd *nghỉ ốm ngày 08*, *về quê 20–21*).
-4. Bấm **Lưu nháp** nếu chưa chắc — sửa lại thoải mái.
-5. Cuối tháng kiểm lại một lần rồi bấm **✓ Xác nhận ngày công**.
+3. Gõ **số lần vi phạm tác phong** trong tháng (không có thì để 0).
+4. Ghi chú nếu cần (vd *nghỉ ốm ngày 08*, *về quê 20–21*).
+5. Bấm **Lưu nháp** nếu chưa chắc — sửa lại thoải mái.
+6. Cuối tháng kiểm lại một lần rồi bấm **✓ Xác nhận ngày công**.
 
 > ⚠ **Xác nhận xong là KHOÁ.** Không tự sửa được nữa. Sai ngày làm hoặc ngày nghỉ thì báo trưởng
 > phòng để kiểm tra và cập nhật — mỗi lần trưởng phòng sửa đều phải ghi lý do và được lưu lại.
@@ -102,7 +105,23 @@ hợp này **bắt buộc ghi chú** (vì sao chưa nhập app, khách trả ng�
 
 ---
 
-## Phần 3 — Dành cho trưởng phòng
+## Phần 3 — Phiếu lương của tôi
+
+Kế toán nội bộ chốt bảng lương xong sẽ **gửi phiếu lương** cho từng người. Vào tab **Phiếu lương của tôi**
+— bạn **chỉ thấy phiếu của chính mình**.
+
+Phiếu ghi đủ: lương cơ bản, ngày tính lương, lương theo công; các khoản thưởng (KPI công việc, KPI công nợ,
+doanh số, dịch vụ khác, KPI phòng); phụ cấp, điều chỉnh (kèm lý do); tổng thu nhập; khoản trừ BHXH / công
+đoàn / Đoàn phí; và **THỰC LĨNH**.
+
+- Đúng → bấm **✓ Xác nhận đúng**.
+- Sai → bấm **⚠ Báo sai**, ghi rõ chỗ sai (vd *thiếu 1 ngày công*, *chưa có thưởng hồ sơ X*) → **Gửi báo sai**.
+  Kế toán nội bộ sửa rồi gửi lại phiếu, bạn xác nhận lại.
+- Tháng nào có phiếu đang chờ bạn xác nhận thì nút tháng đó có dấu **•**.
+
+---
+
+## Phần 4 — Dành cho trưởng phòng
 
 Trưởng phòng có thêm tab **Chấm công phòng** và khung **Duyệt thưởng dịch vụ khác**. Trưởng phòng
 **thấy ngày công của phòng mình, không thấy lương** của nhân viên.
@@ -112,7 +131,7 @@ Trưởng phòng có thêm tab **Chấm công phòng** và khung **Duyệt thư�
 1. Tab **Chấm công phòng** → chọn tháng (mặc định tháng này, xem lại được 6 tháng).
 2. Bốn thẻ trên đầu: **Ngày công chuẩn** · **Đã xác nhận** · **Đang nháp** · **Chưa khai**. Bấm vào
    thẻ để lọc đúng nhóm đó (bấm lần nữa để bỏ lọc) — đầu tháng nên bấm **Chưa khai** để nhắc mọi người.
-3. Nhân viên báo khai sai → bấm **✎ Sửa** ở dòng đó, sửa số ngày, **ghi lý do** (bắt buộc) → **Lưu**.
+3. Nhân viên báo khai sai → bấm **✎ Sửa** ở dòng đó, sửa số ngày hoặc số lần vi phạm, **ghi lý do** (bắt buộc) → **Lưu**.
    Bảng công vẫn ở trạng thái đã xác nhận; app lưu lại ai sửa, sửa từ số nào thành số nào, lý do gì.
 4. Trưởng phòng **không tự sửa công của chính mình** — nhờ quản trị.
 
@@ -133,12 +152,17 @@ Danh sách xếp theo phòng, trưởng phòng đứng đầu (nhãn **TP**).
 
 **Lương của tôi tính thế nào?**
 Lương theo công = lương cơ bản × ngày tính lương ÷ ngày công chuẩn, cộng các khoản thưởng (KPI công
-việc, KPI công nợ, doanh số, dịch vụ khác, KPI phòng), trừ BHXH 10,5% + kinh phí công đoàn 0,5% +
-phí Đoàn 40.000đ (chỉ người đóng BHXH). Kế toán nội bộ tổng hợp và gửi bảng lương — nhân viên không
-xem bảng lương trên app.
+việc, KPI công nợ, doanh số, dịch vụ khác, KPI phòng), phụ cấp và điều chỉnh, trừ BHXH 10,5% + kinh phí
+công đoàn 0,5% + phí Đoàn 40.000đ (chỉ người đóng BHXH). Bạn xem đủ các khoản ở tab **Phiếu lương của tôi**.
+
+**Thưởng KPI phòng tính thế nào?**
+Điểm KPI phòng = trung bình 3 tiêu chí: %-công việc, %-công nợ và %-tác phong của phòng. Mỗi người trong
+phòng nhận đủ mức: dưới 80% không thưởng · 80–90% được 300.000đ · trên 90% được 500.000đ. Vì vậy một người
+vi phạm tác phong cũng kéo thưởng của cả phòng.
 
 **Thưởng KPI lấy số tháng nào?**
-Lương tháng N lấy **%-công việc tháng N−1** và **%-công nợ tháng N−2** — đúng số trên Báo cáo KPI.
+Lương tháng N lấy **%-công việc tháng N** và **%-công nợ tháng N−1** (vd lương tháng 10: công việc tháng 10,
+công nợ tháng 9) — đúng số trên Báo cáo KPI. Doanh thu tính thưởng doanh số cũng lấy tháng N.
 Mỗi chỉ số: dưới 80% không thưởng · 80–90% được 300.000đ · trên 90% được 500.000đ.
 
 **Thứ Bảy có phải khai không?**

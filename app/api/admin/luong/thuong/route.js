@@ -75,7 +75,11 @@ export async function GET(request) {
       // Tháng đã CHỐT thì trả bản chụp (sql/33). Chưa có bảng (chưa chạy SQL) thì coi như chưa chốt.
       const chot = await docBanChot(supabase, nt.nam, nt.thang)
       if (chot && !chot.da_mo) {
-        return Response.json({ ...chot.du_lieu, daChot: { luc: chot.chot_luc, boi: chot.staff?.full_name || '' }, duocChot: quyen.manage })
+        // Đã gửi phiếu thì kèm trạng thái xác nhận từng người (sql/34).
+        const { data: px } = await supabase.from('luong_phieu_xac_nhan').select('staff_id, trang_thai, ghi_chu, luc').eq('nam', nt.nam).eq('thang', nt.thang)
+        const pxMap = new Map((px || []).map(x => [x.staff_id, x]))
+        const dong = (chot.du_lieu.dong || []).map(x => ({ ...x, phieu: pxMap.get(x.staff_id) || null }))
+        return Response.json({ ...chot.du_lieu, dong, daChot: { luc: chot.chot_luc, boi: chot.staff?.full_name || '', daGui: !!chot.da_gui, guiLuc: chot.gui_luc || null }, duocChot: quyen.manage })
       }
       const kq = await tinhBangLuong(supabase, nt.nam, nt.thang)
       return Response.json({ ...kq, daChot: null, daMoChot: chot?.da_mo ? { luc: chot.mo_luc, lyDo: chot.ly_do_mo } : null, duocChot: quyen.manage })

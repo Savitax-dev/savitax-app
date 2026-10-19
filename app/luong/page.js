@@ -8,6 +8,7 @@ import ChamCongPhong from '@/components/luong/ChamCongPhong'
 import CapBacNgayLe from '@/components/luong/CapBacNgayLe'
 import ThuongDvk from '@/components/luong/ThuongDvk'
 import BangLuong from '@/components/luong/BangLuong'
+import PhieuLuongCuaToi from '@/components/luong/PhieuLuongCuaToi'
 
 // Chấm công & Lương (/luong) — bước 1 của phân hệ Tiền lương.
 //   Tab "Chấm công của tôi": mọi nhân viên tự khai ngày công, bấm xác nhận là khoá.
@@ -37,6 +38,7 @@ export default function LuongPage() {
     quyen.cham_cong && ['cua_toi', 'Chấm công của tôi', '🗓️'],
     (quyen.view || quyen.phongTruong?.length > 0) && ['phong', quyen.view ? 'Chấm công toàn công ty' : 'Chấm công phòng', '👥'],
     quyen.cham_cong && ['dvk', 'Thưởng dịch vụ khác', '🧾'],
+    quyen.cham_cong && ['phieu', 'Phiếu lương của tôi', '📄'],
     quyen.view && ['bang_luong', 'Bảng lương', '💰'],
     quyen.manage && ['thiet_lap', 'Cấp bậc & ngày lễ', '⚙️'],
   ].filter(Boolean)
@@ -69,6 +71,7 @@ export default function LuongPage() {
         {tab === 'cua_toi' && quyen.cham_cong && <ChamCongCuaToi thangDuocKhai={quyen.thangDuocKhai} />}
         {tab === 'phong' && <ChamCongPhong quyen={quyen} />}
         {tab === 'dvk' && quyen.cham_cong && <ThuongDvk quyen={quyen} />}
+        {tab === 'phieu' && quyen.cham_cong && <PhieuLuongCuaToi />}
         {tab === 'bang_luong' && quyen.view && <BangLuong quyen={quyen} />}
         {tab === 'thiet_lap' && quyen.manage && <CapBacNgayLe />}
         {!tabs.length && <p className="text-sm text-gray-500">Tài khoản chưa được cấp quyền chấm công.</p>}

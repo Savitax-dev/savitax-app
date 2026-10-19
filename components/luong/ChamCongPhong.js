@@ -34,7 +34,7 @@ export default function CongPhong({ quyen }) {
 
   const luuSua = async () => {
     const f = sua.f
-    const j = await goi('/api/admin/luong', { viec: 'sua_cong', id: sua.dong.cong.id, ...f, ngay_di_lam: Number(f.ngay_di_lam), nghi_phep: Number(f.nghi_phep), nghi_khong_luong: Number(f.nghi_khong_luong) })
+    const j = await goi('/api/admin/luong', { viec: 'sua_cong', id: sua.dong.cong.id, ...f, ngay_di_lam: Number(f.ngay_di_lam), nghi_phep: Number(f.nghi_phep), nghi_khong_luong: Number(f.nghi_khong_luong), so_lan_vi_pham: Number(f.so_lan_vi_pham) || 0 })
     if (j.error) { setMsg({ loai: 'loi', text: j.error }); return }
     setMsg({ loai: 'ok', text: 'Đã cập nhật bảng công của ' + sua.dong.full_name + '.' }); setSua(null); tai()
   }
@@ -88,11 +88,11 @@ export default function CongPhong({ quyen }) {
             <thead><tr className="text-left text-xs uppercase tracking-wide text-gray-500 bg-gradient-to-r from-gray-50 to-rose-50/40 border-b border-gray-200">
               <th className="px-4 py-3 font-semibold">Nhân viên</th><th className="px-4 py-3 font-semibold">Phòng</th>
               <th className="px-4 py-3 font-semibold text-right text-emerald-700">Đi làm</th><th className="px-4 py-3 font-semibold text-right text-amber-700">Phép</th>
-              <th className="px-4 py-3 font-semibold text-right text-rose-700">Không lương</th><th className="px-4 py-3 font-semibold text-right text-blue-700">Tính lương</th>
+              <th className="px-4 py-3 font-semibold text-right text-rose-700">Không lương</th><th className="px-4 py-3 font-semibold text-right text-violet-700">Vi phạm</th><th className="px-4 py-3 font-semibold text-right text-blue-700">Tính lương</th>
               <th className="px-4 py-3 font-semibold">Ghi chú</th><th className="px-4 py-3 font-semibold">Trạng thái</th><th className="px-4 py-3"></th>
             </tr></thead>
             <tbody>
-              {!d && !loiTai && <tr><td colSpan={9} className="px-4 py-10 text-center text-gray-400">Đang tải…</td></tr>}
+              {!d && !loiTai && <tr><td colSpan={10} className="px-4 py-10 text-center text-gray-400">Đang tải…</td></tr>}
               {ds.map((x, i) => {
                 const c = x.cong
                 const tt = TRANG_THAI[trangThaiCua(c)]
@@ -101,7 +101,7 @@ export default function CongPhong({ quyen }) {
                   <Fragment key={x.staff_id}>
                   {(i === 0 || ds[i - 1].phong !== x.phong) && (
                     <tr className="bg-rose-50/70 border-t-2 border-rose-200">
-                      <td colSpan={9} className="px-4 py-2 text-sm font-bold text-[#8B1A1A]">
+                      <td colSpan={10} className="px-4 py-2 text-sm font-bold text-[#8B1A1A]">
                         🏢 {x.phong ? 'Phòng ' + x.phong : 'Chưa xếp phòng'} <span className="font-normal text-gray-500">· {ds.filter(y => y.phong === x.phong).length} người</span>
                       </td>
                     </tr>
@@ -114,13 +114,14 @@ export default function CongPhong({ quyen }) {
                       </div>
                     </td>
                     <td className="px-4 py-2.5">{x.phong ? <span className="text-xs rounded-md bg-slate-100 text-slate-700 px-2 py-0.5">{x.phong}</span> : <span className="text-gray-300">—</span>}</td>
-                    {dangSua ? ['ngay_di_lam', 'nghi_phep', 'nghi_khong_luong'].map(kk => (
+                    {dangSua ? ['ngay_di_lam', 'nghi_phep', 'nghi_khong_luong', 'so_lan_vi_pham'].map(kk => (
                       <td key={kk} className="px-2 py-1.5 text-right"><input type="number" step="0.5" min="0" value={sua.f[kk]}
                         onChange={e => setSua(s => ({ ...s, f: { ...s.f, [kk]: e.target.value } }))} className="w-16 border border-blue-300 rounded-lg px-1.5 py-1 text-right bg-white" /></td>
                     )) : <>
                       <td className="px-4 py-2.5 text-right text-emerald-800">{c ? c.ngay_di_lam : '—'}</td>
                       <td className="px-4 py-2.5 text-right text-amber-800">{c ? c.nghi_phep : '—'}</td>
                       <td className="px-4 py-2.5 text-right text-rose-800">{c ? c.nghi_khong_luong : '—'}</td>
+                      <td className="px-4 py-2.5 text-right text-violet-800">{c ? (Number(c.so_lan_vi_pham) ? <span title={'Tác phong ' + Math.max(0, 100 - 20 * Number(c.so_lan_vi_pham)) + '%'}>{c.so_lan_vi_pham} lần</span> : '0') : '—'}</td>
                     </>}
                     <td className="px-4 py-2.5 text-right"><b className="text-blue-800">{c ? Number(c.ngay_di_lam) + Number(c.nghi_phep) : '—'}</b></td>
                     <td className="px-4 py-2.5 text-gray-500 text-xs max-w-[260px]">
@@ -134,7 +135,7 @@ export default function CongPhong({ quyen }) {
                         <button onClick={luuSua} className="text-xs px-3 py-1 rounded-lg bg-[#8B1A1A] text-white mr-1">Lưu</button>
                         <button onClick={() => setSua(null)} className="text-xs text-gray-500">Hủy</button>
                       </> : (c && x.duocSua && (
-                        <button onClick={() => { setMsg(null); setSua({ dong: x, f: { ngay_di_lam: c.ngay_di_lam, nghi_phep: c.nghi_phep, nghi_khong_luong: c.nghi_khong_luong, ly_do: '' } }) }}
+                        <button onClick={() => { setMsg(null); setSua({ dong: x, f: { ngay_di_lam: c.ngay_di_lam, nghi_phep: c.nghi_phep, nghi_khong_luong: c.nghi_khong_luong, so_lan_vi_pham: c.so_lan_vi_pham ?? 0, ly_do: '' } }) }}
                           className="text-xs px-3 py-1 rounded-lg border border-[#8B1A1A]/30 text-[#8B1A1A] hover:bg-rose-50">✎ Sửa</button>
                       ))}
                     </td>
@@ -142,7 +143,7 @@ export default function CongPhong({ quyen }) {
                   </Fragment>
                 )
               })}
-              {d && !ds.length && <tr><td colSpan={9} className="px-4 py-10 text-center text-gray-400">Không có nhân viên nào khớp bộ lọc.</td></tr>}
+              {d && !ds.length && <tr><td colSpan={10} className="px-4 py-10 text-center text-gray-400">Không có nhân viên nào khớp bộ lọc.</td></tr>}
             </tbody>
           </table>
         </div>

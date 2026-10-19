@@ -7,7 +7,7 @@ import { goi, MAU, TRANG_THAI, trangThaiCua, HopThongBao } from './chung'
 export default function CuaToi({ thangDuocKhai }) {
   const [ky, setKy] = useState(thangDuocKhai[0])
   const [d, setD] = useState(null)
-  const [f, setF] = useState({ ngay_di_lam: '', nghi_phep: '0', nghi_khong_luong: '0', ghi_chu: '' })
+  const [f, setF] = useState({ ngay_di_lam: '', nghi_phep: '0', nghi_khong_luong: '0', so_lan_vi_pham: '0', ghi_chu: '' })
   const [msg, setMsg] = useState(null)
   const [ban, setBan] = useState(false)
   // Ngày đi làm TỰ TÍNH = chuẩn − phép − không lương, cho tới khi người dùng tự gõ vào ô đó (vd vào làm
@@ -20,13 +20,16 @@ export default function CuaToi({ thangDuocKhai }) {
     if (j.error) { setMsg({ loai: 'loi', text: j.error }); return }
     setD(j)
     const c = j.data
-    setF(c ? { ngay_di_lam: String(c.ngay_di_lam), nghi_phep: String(c.nghi_phep), nghi_khong_luong: String(c.nghi_khong_luong), ghi_chu: c.ghi_chu || '' }
-      : { ngay_di_lam: String(j.ngayCong.chuan), nghi_phep: '0', nghi_khong_luong: '0', ghi_chu: '' })
+    setF(c ? { ngay_di_lam: String(c.ngay_di_lam), nghi_phep: String(c.nghi_phep), nghi_khong_luong: String(c.nghi_khong_luong), so_lan_vi_pham: String(c.so_lan_vi_pham ?? 0), ghi_chu: c.ghi_chu || '' }
+      : { ngay_di_lam: String(j.ngayCong.chuan), nghi_phep: '0', nghi_khong_luong: '0', so_lan_vi_pham: '0', ghi_chu: '' })
   }, [ky])
   useEffect(() => { tai() }, [tai])
 
   const so = k => { const v = Number(String(f[k]).replace(',', '.')); return isFinite(v) ? v : 0 }
   const lam = so('ngay_di_lam'), phep = so('nghi_phep'), kl = so('nghi_khong_luong')
+  // Tác phong (sql/34): mỗi lần vi phạm trừ 20%, nhân viên tự khai; % tác phong phòng = trung bình cả phòng.
+  const viPham = Math.max(0, Math.round(so('so_lan_vi_pham')))
+  const tacPhong = Math.max(0, 100 - 20 * viPham)
   const tong = lam + phep + kl
   const chuan = d?.ngayCong.chuan || 0
   const khoa = d?.data?.trang_thai === 'da_xac_nhan'
@@ -50,7 +53,7 @@ export default function CuaToi({ thangDuocKhai }) {
     setBan(true); setMsg(null)
     const j = await goi('/api/admin/luong', {
       viec: 'luu_cong', nam: ky.nam, thang: ky.thang, xacNhan,
-      ngay_di_lam: lam, nghi_phep: phep, nghi_khong_luong: kl, ghi_chu: f.ghi_chu,
+      ngay_di_lam: lam, nghi_phep: phep, nghi_khong_luong: kl, so_lan_vi_pham: viPham, ghi_chu: f.ghi_chu,
     })
     setBan(false)
     if (j.error) { setMsg({ loai: 'loi', text: j.error }); return }
@@ -91,7 +94,7 @@ export default function CuaToi({ thangDuocKhai }) {
       {!d && !msg && <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-400">Đang tải…</div>}
       {d && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
             <div className={'rounded-2xl border p-4 ' + MAU.chuan.the}>
               <span className={'text-sm font-medium ' + MAU.chuan.chu}>Ngày công chuẩn</span>
               <div className={'text-4xl font-bold mt-2 ' + MAU.chuan.dam}>{chuan}</div>
@@ -100,6 +103,13 @@ export default function CuaToi({ thangDuocKhai }) {
             {O({ k: 'ngay_di_lam', nhan: 'Ngày đi làm', mau: 'lam', goiY: tuGoDiLam ? 'Đang gõ tay — tính cả thứ Bảy làm online' : 'Tự tính = chuẩn − phép − không lương' })}
             {O({ k: 'nghi_phep', nhan: 'Nghỉ phép (có lương)', mau: 'phep', goiY: 'Vẫn được tính lương' })}
             {O({ k: 'nghi_khong_luong', nhan: 'Nghỉ không lương', mau: 'kl', goiY: 'Không tính lương' })}
+            <label className="rounded-2xl border p-4 block bg-violet-50 border-violet-200">
+              <span className="text-sm font-medium text-violet-700">Số lần vi phạm tác phong</span>
+              <input type="number" min="0" max="50" step="1" value={f.so_lan_vi_pham} disabled={khoa || !d?.duocKhai}
+                onChange={e => { setMsg(null); setF(v => ({ ...v, so_lan_vi_pham: e.target.value })) }}
+                className="block w-full mt-2 rounded-xl border border-white/80 bg-white px-3 py-2 text-3xl font-bold shadow-sm disabled:bg-white/60 text-violet-900" />
+              <span className="text-xs text-gray-500 mt-1 block">Tác phong của bạn: <b className={tacPhong > 90 ? 'text-emerald-700' : tacPhong >= 80 ? 'text-amber-700' : 'text-rose-600'}>{tacPhong}%</b> (mỗi lần −20%)</span>
+            </label>
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">

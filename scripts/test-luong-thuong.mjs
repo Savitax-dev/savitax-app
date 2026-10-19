@@ -2,7 +2,7 @@
 // file lương mẫu anh gửi 14/10/2026.
 //   node scripts/test-luong-thuong.mjs                       — chỉ kiểm quy tắc, không đụng database
 //   node --env-file=.env.local scripts/test-luong-thuong.mjs --that   — thêm đối chiếu dữ liệu thật (chỉ đọc)
-import { thuongTheoKpi, thuongDoanhSo, doanhThuThangCuaCongTy, tienThuongDvk, luongTheoCong, thangLui } from '../lib/luong/thuong.js'
+import { thuongTheoKpi, thuongDoanhSo, doanhThuThangCuaCongTy, tienThuongDvk, luongTheoCong, thangLui, tacPhongNhanVien, diemKpiPhong } from '../lib/luong/thuong.js'
 import { khauTru } from '../lib/luong/khauTru.js'
 
 let hong = 0
@@ -37,6 +37,13 @@ kiem('KPCĐ 0,5%', khauTru(5841000, true).kpcd, 29205)
 kiem('Đoàn phí', khauTru(5841000, true).doanPhi, 40000)
 kiem('tổng trừ', khauTru(5841000, true).tong, 682510)
 kiem('không tham gia BHXH → không trừ gì', khauTru(5841000, false).tong, 0)
+
+console.log('\nTác phong + KPI phòng (anh chốt 19/10/2026):')
+kiem('0 lần vi phạm → 100%', tacPhongNhanVien(0), 100)
+kiem('Kiều Tiên 2 lần → 60%', tacPhongNhanVien(2), 60)
+kiem('6 lần → sàn 0%', tacPhongNhanVien(6), 0)
+kiem('điểm phòng = TB 3 tiêu chí (96, 99, 95 → 97)', diemKpiPhong(96, 99, 95), 97)
+kiem('thiếu tiêu chí → chưa có điểm', diemKpiPhong(96, null, 95), null)
 
 console.log('\nKhác:')
 kiem('DVK 10.000.000 × 20%', tienThuongDvk(10000000, 20), 2000000)

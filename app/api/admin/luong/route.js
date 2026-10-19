@@ -197,6 +197,7 @@ export async function POST(request) {
       const chuan = ngayCongChuan(nt.nam, nt.thang, le.map(x => x.ngay)).chuan
       const vao = {
         ngay_di_lam: Number(body.ngay_di_lam), nghi_phep: Number(body.nghi_phep), nghi_khong_luong: Number(body.nghi_khong_luong),
+        so_lan_vi_pham: Math.max(0, Math.min(50, Math.round(Number(body.so_lan_vi_pham) || 0))),
         ghi_chu: String(body.ghi_chu || '').trim().slice(0, 300) || null,
       }
       const kq = kiemChamCong(vao, chuan, { xacNhan: !!body.xacNhan })
@@ -215,7 +216,7 @@ export async function POST(request) {
       if (body.xacNhan) {
         await supabase.from('luong_cham_cong_log').insert({
           cham_cong_id: ghi.data.id, staff_id: caller.staffId, hanh_dong: 'xac_nhan',
-          sau: { ngay_di_lam: vao.ngay_di_lam, nghi_phep: vao.nghi_phep, nghi_khong_luong: vao.nghi_khong_luong, ngay_cong_chuan: chuan },
+          sau: { ngay_di_lam: vao.ngay_di_lam, nghi_phep: vao.nghi_phep, nghi_khong_luong: vao.nghi_khong_luong, so_lan_vi_pham: vao.so_lan_vi_pham, ngay_cong_chuan: chuan },
           boi: caller.staffId,
         })
       }
@@ -236,6 +237,7 @@ export async function POST(request) {
       const chuan = ngayCongChuan(cu.nam, cu.thang, le.map(x => x.ngay)).chuan
       const vao = {
         ngay_di_lam: Number(body.ngay_di_lam), nghi_phep: Number(body.nghi_phep), nghi_khong_luong: Number(body.nghi_khong_luong),
+        so_lan_vi_pham: Math.max(0, Math.min(50, Math.round(Number(body.so_lan_vi_pham) || 0))),
         ghi_chu: String(body.ghi_chu ?? cu.ghi_chu ?? '').trim().slice(0, 300) || null,
       }
       if (![vao.ngay_di_lam, vao.nghi_phep, vao.nghi_khong_luong].every(soNgayHopLe)) return loi('Số ngày không hợp lệ')
@@ -248,8 +250,8 @@ export async function POST(request) {
       if (error) return loi(error.message, 500)
       await supabase.from('luong_cham_cong_log').insert({
         cham_cong_id: cu.id, staff_id: cu.staff_id, hanh_dong: 'sua', ly_do: lyDo.slice(0, 300), boi: caller.staffId,
-        truoc: { ngay_di_lam: cu.ngay_di_lam, nghi_phep: cu.nghi_phep, nghi_khong_luong: cu.nghi_khong_luong, ghi_chu: cu.ghi_chu },
-        sau: { ngay_di_lam: vao.ngay_di_lam, nghi_phep: vao.nghi_phep, nghi_khong_luong: vao.nghi_khong_luong, ghi_chu: vao.ghi_chu },
+        truoc: { ngay_di_lam: cu.ngay_di_lam, nghi_phep: cu.nghi_phep, nghi_khong_luong: cu.nghi_khong_luong, so_lan_vi_pham: cu.so_lan_vi_pham, ghi_chu: cu.ghi_chu },
+        sau: { ngay_di_lam: vao.ngay_di_lam, nghi_phep: vao.nghi_phep, nghi_khong_luong: vao.nghi_khong_luong, so_lan_vi_pham: vao.so_lan_vi_pham, ghi_chu: vao.ghi_chu },
       })
       return Response.json({ ok: true, data })
     }
