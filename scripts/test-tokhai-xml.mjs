@@ -262,5 +262,18 @@ let loiNen = ''
 try { await moFileNen(new PizZip().generate({ type: 'uint8array' }), 'a.zip') } catch (e) { loiNen = e.message }
 kiem('file nén rỗng thì báo lỗi', loiNen, 'file nén rỗng')
 
+// Ca DOEL 19/10/2026: thông báo của tờ bổ sung ra file 0 byte. Phần rỗng không được làm file chính.
+const zip3 = new PizZip()
+zip3.file('rong.xml', '')
+zip3.file('that.xml', '<?xml version="1.0"?><TBaoThueDTu><x/></TBaoThueDTu>')
+const phan3 = await moFileNen(zip3.generate({ type: 'uint8array' }), 'TBCN_TNCN_Q1.2026_DOEL_BSL1.zip')
+kiem('nén có phần rỗng -> bỏ phần rỗng, file chính là phần có dữ liệu',
+  phan3.map(p => [p.ten, p.laChinh, p.du.length > 0]), [['TBCN_TNCN_Q1.2026_DOEL_BSL1.xml', true, true]])
+const zip4 = new PizZip()
+zip4.file('a.xml', '')
+let loiRong = ''
+try { await moFileNen(zip4.generate({ type: 'uint8array' }), 'b.zip') } catch (e) { loiRong = e.message }
+kiem('nén mà mọi phần đều rỗng -> báo lỗi nói rõ', /bên trong rỗng/.test(loiRong), true)
+
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)
