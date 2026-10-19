@@ -56,7 +56,12 @@ export async function GET(request) {
       // Kỳ khai ĐANG áp dụng hôm nay — tính bằng đúng luật sinh lịch, không tự suy riêng ở đây.
       dangKhai: kyKhaiTai(client, cuaLoai, homNay) === 'monthly' ? 'month' : 'quarter',
       macDinh: client.report_type === 'monthly' ? 'month' : 'quarter',
-      lichSu: cuaLoai.map(g => ({ periodKind: g.period_kind, tuNgay: g.effective_from })),
+      lichSu: cuaLoai.map(g => ({ periodKind: g.period_kind, tuNgay: g.effective_from, tuDong: !g.approved_by })),
+      // Dòng ĐANG áp dụng do app tự đổi theo hồ sơ trên cổng (approved_by trống), không phải người bấm.
+      tuDong: (() => {
+        const apDung = cuaLoai.filter(g => g.effective_from <= homNay).pop()
+        return !!apDung && !apDung.approved_by
+      })(),
     }
   })
 

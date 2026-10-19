@@ -112,7 +112,7 @@ export default function KyKhaiCongTy({ congTy, onDong, onDaLuu }) {
                 ))}
               </div>
               <span className="text-[11px] text-gray-400">
-                {t.dangKhai === t.macDinh ? 'theo công ty' : 'đã đổi riêng'}
+                {t.tuDong ? 'app tự đổi theo cổng' : t.dangKhai === t.macDinh ? 'theo công ty' : 'đã đổi riêng'}
               </span>
             </div>
           ))}

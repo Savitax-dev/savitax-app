@@ -75,7 +75,7 @@ export async function GET(request) {
     let dsGhiDe = []
     try {
       dsGhiDe = await docHet(() => supabase.from('tax_client_filings')
-        .select('client_id, filing_type_id, period_kind, effective_from'))
+        .select('client_id, filing_type_id, period_kind, effective_from, approved_by'))
     } catch (_) { dsGhiDe = [] }
 
     // 1. Công ty trong phạm vi
@@ -96,7 +96,12 @@ export async function GET(request) {
         const ghiDe = dsGhiDe.filter(g => g.client_id === c.id && g.filing_type_id === t.id)
         if (!ghiDe.length) continue
         const dang = kyKhaiTai(c, ghiDe, homNayKy)
-        if (dang !== macDinh) khac.push(t.code + ' ' + (dang === 'monthly' ? 'tháng' : 'quý'))
+        // Dòng đang áp dụng không có người duyệt = APP TỰ ĐỔI theo hồ sơ trên cổng -> ghi rõ, để
+        // trưởng phòng phân biệt với lần chính mình bấm đổi.
+        const apDung = ghiDe.filter(g => g.effective_from <= homNayKy)
+          .sort((a, b) => (a.effective_from < b.effective_from ? 1 : -1))[0]
+        const tuDong = apDung && !apDung.approved_by ? ' (tự đổi)' : ''
+        if (dang !== macDinh) khac.push(t.code + ' ' + (dang === 'monthly' ? 'tháng' : 'quý') + tuDong)
       }
       return (macDinh === 'monthly' ? 'Tháng' : 'Quý') + (khac.length ? ' · ' + khac.join(', ') : '')
     }

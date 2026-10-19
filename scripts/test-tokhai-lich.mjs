@@ -5,7 +5,7 @@
 // Vì sao phải có bộ kiểm riêng: lịch hạn nộp là thứ nhân viên dựa vào để khỏi trễ hạn. Sinh thừa
 // một kỳ là báo "Quá hạn" oan; sinh thiếu một kỳ là để trễ hạn mà app im lặng — cái sau nguy hiểm
 // hơn nhiều vì không ai thấy để mà sửa.
-import { kyKhaiTai, nghiaVuDinhKy, ngayDauQuy } from '../lib/tokhaiLich.js'
+import { kyKhaiTai, nghiaVuDinhKy, ngayDauQuy, timKyKhaiTheoCong, kieuCuaKy, quyCuaKy, ngaySauKy } from '../lib/tokhaiLich.js'
 
 let dat = 0, hong = 0
 const kiem = (ten, thucTe, mongDoi) => {
@@ -78,6 +78,57 @@ kiem('thiếu effective_from -> theo report_type', kyKhaiTai(thang, [{ period_ki
 kiem('ngayDauQuy Q3.2026', ngayDauQuy('Q3.2026'), '2026-07-01')
 kiem('ngayDauQuy Q1.2027', ngayDauQuy('Q1.2027'), '2027-01-01')
 kiem('ngayDauQuy rác -> null', ngayDauQuy('T09.2026'), null)
+
+console.log('\n[9] Tự nhận kỳ khai theo cổng (timKyKhaiTheoCong):')
+kiem('kieuCuaKy T09/Q3/PS', [kieuCuaKy('T09.2026'), kieuCuaKy('Q3.2026'), kieuCuaKy('PS.2026-10-15'), kieuCuaKy('2026')], ['monthly', 'quarterly', null, null])
+kiem('quyCuaKy T08 -> Q3, Q3 -> Q3', [quyCuaKy('T08.2026'), quyCuaKy('Q3.2026')], ['Q3.2026', 'Q3.2026'])
+const LOAI = new Map([['tncn', TNCN], ['gtgt', { id: 'gtgt', code: '01/GTGT' }]])
+// Mặc định: nộp ngay sau kỳ, đồng bộ sau mốc sửa lỗi "quý 9" — tức hồ sơ đáng tin.
+const hs = (loai, ky, them = {}) => ({ filing_type_id: loai, period_code: ky, state: 'accepted', form_kind: 'Chính thức', amend_no: 0,
+  submitted_at: ngaySauKy(ky) + 'T09:00:00+07:00', synced_at: '2026-10-19T05:00:00Z', ...them })
+const tim = (hoSo, ghiDe = [], client = thang) => timKyKhaiTheoCong({ client, loaiTheoId: LOAI, ghiDe, hoSo, tuNgay: '2026-01-01' })
+const gon = (r) => ({ doi: r.doi.map(d => d.code + ' ' + d.periodKind + ' ' + d.tuNgay), xemTay: r.xemTay.map(x => x.code + ' ' + x.quy) })
+
+kiem('ca CHARGEPOINT: kê tháng, TNCN Q3 chấp nhận -> đổi TNCN sang quý từ 01/07',
+  gon(tim([hs('gtgt', 'T09.2026'), hs('tncn', 'Q3.2026')])), { doi: ['05/KK-TNCN quarter 2026-07-01'], xemTay: [] })
+kiem('kỳ khớp sẵn (GTGT tháng, cty tháng) -> không đổi gì',
+  gon(tim([hs('gtgt', 'T07.2026'), hs('gtgt', 'T08.2026')])), { doi: [], xemTay: [] })
+kiem('đã đổi rồi (HSIN có ghi đè quý) -> không đổi lại',
+  gon(tim([hs('tncn', 'Q3.2026')], [{ filing_type_id: 'tncn', period_kind: 'quarter', effective_from: '2026-07-01', approved_by: null }])), { doi: [], xemTay: [] })
+kiem('hồ sơ bị cổng TRẢ VỀ -> không tính',
+  gon(tim([hs('tncn', 'Q3.2026', { state: 'rejected' })])), { doi: [], xemTay: [] })
+kiem('đang chờ cổng (received) -> có tính',
+  gon(tim([hs('tncn', 'Q3.2026', { state: 'received' })])).doi.length, 1)
+kiem('tờ BỔ SUNG -> không tính',
+  gon(tim([hs('tncn', 'Q3.2026', { form_kind: 'Bổ sung', amend_no: 1 })])), { doi: [], xemTay: [] })
+kiem('cùng quý có cả T07 lẫn Q3 -> KHÔNG tự đổi, báo xem tay',
+  gon(tim([hs('tncn', 'T07.2026'), hs('tncn', 'Q3.2026')])), { doi: [], xemTay: ['05/KK-TNCN Q3.2026'] })
+kiem('người đã đặt tay kỳ tháng mà cổng ra quý -> không cãi, báo xem tay',
+  gon(tim([hs('tncn', 'Q3.2026')], [{ filing_type_id: 'tncn', period_kind: 'month', effective_from: '2026-04-01', approved_by: 'nv1' }])),
+  { doi: [], xemTay: ['05/KK-TNCN Q3.2026'] })
+kiem('cty kê quý nộp GTGT tháng 10 -> đổi sang tháng từ 01/10',
+  gon(tim([hs('gtgt', 'Q3.2026'), hs('gtgt', 'T10.2026')], [], quy)), { doi: ['01/GTGT month 2026-10-01'], xemTay: [] })
+kiem('quý 2 khai quý rồi quý 4 quay lại tháng -> hai lần đổi, đúng thứ tự',
+  gon(tim([hs('tncn', 'Q2.2026'), hs('tncn', 'Q3.2026'), hs('tncn', 'T10.2026')])),
+  { doi: ['05/KK-TNCN quarter 2026-04-01', '05/KK-TNCN month 2026-10-01'], xemTay: [] })
+kiem('hồ sơ năm cũ (trước phạm vi lịch) -> bỏ qua',
+  gon(tim([hs('tncn', 'Q3.2025')])), { doi: [], xemTay: [] })
+kiem('kỳ phát sinh / năm -> bỏ qua',
+  gon(tim([hs('tncn', 'PS.2026-10-15'), hs('tncn', '2026')])), { doi: [], xemTay: [] })
+kiem('ngaySauKy T09 / Q3 / Q4 / T12', [ngaySauKy('T09.2026'), ngaySauKy('Q3.2026'), ngaySauKy('Q4.2026'), ngaySauKy('T12.2026')],
+  ['2026-10-01', '2026-10-01', '2027-01-01', '2027-01-01'])
+// Ca thật VƯU ĐỨC PHÁT: đồng bộ 01/10 (trước bản sửa "quý 9") -> mã kỳ hỏng, KHÔNG được tin.
+kiem('hồ sơ đồng bộ TRƯỚC mốc sửa lỗi quý 9 -> bỏ qua (dù trông hợp lệ: T06 đọc thành Q2, nộp 20/07)',
+  gon(tim([hs('tncn', 'Q2.2026', { submitted_at: '2026-07-20T09:00:00+07:00', synced_at: '2026-10-01T08:03:00Z' })])), { doi: [], xemTay: [] })
+kiem('nộp TRƯỚC khi hết kỳ (Q3.2026 nộp 20/04 = T03 đọc nhầm) -> bỏ qua',
+  gon(tim([hs('tncn', 'Q3.2026', { submitted_at: '2026-04-20T09:00:00+07:00' })])), { doi: [], xemTay: [] })
+kiem('thiếu ngày nộp -> bỏ qua', gon(tim([hs('tncn', 'Q3.2026', { submitted_at: null })])), { doi: [], xemTay: [] })
+kiem('ca CHARGEPOINT thật: nộp 16/10, đồng bộ 19/10 11:38 -> đổi',
+  gon(tim([hs('tncn', 'Q3.2026', { submitted_at: '2026-10-16T08:00:00+00:00', synced_at: '2026-10-19T04:38:39Z' })])).doi.length, 1)
+// Lịch sinh ra sau khi đổi phải ĐÚNG như mong đợi: ghép kết quả đổi vào luật sinh lịch.
+const doiCP = tim([hs('tncn', 'Q3.2026')]).doi.map(d => ({ period_kind: d.periodKind, effective_from: d.tuNgay }))
+kiem('lịch TNCN sau khi tự đổi = T01..T06 + Q3 + Q4', ma(nghiaVuDinhKy({ client: thang, loai: TNCN, nam: 2026, ghiDe: doiCP })),
+  ['T01.2026','T02.2026','T03.2026','T04.2026','T05.2026','T06.2026','Q3.2026','Q4.2026'])
 
 console.log(hong === 0 ? `\nTẤT CẢ ${dat} MỤC ĐỀU ĐẠT.` : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)
