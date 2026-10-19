@@ -256,23 +256,28 @@ hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công 
 
 ## Phân hệ Tiền lương (`/luong`)
 
-Chấm công + thưởng + khoản trừ + chốt bảng lương + Excel, dựng 17–18/10/2026 (lên production
-`c4ebe81`), SQL `sql/31_tien_luong.sql`, `32_luong_thuong_dvk.sql`, `33_luong_chot.sql` (đã chạy).
+Chấm công + thưởng + khoản trừ + chốt bảng lương + Excel + phiếu lương, dựng 17–19/10/2026 (production
+`c4ebe81`, `a1f1f71`), SQL `sql/31` → `sql/34` (đã chạy). Hướng dẫn nhân viên: `docs/huong-dan-cham-cong-luong.md` (+ .docx).
 **Mã tách theo 3 bước — đọc `lib/luong/README.md` trước khi sửa** (bảng "bước nào ở file nào" + toàn
 bộ quy tắc). Anh yêu cầu tách cho dễ sửa: đổi quy tắc bước nào chỉ đụng file của bước đó.
 
 - Bước 1 `lib/luong/ngayCong.js` + `api/admin/luong`: cấp bậc (`luong_cap_bac`), lương từng người
   có LỊCH SỬ theo tháng (`luong_nhan_vien`, đổi lương = dòng mới), ngày lễ (`luong_ngay_le`, lễ rơi
   chủ nhật anh muốn BỎ khỏi danh sách), chấm công tự khai → xác nhận là khoá, TP sửa phải ghi lý do.
-- Bước 2 `thuong.js`, `bangLuong.js` + `api/admin/luong/thuong`: lương tháng N lấy %-việc N−1,
-  %-nợ N−2, doanh thu N−1. Doanh thu = `monthly_fee ÷ 1,08` (phí lưu GỒM VAT) của công ty phụ trách
+- Bước 2 `thuong.js`, `bangLuong.js` + `api/admin/luong/thuong`: lương tháng N lấy %-việc **N**,
+  %-nợ **N−1**, doanh thu **N** (anh đổi 19/10/2026). Doanh thu = `monthly_fee ÷ 1,08` (phí lưu GỒM VAT) của công ty phụ trách
   chính, công ty quý ÷ 3 — đã khớp file lương mẫu của anh từng đồng (4/4 người). Thưởng KPI mỗi chỉ
   số 0 / 300k / 500k; vượt doanh số × 20% (TP: 20% doanh thu tự làm, không cần tối thiểu). Thưởng
   dịch vụ khác: nhân viên tự khai (tiền × %), TP duyệt; dịch vụ ngoài app bắt buộc ghi chú.
 - Bước 3 `khauTru.js`, `chot.js`, `excel.js` + `api/admin/luong/chot`: BHXH 10,5% + KPCĐ 0,5% ×
   lương đóng BHXH + Đoàn phí 40.000 (chỉ người tick tham gia BHXH), KHÔNG thuế TNCN. Chốt = chụp
   nguyên bảng lương vào `luong_bang_chot`; mở chốt bắt buộc lý do. Excel có công thức: KPI tác
-  phong, thưởng phòng, phụ cấp, điều chỉnh ngoại lệ (giám đốc duyệt) nhập trên file, file tự tính.
+  phong tự tính theo phòng; phụ cấp / điều chỉnh ngoại lệ prefill từ app, sửa trên file thì file tự tính.
+- Tác phong (sql/34): nhân viên TỰ KHAI số lần vi phạm cùng ngày công; người = 100 − 20 × số lần, phòng =
+  trung bình; điểm KPI phòng = TB(việc, nợ, tác phong) → thưởng phòng app tự tính. Phụ cấp / điều chỉnh nhập
+  trên tab Bảng lương (`luong_dieu_chinh`) trước khi chốt.
+- Bước 4 `api/admin/luong/phieu` + `PhieuLuongCuaToi`: chốt → "Gửi nhân viên xác nhận"; mỗi người CHỈ thấy
+  phiếu mình (máy chủ lọc theo người đăng nhập), Xác nhận / Báo sai kèm ghi chú. Mở chốt = thu hồi phiếu.
 - Quyền: `cham_cong` (mọi vai trò), `view_payroll` / `manage_payroll` (chỉ Nhân viên NB, anh tự cấp
   thêm). Trưởng phòng thấy CÔNG của phòng mình nhưng KHÔNG thấy lương.
 - Bộ kiểm: `node scripts/test-luong-ngay-cong.mjs`, `node --env-file=.env.local
