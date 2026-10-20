@@ -8,7 +8,7 @@
 // Chỉ đọc file, KHÔNG đụng database. state.json nằm trong app.baogia/ (đã gitignore vì chứa dữ liệu
 // khách thật) — máy không có file đó thì lớp 1 tự bỏ qua.
 import { readFileSync, existsSync } from 'node:fs'
-import { computeFees, normalizeSurvey, priceQuote, money, HCNS_PER_HEAD, nextPriceStatus, pricingChanged, canExportPrice, awaitingApproval, APPROVE_ALL_QUOTES } from '../lib/salesPricing.js'
+import { computeFees, normalizeSurvey, priceQuote, money, HCNS_PER_HEAD, nextPriceStatus, pricingChanged, canExportPrice, awaitingApproval, APPROVE_ALL_QUOTES, APPROVE_OVERRIDE_QUOTES } from '../lib/salesPricing.js'
 import { printedMonthlyLines } from '../lib/salesDocx.js'
 
 let pass = 0, fail = 0
@@ -135,10 +135,14 @@ console.log('\n4. Duyệt báo giá (từ 2026-09-21 mọi báo giá phải qu�
 // Công tắc APPROVE_ALL_QUOTES (lib/salesPricing.js) — đang TẮT từ 2026-09-21: đúng biểu phí xuất ngay,
 // chỉ giá đề xuất phải chờ duyệt. Bật lại thì 'ok' cũng thành chờ duyệt.
 t('Công tắc duyệt mọi báo giá đang ' + (APPROVE_ALL_QUOTES ? 'BẬT' : 'TẮT'), typeof APPROVE_ALL_QUOTES, 'boolean')
-t('Được xuất gửi khách: ' + (APPROVE_ALL_QUOTES ? 'chỉ đã duyệt' : 'đúng biểu phí + đã duyệt'),
-  ['ok', 'pending', 'approved', 'rejected'].map(canExportPrice), [!APPROVE_ALL_QUOTES, false, true, false])
-t('Chờ duyệt: ' + (APPROVE_ALL_QUOTES ? 'đúng biểu phí + giá đề xuất' : 'chỉ giá đề xuất'),
-  ['ok', 'pending', 'approved', 'rejected'].map(awaitingApproval), [APPROVE_ALL_QUOTES, true, false, false])
+// Công tắc APPROVE_OVERRIDE_QUOTES — TẮT từ 20/10/2026: giá đề xuất cũng xuất được ngay (vẫn mang nhãn).
+t('Công tắc duyệt giá đề xuất đang ' + (APPROVE_OVERRIDE_QUOTES ? 'BẬT' : 'TẮT'), typeof APPROVE_OVERRIDE_QUOTES, 'boolean')
+const xuatDeXuat = !APPROVE_OVERRIDE_QUOTES && !APPROVE_ALL_QUOTES
+t('Được xuất gửi khách (ok, đề xuất, đã duyệt, từ chối)',
+  ['ok', 'pending', 'approved', 'rejected'].map(canExportPrice), [!APPROVE_ALL_QUOTES, xuatDeXuat, true, false])
+t('Chờ duyệt (ok, đề xuất, đã duyệt, từ chối)',
+  ['ok', 'pending', 'approved', 'rejected'].map(awaitingApproval), [APPROVE_ALL_QUOTES, APPROVE_OVERRIDE_QUOTES, false, false])
+t('Bị từ chối KHÔNG BAO GIỜ xuất được', canExportPrice('rejected'), false)
 t('Đã duyệt, sửa lặt vặt (phí không đổi) → giữ đã duyệt', nextPriceStatus('approved', { priceChanged: false, overrideOn: false }), 'approved')
 t('Đã duyệt, đổi phí/số liệu → chờ duyệt lại', nextPriceStatus('approved', { priceChanged: true, overrideOn: false }), 'ok')
 t('Đã duyệt, bật đề xuất giá → chờ duyệt giá đề xuất', nextPriceStatus('approved', { priceChanged: true, overrideOn: true }), 'pending')

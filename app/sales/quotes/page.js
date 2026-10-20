@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import {
   SECTORS, AREA_SURCHARGE, EXTRA_SERVICES, HCNS_PER_HEAD, CONTRACT_STATES, PRICE_STATES,
-  emptySurvey, syncDocs, priceQuote, canExportPrice, awaitingApproval,
+  emptySurvey, syncDocs, priceQuote, canExportPrice, awaitingApproval, APPROVE_OVERRIDE_QUOTES,
 } from '@/lib/salesPricing'
 import { readSurveyDocx, applySurveyRows } from '@/lib/salesSurvey'
 import {
@@ -690,7 +690,9 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
                       <textarea rows={2} value={d.override.reason} onChange={e => upd(n => { n.override.reason = e.target.value })} className={inputCls}
                         placeholder="VD: khách hàng cũ giới thiệu, cam kết ký 2 năm." />
                     </Field>
-                    <p className="text-xs text-red-700">Báo giá hiện nhãn “Chờ duyệt · giá đề xuất” — quản trị xem lý do trước khi duyệt.</p>
+                    <p className="text-xs text-red-700">{APPROVE_OVERRIDE_QUOTES
+                      ? 'Báo giá hiện nhãn “Chờ duyệt · giá đề xuất” — quản trị xem lý do trước khi duyệt.'
+                      : 'Báo giá hiện nhãn “Giá đề xuất · khác biểu phí” để quản trị biết — vẫn xuất file gửi khách được ngay.'}</p>
                     {(() => {
                       // Cùng quy tắc với printedMonthlyLines (lib/salesDocx.js): phần chênh dồn vào dòng kế toán trọn gói.
                       const baseLine = f.lines.find(l => l.key === 'base')
