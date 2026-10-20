@@ -7,7 +7,7 @@ route API và giao diện riêng; bước sau chỉ ĐỌC kết quả của bư
 |---|---|---|---|---|---|
 | 1 | Cấp bậc, lương từng nhân viên, ngày lễ, chấm công | `sql/31_tien_luong.sql` | `ngayCong.js` | `route.js` | `ChamCongCuaToi`, `ChamCongPhong`, `CapBacNgayLe`, `OLuongNhanVien` (ô ở trang Quản lý nhân viên) |
 | 2 | Thưởng KPI, thưởng doanh số, thưởng dịch vụ khác, bảng lương | `sql/32_luong_thuong_dvk.sql` | `thuong.js`, `bangLuong.js` | `thuong/route.js` | `ThuongDvk`, `BangLuong` |
-| 3 | Khoản trừ, phụ cấp / điều chỉnh, chốt bảng lương, xuất Excel | `sql/33_luong_chot.sql`, `sql/34_…` | `khauTru.js`, `chot.js`, `excel.js` | `chot/route.js` | `ThanhChotLuong` |
+| 3 | Khoản trừ, thuế TNCN, phụ cấp / điều chỉnh, chốt bảng lương, xuất Excel | `sql/33_luong_chot.sql`, `sql/34_…`, `sql/35_luong_thue_ngan_hang.sql` | `khauTru.js`, `thueTncn.js`, `chot.js`, `excel.js` | `chot/route.js` | `ThanhChotLuong` |
 | 4 | Gửi phiếu lương, nhân viên xác nhận / báo sai | `sql/34_luong_tac_phong_phieu.sql` | — | `phieu/route.js` | `PhieuLuongCuaToi` |
 
 Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số — chỉ máy chủ), `components/luong/chung.js`
@@ -21,7 +21,13 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
 - **Thưởng KPI** công việc / công nợ / phòng: dưới 80% → 0; 80–90% → 300.000; trên 90% → 500.000.
 - **Thưởng vượt doanh số**: nhân viên (DT − tối thiểu theo cấp) × 20%; trưởng phòng 20% DT công ty tự làm.
 - **Thưởng dịch vụ khác**: nhân viên tự khai (số tiền × tỉ lệ), trưởng phòng duyệt; dịch vụ ngoài app bắt buộc ghi chú.
-- **Khoản trừ** (chỉ người tham gia BHXH): BHXH 10,5% + KPCĐ 0,5% × lương đóng BHXH + Đoàn phí 40.000. Không TNCN.
+- **Khoản trừ** (chỉ người tham gia BHXH): BHXH 10,5% + KPCĐ 0,5% × lương đóng BHXH + Đoàn phí 40.000.
+- **Thuế TNCN** (`thueTncn.js`, anh chốt 20/10/2026 — trước đó không tính): người tham gia BHXH → thu nhập
+  tính thuế = tổng thu nhập (lương theo công + mọi thưởng + phụ cấp + điều chỉnh) − 15,5tr − 6,2tr × người phụ
+  thuộc − BHXH 10,5% → biểu lũy tiến 5 bậc; người KHÔNG tham gia BHXH (thử việc, học việc) → 10% tổng thu nhập, CỐ Ý không áp mốc 2 triệu của luật (anh
+  chốt: khấu trừ mọi khoản cho chắc). Lương từng người do công ty nhập tay theo năng lực, không tự gán.
+  Thực lĩnh = thu nhập − BHXH − KPCĐ − Đoàn phí − thuế. Số người phụ thuộc đi theo lịch sử lương
+  (`luong_nhan_vien.so_nguoi_phu_thuoc`); tài khoản nhận lương một dòng mỗi người (`luong_ngan_hang`).
 - **Tác phong** (19/10/2026): nhân viên tự khai số lần vi phạm cùng ngày công; % của người = 100 − 20 × số lần
   (sàn 0); % tác phong phòng = trung bình cả phòng. **Điểm KPI phòng** = TB(%-việc, %-nợ, %-tác phong) →
   thưởng phòng 0 / 300k / 500k, MỖI người trong phòng nhận đủ. App tự tính, Excel cũng tự tính lại.

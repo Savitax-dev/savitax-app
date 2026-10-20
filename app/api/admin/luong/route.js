@@ -8,7 +8,8 @@
 //   GET  ?viec=cua_toi&nam=&thang=           → bảng công của chính mình + ngày công chuẩn
 //   GET  ?viec=phong&nam=&thang=             → bảng công các nhân viên trong phạm vi (TP: phòng mình làm trưởng)
 //   POST {viec:'luu_cap_bac', ds:[…]}                           (manage_payroll)
-//   POST {viec:'luu_luong_nv', staffId, thang:'YYYY-MM', …}     (manage_payroll)
+//   POST {viec:'luu_luong_nv', staffId, thang:'YYYY-MM', …, so_nguoi_phu_thuoc}   (manage_payroll)
+//   POST {viec:'luu_ngan_hang', staffId, ngan_hang, so_tai_khoan, chu_tai_khoan}  (manage_payroll)
 //   POST {viec:'them_ngay_le', ngay, den?, ten} | {viec:'xoa_ngay_le', ngays}   (manage_payroll)
 //   POST {viec:'luu_cong', nam, thang, ngay_di_lam, nghi_phep, nghi_khong_luong, ghi_chu, xacNhan}
 //   POST {viec:'sua_cong', id, ngay_di_lam, nghi_phep, nghi_khong_luong, ghi_chu, ly_do}   (TP của phòng / quản trị)
@@ -53,7 +54,9 @@ export async function GET(request) {
       if (!quyen.view) return loi('Không đủ quyền xem lương', 403)
       const { data, error } = await supabase.from('luong_nhan_vien').select('*').order('ap_dung_tu', { ascending: false }).limit(5000)
       if (error) return loi('Chưa chạy sql/31_tien_luong.sql (' + error.message + ')', 500)
-      return Response.json({ data })
+      // Tài khoản nhận lương (sql/35) — chưa chạy SQL thì trả rỗng.
+      const nh = await supabase.from('luong_ngan_hang').select('staff_id, ngan_hang, so_tai_khoan, chu_tai_khoan').limit(5000)
+      return Response.json({ data, nganHang: nh.error ? [] : nh.data || [] })
     }
 
     const nt = namThang(q.get('nam'), q.get('thang'))
@@ -141,19 +144,44 @@ export async function POST(request) {
       if (lcb === null || !tienHopLe(lcb) || !tienHopLe(dt) || !tienHopLe(bh)) return loi('Số tiền không hợp lệ')
       const thamGia = !!body.tham_gia_bhxh
       if (thamGia && !bh) return loi('Đã tick tham gia BHXH thì phải có lương đóng BHXH')
+      const npt = Number(body.so_nguoi_phu_thuoc ?? 0)
+      if (!Number.isInteger(npt) || npt < 0 || npt > 20) return loi('Số người phụ thuộc không hợp lệ (0–20)')
       const { data: st } = await supabase.from('staff').select('id').eq('id', body.staffId).maybeSingle()
       if (!st) return loi('Không tìm thấy nhân viên')
       if (body.cap_bac) {
         const { data: cb } = await supabase.from('luong_cap_bac').select('ma').eq('ma', body.cap_bac).maybeSingle()
         if (!cb) return loi('Cấp bậc không tồn tại')
       }
-      const { error } = await supabase.from('luong_nhan_vien').upsert({
+      const dongLuong = {
         staff_id: body.staffId, ap_dung_tu: m[1] + '-' + m[2] + '-01', cap_bac: body.cap_bac || null,
         luong_co_ban: lcb, doanh_thu_toi_thieu: dt, luong_bhxh: bh, tham_gia_bhxh: thamGia,
         ghi_chu: body.ghi_chu ? String(body.ghi_chu).slice(0, 300) : null,
-        tao_boi: caller.staffId, tao_luc: new Date().toISOString(),
-      }, { onConflict: 'staff_id,ap_dung_tu' })
+        tao_boi: caller.staffId, tao_luc: new Date().toISOString(), so_nguoi_phu_thuoc: npt,
+      }
+      // Cột người phụ thuộc có từ sql/35 — chưa chạy SQL mà không có người phụ thuộc thì vẫn lưu được lương.
+      let { error } = await supabase.from('luong_nhan_vien').upsert(dongLuong, { onConflict: 'staff_id,ap_dung_tu' })
+      if (error && /so_nguoi_phu_thuoc/.test(error.message)) {
+        if (npt > 0) return loi('Chưa chạy sql/35_luong_thue_ngan_hang.sql — chưa lưu được người phụ thuộc', 500)
+        delete dongLuong.so_nguoi_phu_thuoc
+        ;({ error } = await supabase.from('luong_nhan_vien').upsert(dongLuong, { onConflict: 'staff_id,ap_dung_tu' }))
+      }
       if (error) return loi(error.message, 500)
+      return Response.json({ ok: true })
+    }
+
+    // Tài khoản nhận lương — mỗi người một dòng, không theo tháng (sql/35).
+    if (viec === 'luu_ngan_hang') {
+      if (!quyen.manage) return loi('Không đủ quyền sửa tài khoản nhận lương', 403)
+      const chu = v => String(v ?? '').trim().slice(0, 120)
+      const stk = String(body.so_tai_khoan ?? '').replace(/\s+/g, '')
+      if (stk && !/^[0-9A-Za-z.-]{4,30}$/.test(stk)) return loi('Số tài khoản không hợp lệ')
+      const { data: st } = await supabase.from('staff').select('id').eq('id', body.staffId).maybeSingle()
+      if (!st) return loi('Không tìm thấy nhân viên')
+      const { error } = await supabase.from('luong_ngan_hang').upsert({
+        staff_id: body.staffId, ngan_hang: chu(body.ngan_hang) || null, so_tai_khoan: stk || null,
+        chu_tai_khoan: chu(body.chu_tai_khoan).toUpperCase() || null, sua_boi: caller.staffId, sua_luc: new Date().toISOString(),
+      }, { onConflict: 'staff_id' })
+      if (error) return loi(/luong_ngan_hang/.test(error.message) ? 'Chưa chạy sql/35_luong_thue_ngan_hang.sql' : error.message, 500)
       return Response.json({ ok: true })
     }
 

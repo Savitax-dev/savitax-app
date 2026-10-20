@@ -4,7 +4,7 @@ import ThanhChotLuong from './ThanhChotLuong'
 
 // Tab "Bảng lương" — phân hệ Tiền lương BƯỚC 2 (chỉ ban lãnh đạo / kế toán nội bộ: view_payroll).
 // Chỉ ĐỌC: tính từ chấm công, lương, KPI và doanh thu thật (lib/luong/bangLuong.js). Cột khoản trừ /
-// thực lĩnh tạm hiện số của bước 3 (lib/luong/khauTru.js); thanh chốt + Excel là ThanhChotLuong.js.
+// thực lĩnh hiện số của bước 3 (lib/luong/khauTru.js + thueTncn.js); thanh chốt + Excel là ThanhChotLuong.js.
 
 const fmt = n => (n === null || n === undefined) ? '—' : Number(n).toLocaleString('vi-VN')
 const pctMau = p => p === null || p === undefined ? 'text-gray-400' : p > 90 ? 'text-emerald-700' : p >= 80 ? 'text-amber-700' : 'text-rose-600'
@@ -85,7 +85,7 @@ export default function BangLuong({ quyen }) {
 
       {d && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-5 2xl:grid-cols-10 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-6 2xl:grid-cols-11 gap-3">
             {[['Lương theo công', tong('luongTheoCong'), 'bg-blue-50 border-blue-200 text-blue-900'],
               ['Thưởng KPI công việc', tong('thuongViec'), 'bg-emerald-50 border-emerald-200 text-emerald-900'],
               ['Thưởng KPI công nợ', tong('thuongNo'), 'bg-teal-50 border-teal-200 text-teal-900'],
@@ -95,6 +95,7 @@ export default function BangLuong({ quyen }) {
               ['Phụ cấp + điều chỉnh', tong('phuCap') + tong('dieuChinh'), 'bg-amber-50 border-amber-200 text-amber-900'],
               ['Thu nhập', tong('thuNhap'), 'bg-slate-50 border-slate-200 text-slate-900'],
               ['Khoản trừ', ds.reduce((a, x) => a + (x.khauTru?.tong || 0), 0), 'bg-rose-50 border-rose-200 text-rose-900'],
+              ['Thuế TNCN', ds.reduce((a, x) => a + (x.thueTncn?.thue || 0), 0), 'bg-red-50 border-red-200 text-red-900'],
               ['Thực lĩnh', tong('thucLinh'), 'bg-gray-900 border-gray-900 text-white']].map(([l, v, c]) => (
               <div key={l} className={'rounded-2xl border p-4 ' + c}><div className="text-xs font-medium opacity-80">{l}</div><div className="text-xl font-bold mt-1">{fmt(v)}</div></div>
             ))}
@@ -119,6 +120,7 @@ export default function BangLuong({ quyen }) {
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-amber-700">Phụ cấp · điều chỉnh</th>
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right">Tổng thưởng</th>
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-rose-700">Trừ BHXH · KPCĐ · Đoàn</th>
+                  <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-red-700">Thuế TNCN</th>
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right">Thực lĩnh</th>
                   {d.daChot?.daGui && <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold">Nhân viên xác nhận</th>}
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold">Cần xem</th>
@@ -128,7 +130,7 @@ export default function BangLuong({ quyen }) {
                     <Fragment key={x.staff_id}>
                     {(i === 0 || ds[i - 1].phong !== x.phong) && (
                       <tr className="bg-rose-50/70 border-t-2 border-rose-200">
-                        <td colSpan={16} className="sticky left-0 px-3 py-2 text-sm font-bold text-[#8B1A1A]">
+                        <td colSpan={17} className="sticky left-0 px-3 py-2 text-sm font-bold text-[#8B1A1A]">
                           🏢 {x.phong ? 'Phòng ' + x.phong : 'Chưa xếp phòng'} <span className="font-normal text-gray-500">· {ds.filter(y => y.phong === x.phong).length} người</span>
                         </td>
                       </tr>
@@ -170,7 +172,16 @@ export default function BangLuong({ quyen }) {
                       </td>
                       <td className="px-3 py-2.5 text-right font-bold text-gray-900">{fmt(x.tongThuong)}</td>
                       <td className="px-3 py-2.5 text-right text-rose-700 whitespace-nowrap">{x.khauTru?.tong ? <span title={'BHXH ' + fmt(x.khauTru.bhxh) + ' · KPCĐ ' + fmt(x.khauTru.kpcd) + ' · Đoàn phí ' + fmt(x.khauTru.doanPhi)}>−{fmt(x.khauTru.tong)}</span> : <span className="text-xs text-gray-400">không BHXH</span>}</td>
-                      <td className="px-3 py-2.5 text-right font-bold text-gray-900 whitespace-nowrap">{x.luongCoBan === null ? '—' : fmt(x.thucLinh)}</td>
+                      <td className="px-3 py-2.5 text-right whitespace-nowrap">{!x.thueTncn ? <span className="text-gray-300">—</span> : <>
+                        <div className="text-red-700 font-semibold">{x.thueTncn.thue ? '−' + fmt(x.thueTncn.thue) : '0'}</div>
+                        <div className="text-[11px] text-gray-500" title={x.thueTncn.cach === 'luy_tien'
+                          ? 'Chịu thuế ' + fmt(x.thueTncn.thuNhapChiuThue) + ' − bản thân ' + fmt(x.thueTncn.giamTruBanThan) + ' − NPT ' + fmt(x.thueTncn.giamTruPhuThuoc) + ' − BHXH ' + fmt(x.thueTncn.giamTruBhxh) + ' = tính thuế ' + fmt(x.thueTncn.thuNhapTinhThue)
+                          : '10% × tổng thu nhập ' + fmt(x.thueTncn.thuNhapChiuThue)}>
+                          {x.thueTncn.cach === 'luy_tien' ? 'lũy tiến' + (x.soNguoiPhuThuoc ? ' · ' + x.soNguoiPhuThuoc + ' NPT' : '') : 'khấu trừ 10%'}</div>
+                      </>}</td>
+                      <td className="px-3 py-2.5 text-right font-bold text-gray-900 whitespace-nowrap">{x.luongCoBan === null ? '—' : fmt(x.thucLinh)}
+                        {x.nganHang?.stk && <div className="text-[11px] font-normal text-gray-500" title={x.nganHang.ten + ' · ' + x.nganHang.stk + ' · ' + x.nganHang.chu}>🏦 {x.nganHang.ten || 'NH'} ·· {x.nganHang.stk.slice(-4)}</div>}
+                      </td>
                       {d.daChot?.daGui && <td className="px-3 py-2.5 whitespace-nowrap">{
                         !x.phieu ? <span className="text-xs text-gray-400">không gửi</span>
                           : x.phieu.trang_thai === 'da_xac_nhan' ? <span className="text-xs rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5">✓ Đã xác nhận</span>
@@ -180,7 +191,7 @@ export default function BangLuong({ quyen }) {
                     </tr>
                     </Fragment>
                   ))}
-                  {!ds.length && <tr><td colSpan={16} className="px-4 py-8 text-center text-gray-400">Không có nhân viên nào khớp bộ lọc.</td></tr>}
+                  {!ds.length && <tr><td colSpan={17} className="px-4 py-8 text-center text-gray-400">Không có nhân viên nào khớp bộ lọc.</td></tr>}
                 </tbody>
               </table>
             </div>

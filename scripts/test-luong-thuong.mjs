@@ -4,6 +4,7 @@
 //   node --env-file=.env.local scripts/test-luong-thuong.mjs --that   — thêm đối chiếu dữ liệu thật (chỉ đọc)
 import { thuongTheoKpi, thuongDoanhSo, doanhThuThangCuaCongTy, tienThuongDvk, luongTheoCong, thangLui, tacPhongNhanVien, diemKpiPhong } from '../lib/luong/thuong.js'
 import { khauTru } from '../lib/luong/khauTru.js'
+import { thueLuyTien, thueTncn } from '../lib/luong/thueTncn.js'
 
 let hong = 0
 const kiem = (ten, thuc, mong) => {
@@ -44,6 +45,20 @@ kiem('Kiều Tiên 2 lần → 60%', tacPhongNhanVien(2), 60)
 kiem('6 lần → sàn 0%', tacPhongNhanVien(6), 0)
 kiem('điểm phòng = TB 3 tiêu chí (96, 99, 95 → 97)', diemKpiPhong(96, 99, 95), 97)
 kiem('thiếu tiêu chí → chưa có điểm', diemKpiPhong(96, null, 95), null)
+
+console.log('\nThuế TNCN (anh chốt 20/10/2026):')
+kiem('tính thuế 0 → 0', thueLuyTien(0), 0)
+kiem('bậc 1: 10tr × 5%', thueLuyTien(10000000), 500000)
+kiem('nối bậc 1–2 tại 10tr (10% − 500k)', thueLuyTien(10000001), 500000)
+kiem('bậc 2: 30tr → 2,5tr', thueLuyTien(30000000), 2500000)
+kiem('bậc 3: 60tr → 8,5tr', thueLuyTien(60000000), 8500000)
+kiem('bậc 4: 100tr → 20,5tr', thueLuyTien(100000000), 20500000)
+kiem('bậc 5: 120tr → 35% − 14,5tr', thueLuyTien(120000000), 27500000)
+kiem('ví dụ anh: 40tr, 0 NPT, BHXH 613.305 → 1.888.670', thueTncn({ thuNhap: 40000000, thamGiaBhxh: true, soNguoiPhuThuoc: 0, bhxh: 613305 }).thue, 1888670)
+kiem('cùng thu nhập, 1 NPT → 1.268.670', thueTncn({ thuNhap: 40000000, thamGiaBhxh: true, soNguoiPhuThuoc: 1, bhxh: 613305 }).thue, 1268670)
+kiem('thu nhập dưới giảm trừ → 0', thueTncn({ thuNhap: 18000000, thamGiaBhxh: true, soNguoiPhuThuoc: 1, bhxh: 613305 }).thue, 0)
+kiem('thử việc 10% × 7.000.000', thueTncn({ thuNhap: 7000000, thamGiaBhxh: false, soNguoiPhuThuoc: 2 }).thue, 700000)
+kiem('thử việc thu nhập âm (điều chỉnh) → 0', thueTncn({ thuNhap: -500000, thamGiaBhxh: false }).thue, 0)
 
 console.log('\nKhác:')
 kiem('DVK 10.000.000 × 20%', tienThuongDvk(10000000, 20), 2000000)

@@ -270,7 +270,8 @@ bộ quy tắc). Anh yêu cầu tách cho dễ sửa: đổi quy tắc bước n
   số 0 / 300k / 500k; vượt doanh số × 20% (TP: 20% doanh thu tự làm, không cần tối thiểu). Thưởng
   dịch vụ khác: nhân viên tự khai (tiền × %), TP duyệt; dịch vụ ngoài app bắt buộc ghi chú.
 - Bước 3 `khauTru.js`, `chot.js`, `excel.js` + `api/admin/luong/chot`: BHXH 10,5% + KPCĐ 0,5% ×
-  lương đóng BHXH + Đoàn phí 40.000 (chỉ người tick tham gia BHXH), KHÔNG thuế TNCN. Chốt = chụp
+  lương đóng BHXH + Đoàn phí 40.000 (chỉ người tick tham gia BHXH). **Thuế TNCN** (`thueTncn.js`, từ 20/10/2026): có BHXH → lũy tiến 5 bậc sau
+  giảm trừ 15,5tr + 6,2tr/người phụ thuộc + BHXH; thử việc/học việc → 10% tổng thu nhập. Chốt = chụp
   nguyên bảng lương vào `luong_bang_chot`; mở chốt bắt buộc lý do. Excel có công thức: KPI tác
   phong tự tính theo phòng; phụ cấp / điều chỉnh ngoại lệ prefill từ app, sửa trên file thì file tự tính.
 - Tác phong (sql/34): nhân viên TỰ KHAI số lần vi phạm cùng ngày công; người = 100 − 20 × số lần, phòng =

@@ -11,7 +11,7 @@ const fmt = n => (n === null || n === undefined || n === '') ? '—' : Number(n)
 const soNhap = s => { const v = String(s ?? '').replace(/[^\d]/g, ''); return v === '' ? null : Number(v) }
 const thangNay = () => { const d = new Date(Date.now() + 7 * 3600e3); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') }
 
-export default function OLuongNhanVien({ staffId, tenNv, hienHanh, capBac, sua, onDaLuu }) {
+export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, capBac, sua, onDaLuu }) {
   const [mo, setMo] = useState(false)
   const [f, setF] = useState(null)
   const [loi, setLoi] = useState(null)
@@ -22,7 +22,8 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, capBac, sua, 
     setF({
       thang: thangNay(), cap_bac: h.cap_bac || '', luong_co_ban: h.luong_co_ban ?? null,
       doanh_thu_toi_thieu: h.doanh_thu_toi_thieu ?? null, luong_bhxh: h.luong_bhxh ?? null,
-      tham_gia_bhxh: !!h.tham_gia_bhxh, ghi_chu: '',
+      tham_gia_bhxh: !!h.tham_gia_bhxh, so_nguoi_phu_thuoc: Number(h.so_nguoi_phu_thuoc) || 0, ghi_chu: '',
+      ngan_hang: nganHang?.ngan_hang || '', so_tai_khoan: nganHang?.so_tai_khoan || '', chu_tai_khoan: nganHang?.chu_tai_khoan || tenNv || '',
     })
     setLoi(null); setMo(true)
   }
@@ -30,12 +31,30 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, capBac, sua, 
     const c = (capBac || []).find(x => x.ma === ma)
     setF(v => c ? { ...v, cap_bac: ma, luong_co_ban: c.luong_co_ban, doanh_thu_toi_thieu: c.doanh_thu_toi_thieu, luong_bhxh: c.luong_bhxh, tham_gia_bhxh: c.luong_bhxh ? v.tham_gia_bhxh : false } : { ...v, cap_bac: '' })
   }
+  // Hai phần lưu riêng: lương (lịch sử theo tháng) chỉ ghi khi số liệu lương đổi; tài khoản nhận lương
+  // (không theo tháng) chỉ ghi khi đổi — sửa mỗi số tài khoản không đẻ thêm dòng lịch sử lương.
+  const goi = async (body) => {
+    const res = await fetch('/api/admin/luong', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ staffId, ...body }) })
+    return res.json().catch(() => ({ error: 'Lỗi máy chủ' }))
+  }
   const luu = async () => {
+    const h = hienHanh || {}
+    const doiLuong = !hienHanh ? f.luong_co_ban !== null : f.ghi_chu || f.thang !== String(h.ap_dung_tu || '').slice(0, 7)
+      || ['cap_bac', 'luong_co_ban', 'doanh_thu_toi_thieu', 'luong_bhxh'].some(k => String(f[k] ?? '') !== String(h[k] ?? ''))
+      || f.tham_gia_bhxh !== !!h.tham_gia_bhxh || f.so_nguoi_phu_thuoc !== (Number(h.so_nguoi_phu_thuoc) || 0)
+    const doiNh = ['ngan_hang', 'so_tai_khoan', 'chu_tai_khoan'].some(k => (f[k] || '') !== (nganHang?.[k] || (k === 'chu_tai_khoan' && !nganHang ? tenNv || '' : '')))
+      && (f.so_tai_khoan || nganHang)
     setBan(true); setLoi(null)
-    const res = await fetch('/api/admin/luong', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ viec: 'luu_luong_nv', staffId, ...f }) })
-    const j = await res.json().catch(() => ({ error: 'Lỗi máy chủ' }))
+    if (doiLuong) {
+      const { ngan_hang, so_tai_khoan, chu_tai_khoan, ...luong } = f
+      const j = await goi({ viec: 'luu_luong_nv', ...luong })
+      if (j.error) { setBan(false); setLoi(j.error); return }
+    }
+    if (doiNh) {
+      const j = await goi({ viec: 'luu_ngan_hang', ngan_hang: f.ngan_hang, so_tai_khoan: f.so_tai_khoan, chu_tai_khoan: f.chu_tai_khoan })
+      if (j.error) { setBan(false); setLoi((doiLuong ? 'Đã lưu lương, NHƯNG chưa lưu được tài khoản: ' : '') + j.error); onDaLuu && onDaLuu(); return }
+    }
     setBan(false)
-    if (j.error) { setLoi(j.error); return }
     setMo(false); onDaLuu && onDaLuu()
   }
 
@@ -44,8 +63,9 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, capBac, sua, 
     <div className="text-xs leading-relaxed whitespace-nowrap">
       {hienHanh ? <>
         <div className="text-gray-800"><b>{ten || 'Chưa gán cấp'}</b> · {fmt(hienHanh.luong_co_ban)}</div>
-        <div className="text-gray-400">BHXH {hienHanh.tham_gia_bhxh ? fmt(hienHanh.luong_bhxh) : 'không tham gia'} · từ {String(hienHanh.ap_dung_tu).slice(5, 7)}/{String(hienHanh.ap_dung_tu).slice(0, 4)}</div>
+        <div className="text-gray-400">BHXH {hienHanh.tham_gia_bhxh ? fmt(hienHanh.luong_bhxh) : 'không tham gia'}{Number(hienHanh.so_nguoi_phu_thuoc) ? ' · ' + hienHanh.so_nguoi_phu_thuoc + ' NPT' : ''} · từ {String(hienHanh.ap_dung_tu).slice(5, 7)}/{String(hienHanh.ap_dung_tu).slice(0, 4)}</div>
       </> : <span className="text-gray-400">Chưa đặt lương</span>}
+      {nganHang?.so_tai_khoan && <div className="text-gray-400">🏦 {nganHang.ngan_hang || 'NH'} ·· {String(nganHang.so_tai_khoan).slice(-4)}</div>}
       {sua && <button onClick={batDau} className="text-[#8B1A1A] underline mt-0.5">{hienHanh ? 'Đổi' : 'Đặt lương'}</button>}
     </div>
   )
@@ -78,6 +98,21 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, capBac, sua, 
         <input type="checkbox" checked={f.tham_gia_bhxh} onChange={e => setF(v => ({ ...v, tham_gia_bhxh: e.target.checked }))} />
         Chính thức, có tham gia BHXH
       </label>
+      <div className="flex items-center gap-1">
+        <span className="text-gray-500 w-28">Người phụ thuộc</span>
+        <input type="number" min={0} max={20} value={f.so_nguoi_phu_thuoc} onChange={e => setF(v => ({ ...v, so_nguoi_phu_thuoc: Math.max(0, Math.min(20, Math.floor(Number(e.target.value) || 0))) }))}
+          className="w-20 border border-gray-300 rounded px-2 py-1 text-right" />
+        <span className="text-xs text-gray-400">× 6.200.000 giảm trừ</span>
+      </div>
+      <div className="text-xs text-gray-500">{f.tham_gia_bhxh ? 'Thuế TNCN: biểu lũy tiến (giảm trừ bản thân + người phụ thuộc + BHXH).' : 'Chưa tham gia BHXH (thử việc / học việc): khấu trừ thuế 10% tổng thu nhập.'}</div>
+      <div className="pt-2 mt-1 border-t border-gray-100 font-semibold text-gray-800">🏦 Tài khoản nhận lương</div>
+      {[['ngan_hang', 'Ngân hàng', 'vd: Vietcombank'], ['so_tai_khoan', 'Số tài khoản', ''], ['chu_tai_khoan', 'Tên chủ TK', '']].map(([k, l, ph]) => (
+        <div key={k} className="flex items-center gap-1">
+          <span className="text-gray-500 w-28">{l}</span>
+          <input value={f[k]} onChange={e => setF(v => ({ ...v, [k]: k === 'so_tai_khoan' ? e.target.value.replace(/\s+/g, '') : k === 'chu_tai_khoan' ? e.target.value.toUpperCase() : e.target.value }))}
+            placeholder={ph} maxLength={k === 'so_tai_khoan' ? 30 : 120} className="flex-1 border border-gray-300 rounded px-2 py-1" />
+        </div>
+      ))}
       <input value={f.ghi_chu} onChange={e => setF(v => ({ ...v, ghi_chu: e.target.value }))} placeholder="Ghi chú (vd: lên cấp 4)" maxLength={300}
         className="w-full border border-gray-300 rounded px-1 py-0.5" />
       {loi && <div className="text-red-600">{loi}</div>}

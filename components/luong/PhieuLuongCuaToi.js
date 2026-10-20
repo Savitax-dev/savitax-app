@@ -12,11 +12,11 @@ const TT = {
   bao_sai: ['Đã báo sai — chờ kế toán sửa', 'bg-rose-100 text-rose-800 border-rose-200'],
 }
 
-function Dong({ nhan, giaTri, phu, mau = 'text-gray-900', dam = false, am = false }) {
+function Dong({ nhan, giaTri, chu, phu, mau = 'text-gray-900', dam = false, am = false }) {
   return (
     <div className="flex items-baseline justify-between gap-3 py-2 border-b border-gray-100 last:border-0">
       <div><div className={'text-sm ' + (dam ? 'font-semibold text-gray-900' : 'text-gray-700')}>{nhan}</div>{phu && <div className="text-xs text-gray-500">{phu}</div>}</div>
-      <div className={'text-sm whitespace-nowrap ' + (dam ? 'font-bold ' : 'font-semibold ') + mau}>{am && giaTri ? '−' : ''}{fmt(giaTri)}</div>
+      <div className={'text-sm whitespace-nowrap ' + (dam ? 'font-bold ' : 'font-semibold ') + mau}>{chu !== undefined ? chu : <>{am && giaTri ? '−' : ''}{fmt(giaTri)}</>}</div>
     </div>
   )
 }
@@ -82,7 +82,7 @@ export default function PhieuLuongCuaToi() {
             <div>
               <div className="text-xs font-bold text-blue-700 uppercase tracking-wide mt-2 mb-1">Lương theo công</div>
               <Dong nhan="Lương cơ bản" giaTri={x.luongCoBan} />
-              <Dong nhan="Ngày tính lương" giaTri={null} phu={(x.ngayTinhLuong ?? 0).toLocaleString('vi-VN') + ' / ' + x.ngayCongChuan + ' ngày công chuẩn'} />
+              <Dong nhan="Ngày tính lương" chu={(x.ngayTinhLuong ?? 0).toLocaleString('vi-VN') + ' ngày'} phu={'Công chuẩn ' + x.ngayCongChuan + ' ngày'} />
               <Dong nhan="Lương theo công" giaTri={x.luongTheoCong} mau="text-blue-800" />
               <div className="text-xs font-bold text-emerald-700 uppercase tracking-wide mt-3 mb-1">Thưởng</div>
               {x.kpiApDung && <Dong nhan="KPI công việc" phu={'Tháng ' + p.ky.viec.thang + ': ' + (x.pctViec ?? '—') + '%'} giaTri={x.thuongViec} mau="text-emerald-700" />}
@@ -101,7 +101,20 @@ export default function PhieuLuongCuaToi() {
                 <Dong nhan="BHXH, BHYT, BHTN (10,5%)" phu={'Lương đóng BHXH ' + fmt(x.luongBhxh)} giaTri={x.khauTru?.bhxh} mau="text-rose-700" am />
                 <Dong nhan="Kinh phí công đoàn (0,5%)" giaTri={x.khauTru?.kpcd} mau="text-rose-700" am />
                 <Dong nhan="Phí Đoàn Thanh niên" giaTri={x.khauTru?.doanPhi} mau="text-rose-700" am />
-              </> : <div className="text-xs text-gray-500 py-2">Không tham gia BHXH — không có khoản trừ.</div>}
+              </> : <div className="text-xs text-gray-500 py-2">Không tham gia BHXH — không trừ BHXH, KPCĐ, Đoàn phí.</div>}
+              {x.thueTncn && <>
+                <div className="text-xs font-bold text-red-700 uppercase tracking-wide mt-3 mb-1">Thuế TNCN</div>
+                {/* Anh dặn 20/10/2026: chỉ 3 dòng, không liệt kê từng khoản giảm trừ. */}
+                <Dong nhan="Thu nhập chịu thuế" giaTri={x.thueTncn.thuNhapChiuThue} />
+                <Dong nhan="Thu nhập tính thuế" giaTri={x.thueTncn.thuNhapTinhThue} />
+                <Dong nhan="Thuế TNCN phải nộp" phu={x.thueTncn.cach === 'luy_tien' ? null : 'Thử việc / học việc: khấu trừ 10%'} giaTri={x.thueTncn.thue} mau="text-red-700" am />
+              </>}
+              <div className="text-xs font-bold text-cyan-700 uppercase tracking-wide mt-3 mb-1">Tài khoản ngân hàng</div>
+              {x.nganHang?.stk ? <>
+                <Dong nhan="Ngân hàng" chu={x.nganHang.ten || '—'} />
+                <Dong nhan="Số tài khoản" chu={<span className="font-mono">{x.nganHang.stk}</span>} />
+                <Dong nhan="Chủ tài khoản" chu={x.nganHang.chu || '—'} />
+              </> : <div className="text-xs text-gray-500 py-2">Chưa có tài khoản nhận lương — báo kế toán nội bộ bổ sung.</div>}
             </div>
           </div>
           <div className="mx-5 mb-5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 text-white px-5 py-4 flex items-center justify-between shadow-sm">

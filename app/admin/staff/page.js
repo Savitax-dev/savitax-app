@@ -61,7 +61,7 @@ export default function AdminStaffPage() {
         fetch('/api/admin/luong?viec=luong_nv', { cache: 'no-store' }).then(r => r.json()),
       ])
       if (cb.error || ls.error) { setLuong(null); return }
-      setLuong({ sua: !!q.manage, capBac: cb.data || [], lichSu: ls.data || [] })
+      setLuong({ sua: !!q.manage, capBac: cb.data || [], lichSu: ls.data || [], nganHang: ls.nganHang || [] })
     } catch { setLuong(null) }
   }
   useEffect(() => { taiLuong() }, [])
@@ -491,7 +491,7 @@ export default function AdminStaffPage() {
 
                       {luong && (
                         <td className="px-4 py-3 align-top">
-                          <OLuongNhanVien staffId={s.id} tenNv={s.full_name} capBac={luong.capBac} sua={luong.sua} onDaLuu={taiLuong}
+                          <OLuongNhanVien staffId={s.id} tenNv={s.full_name} capBac={luong.capBac} nganHang={luong.nganHang.find(x => x.staff_id === s.id) || null} sua={luong.sua} onDaLuu={taiLuong}
                             hienHanh={luongCuaThang(luong.lichSu.filter(x => x.staff_id === s.id), thangNayVN.nam, thangNayVN.thang)
                               || luong.lichSu.filter(x => x.staff_id === s.id).sort((a, b) => String(a.ap_dung_tu).localeCompare(String(b.ap_dung_tu)))[0] || null} />
                         </td>
