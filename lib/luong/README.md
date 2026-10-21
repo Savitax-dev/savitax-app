@@ -9,6 +9,7 @@ route API và giao diện riêng; bước sau chỉ ĐỌC kết quả của bư
 | 2 | Thưởng KPI, thưởng doanh số, thưởng dịch vụ khác, bảng lương | `sql/32_luong_thuong_dvk.sql` | `thuong.js`, `bangLuong.js` | `thuong/route.js` | `ThuongDvk`, `BangLuong` |
 | 3 | Khoản trừ, thuế TNCN, phụ cấp / điều chỉnh, chốt bảng lương, xuất Excel | `sql/33_luong_chot.sql`, `sql/34_…`, `sql/35_luong_thue_ngan_hang.sql` | `khauTru.js`, `thueTncn.js`, `chot.js`, `excel.js` | `chot/route.js` | `ThanhChotLuong` |
 | 4 | Gửi phiếu lương, nhân viên xác nhận / báo sai | `sql/34_luong_tac_phong_phieu.sql` | — | `phieu/route.js` | `PhieuLuongCuaToi` |
+| 5 | File chuyển khoản chi lương hàng loạt (mẫu ngân hàng) | `sql/36_luong_ma_ngan_hang.sql` | `fileChuyenKhoan.js` | (đọc `?viec=luong_nv`) | nút 🏦 ở `ThanhChotLuong` |
 
 Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số — chỉ máy chủ), `components/luong/chung.js`
 (gọi API, màu, hộp thông báo — trình duyệt). Trang `app/luong/page.js` chỉ còn khung + thanh tab.
@@ -34,6 +35,11 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
 - **Phụ cấp / điều chỉnh ngoại lệ**: kế toán nội bộ nhập trên tab Bảng lương (`luong_dieu_chinh`) TRƯỚC khi chốt.
 - **Phiếu lương**: chốt → "Gửi nhân viên xác nhận" → mỗi người chỉ thấy phiếu mình (tab Phiếu lương của tôi),
   Xác nhận / Báo sai (ghi chú). Mở chốt = thu hồi phiếu. Gửi lại: ai đã xác nhận mà thực lĩnh không đổi thì giữ.
+
+- **File chuyển khoản** (20/10/2026): đúng 12 cột mẫu ngân hàng anh gửi, tiêu đề ở dòng 1, KHÔNG thêm dòng
+  tiêu đề / dòng tổng (ngân hàng từ chối file lạ). Chỉ xuất khi đã chốt; số tiền = thực lĩnh bản chốt; tên chủ TK
+  HOA không dấu; mã ngân hàng là mã SỐ theo danh mục ngân hàng chi lương (`luong_ngan_hang.ma_ngan_hang`).
+  Thiếu số TK / mã NH hoặc thực lĩnh ≤ 0 thì không vào file, app liệt kê để chuyển tay.
 
 ## Bộ kiểm
 `node scripts/test-luong-ngay-cong.mjs` · `node --env-file=.env.local scripts/test-luong-thuong.mjs --that`

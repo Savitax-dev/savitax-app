@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { xuatExcelBangLuong } from '@/lib/luong/excel'
+import { dongChuyenKhoan, xuatFileChuyenKhoan, khongDau } from '@/lib/luong/fileChuyenKhoan'
 
 // Phân hệ Tiền lương — BƯỚC 3: thanh trạng thái chốt bảng lương + nút Xuất Excel / Chốt / Mở chốt.
 // Chốt = chụp nguyên bảng lương tháng vào luong_bang_chot (route app/api/admin/luong/chot, sql/33).
@@ -33,6 +34,35 @@ export default function ThanhChotLuong({ d, ky, onXong }) {
     } catch (e) { setMsg(String(e.message || e)) }
     setBan(false)
   }
+  // File chuyển khoản chi lương hàng loạt (mẫu ngân hàng anh gửi 20/10/2026) — CHỈ từ bảng đã chốt, để số
+  // tiền chuyển đúng bằng phiếu lương. Tài khoản lấy số HIỆN TẠI ở trang Quản lý nhân viên.
+  const chuyenKhoan = async () => {
+    setMsg(null)
+    if (!d.daChot) { setMsg('Bấm "🔒 Chốt bảng lương" trước — file chuyển khoản phải lấy số tiền của bản đã chốt.'); return }
+    const noiDung = prompt('Nội dung giao dịch (không dấu):', 'SVT thanh toan luong thang ' + ky.thang + '.' + ky.nam)
+    if (noiDung === null) return
+    if (!khongDau(noiDung)) { setMsg('Chưa nhập nội dung giao dịch.'); return }
+    setBan(true)
+    try {
+      const j = await fetch('/api/admin/luong?viec=luong_nv', { cache: 'no-store' }).then(r => r.json())
+      if (j.error) { setMsg(j.error); return }
+      const kq = dongChuyenKhoan(d.dong, new Map((j.nganHang || []).map(x => [x.staff_id, x])), noiDung)
+      const fmt = n => Number(n).toLocaleString('vi-VN')
+      const baoSai = kq.ra.filter(r => r.baoSai)
+      const NL = '\n'
+      const loi = [
+        kq.thieu.length ? '⚠ ' + kq.thieu.length + ' người KHÔNG có trong file (thiếu tài khoản — bổ sung ở Quản lý nhân viên):' + NL + kq.thieu.map(x => '  • ' + x.ten + ' — ' + x.ly + ' (' + fmt(x.tien) + 'đ)').join(NL) : '',
+        baoSai.length ? '⚠ ' + baoSai.length + ' người đang BÁO SAI phiếu lương nhưng vẫn có trong file:' + NL + baoSai.map(r => '  • ' + r.ten + ' (' + fmt(r.tien) + 'đ)').join(NL) : '',
+        kq.khongTra.length ? kq.khongTra.length + ' người thực lĩnh ≤ 0 — không chuyển.' : '',
+      ].filter(Boolean)
+      if (!kq.ra.length) { setMsg('Không có ai đủ điều kiện chuyển khoản. ' + loi.join(' ').split(NL).join(' ')); return }
+      if (!confirm('Xuất file chuyển khoản lương tháng ' + ky.thang + '/' + ky.nam + ':' + NL + kq.ra.length + ' người · tổng ' + fmt(kq.tong) + 'đ' +
+        (loi.length ? NL + NL + loi.join(NL + NL) : '') + NL + NL + 'Xuất file?')) return
+      await xuatFileChuyenKhoan(kq.ra, ky.nam, ky.thang)
+      if (kq.thieu.length) setMsg('Đã xuất file, còn ' + kq.thieu.length + ' người thiếu tài khoản phải chuyển tay: ' + kq.thieu.map(x => x.ten).join(', ') + '.')
+    } catch (e) { setMsg(String(e.message || e)) } finally { setBan(false) }
+  }
+
   const phieu = (d.dong || []).map(x => x.phieu).filter(Boolean)
   const dem = { xn: phieu.filter(p => p.trang_thai === 'da_xac_nhan').length, sai: phieu.filter(p => p.trang_thai === 'bao_sai').length, cho: phieu.filter(p => p.trang_thai === 'cho_xac_nhan').length }
 
@@ -45,8 +75,10 @@ export default function ThanhChotLuong({ d, ky, onXong }) {
               ? <>🔒 <b>Đã chốt</b> lúc {new Date(d.daChot.luc).toLocaleString('vi-VN')}{d.daChot.boi ? ' bởi ' + d.daChot.boi : ''} — số liệu tháng này không đổi nữa.{d.daChot.daGui && <> · 📨 Đã gửi phiếu: <b className="text-emerald-700">{dem.xn} xác nhận</b> · <b className="text-amber-700">{dem.cho} chờ</b> · <b className="text-rose-600">{dem.sai} báo sai</b></>}</>
               : <>⏳ <b>Chưa chốt</b> — số tính từ dữ liệu hiện tại, có thể đổi khi chấm công / công nợ / KPI thay đổi.{d.daMoChot ? ' (Đã mở chốt: ' + d.daMoChot.lyDo + ')' : ''}</>}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button onClick={() => xuatExcelBangLuong(d)} className="text-sm px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold shadow-sm hover:bg-emerald-700">⬇ Xuất Excel</button>
+            <button onClick={chuyenKhoan} disabled={ban} title={d.daChot ? 'File chi lương hàng loạt theo mẫu ngân hàng' : 'Chốt bảng lương trước rồi mới xuất được'}
+              className={'text-sm px-4 py-2 rounded-xl font-semibold shadow-sm disabled:opacity-50 ' + (d.daChot ? 'bg-cyan-700 text-white hover:bg-cyan-800' : 'bg-cyan-100 text-cyan-800 cursor-not-allowed')}>🏦 File chuyển khoản</button>
             {d.duocChot && (d.daChot
               ? <><button onClick={gui} disabled={ban} className="text-sm px-4 py-2 rounded-xl bg-indigo-600 text-white font-semibold shadow-sm disabled:opacity-50">📨 {d.daChot.daGui ? 'Gửi lại phiếu' : 'Gửi nhân viên xác nhận'}</button><button onClick={() => chot(true)} disabled={ban} className="text-sm px-4 py-2 rounded-xl border border-rose-300 text-rose-700 bg-white disabled:opacity-50">Mở chốt</button></>
               : <><button onClick={() => chot(false)} disabled={ban} className="text-sm px-4 py-2 rounded-xl bg-[#8B1A1A] text-white font-semibold shadow-sm disabled:opacity-50">🔒 Chốt bảng lương</button>

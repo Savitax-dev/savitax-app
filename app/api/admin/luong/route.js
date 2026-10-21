@@ -55,7 +55,8 @@ export async function GET(request) {
       const { data, error } = await supabase.from('luong_nhan_vien').select('*').order('ap_dung_tu', { ascending: false }).limit(5000)
       if (error) return loi('Chưa chạy sql/31_tien_luong.sql (' + error.message + ')', 500)
       // Tài khoản nhận lương (sql/35) — chưa chạy SQL thì trả rỗng.
-      const nh = await supabase.from('luong_ngan_hang').select('staff_id, ngan_hang, so_tai_khoan, chu_tai_khoan').limit(5000)
+      let nh = await supabase.from('luong_ngan_hang').select('staff_id, ngan_hang, so_tai_khoan, chu_tai_khoan, ma_ngan_hang').limit(5000)
+      if (nh.error) nh = await supabase.from('luong_ngan_hang').select('staff_id, ngan_hang, so_tai_khoan, chu_tai_khoan').limit(5000)   // chưa chạy sql/36
       return Response.json({ data, nganHang: nh.error ? [] : nh.data || [] })
     }
 
@@ -175,12 +176,22 @@ export async function POST(request) {
       const chu = v => String(v ?? '').trim().slice(0, 120)
       const stk = String(body.so_tai_khoan ?? '').replace(/\s+/g, '')
       if (stk && !/^[0-9A-Za-z.-]{4,30}$/.test(stk)) return loi('Số tài khoản không hợp lệ')
+      // Mã ngân hàng = mã SỐ trong danh mục của ngân hàng chi lương (file chuyển khoản, sql/36).
+      const maNh = String(body.ma_ngan_hang ?? '').trim()
+      if (maNh && !/^\d{1,10}$/.test(maNh)) return loi('Mã ngân hàng chỉ gồm chữ số (theo danh mục của ngân hàng chi lương)')
       const { data: st } = await supabase.from('staff').select('id').eq('id', body.staffId).maybeSingle()
       if (!st) return loi('Không tìm thấy nhân viên')
-      const { error } = await supabase.from('luong_ngan_hang').upsert({
+      const dongNh = {
         staff_id: body.staffId, ngan_hang: chu(body.ngan_hang) || null, so_tai_khoan: stk || null,
-        chu_tai_khoan: chu(body.chu_tai_khoan).toUpperCase() || null, sua_boi: caller.staffId, sua_luc: new Date().toISOString(),
-      }, { onConflict: 'staff_id' })
+        chu_tai_khoan: chu(body.chu_tai_khoan).toUpperCase() || null, ma_ngan_hang: maNh || null,
+        sua_boi: caller.staffId, sua_luc: new Date().toISOString(),
+      }
+      let { error } = await supabase.from('luong_ngan_hang').upsert(dongNh, { onConflict: 'staff_id' })
+      if (error && /ma_ngan_hang/.test(error.message)) {
+        if (maNh) return loi('Chưa chạy sql/36_luong_ma_ngan_hang.sql — chưa lưu được mã ngân hàng', 500)
+        delete dongNh.ma_ngan_hang
+        ;({ error } = await supabase.from('luong_ngan_hang').upsert(dongNh, { onConflict: 'staff_id' }))
+      }
       if (error) return loi(/luong_ngan_hang/.test(error.message) ? 'Chưa chạy sql/35_luong_thue_ngan_hang.sql' : error.message, 500)
       return Response.json({ ok: true })
     }

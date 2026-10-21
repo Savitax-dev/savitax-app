@@ -11,7 +11,8 @@ const fmt = n => (n === null || n === undefined || n === '') ? '—' : Number(n)
 const soNhap = s => { const v = String(s ?? '').replace(/[^\d]/g, ''); return v === '' ? null : Number(v) }
 const thangNay = () => { const d = new Date(Date.now() + 7 * 3600e3); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') }
 
-export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, capBac, sua, onDaLuu }) {
+// dsNganHang: tài khoản của mọi nhân viên — dùng gợi ý tên ngân hàng + tự điền mã ngân hàng đã từng nhập.
+export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, dsNganHang = [], capBac, sua, onDaLuu }) {
   const [mo, setMo] = useState(false)
   const [f, setF] = useState(null)
   const [loi, setLoi] = useState(null)
@@ -23,7 +24,7 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, cap
       thang: thangNay(), cap_bac: h.cap_bac || '', luong_co_ban: h.luong_co_ban ?? null,
       doanh_thu_toi_thieu: h.doanh_thu_toi_thieu ?? null, luong_bhxh: h.luong_bhxh ?? null,
       tham_gia_bhxh: !!h.tham_gia_bhxh, so_nguoi_phu_thuoc: Number(h.so_nguoi_phu_thuoc) || 0, ghi_chu: '',
-      ngan_hang: nganHang?.ngan_hang || '', so_tai_khoan: nganHang?.so_tai_khoan || '', chu_tai_khoan: nganHang?.chu_tai_khoan || tenNv || '',
+      ngan_hang: nganHang?.ngan_hang || '', so_tai_khoan: nganHang?.so_tai_khoan || '', chu_tai_khoan: nganHang?.chu_tai_khoan || tenNv || '', ma_ngan_hang: nganHang?.ma_ngan_hang || '',
     })
     setLoi(null); setMo(true)
   }
@@ -42,22 +43,23 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, cap
     const doiLuong = !hienHanh ? f.luong_co_ban !== null : f.ghi_chu || f.thang !== String(h.ap_dung_tu || '').slice(0, 7)
       || ['cap_bac', 'luong_co_ban', 'doanh_thu_toi_thieu', 'luong_bhxh'].some(k => String(f[k] ?? '') !== String(h[k] ?? ''))
       || f.tham_gia_bhxh !== !!h.tham_gia_bhxh || f.so_nguoi_phu_thuoc !== (Number(h.so_nguoi_phu_thuoc) || 0)
-    const doiNh = ['ngan_hang', 'so_tai_khoan', 'chu_tai_khoan'].some(k => (f[k] || '') !== (nganHang?.[k] || (k === 'chu_tai_khoan' && !nganHang ? tenNv || '' : '')))
+    const doiNh = ['ngan_hang', 'so_tai_khoan', 'chu_tai_khoan', 'ma_ngan_hang'].some(k => (f[k] || '') !== (nganHang?.[k] || (k === 'chu_tai_khoan' && !nganHang ? tenNv || '' : '')))
       && (f.so_tai_khoan || nganHang)
     setBan(true); setLoi(null)
     if (doiLuong) {
-      const { ngan_hang, so_tai_khoan, chu_tai_khoan, ...luong } = f
+      const { ngan_hang, so_tai_khoan, chu_tai_khoan, ma_ngan_hang, ...luong } = f
       const j = await goi({ viec: 'luu_luong_nv', ...luong })
       if (j.error) { setBan(false); setLoi(j.error); return }
     }
     if (doiNh) {
-      const j = await goi({ viec: 'luu_ngan_hang', ngan_hang: f.ngan_hang, so_tai_khoan: f.so_tai_khoan, chu_tai_khoan: f.chu_tai_khoan })
+      const j = await goi({ viec: 'luu_ngan_hang', ngan_hang: f.ngan_hang, so_tai_khoan: f.so_tai_khoan, chu_tai_khoan: f.chu_tai_khoan, ma_ngan_hang: f.ma_ngan_hang })
       if (j.error) { setBan(false); setLoi((doiLuong ? 'Đã lưu lương, NHƯNG chưa lưu được tài khoản: ' : '') + j.error); onDaLuu && onDaLuu(); return }
     }
     setBan(false)
     setMo(false); onDaLuu && onDaLuu()
   }
 
+  const maTheoTen = new Map(dsNganHang.filter(x => x.ngan_hang && x.ma_ngan_hang).map(x => [x.ngan_hang.trim().toLowerCase(), String(x.ma_ngan_hang)]))
   const ten = capBac?.find(c => c.ma === hienHanh?.cap_bac)?.ten
   const tom = (
     <div className="text-xs leading-relaxed whitespace-nowrap">
@@ -106,13 +108,24 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, cap
       </div>
       <div className="text-xs text-gray-500">{f.tham_gia_bhxh ? 'Thuế TNCN: biểu lũy tiến (giảm trừ bản thân + người phụ thuộc + BHXH).' : 'Chưa tham gia BHXH (thử việc / học việc): khấu trừ thuế 10% tổng thu nhập.'}</div>
       <div className="pt-2 mt-1 border-t border-gray-100 font-semibold text-gray-800">🏦 Tài khoản nhận lương</div>
-      {[['ngan_hang', 'Ngân hàng', 'vd: Vietcombank'], ['so_tai_khoan', 'Số tài khoản', ''], ['chu_tai_khoan', 'Tên chủ TK', '']].map(([k, l, ph]) => (
+      {[['ngan_hang', 'Ngân hàng', 'vd: Vietcombank'], ['ma_ngan_hang', 'Mã ngân hàng', 'mã số trong file chi lương'], ['so_tai_khoan', 'Số tài khoản', ''], ['chu_tai_khoan', 'Tên chủ TK', '']].map(([k, l, ph]) => (
         <div key={k} className="flex items-center gap-1">
           <span className="text-gray-500 w-28">{l}</span>
-          <input value={f[k]} onChange={e => setF(v => ({ ...v, [k]: k === 'so_tai_khoan' ? e.target.value.replace(/\s+/g, '') : k === 'chu_tai_khoan' ? e.target.value.toUpperCase() : e.target.value }))}
-            placeholder={ph} maxLength={k === 'so_tai_khoan' ? 30 : 120} className="flex-1 border border-gray-300 rounded px-2 py-1" />
+          <input value={f[k]} list={k === 'ngan_hang' ? 'ds-ngan-hang-' + staffId : undefined} onChange={e => {
+            const v0 = e.target.value
+            setF(v => {
+              if (k === 'ngan_hang') {
+                // Ngân hàng đã có người khác nhập mã → tự điền mã (vẫn sửa tay được).
+                const ma = maTheoTen.get(v0.trim().toLowerCase())
+                return { ...v, ngan_hang: v0, ma_ngan_hang: ma && !v.ma_ngan_hang ? ma : v.ma_ngan_hang }
+              }
+              return { ...v, [k]: k === 'so_tai_khoan' ? v0.replace(/\s+/g, '') : k === 'ma_ngan_hang' ? v0.replace(/\D/g, '') : k === 'chu_tai_khoan' ? v0.toUpperCase() : v0 }
+            })
+          }}
+            placeholder={ph} maxLength={k === 'so_tai_khoan' ? 30 : k === 'ma_ngan_hang' ? 10 : 120} className="flex-1 border border-gray-300 rounded px-2 py-1" />
         </div>
       ))}
+      <datalist id={'ds-ngan-hang-' + staffId}>{[...new Set(dsNganHang.map(x => (x.ngan_hang || '').trim()).filter(Boolean))].map(t => <option key={t} value={t} />)}</datalist>
       <input value={f.ghi_chu} onChange={e => setF(v => ({ ...v, ghi_chu: e.target.value }))} placeholder="Ghi chú (vd: lên cấp 4)" maxLength={300}
         className="w-full border border-gray-300 rounded px-1 py-0.5" />
       {loi && <div className="text-red-600">{loi}</div>}

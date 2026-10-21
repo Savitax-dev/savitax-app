@@ -117,9 +117,10 @@ export default function PhieuLuongCuaToi() {
               </> : <div className="text-xs text-gray-500 py-2">Chưa có tài khoản nhận lương — báo kế toán nội bộ bổ sung.</div>}
             </div>
           </div>
-          <div className="mx-5 mb-5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 text-white px-5 py-4 flex items-center justify-between shadow-sm">
-            <span className="text-sm font-semibold tracking-wide">THỰC LĨNH</span>
-            <span className="text-3xl font-bold">{fmt(x.thucLinh)}</span>
+          {/* Màu vàng thương hiệu Savitax (#C9A84C), chữ đen to — anh chọn 20/10/2026. */}
+          <div className="mx-5 mb-5 rounded-xl bg-gradient-to-r from-[#C9A84C] via-[#E2C873] to-[#F5E3A3] text-black px-6 py-5 flex items-center justify-between shadow-md border border-[#B8963A]">
+            <span className="text-lg font-bold">THỰC LĨNH</span>
+            <span className="text-4xl font-bold">{fmt(x.thucLinh)}</span>
           </div>
         </div>
 
