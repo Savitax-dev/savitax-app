@@ -38,6 +38,12 @@ console.log('[2] Các dạng ghi kỳ:')
 const k = (s) => docKy(s)
 kiem('"Q3.2026"',      k('BÁO CÁO THUẾ Q3.2026'),      { loai: 'quy',   so: 3, nam: 2026 })
 kiem('"QUÝ 3/2026"',   k('BÁO CÁO THUẾ QUÝ 3/2026'),   { loai: 'quy',   so: 3, nam: 2026 })
+// Ca thật 22/10/2026: 8 mail "…_BÁO CÁO THUẾ QUÝ 03.2026" bị đọc thành THÁNG 3, không mail nào tick.
+kiem('"QUÝ 03.2026" (số 0 đứng trước) → QUÝ 3, không phải tháng 3', k('BÁO CÁO THUẾ QUÝ 03.2026'), { loai: 'quy', so: 3, nam: 2026 })
+kiem('"Q04/2026" → quý 4', k('BÁO CÁO THUẾ Q04/2026'), { loai: 'quy', so: 4, nam: 2026 })
+kiem('"QUÝ 03.2026": tên công ty đứng trước vẫn nguyên, phía sau không còn sót "03"',
+  (({ tenTruoc, tenSau }) => ({ tenTruoc, tenSau }))(docTieuDe('CÔNG TY TNHH TOPAZ VIỆT NAM_BÁO CÁO THUẾ QUÝ 03.2026')),
+  { tenTruoc: 'CÔNG TY TNHH TOPAZ VIỆT NAM', tenSau: '' })
 kiem('"THÁNG 12/2025"', k('BÁO CÁO THUẾ THÁNG 12/2025'), { loai: 'thang', so: 12, nam: 2025 })
 kiem('"T9/2026"',      k('BÁO CÁO THUẾ T9/2026'),      { loai: 'thang', so: 9, nam: 2026 })
 kiem('"09/2026" trần', k('BÁO CÁO THUẾ 09/2026'),      { loai: 'thang', so: 9, nam: 2026 })
