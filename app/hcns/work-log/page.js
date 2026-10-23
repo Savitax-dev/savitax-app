@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { loadPermissionData, can } from '@/lib/permissions'
 import AppShell from '@/components/AppShell'
+import { layMe } from '@/lib/khoiDong'
 
 const TYPES = [
   { key: '',       label: 'Tất cả' },
@@ -41,7 +42,7 @@ export default function HcnsWorkLogPage() {
       if (!sd.session) { router.push('/login'); return }
       const [{ data: me }, myPerm] = await Promise.all([
         supabase.from('staff').select('role').eq('id', sd.session.user.id).single(),
-        fetch('/api/admin/me').then(r => r.json()).catch(() => ({})),
+        layMe().catch(() => ({})),
       ])
       const perm = await loadPermissionData()
       const roles = myPerm?.roles?.length ? myPerm.roles : [me?.role].filter(Boolean)

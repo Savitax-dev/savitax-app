@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import { hasPermission } from '@/lib/permissions'
+import { layQuyenLuong } from '@/lib/khoiDong'
 
 const STATUS_OPTS = [
   { v: 'pending',     l: 'Trình ký' },
@@ -32,6 +33,11 @@ export default function AdminClientsPage() {
   const [filterStatus, setFilterStatus] = useState('')
   const [filterStaff, setFilterStaff]   = useState('')   // id nhân viên phụ trách CHÍNH
   const [filterReport, setFilterReport] = useState('')   // 'monthly' | 'quarterly'
+  const [filterGt, setFilterGt]         = useState('')   // người giới thiệu: '' | 'co' | 'khong' | staff id
+  // Hoa hồng giới thiệu (sql/39): chỉ quản trị / kế toán nội bộ (manage_payroll) được ghi người giới thiệu.
+  const [suaGt, setSuaGt]   = useState(false)
+  const [gtDang, setGtDang] = useState(null)           // { id, staffId, tuThang } đang sửa
+  const [gtLoi, setGtLoi]   = useState('')
   const [showForm, setShowForm]   = useState(false)
   const [form, setForm]           = useState({ name:'', tax_code:'', assigned_to:'', report_type:'monthly', monthly_fee:'', status:'active' })
   const [saving, setSaving]       = useState(false)
@@ -47,22 +53,19 @@ export default function AdminClientsPage() {
   const isAdmin = myRole === 'admin'
 
   const loadClients = async (supabase, roomId, role) => {
-    let query = supabase
-      .from('clients')
-      .select('*, staff(id, full_name, room_id, rooms(name))')
-      .order('name')
+    // Đọc qua API máy chủ (AGENTS.md: không đọc nghiệp vụ bằng anon key). 23/10/2026: câu embed
+    // clients→staff qua anon key từng ra 0 công ty khi bảng clients có thêm khoá ngoại sang staff.
+    const res = await fetch('/api/admin/clients', { cache: 'no-store' })
+    const json = await res.json().catch(() => ({}))
+    let data = json.data ?? []
     if (role !== 'admin' && roomId) {
-      // Leader: chỉ thấy clients trong phòng mình
-      // Cần lấy staff_ids của phòng trước
-      const { data: staffInRoom } = await supabase
-        .from('staff').select('id').eq('room_id', roomId)
-      const ids = (staffInRoom ?? []).map(s => s.id)
-      if (ids.length > 0) {
-        query = query.in('assigned_to', ids)
-      }
+      // Leader: chỉ thấy công ty do nhân viên phòng mình phụ trách chính (như trước).
+      const { data: staffInRoom } = await supabase.from('staff').select('id').eq('room_id', roomId)
+      const ids = new Set((staffInRoom ?? []).map(s => s.id))
+      if (ids.size > 0) data = data.filter(c => ids.has(c.assigned_to))
     }
-    const { data } = await query
-    setClients(data ?? [])
+    data.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'vi'))
+    setClients(data)
 
     // Load nhân viên phụ cho toàn bộ công ty đang hiện
     const { data: secRows } = await supabase
@@ -120,6 +123,7 @@ export default function AdminClientsPage() {
       ])
       setStaffList(resStaff.data ?? [])
       setRooms(resRooms.data ?? [])
+      layQuyenLuong().then(j => setSuaGt(!!j.manage)).catch(() => {})
       setLoading(false)
     }
     init()
@@ -188,6 +192,16 @@ export default function AdminClientsPage() {
     }))
   }
 
+  const luuGioiThieu = async () => {
+    setGtLoi('')
+    const res = await fetch('/api/admin/luong', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ viec: 'luu_gioi_thieu', clientId: gtDang.id, staffId: gtDang.staffId || null, tuThang: gtDang.tuThang }) })
+    const j = await res.json().catch(() => ({ error: 'Lỗi máy chủ' }))
+    if (j.error) { setGtLoi(j.error); return }
+    setClients(cl => cl.map(c => c.id === gtDang.id ? { ...c, gioi_thieu_boi: gtDang.staffId || null, gioi_thieu_tu: gtDang.staffId ? gtDang.tuThang + '-01' : null } : c))
+    setGtDang(null)
+  }
+
   const quickChangeStatus = async (clientId, newStatus) => {
     const supabase = createClient()
     await supabase.from('clients').update({ status: newStatus, is_active: newStatus === 'active' }).eq('id', clientId)
@@ -214,12 +228,17 @@ export default function AdminClientsPage() {
     const matchStatus = !filterStatus || c.status === filterStatus
     const matchStaff  = !filterStaff  || c.assigned_to === filterStaff
     const matchReport = !filterReport || (c.report_type || 'monthly') === filterReport
-    return matchSearch && matchRoom && matchStatus && matchStaff && matchReport
+    const matchGt = !filterGt || (filterGt === 'co' ? !!c.gioi_thieu_boi : filterGt === 'khong' ? !c.gioi_thieu_boi : c.gioi_thieu_boi === filterGt)
+    return matchSearch && matchRoom && matchStatus && matchStaff && matchReport && matchGt
   })
-  const dangLoc = !!(search.trim() || filterRoom || filterStatus || filterStaff || filterReport)
+  const dangLoc = !!(search.trim() || filterRoom || filterStatus || filterStaff || filterReport || filterGt)
   const clearFilters = () => {
-    setSearch(''); setFilterRoom(''); setFilterStatus(''); setFilterStaff(''); setFilterReport('')
+    setSearch(''); setFilterRoom(''); setFilterStatus(''); setFilterStaff(''); setFilterReport(''); setFilterGt('')
   }
+  // Người giới thiệu đang có (để lọc) + đếm số công ty mỗi người.
+  const tenNv = id => staffList.find(x => x.id === id)?.full_name || '—'
+  const demGt = {}
+  for (const c of clients) if (c.gioi_thieu_boi) demGt[c.gioi_thieu_boi] = (demGt[c.gioi_thieu_boi] || 0) + 1
 
   // Staff grouped by room for optgroup
   const staffByRoom = rooms.map(r => ({
@@ -362,6 +381,13 @@ export default function AdminClientsPage() {
             <option value="">Tất cả trạng thái</option>
             {STATUS_OPTS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
           </select>
+          <select value={filterGt} onChange={e => setFilterGt(e.target.value)}
+            className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Người giới thiệu: tất cả</option>
+            <option value="co">Có người giới thiệu</option>
+            <option value="khong">Chưa có người giới thiệu</option>
+            {Object.keys(demGt).sort((a, b) => tenNv(a).localeCompare(tenNv(b), 'vi')).map(id => <option key={id} value={id}>{tenNv(id)} ({demGt[id]} cty)</option>)}
+          </select>
         </div>
 
         {/* Số kết quả + xóa lọc — để không ai tưởng "mất công ty" khi quên là đang lọc */}
@@ -385,7 +411,7 @@ export default function AdminClientsPage() {
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
                   {/* 10 cột cũ tràn ngang → gộp còn 6 (anh yêu cầu cân đối trang 23/10/2026) */}
-                  {['Công ty', 'NV phụ trách', 'NV phụ', 'Báo cáo · Phí', 'Trạng thái', ''].map(h => (
+                  {['Công ty', 'NV phụ trách', 'NV phụ', 'Giới thiệu', 'Báo cáo · Phí', 'Trạng thái', ''].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -393,7 +419,7 @@ export default function AdminClientsPage() {
               <tbody className="divide-y divide-gray-50">
                 {displayed.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400">Không có công ty nào</td>
+                    <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">Không có công ty nào</td>
                   </tr>
                 )}
                 {displayed.map(c => {
@@ -480,6 +506,39 @@ export default function AdminClientsPage() {
                               className="text-xs text-amber-600 hover:underline flex-shrink-0">+ Thêm</button>
                           )}
                         </div>
+                      </td>
+
+                      {/* Người giới thiệu — hoa hồng giới thiệu (sql/39). Chỉ manage_payroll sửa. */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {gtDang?.id === c.id ? (
+                          <div className="space-y-1">
+                            <select value={gtDang.staffId} onChange={e => setGtDang(v => ({ ...v, staffId: e.target.value }))}
+                              className="block px-2 py-1 border border-emerald-300 rounded text-xs focus:outline-none max-w-44">
+                              <option value="">— Không có —</option>
+                              {staffByRoom.map(g => (
+                                <optgroup key={g.room.id} label={g.room.name}>
+                                  {g.staff.map(st => <option key={st.id} value={st.id}>{st.full_name}</option>)}
+                                </optgroup>
+                              ))}
+                            </select>
+                            {gtDang.staffId && <input type="month" value={gtDang.tuThang} onChange={e => setGtDang(v => ({ ...v, tuThang: e.target.value }))}
+                              title="Hưởng hoa hồng từ tháng" className="block px-2 py-0.5 border border-emerald-300 rounded text-xs" />}
+                            <div className="flex gap-2">
+                              <button onClick={luuGioiThieu} className="text-xs text-emerald-700 font-semibold hover:underline">Lưu</button>
+                              <button onClick={() => { setGtDang(null); setGtLoi('') }} className="text-xs text-gray-400">Hủy</button>
+                            </div>
+                            {gtLoi && <div className="text-xs text-red-600 whitespace-normal max-w-44">{gtLoi}</div>}
+                          </div>
+                        ) : c.gioi_thieu_boi ? (
+                          <div>
+                            <div className="text-sm text-emerald-800">🤝 {tenNv(c.gioi_thieu_boi)}</div>
+                            <div className="text-xs text-gray-400">từ {String(c.gioi_thieu_tu || '').slice(5, 7)}/{String(c.gioi_thieu_tu || '').slice(0, 4)}
+                              {suaGt && <button onClick={() => setGtDang({ id: c.id, staffId: c.gioi_thieu_boi, tuThang: String(c.gioi_thieu_tu || '').slice(0, 7) })} className="ml-1.5 text-emerald-700 hover:underline">Đổi</button>}</div>
+                          </div>
+                        ) : suaGt ? (
+                          <button onClick={() => { const n = new Date(Date.now() + 7 * 3600e3); setGtDang({ id: c.id, staffId: '', tuThang: n.toISOString().slice(0, 7) }) }}
+                            className="text-xs text-emerald-700 hover:underline">+ Ghi người giới thiệu</button>
+                        ) : <span className="text-gray-300 text-xs">—</span>}
                       </td>
 
                       {/* Báo cáo · Phí */}

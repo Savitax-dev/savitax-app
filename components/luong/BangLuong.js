@@ -81,16 +81,24 @@ export default function BangLuong({ quyen }) {
       {d && <ThanhChotLuong d={d} ky={ky} onXong={tai} />}
       {loi && <div className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-2.5 text-sm">{loi}</div>}
       {loiSua && <div className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-2.5 text-sm">{loiSua}</div>}
+      {d?.hoaHongNgoai?.length > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-900 px-4 py-2.5 text-sm">
+          ⚠ <b>Hoa hồng giới thiệu KHÔNG nằm trong bảng lương</b> (người giới thiệu không có dòng lương — phòng remote / chưa đặt lương / đã nghỉ), cần chi tay:
+          {' '}{d.hoaHongNgoai.map(h => h.ten + ' ' + Number(h.hoaHong).toLocaleString('vi-VN') + 'đ (' + h.soCty + ' cty × ' + h.tyLe + '%)').join(' · ')}.
+          Khoản này không ghi sổ nên tháng sau vẫn hiện lại.
+        </div>
+      )}
       {!d && !loi && <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-400">Đang tính bảng lương (KPI hai tháng + doanh thu)… mất vài giây.</div>}
 
       {d && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-7 2xl:grid-cols-13 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-7 2xl:grid-cols-14 gap-3">
             {[['Lương theo công', tong('luongTheoCong'), 'bg-blue-50 border-blue-200 text-blue-900'],
               ['Thưởng KPI công việc', tong('thuongViec'), 'bg-emerald-50 border-emerald-200 text-emerald-900'],
               ['Thưởng KPI công nợ', tong('thuongNo'), 'bg-teal-50 border-teal-200 text-teal-900'],
               ['Thưởng doanh số', tong('thuongDoanhSo'), 'bg-violet-50 border-violet-200 text-violet-900'],
               ['Thưởng dịch vụ khác', tong('thuongDvk'), 'bg-orange-50 border-orange-200 text-orange-900'],
+              ['Hoa hồng giới thiệu', tong('thuongHoaHong'), 'bg-emerald-50 border-emerald-200 text-emerald-900'],
               ['Thưởng phòng', tong('thuongPhong'), 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-900'],
               ['Phụ cấp + điều chỉnh', tong('phuCap') + tong('dieuChinh'), 'bg-amber-50 border-amber-200 text-amber-900'],
               ['Thu nhập', tong('thuNhap'), 'bg-slate-50 border-slate-200 text-slate-900'],
@@ -119,6 +127,7 @@ export default function BangLuong({ quyen }) {
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-teal-700">% nợ → thưởng</th>
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-violet-700">Doanh thu / tối thiểu → thưởng</th>
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-orange-700">DVK</th>
+                  <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-emerald-700">Hoa hồng GT</th>
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-fuchsia-700">Tác phong · KPI phòng → thưởng</th>
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-amber-700">Phụ cấp · điều chỉnh</th>
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right">Tổng thưởng</th>
@@ -133,7 +142,7 @@ export default function BangLuong({ quyen }) {
                     <Fragment key={x.staff_id}>
                     {(i === 0 || ds[i - 1].phong !== x.phong) && (
                       <tr className="bg-rose-50/70 border-t-2 border-rose-200">
-                        <td colSpan={17} className="sticky left-0 px-3 py-2 text-sm font-bold text-[#8B1A1A]">
+                        <td colSpan={18} className="sticky left-0 px-3 py-2 text-sm font-bold text-[#8B1A1A]">
                           🏢 {x.phong ? 'Phòng ' + x.phong : 'Chưa xếp phòng'} <span className="font-normal text-gray-500">· {ds.filter(y => y.phong === x.phong).length} người</span>
                         </td>
                       </tr>
@@ -152,6 +161,11 @@ export default function BangLuong({ quyen }) {
                         {mo === x.staff_id && <div className="text-left text-xs text-gray-600 mt-1 space-y-0.5 max-h-48 overflow-y-auto">{x.congTyDoanhThu.map(c => <div key={c.id}>{c.ma || c.ten}: {fmt(c.doanhThu)}{c.quy ? ' (quý ÷3)' : ''}</div>)}</div>}
                       </td>
                       <td className="px-3 py-2.5 text-right text-orange-700">{fmt(x.thuongDvk)}</td>
+                      <td className="px-3 py-2.5 text-right whitespace-nowrap">{x.hoaHongGt ? <>
+                        <div className="font-semibold text-emerald-700">{fmt(x.thuongHoaHong)}</div>
+                        <div className="text-[11px] text-gray-500" title={(x.hoaHongGt.chiTiet || []).map(c => (c.ma || c.ten) + ' · ' + c.nguon + ' ' + c.kyThang + ': ' + Number(c.so_tien).toLocaleString('vi-VN')).join('\n')}>
+                          {x.hoaHongGt.soCty}/{x.hoaHongGt.soCtyTong} cty × {x.hoaHongGt.tyLe}%</div>
+                      </> : <span className="text-gray-300">—</span>}</td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">
                         <span className={'font-semibold ' + pctMau(x.pctTacPhong)} title={(x.soLanViPham || 0) + ' lần vi phạm'}>{x.pctTacPhong ?? 100}%</span>
                         {x.kpiApDung ? <> · <span className={pctMau(x.diemKpiPhong)}>{x.diemKpiPhong ?? '—'}%</span> → <b className="text-fuchsia-800">{fmt(x.thuongPhong)}</b></> : null}
@@ -194,7 +208,7 @@ export default function BangLuong({ quyen }) {
                     </tr>
                     </Fragment>
                   ))}
-                  {!ds.length && <tr><td colSpan={17} className="px-4 py-8 text-center text-gray-400">Không có nhân viên nào khớp bộ lọc.</td></tr>}
+                  {!ds.length && <tr><td colSpan={18} className="px-4 py-8 text-center text-gray-400">Không có nhân viên nào khớp bộ lọc.</td></tr>}
                 </tbody>
               </table>
             </div>

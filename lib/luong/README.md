@@ -53,9 +53,15 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
   HOA không dấu; mã ngân hàng là mã SỐ theo danh mục ngân hàng chi lương (`luong_ngan_hang.ma_ngan_hang`).
   Thiếu số TK / mã NH hoặc thực lĩnh ≤ 0 thì không vào file, app liệt kê để chuyển tay.
 
+- **Hoa hồng giới thiệu** (sql/39, `hoaHong.js`, 3 bước xong 23/10/2026): `clients.gioi_thieu_boi` + `gioi_thieu_tu`
+  ghi ở cột "Giới thiệu" trang Quản lý khách hàng (chỉ manage_payroll, có nhật ký); bậc % ở `luong_hoa_hong_bac`
+  (tab Cấp bậc & ngày lễ). Quy tắc tính (bước 2): % theo số công ty ĐANG dùng DV × tiền khách trả THÊM từ lần chốt
+  trước (KT + HCNS + DVK + nợ tồn, ÷ 1,08), sổ `luong_hoa_hong_so` ghi khi chốt (mở chốt xoá); đã chi = nút
+  "Đã chuyển lương". Không còn công ty đang dùng → bậc thấp nhất. Người giới thiệu không có dòng lương (remote…)
+  → `hoaHongNgoai`, chi tay, không ghi sổ. Báo cáo: tab "Hoa hồng giới thiệu" ở Báo cáo KPI (`BaoCaoHoaHong.js`).
 - **Báo cáo thâm niên** (`thamNien.js` + `components/BaoCaoThamNien.js`, tab ở trang Báo cáo KPI, chỉ view_payroll):
   thâm niên = số tháng tròn từ `staff.ngay_vao_lam`; cấp theo thâm niên đọc mốc "dưới X tháng/năm" trong MÔ TẢ cấp bậc
   (sửa mô tả là báo cáo đổi theo); cấp trưởng phòng không xét. Đánh dấu đến hạn lên cấp, sắp đủ mốc 1–6 tháng.
 
 ## Bộ kiểm
-`node scripts/test-luong-ngay-cong.mjs` · `node scripts/test-luong-may-cham-cong.mjs [file.xlsx]` · `node scripts/test-luong-tham-nien.mjs` · `node --env-file=.env.local scripts/test-luong-thuong.mjs --that`
+`node scripts/test-luong-ngay-cong.mjs` · `node scripts/test-luong-may-cham-cong.mjs [file.xlsx]` · `node scripts/test-luong-tham-nien.mjs` · `node scripts/test-luong-hoa-hong.mjs` · `node --env-file=.env.local scripts/test-luong-thuong.mjs --that`

@@ -34,7 +34,11 @@ export async function POST(request) {
         // Mở chốt là THU HỒI phiếu đã gửi: nhân viên không thấy phiếu cho tới khi chốt + gửi lại.
         const { error } = await supabase.from('luong_bang_chot').update({ da_mo: true, mo_boi: caller.staffId, mo_luc: new Date().toISOString(), ly_do_mo: lyDo.slice(0, 300), da_gui: false })
           .eq('nam', nt.nam).eq('thang', nt.thang)
-        return error ? loi(error.message, 500) : Response.json({ ok: true })
+        if (error) return loi(error.message, 500)
+        // Mở chốt = huỷ ghi nhận hoa hồng tháng này (sql/39) + bỏ dấu "đã chuyển lương": chốt lại sẽ tính lại.
+        await supabase.from('luong_hoa_hong_so').delete().eq('nam', nt.nam).eq('thang', nt.thang)
+        await supabase.from('luong_bang_chot').update({ da_chuyen_luong: false, chuyen_luong_luc: null, chuyen_luong_boi: null }).eq('nam', nt.nam).eq('thang', nt.thang)
+        return Response.json({ ok: true })
       }
       const kq = await tinhBangLuong(supabase, nt.nam, nt.thang)
       const { error } = await supabase.from('luong_bang_chot').upsert({
@@ -42,6 +46,31 @@ export async function POST(request) {
         da_mo: false, mo_boi: null, mo_luc: null, ly_do_mo: null, da_gui: false,
       }, { onConflict: 'nam,thang' })
       if (error) return loi(/luong_bang_chot/.test(error.message) ? 'Chưa chạy sql/33_luong_chot.sql (' + error.message + ')' : error.message, 500)
+      // Ghi sổ "đã tính hoa hồng" đúng như bản chụp: tháng sau chỉ tính phần khách trả THÊM (sql/39).
+      const soHh = (kq.dong || []).flatMap(x => (x.hoaHongGt?.chiTiet || []).map(c => ({
+        nam: nt.nam, thang: nt.thang, staff_id: x.staff_id, client_id: c.client_id, nguon: c.nguon, ky: String(c.ky),
+        so_tien: c.so_tien, ty_le: c.ty_le, hoa_hong: c.hoa_hong,
+      })))
+      const xoa = await supabase.from('luong_hoa_hong_so').delete().eq('nam', nt.nam).eq('thang', nt.thang)
+      if (!xoa.error && soHh.length) {
+        const { error: eh } = await supabase.from('luong_hoa_hong_so').insert(soHh)
+        if (eh) return loi('Đã chốt bảng lương nhưng CHƯA ghi được sổ hoa hồng: ' + eh.message + ' — mở chốt rồi chốt lại.', 500)
+      }
+      return Response.json({ ok: true })
+    }
+
+    // ── Đã chuyển lương (sql/39): hoa hồng giới thiệu coi là ĐÃ CHI từ lúc này ──
+    if (viec === 'chuyen_luong') {
+      if (!quyen.manage) return loi('Chỉ người có quyền thiết lập lương', 403)
+      const nt = namThang(body.nam, body.thang)
+      if (!nt) return loi('Tháng không hợp lệ')
+      const chot = await docBanChot(supabase, nt.nam, nt.thang)
+      if (!chot || chot.da_mo) return loi('Chốt bảng lương trước rồi mới đánh dấu đã chuyển lương', 409)
+      const bat = body.da !== false
+      const { error } = await supabase.from('luong_bang_chot').update({
+        da_chuyen_luong: bat, chuyen_luong_luc: bat ? new Date().toISOString() : null, chuyen_luong_boi: bat ? caller.staffId : null,
+      }).eq('nam', nt.nam).eq('thang', nt.thang)
+      if (error) return loi(/da_chuyen_luong/.test(error.message) ? 'Chưa chạy sql/39_hoa_hong_gioi_thieu.sql' : error.message, 500)
       return Response.json({ ok: true })
     }
 

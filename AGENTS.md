@@ -14,6 +14,10 @@ công việc hàng tháng/quý, công nợ dịch vụ, KPI nhân viên/phòng b
   `SUPABASE_SERVICE_ROLE_KEY` (bỏ qua RLS). Browser chỉ dùng `lib/supabase.js` (anon key) để
   check session đăng nhập — KHÔNG dùng anon key để đọc/ghi nghiệp vụ trực tiếp (dễ vướng RLS
   hỏng/đệ quy đã từng gặp).
+- **Quyền phía trình duyệt lấy từ `lib/khoiDong.js`** (`layMe`, `layQuyenLuong`; `loadPermissionData` dùng chung):
+  MỘT yêu cầu `/api/admin/khoi-dong` (me + vai trò + bảng quyền + quyền lương), nhớ 5 phút trong phiên. Trang mới
+  đừng tự `fetch('/api/admin/me')` / `/roles` / `/role-permissions` (23/10/2026: mỗi trang 4–5 lần kiểm đăng nhập,
+  localhost chậm thấy rõ). Sửa phân quyền / đăng nhập / đăng xuất phải gọi `clearPermissionCache()` (xoá luôn bộ nhớ này).
 - Phân quyền: bảng `roles`/`permissions`/`role_permissions`, helper `lib/permissions.js`
   (`hasPermission(role, key)`). Vai trò `admin` có `is_system=true` → luôn full quyền, không cần
   gán permission riêng. Trang admin mới phải gọi `hasPermission` để gate, không hard-code role.
@@ -281,6 +285,9 @@ bộ quy tắc). Anh yêu cầu tách cho dễ sửa: đổi quy tắc bước n
   Xác nhận / Báo sai; mã NV ở `staff.ma_nhan_vien` (mã trên file sẽ đổi), `staff.cham_cong_may = false` cho NV online /
   ban giám đốc. File hồ sơ lương (`fileHoSoLuong.js`) nhận người theo email. Quy đổi cột: xem lib/luong/README.md.
   Báo cáo thâm niên (`thamNien.js`, tab Báo cáo KPI, chỉ view_payroll): mốc lên cấp đọc từ MÔ TẢ cấp bậc.
+- **Hoa hồng giới thiệu** (sql/39, `lib/luong/hoaHong.js`): `clients.gioi_thieu_boi/_tu` (cột "Giới thiệu" trang khách
+  hàng, chỉ manage_payroll); % bậc theo số công ty đang dùng DV × tiền khách trả THÊM từ lần chốt trước (÷1,08);
+  sổ `luong_hoa_hong_so` ghi khi chốt, xoá khi mở chốt; "Đã chuyển lương" = đã chi. Tab báo cáo ở Báo cáo KPI.
 - Tác phong (sql/34): nhân viên TỰ KHAI số lần vi phạm cùng ngày công; người = 100 − 20 × số lần, phòng =
   trung bình; điểm KPI phòng = TB(việc, nợ, tác phong) → thưởng phòng app tự tính. Phụ cấp / điều chỉnh nhập
   trên tab Bảng lương (`luong_dieu_chinh`) trước khi chốt.

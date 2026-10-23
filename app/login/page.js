@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import { xoaDauNhacNho } from '@/components/NotificationBell'
+import { xoaKhoiDong } from '@/lib/khoiDong'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -20,6 +21,7 @@ export default function LoginPage() {
 
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
+    xoaKhoiDong()   // người đăng nhập mới không dùng lại quyền đã nhớ của phiên trước
 
     if (error) {
       setError('Email hoặc mật khẩu không đúng')

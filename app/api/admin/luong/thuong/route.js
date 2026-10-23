@@ -79,7 +79,7 @@ export async function GET(request) {
         const { data: px } = await supabase.from('luong_phieu_xac_nhan').select('staff_id, trang_thai, ghi_chu, luc').eq('nam', nt.nam).eq('thang', nt.thang)
         const pxMap = new Map((px || []).map(x => [x.staff_id, x]))
         const dong = (chot.du_lieu.dong || []).map(x => ({ ...x, phieu: pxMap.get(x.staff_id) || null }))
-        return Response.json({ ...chot.du_lieu, dong, daChot: { luc: chot.chot_luc, boi: chot.staff?.full_name || '', daGui: !!chot.da_gui, guiLuc: chot.gui_luc || null }, duocChot: quyen.manage })
+        return Response.json({ ...chot.du_lieu, dong, daChot: { luc: chot.chot_luc, boi: chot.staff?.full_name || '', daGui: !!chot.da_gui, guiLuc: chot.gui_luc || null, daChuyenLuong: !!chot.da_chuyen_luong, chuyenLuongLuc: chot.chuyen_luong_luc || null }, duocChot: quyen.manage })
       }
       const kq = await tinhBangLuong(supabase, nt.nam, nt.thang)
       return Response.json({ ...kq, daChot: null, daMoChot: chot?.da_mo ? { luc: chot.mo_luc, lyDo: chot.ly_do_mo } : null, duocChot: quyen.manage })

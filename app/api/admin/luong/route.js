@@ -78,6 +78,77 @@ export async function GET(request) {
       return Response.json({ data, nganHang: nh.error ? [] : nh.data || [], hoSo: hs.error ? [] : hs.data || [] })
     }
 
+    // Bậc hoa hồng giới thiệu (sql/39) — chưa chạy SQL thì trả rỗng + cờ thiếu.
+    if (viec === 'hoa_hong_bac') {
+      if (!quyen.view && !quyen.manage) return loi('Không đủ quyền', 403)
+      const { data, error } = await supabase.from('luong_hoa_hong_bac').select('tu_so_cty, ty_le').order('tu_so_cty')
+      return Response.json({ data: error ? [] : data || [], chuaChaySql: !!error })
+    }
+
+    // Báo cáo HOA HỒNG GIỚI THIỆU (tab ở Báo cáo KPI, sql/39). Kỳ = các tháng LƯƠNG từ `tu` tới `den` ('YYYY-MM').
+    //   phát sinh = sổ luong_hoa_hong_so của các bảng lương đã chốt trong kỳ; đã chi = phần thuộc bảng đã bấm
+    //   "Đã chuyển lương"; tồn đầu = phát sinh − đã chi của mọi tháng TRƯỚC kỳ; chuyển kỳ sau = tồn + phát sinh − đã chi
+    //   (nên chuyển kỳ sau của kỳ này = tồn đầu kỳ của kỳ sau). Chờ tính = tiền khách đã trả chưa vào bảng lương đã chốt.
+    if (viec === 'bao_cao_hoa_hong') {
+      if (!quyen.view) return loi('Chỉ người có quyền xem lương được xem báo cáo hoa hồng', 403)
+      const kyHopLe = v => /^\d{4}-\d{2}$/.test(String(v || ''))
+      const tu = q.get('tu'), den = q.get('den')
+      if (!kyHopLe(tu) || !kyHopLe(den) || tu > den) return loi('Kỳ báo cáo không hợp lệ')
+      const kyCua = r => r.nam + '-' + pad(r.thang)
+      const so = []
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase.from('luong_hoa_hong_so').select('id, nam, thang, staff_id, client_id, nguon, ky, so_tien, ty_le, hoa_hong').order('id').range(from, from + 999)
+        if (error) return loi(/luong_hoa_hong_so/.test(error.message) ? 'Chưa chạy sql/39_hoa_hong_gioi_thieu.sql' : error.message, 500)
+        so.push(...(data || []))
+        if (!data || data.length < 1000) break
+      }
+      const [{ data: chot }, { data: cty }, { data: st }] = await Promise.all([
+        supabase.from('luong_bang_chot').select('nam, thang, da_mo, da_chuyen_luong'),
+        supabase.from('clients').select('id, name, client_code, status, service_end, gioi_thieu_boi, gioi_thieu_tu').not('gioi_thieu_boi', 'is', null),
+        supabase.from('staff').select('id, full_name, is_active, rooms(name)'),
+      ])
+      const daChi = new Set((chot || []).filter(c => !c.da_mo && c.da_chuyen_luong).map(kyCua))
+      const choTinhKy = den   // bảng lương tháng cuối kỳ chưa chốt → tính "chờ tính" sống
+      const daChotDen = (chot || []).some(c => kyCua(c) === den && !c.da_mo)
+      const { hoaHongThang } = await import('@/lib/luong/hoaHong')
+      const { countsForMonth } = await import('@/lib/contractDates')
+      const song = daChotDen ? new Map() : await hoaHongThang(supabase, Number(den.slice(0, 4)), Number(den.slice(5, 7)), { countsForMonth })
+      const nv = new Map(), ctyMap = new Map((cty || []).map(c => [c.id, c]))
+      const lay = (staffId) => {
+        if (!nv.has(staffId)) {
+          const s = (st || []).find(x => x.id === staffId)
+          nv.set(staffId, { staff_id: staffId, ten: s?.full_name || '—', phong: s?.rooms?.name || '', dangLam: !!s?.is_active, tonDau: 0, phatSinh: 0, daChi: 0, daThu: 0, choTinh: 0, congTy: new Map() })
+        }
+        return nv.get(staffId)
+      }
+      const layCty = (x, clientId) => {
+        if (!x.congTy.has(clientId)) {
+          const c = ctyMap.get(clientId)
+          x.congTy.set(clientId, { client_id: clientId, ten: c?.name || '(công ty đã đổi người giới thiệu)', ma: c?.client_code || '', tuThang: c?.gioi_thieu_tu || null,
+            dangDung: c ? (c.service_end ? false : c.status === 'active') : false, tonDau: 0, phatSinh: 0, daChi: 0, daThu: 0, choTinh: 0 })
+        }
+        return x.congTy.get(clientId)
+      }
+      for (const c of cty || []) layCty(lay(c.gioi_thieu_boi), c.id)
+      for (const r of so) {
+        const k = kyCua(r), hh = Number(r.hoa_hong) || 0, chi = daChi.has(k)
+        if (k > den || !r.staff_id) continue
+        const x = lay(r.staff_id), c = layCty(x, r.client_id)
+        if (k < tu) { const t = hh - (chi ? hh : 0); x.tonDau += t; c.tonDau += t; continue }
+        x.phatSinh += hh; c.phatSinh += hh
+        if (chi) { x.daChi += hh; c.daChi += hh }
+        const thu = Math.round((Number(r.so_tien) || 0) / 1.08); x.daThu += thu; c.daThu += thu
+      }
+      for (const [staffId, h] of song) {
+        const x = lay(staffId); x.choTinh += h.hoaHong; x.tyLeHienTai = h.tyLe; x.soCty = h.soCty
+        for (const t of h.chiTiet) layCty(x, t.client_id).choTinh += t.hoa_hong
+      }
+      const ds = [...nv.values()].map(x => ({ ...x, chuyenKySau: x.tonDau + x.phatSinh - x.daChi,
+        congTy: [...x.congTy.values()].map(c => ({ ...c, chuyenKySau: c.tonDau + c.phatSinh - c.daChi })).sort((a, b) => a.ten.localeCompare(b.ten, 'vi')) }))
+        .sort((a, b) => a.ten.localeCompare(b.ten, 'vi'))
+      return Response.json({ tu, den, choTinhKy: daChotDen ? null : choTinhKy, nhanVien: ds })
+    }
+
     // Báo cáo THÂM NIÊN (trang Báo cáo KPI) — có cấp bậc (lộ mức lương) nên chỉ view_payroll. Trừ phòng remote.
     if (viec === 'tham_nien') {
       if (!quyen.view) return loi('Chỉ người có quyền xem lương được xem báo cáo thâm niên', 403)
@@ -366,6 +437,54 @@ export async function POST(request) {
         sau: { ngay_di_lam: vao.ngay_di_lam, nghi_phep: vao.nghi_phep, nghi_khong_luong: vao.nghi_khong_luong, so_lan_vi_pham: vao.so_lan_vi_pham, ghi_chu: vao.ghi_chu },
       })
       return Response.json({ ok: true, data })
+    }
+
+    // ── Hoa hồng giới thiệu (sql/39): bảng bậc + người giới thiệu từng công ty ──
+    if (viec === 'luu_hoa_hong_bac') {
+      if (!quyen.manage) return loi('Không đủ quyền sửa bậc hoa hồng', 403)
+      const ds = Array.isArray(body.ds) ? body.ds : []
+      if (ds.length > 20) return loi('Tối đa 20 bậc')
+      const rows = []
+      for (const r of ds) {
+        const tu = Number(r.tu_so_cty), tl = Number(String(r.ty_le).replace(',', '.'))
+        if (!Number.isInteger(tu) || tu < 1 || tu > 1000) return loi('"Từ số công ty" phải là số nguyên từ 1')
+        if (!(tl > 0 && tl <= 100)) return loi('Tỉ lệ hoa hồng phải trong khoảng 0–100%')
+        if (rows.some(x => x.tu_so_cty === tu)) return loi('Hai bậc trùng mốc ' + tu + ' công ty')
+        rows.push({ tu_so_cty: tu, ty_le: tl, sua_boi: caller.staffId, sua_luc: new Date().toISOString() })
+      }
+      const x = await supabase.from('luong_hoa_hong_bac').delete().gte('tu_so_cty', 0)
+      if (x.error) return loi(/luong_hoa_hong_bac/.test(x.error.message) ? 'Chưa chạy sql/39_hoa_hong_gioi_thieu.sql' : x.error.message, 500)
+      if (rows.length) {
+        const { error } = await supabase.from('luong_hoa_hong_bac').insert(rows)
+        if (error) return loi(error.message, 500)
+      }
+      return Response.json({ ok: true })
+    }
+
+    if (viec === 'luu_gioi_thieu') {
+      if (!quyen.manage) return loi('Chỉ quản trị / kế toán nội bộ được ghi người giới thiệu', 403)
+      const staffId = body.staffId || null
+      const m = /^(\d{4})-(\d{2})$/.exec(String(body.tuThang || ''))
+      if (staffId && !m) return loi('Chọn tháng bắt đầu hưởng hoa hồng')
+      const { data: cty, error: e0 } = await supabase.from('clients').select('id, gioi_thieu_boi, gioi_thieu_tu').eq('id', body.clientId).maybeSingle()
+      if (e0) return loi(/gioi_thieu/.test(e0.message) ? 'Chưa chạy sql/39_hoa_hong_gioi_thieu.sql' : e0.message, 500)
+      if (!cty) return loi('Không tìm thấy công ty')
+      const ids = [cty.gioi_thieu_boi, staffId].filter(Boolean)
+      const { data: ns } = ids.length ? await supabase.from('staff').select('id, full_name, is_active').in('id', ids) : { data: [] }
+      if (staffId && !(ns || []).some(s => s.id === staffId && s.is_active)) return loi('Nhân viên giới thiệu không tồn tại hoặc đã nghỉ')
+      const tu = staffId ? m[1] + '-' + m[2] + '-01' : null
+      const { error } = await supabase.from('clients').update({ gioi_thieu_boi: staffId, gioi_thieu_tu: tu }).eq('id', cty.id)
+      if (error) return loi(error.message, 500)
+      // Nhật ký sửa thông tin công ty — như các ô khác của hồ sơ công ty.
+      const ten = id => (ns || []).find(s => s.id === id)?.full_name || ''
+      const chu = (id, d) => id ? ten(id) + (d ? ' (từ ' + String(d).slice(5, 7) + '/' + String(d).slice(0, 4) + ')' : '') : ''
+      if (chu(cty.gioi_thieu_boi, cty.gioi_thieu_tu) !== chu(staffId, tu)) {
+        await supabase.from('client_change_log').insert({
+          client_id: cty.id, entity: 'client_info', entity_label: 'Người giới thiệu', field: 'gioi_thieu_boi',
+          old_value: chu(cty.gioi_thieu_boi, cty.gioi_thieu_tu) || null, new_value: chu(staffId, tu) || null, action: 'update', changed_by: caller.staffId,
+        })
+      }
+      return Response.json({ ok: true })
     }
 
     // ── Nhân viên báo sai số công lấy từ máy chấm công ────────────────────

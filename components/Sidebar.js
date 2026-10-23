@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase'
 import { loadPermissionData, can, clearPermissionCache } from '@/lib/permissions'
 import { xoaBoNhoNhacHan } from './NhacHanNop'
 import { xoaDauNhacNho } from './NotificationBell'
+import { layMe } from '@/lib/khoiDong'
 
 /* ─── Brand colors ───────────────────────────────────────────────
    Đỏ chủ đạo : #8B1A1A   Gold chủ đạo : #C9A84C
@@ -113,7 +114,7 @@ export default function Sidebar({ onClose }) {
       const fetchMe = async () => {
         for (let i = 0; i < 2; i++) {
           try {
-            const me = await fetch('/api/admin/me').then(r => r.json())
+            const me = await layMe()
             if (me?.roles?.length) return me
           } catch (_) { /* thử lại */ }
           if (i === 0) await new Promise(r => setTimeout(r, 1200))

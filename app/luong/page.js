@@ -9,6 +9,7 @@ import CapBacNgayLe from '@/components/luong/CapBacNgayLe'
 import ThuongDvk from '@/components/luong/ThuongDvk'
 import BangLuong from '@/components/luong/BangLuong'
 import PhieuLuongCuaToi from '@/components/luong/PhieuLuongCuaToi'
+import { layQuyenLuong } from '@/lib/khoiDong'
 
 // Chấm công & Lương (/luong) — bước 1 của phân hệ Tiền lương.
 //   Tab "Chấm công của tôi": mọi nhân viên tự khai ngày công, bấm xác nhận là khoá.
@@ -25,7 +26,7 @@ export default function LuongPage() {
 
   useEffect(() => {
     (async () => {
-      const q = await goi('/api/admin/luong?viec=quyen')
+      const q = await layQuyenLuong()   // gộp trong /api/admin/khoi-dong, nhớ 5 phút trong phiên
       if (q.error) { if (/đăng nhập/i.test(q.error)) router.push('/login'); else setLoiChung(q.error); return }
       setQuyen(q)
     })()

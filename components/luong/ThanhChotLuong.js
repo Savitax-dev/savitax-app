@@ -63,6 +63,19 @@ export default function ThanhChotLuong({ d, ky, onXong }) {
     } catch (e) { setMsg(String(e.message || e)) } finally { setBan(false) }
   }
 
+  // Đã chuyển lương (sql/39): hoa hồng giới thiệu coi là ĐÃ CHI từ lúc bấm (báo cáo Hoa hồng giới thiệu).
+  const chuyenLuong = async () => {
+    const dang = !!d.daChot?.daChuyenLuong
+    if (!confirm(dang ? 'Bỏ đánh dấu "Đã chuyển lương" tháng ' + ky.thang + '/' + ky.nam + '?' : 'Xác nhận ĐÃ CHUYỂN LƯƠNG tháng ' + ky.thang + '/' + ky.nam + ' cho nhân viên? Hoa hồng giới thiệu trong bảng này sẽ tính là đã chi.')) return
+    setBan(true); setMsg(null)
+    try {
+      const res = await fetch('/api/admin/luong/chot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ viec: 'chuyen_luong', nam: ky.nam, thang: ky.thang, da: !dang }) })
+      const j = await res.json()
+      if (j.error) setMsg(j.error); else await onXong()
+    } catch (e) { setMsg(String(e.message || e)) }
+    setBan(false)
+  }
+
   const phieu = (d.dong || []).map(x => x.phieu).filter(Boolean)
   const dem = { xn: phieu.filter(p => p.trang_thai === 'da_xac_nhan').length, sai: phieu.filter(p => p.trang_thai === 'bao_sai').length, cho: phieu.filter(p => p.trang_thai === 'cho_xac_nhan').length }
 
@@ -72,7 +85,7 @@ export default function ThanhChotLuong({ d, ky, onXong }) {
         <div className={'flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 ' + (d.daChot ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200')}>
           <div className={'text-sm ' + (d.daChot ? 'text-emerald-800' : 'text-amber-800')}>
             {d.daChot
-              ? <>🔒 <b>Đã chốt</b> lúc {new Date(d.daChot.luc).toLocaleString('vi-VN')}{d.daChot.boi ? ' bởi ' + d.daChot.boi : ''} — số liệu tháng này không đổi nữa.{d.daChot.daGui && <> · 📨 Đã gửi phiếu: <b className="text-emerald-700">{dem.xn} xác nhận</b> · <b className="text-amber-700">{dem.cho} chờ</b> · <b className="text-rose-600">{dem.sai} báo sai</b></>}</>
+              ? <>🔒 <b>Đã chốt</b> lúc {new Date(d.daChot.luc).toLocaleString('vi-VN')}{d.daChot.boi ? ' bởi ' + d.daChot.boi : ''} — số liệu tháng này không đổi nữa.{d.daChot.daChuyenLuong && <> · 💸 <b>Đã chuyển lương</b> {d.daChot.chuyenLuongLuc ? new Date(d.daChot.chuyenLuongLuc).toLocaleDateString('vi-VN') : ''}</>}{d.daChot.daGui && <> · 📨 Đã gửi phiếu: <b className="text-emerald-700">{dem.xn} xác nhận</b> · <b className="text-amber-700">{dem.cho} chờ</b> · <b className="text-rose-600">{dem.sai} báo sai</b></>}</>
               : <>⏳ <b>Chưa chốt</b> — số tính từ dữ liệu hiện tại, có thể đổi khi chấm công / công nợ / KPI thay đổi.{d.daMoChot ? ' (Đã mở chốt: ' + d.daMoChot.lyDo + ')' : ''}</>}
           </div>
           <div className="flex flex-wrap gap-2">
@@ -80,7 +93,7 @@ export default function ThanhChotLuong({ d, ky, onXong }) {
             <button onClick={chuyenKhoan} disabled={ban} title={d.daChot ? 'File chi lương hàng loạt theo mẫu ngân hàng' : 'Chốt bảng lương trước rồi mới xuất được'}
               className={'text-sm px-4 py-2 rounded-xl font-semibold shadow-sm disabled:opacity-50 ' + (d.daChot ? 'bg-cyan-700 text-white hover:bg-cyan-800' : 'bg-cyan-100 text-cyan-800 cursor-not-allowed')}>🏦 File chuyển khoản</button>
             {d.duocChot && (d.daChot
-              ? <><button onClick={gui} disabled={ban} className="text-sm px-4 py-2 rounded-xl bg-indigo-600 text-white font-semibold shadow-sm disabled:opacity-50">📨 {d.daChot.daGui ? 'Gửi lại phiếu' : 'Gửi nhân viên xác nhận'}</button><button onClick={() => chot(true)} disabled={ban} className="text-sm px-4 py-2 rounded-xl border border-rose-300 text-rose-700 bg-white disabled:opacity-50">Mở chốt</button></>
+              ? <><button onClick={gui} disabled={ban} className="text-sm px-4 py-2 rounded-xl bg-indigo-600 text-white font-semibold shadow-sm disabled:opacity-50">📨 {d.daChot.daGui ? 'Gửi lại phiếu' : 'Gửi nhân viên xác nhận'}</button><button onClick={chuyenLuong} disabled={ban} className={'text-sm px-4 py-2 rounded-xl font-semibold shadow-sm disabled:opacity-50 ' + (d.daChot.daChuyenLuong ? 'border border-emerald-300 bg-emerald-50 text-emerald-800' : 'bg-emerald-600 text-white')}>💸 {d.daChot.daChuyenLuong ? 'Đã chuyển lương ✓' : 'Đánh dấu đã chuyển lương'}</button><button onClick={() => chot(true)} disabled={ban} className="text-sm px-4 py-2 rounded-xl border border-rose-300 text-rose-700 bg-white disabled:opacity-50">Mở chốt</button></>
               : <><button onClick={() => chot(false)} disabled={ban} className="text-sm px-4 py-2 rounded-xl bg-[#8B1A1A] text-white font-semibold shadow-sm disabled:opacity-50">🔒 Chốt bảng lương</button>
                 {/* Nút gửi luôn hiện để dễ tìm; chưa chốt thì bấm chỉ nhắc — phiếu gửi đi phải là bản đã chốt. */}
                 <button onClick={() => setMsg('Bấm "🔒 Chốt bảng lương" trước — phiếu gửi cho nhân viên phải là bản đã chốt. Chốt xong nút này mới gửi được.')}

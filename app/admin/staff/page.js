@@ -6,6 +6,7 @@ import AppShell from '@/components/AppShell'
 import { hasPermission } from '@/lib/permissions'
 import OLuongNhanVien from '@/components/luong/OLuongNhanVien'
 import { luongCuaThang } from '@/lib/luong/ngayCong'
+import { layQuyenLuong } from '@/lib/khoiDong'
 
 const ROLE_BADGE_FALLBACK = [
   'bg-purple-100 text-purple-700', 'bg-blue-100 text-blue-700',
@@ -54,7 +55,7 @@ export default function AdminStaffPage() {
   const [luong, setLuong] = useState(null)   // { sua, capBac, lichSu }
   const taiLuong = async () => {
     try {
-      const q = await fetch('/api/admin/luong?viec=quyen', { cache: 'no-store' }).then(r => r.json())
+      const q = await layQuyenLuong()
       if (q.error || !q.view) { setLuong(null); return }
       const [cb, ls] = await Promise.all([
         fetch('/api/admin/luong?viec=cap_bac', { cache: 'no-store' }).then(r => r.json()),

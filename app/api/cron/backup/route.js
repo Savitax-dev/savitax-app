@@ -39,9 +39,10 @@ const TABLES = [
   // Phân hệ Hóa đơn điện tử — anh gác lại 13/10/2026, bảng đã tạo nhưng chưa có dữ liệu. Liệt kê
   // sẵn để lúc mở lại khỏi quên; bản clone không có thì tự bỏ qua.
   'hoadon_tai_khoan', 'hoadon_dau_vao',
-  // Phân hệ Tiền lương (sql/31–35).
+  // Phân hệ Tiền lương (sql/31–39).
   'luong_cap_bac', 'luong_nhan_vien', 'luong_ngay_le', 'luong_cham_cong', 'luong_cham_cong_log',
   'luong_dvk_khai', 'luong_bang_chot', 'luong_dieu_chinh', 'luong_phieu_xac_nhan', 'luong_ngan_hang',
+  'luong_hoa_hong_bac', 'luong_hoa_hong_so',
 ]
 
 // VIEW, không phải bảng — đọc lại từ chính bảng gốc đã có ở trên, backup thêm chỉ nhân đôi dữ

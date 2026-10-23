@@ -9,6 +9,7 @@ import { soExcelMoi, themSheetMang, taiVeExcel } from '@/lib/excelDep'
 import { HCNS_PER_HEAD } from '@/lib/salesPricing'
 import { HCNS_STATUSES, HCNS_STATUS_LABEL } from '@/lib/hcnsStatus'
 import { hcnsDueState, hcnsDueDate } from '@/lib/hcnsDue'
+import { layMe } from '@/lib/khoiDong'
 
 const fmt = (n) => Number(n || 0).toLocaleString('vi-VN')
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : '—'
@@ -94,7 +95,7 @@ export default function HcnsPage() {
       // có quyền HCNS ở vai trò kiêm nhiệm, đọc mỗi staff.role sẽ bị đá về trang chủ.
       const [{ data: me }, myPerm] = await Promise.all([
         supabase.from('staff').select('role').eq('id', sd.session.user.id).single(),
-        fetch('/api/admin/me').then(r => r.json()).catch(() => ({})),
+        layMe().catch(() => ({})),
       ])
       const perm = await loadPermissionData()
       const roles = myPerm?.roles?.length ? myPerm.roles : [me?.role].filter(Boolean)

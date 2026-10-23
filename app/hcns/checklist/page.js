@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { loadPermissionData, can } from '@/lib/permissions'
 import AppShell from '@/components/AppShell'
+import { layMe } from '@/lib/khoiDong'
 
 const inputCls = 'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#8B1A1A]/30'
 
@@ -43,7 +44,7 @@ export default function HcnsChecklistPage() {
       // có quyền HCNS ở vai trò kiêm nhiệm, đọc mỗi staff.role sẽ bị đá về trang chủ.
       const [{ data: me }, myPerm] = await Promise.all([
         supabase.from('staff').select('role').eq('id', sd.session.user.id).single(),
-        fetch('/api/admin/me').then(r => r.json()).catch(() => ({})),
+        layMe().catch(() => ({})),
       ])
       const perm = await loadPermissionData()
       const roles = myPerm?.roles?.length ? myPerm.roles : [me?.role].filter(Boolean)

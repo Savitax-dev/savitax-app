@@ -2,11 +2,13 @@
 import { useEffect, useState } from 'react'
 import BaoCaoPhiDaThu from '@/components/BaoCaoPhiDaThu'
 import BaoCaoThamNien from '@/components/BaoCaoThamNien'
+import BaoCaoHoaHong from '@/components/BaoCaoHoaHong'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import { loadPermissionData, can } from '@/lib/permissions'
 import { isSharedRoom } from '@/lib/specialRooms'
+import { layMe, layQuyenLuong } from '@/lib/khoiDong'
 
 const pctColor = (v) => v >= 90 ? 'text-green-600' : v >= 70 ? 'text-yellow-600' : 'text-red-500'
 const barColor = (v) => v >= 90 ? 'bg-green-500' : v >= 70 ? 'bg-yellow-400' : 'bg-red-400'
@@ -32,7 +34,7 @@ export default function ReportPage() {
   // Tab Thâm niên có cấp bậc (lộ mức lương) → chỉ người có quyền xem lương (view_payroll) thấy.
   const [xemLuong, setXemLuong] = useState(false)
   useEffect(() => {
-    fetch('/api/admin/luong?viec=quyen', { cache: 'no-store' }).then(r => r.json()).then(j => setXemLuong(!!j.view)).catch(() => {})
+    layQuyenLuong().then(j => setXemLuong(!!j.view)).catch(() => {})
   }, [])
   const [expandedRoom, setExpandedRoom] = useState(null)
   const [filterRoom, setFilterRoom] = useState('')
@@ -61,7 +63,7 @@ export default function ReportPage() {
       // Riêng phòng "đặc thù" (xem lib/specialRooms.js): MỌI trưởng phòng đều thấy như phòng mình.
       // Vai trò + phòng GỒM CẢ KIÊM NHIỆM (xem /api/admin/me) — người kiêm Trưởng phòng một phòng khác
       // phải thấy cả phòng đó, không chỉ phòng chính.
-      const quyen = await fetch('/api/admin/me', { cache: 'no-store' }).then(r => r.json()).catch(() => null)
+      const quyen = await layMe().catch(() => null)
       const roles = quyen?.roles?.length ? quyen.roles : [me?.role].filter(Boolean)
       const roomIds = quyen?.roomIds?.length ? quyen.roomIds : [me?.room_id].filter(Boolean)
       setMyRoles(roles)
@@ -132,7 +134,7 @@ export default function ReportPage() {
             { k: 'staff', l: 'Theo nhân viên' },
             // Báo cáo riêng, có bộ lọc ngày của nó — không theo ô Tháng/Năm ở góc trên.
             { k: 'fee', l: 'Phí đã thu' },
-            ...(xemLuong ? [{ k: 'thamnien', l: 'Thâm niên' }] : []),
+            ...(xemLuong ? [{ k: 'hoahong', l: 'Hoa hồng giới thiệu' }, { k: 'thamnien', l: 'Thâm niên' }] : []),
           ].map(t => (
             <button key={t.k} onClick={() => setTab(t.k)}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
@@ -143,6 +145,7 @@ export default function ReportPage() {
 
         {tab === 'fee' && <BaoCaoPhiDaThu />}
         {tab === 'thamnien' && xemLuong && <BaoCaoThamNien />}
+        {tab === 'hoahong' && xemLuong && <BaoCaoHoaHong />}
 
         {/* ── TAB 1: Theo phòng ── */}
         {tab === 'room' && (

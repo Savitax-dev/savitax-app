@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase'
 import { isPastEditDeadline } from '@/lib/feeDue'
 import { loadPermissionData, can } from '@/lib/permissions'
 import DichVuKhac from './DichVuKhac'
+import { layMe } from '@/lib/khoiDong'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : ''
@@ -200,7 +201,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     ;(async () => {
       try {
         const [me, perm] = await Promise.all([
-          fetch('/api/admin/me').then(r => r.json()).catch(() => ({})),
+          layMe().catch(() => ({})),
           loadPermissionData(),
         ])
         if (alive) setCanHcnsWork(can(me?.roles || [], 'view_hcns', perm))

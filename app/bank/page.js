@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import AppShell from '@/components/AppShell'
 import { hasPermission } from '@/lib/permissions'
+import { layMe } from '@/lib/khoiDong'
 
 // Đối soát ngân hàng (/bank) — tiền vào từ VPS (ACB tức thì, Techcombank theo sao kê sáng hôm sau).
 // Trang KHÔNG tự ghi gì: người có quyền `bank_reconcile` bấm "Ghi" mới ghi vào công nợ, và server
@@ -86,7 +87,7 @@ export default function BankPage() {
 
   useEffect(() => {
     (async () => {
-      const me = await fetch('/api/admin/me', { cache: 'no-store' }).then(r => r.json()).catch(() => null)
+      const me = await layMe().catch(() => null)
       if (!me || me.error) { router.push('/login'); return }
       const ok = await hasPermission(me.roles?.length ? me.roles : me.role, 'bank_reconcile')
       if (!ok) { router.push('/dashboard'); return }

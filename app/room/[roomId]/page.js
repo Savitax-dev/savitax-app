@@ -9,6 +9,7 @@ import { soExcelMoi, themSheetMang, taiVeExcel } from '@/lib/excelDep'
 import KhoiDongTien from '@/components/KhoiDongTien'
 import { feeCountsForMonth } from '@/lib/feeDue'
 import { isSharedRoom } from '@/lib/specialRooms'
+import { layMe } from '@/lib/khoiDong'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
 const fmtNgay = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : ''
@@ -137,7 +138,7 @@ export default function RoomPage({ params }) {
       // đã tính kiêm nhiệm) nhưng trang này tự chặn vì chỉ nhìn phòng chính.
       // Phải khớp điều kiện với requireRoomAccess ở lib/serverAuth.js — sửa một bên mà quên bên kia thì
       // hoặc bị chặn oan ở đây, hoặc lọt qua giao diện rồi API mới báo lỗi.
-      const me = await fetch('/api/admin/me', { cache: 'no-store' }).then(r => r.json()).catch(() => null)
+      const me = await layMe().catch(() => null)
       if (!me || me.error) { router.push('/login'); return }
       const roles = me.roles?.length ? me.roles : [me.role].filter(Boolean)
       const roomIds = me.roomIds?.length ? me.roomIds : [me.roomId].filter(Boolean)
