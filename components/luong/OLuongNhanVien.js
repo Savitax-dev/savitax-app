@@ -12,7 +12,8 @@ const soNhap = s => { const v = String(s ?? '').replace(/[^\d]/g, ''); return v 
 const thangNay = () => { const d = new Date(Date.now() + 7 * 3600e3); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') }
 
 // dsNganHang: tài khoản của mọi nhân viên — dùng gợi ý tên ngân hàng + tự điền mã ngân hàng đã từng nhập.
-export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, dsNganHang = [], capBac, sua, onDaLuu }) {
+// hoSo: { ma_nhan_vien, ngay_vao_lam, cham_cong_may } (sql/38) — mã theo phần mềm chấm công, ngày vào làm (thâm niên).
+export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, dsNganHang = [], hoSo = null, capBac, sua, onDaLuu }) {
   const [mo, setMo] = useState(false)
   const [f, setF] = useState(null)
   const [loi, setLoi] = useState(null)
@@ -25,6 +26,7 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, dsN
       doanh_thu_toi_thieu: h.doanh_thu_toi_thieu ?? null, luong_bhxh: h.luong_bhxh ?? null,
       tham_gia_bhxh: !!h.tham_gia_bhxh, so_nguoi_phu_thuoc: Number(h.so_nguoi_phu_thuoc) || 0, ghi_chu: '',
       ngan_hang: nganHang?.ngan_hang || '', so_tai_khoan: nganHang?.so_tai_khoan || '', chu_tai_khoan: nganHang?.chu_tai_khoan || tenNv || '', ma_ngan_hang: nganHang?.ma_ngan_hang || '',
+      ma_nhan_vien: hoSo?.ma_nhan_vien || '', ngay_vao_lam: hoSo?.ngay_vao_lam || '', cham_cong_may: hoSo?.cham_cong_may !== false,
     })
     setLoi(null); setMo(true)
   }
@@ -45,9 +47,15 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, dsN
       || f.tham_gia_bhxh !== !!h.tham_gia_bhxh || f.so_nguoi_phu_thuoc !== (Number(h.so_nguoi_phu_thuoc) || 0)
     const doiNh = ['ngan_hang', 'so_tai_khoan', 'chu_tai_khoan', 'ma_ngan_hang'].some(k => (f[k] || '') !== (nganHang?.[k] || (k === 'chu_tai_khoan' && !nganHang ? tenNv || '' : '')))
       && (f.so_tai_khoan || nganHang)
+    const doiHs = (f.ma_nhan_vien || '') !== (hoSo?.ma_nhan_vien || '') || (f.ngay_vao_lam || '') !== (hoSo?.ngay_vao_lam || '')
+      || f.cham_cong_may !== (hoSo?.cham_cong_may !== false)
     setBan(true); setLoi(null)
+    if (doiHs) {
+      const j = await goi({ viec: 'luu_ho_so_nv', ma_nhan_vien: f.ma_nhan_vien, ngay_vao_lam: f.ngay_vao_lam, cham_cong_may: f.cham_cong_may })
+      if (j.error) { setBan(false); setLoi(j.error); return }
+    }
     if (doiLuong) {
-      const { ngan_hang, so_tai_khoan, chu_tai_khoan, ma_ngan_hang, ...luong } = f
+      const { ngan_hang, so_tai_khoan, chu_tai_khoan, ma_ngan_hang, ma_nhan_vien, ngay_vao_lam, cham_cong_may, ...luong } = f
       const j = await goi({ viec: 'luu_luong_nv', ...luong })
       if (j.error) { setBan(false); setLoi(j.error); return }
     }
@@ -61,14 +69,33 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, dsN
 
   const maTheoTen = new Map(dsNganHang.filter(x => x.ngan_hang && x.ma_ngan_hang).map(x => [x.ngan_hang.trim().toLowerCase(), String(x.ma_ngan_hang)]))
   const ten = capBac?.find(c => c.ma === hienHanh?.cap_bac)?.ten
+  // Ô tóm tắt GỌN 2 dòng (anh yêu cầu 23/10/2026) — chi tiết đầy đủ hiện khi rê chuột.
+  const fmtGon = n => { const v = Number(n) || 0; return v >= 1e6 ? (Math.round(v / 1e5) / 10).toLocaleString('vi-VN') + 'tr' : v.toLocaleString('vi-VN') }
+  const npt = Number(hienHanh?.so_nguoi_phu_thuoc) || 0
+  const stk = nganHang?.so_tai_khoan ? String(nganHang.so_tai_khoan) : ''
+  const chiTiet = [
+    hienHanh ? (ten || 'Chưa gán cấp') + ' · lương ' + fmt(hienHanh.luong_co_ban) : 'Chưa đặt lương',
+    hienHanh ? (hienHanh.tham_gia_bhxh ? 'Đóng BHXH trên ' + fmt(hienHanh.luong_bhxh) : 'Không tham gia BHXH') : null,
+    hienHanh ? npt + ' người phụ thuộc' : null,
+    hienHanh ? 'Áp dụng từ ' + String(hienHanh.ap_dung_tu).slice(5, 7) + '/' + String(hienHanh.ap_dung_tu).slice(0, 4) : null,
+    stk ? 'Tài khoản: ' + (nganHang.ngan_hang || '') + ' ' + stk + (nganHang.chu_tai_khoan ? ' · ' + nganHang.chu_tai_khoan : '') : 'Chưa có tài khoản nhận lương',
+    hoSo?.ma_nhan_vien ? 'Mã NV ' + hoSo.ma_nhan_vien : 'Chưa có mã NV',
+    hoSo?.ngay_vao_lam ? 'Vào làm ' + String(hoSo.ngay_vao_lam).split('-').reverse().join('/') : null,
+    hoSo?.cham_cong_may === false ? 'Tự khai công (không chấm máy)' : null,
+  ].filter(Boolean).join('\n')
+  const phu = [
+    hienHanh ? (hienHanh.tham_gia_bhxh ? 'BHXH ' + fmtGon(hienHanh.luong_bhxh) : 'Không BHXH') : null,
+    npt ? npt + ' NPT' : null,
+    stk ? '🏦 ··' + stk.slice(-4) : null,
+    hoSo?.cham_cong_may === false ? 'tự khai công' : null,
+  ].filter(Boolean).join(' · ')
   const tom = (
-    <div className="text-xs leading-relaxed whitespace-nowrap">
-      {hienHanh ? <>
-        <div className="text-gray-800"><b>{ten || 'Chưa gán cấp'}</b> · {fmt(hienHanh.luong_co_ban)}</div>
-        <div className="text-gray-400">BHXH {hienHanh.tham_gia_bhxh ? fmt(hienHanh.luong_bhxh) : 'không tham gia'}{Number(hienHanh.so_nguoi_phu_thuoc) ? ' · ' + hienHanh.so_nguoi_phu_thuoc + ' NPT' : ''} · từ {String(hienHanh.ap_dung_tu).slice(5, 7)}/{String(hienHanh.ap_dung_tu).slice(0, 4)}</div>
-      </> : <span className="text-gray-400">Chưa đặt lương</span>}
-      {nganHang?.so_tai_khoan && <div className="text-gray-400">🏦 {nganHang.ngan_hang || 'NH'} ·· {String(nganHang.so_tai_khoan).slice(-4)}</div>}
-      {sua && <button onClick={batDau} className="text-[#8B1A1A] underline mt-0.5">{hienHanh ? 'Đổi' : 'Đặt lương'}</button>}
+    <div className="text-xs leading-relaxed whitespace-nowrap cursor-default" title={chiTiet}>
+      <div className={hienHanh ? 'text-gray-800' : 'text-gray-400'}>
+        {hienHanh ? <><b>{ten || 'Chưa gán cấp'}</b> · {fmt(hienHanh.luong_co_ban)}</> : 'Chưa đặt lương'}
+        {sua && <button onClick={batDau} className="ml-1.5 text-[#8B1A1A] underline">{hienHanh ? 'Đổi' : 'Đặt lương'}</button>}
+      </div>
+      {phu && <div className="text-gray-400">{phu}</div>}
     </div>
   )
   if (!mo) return tom
@@ -79,6 +106,19 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, dsN
     <div className="text-sm space-y-2 w-full max-w-sm bg-white border border-gray-200 rounded-xl p-4 shadow-xl" onClick={e => e.stopPropagation()}>
       <div className="font-semibold text-gray-900">{tenNv ? 'Lương · ' + tenNv : 'Cấp bậc & lương'}</div>
       <div className="flex items-center gap-1">
+        <span className="text-gray-500 w-28">Mã nhân viên</span>
+        <input value={f.ma_nhan_vien} onChange={e => setF(v => ({ ...v, ma_nhan_vien: e.target.value.replace(/\s+/g, '').toUpperCase() }))} maxLength={20}
+          placeholder="theo máy chấm công" className="w-36 border border-gray-300 rounded px-2 py-1" />
+      </div>
+      <div className="flex items-center gap-1">
+        <span className="text-gray-500 w-28">Ngày vào làm</span>
+        <input type="date" value={f.ngay_vao_lam} onChange={e => setF(v => ({ ...v, ngay_vao_lam: e.target.value }))} className="border border-gray-300 rounded px-1 py-0.5" />
+      </div>
+      <label className="flex items-center gap-1 text-gray-700">
+        <input type="checkbox" checked={f.cham_cong_may} onChange={e => setF(v => ({ ...v, cham_cong_may: e.target.checked }))} />
+        Chấm công bằng máy <span className="text-xs text-gray-400">(bỏ tick: NV online / ban giám đốc tự khai)</span>
+      </label>
+      <div className="flex items-center gap-1 pt-2 border-t border-gray-100">
         <span className="text-gray-500 w-28">Áp dụng từ</span>
         <input type="month" value={f.thang} onChange={e => setF(v => ({ ...v, thang: e.target.value }))} className="border border-gray-300 rounded px-1 py-0.5" />
       </div>

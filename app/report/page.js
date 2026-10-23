@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import BaoCaoPhiDaThu from '@/components/BaoCaoPhiDaThu'
+import BaoCaoThamNien from '@/components/BaoCaoThamNien'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
@@ -28,6 +29,11 @@ export default function ReportPage() {
   const [roomList, setRoomList] = useState([]) // danh sách phòng để hiện filter
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('room')
+  // Tab Thâm niên có cấp bậc (lộ mức lương) → chỉ người có quyền xem lương (view_payroll) thấy.
+  const [xemLuong, setXemLuong] = useState(false)
+  useEffect(() => {
+    fetch('/api/admin/luong?viec=quyen', { cache: 'no-store' }).then(r => r.json()).then(j => setXemLuong(!!j.view)).catch(() => {})
+  }, [])
   const [expandedRoom, setExpandedRoom] = useState(null)
   const [filterRoom, setFilterRoom] = useState('')
 
@@ -126,6 +132,7 @@ export default function ReportPage() {
             { k: 'staff', l: 'Theo nhân viên' },
             // Báo cáo riêng, có bộ lọc ngày của nó — không theo ô Tháng/Năm ở góc trên.
             { k: 'fee', l: 'Phí đã thu' },
+            ...(xemLuong ? [{ k: 'thamnien', l: 'Thâm niên' }] : []),
           ].map(t => (
             <button key={t.k} onClick={() => setTab(t.k)}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
@@ -135,6 +142,7 @@ export default function ReportPage() {
         </div>
 
         {tab === 'fee' && <BaoCaoPhiDaThu />}
+        {tab === 'thamnien' && xemLuong && <BaoCaoThamNien />}
 
         {/* ── TAB 1: Theo phòng ── */}
         {tab === 'room' && (

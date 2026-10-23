@@ -272,10 +272,15 @@ bộ quy tắc). Anh yêu cầu tách cho dễ sửa: đổi quy tắc bước n
 - Bước 3 `khauTru.js`, `chot.js`, `excel.js` + `api/admin/luong/chot`: BHXH 10,5% + KPCĐ 0,5% ×
   lương đóng BHXH + Đoàn phí 40.000 (chỉ người tick tham gia BHXH). **Thuế TNCN** (`thueTncn.js`, từ 20/10/2026): có BHXH → lũy tiến 5 bậc sau
   giảm trừ 15,5tr + 6,2tr/người phụ thuộc + BHXH; thử việc/học việc → 10% tổng thu nhập (cố ý không áp mốc
-  2 triệu). Nút 🏦 File chuyển khoản (`fileChuyenKhoan.js`, chỉ khi đã chốt) xuất đúng 12 cột mẫu ngân hàng,
+  2 triệu). Công ty đóng BHXH 17,5% + BHYT 3% + BHTN 1% + KPCĐ 2% (`congTyDong`, không trừ lương) → Excel có
+  sheet "Tong hop BHXH" (tổng nộp 32%). Nút 🏦 File chuyển khoản (`fileChuyenKhoan.js`, chỉ khi đã chốt) xuất đúng 12 cột mẫu ngân hàng,
   không thêm dòng lạ; mã ngân hàng nhập ở ô Lương trang nhân viên (sql/36). Chốt = chụp
   nguyên bảng lương vào `luong_bang_chot`; mở chốt bắt buộc lý do. Excel có công thức: KPI tác
   phong tự tính theo phòng; phụ cấp / điều chỉnh ngoại lệ prefill từ app, sửa trên file thì file tự tính.
+- **Phòng remote không tính lương.** Nhập file máy chấm công (`mayChamCong.js`, sql/38) → bảng công nháp từ máy, NV chỉ
+  Xác nhận / Báo sai; mã NV ở `staff.ma_nhan_vien` (mã trên file sẽ đổi), `staff.cham_cong_may = false` cho NV online /
+  ban giám đốc. File hồ sơ lương (`fileHoSoLuong.js`) nhận người theo email. Quy đổi cột: xem lib/luong/README.md.
+  Báo cáo thâm niên (`thamNien.js`, tab Báo cáo KPI, chỉ view_payroll): mốc lên cấp đọc từ MÔ TẢ cấp bậc.
 - Tác phong (sql/34): nhân viên TỰ KHAI số lần vi phạm cùng ngày công; người = 100 − 20 × số lần, phòng =
   trung bình; điểm KPI phòng = TB(việc, nợ, tác phong) → thưởng phòng app tự tính. Phụ cấp / điều chỉnh nhập
   trên tab Bảng lương (`luong_dieu_chinh`) trước khi chốt.

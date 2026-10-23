@@ -61,12 +61,12 @@ export default function AdminStaffPage() {
         fetch('/api/admin/luong?viec=luong_nv', { cache: 'no-store' }).then(r => r.json()),
       ])
       if (cb.error || ls.error) { setLuong(null); return }
-      setLuong({ sua: !!q.manage, capBac: cb.data || [], lichSu: ls.data || [], nganHang: ls.nganHang || [] })
+      setLuong({ sua: !!q.manage, capBac: cb.data || [], lichSu: ls.data || [], nganHang: ls.nganHang || [], hoSo: ls.hoSo || [] })
     } catch { setLuong(null) }
   }
   useEffect(() => { taiLuong() }, [])
   const thangNayVN = (() => { const d = new Date(Date.now() + 7 * 3600e3); return { nam: d.getUTCFullYear(), thang: d.getUTCMonth() + 1 } })()
-  const soCot = luong ? 8 : 7
+  const soCot = luong ? 7 : 6   // email / SĐT gộp vào cột Họ tên (anh yêu cầu cân đối trang 23/10)
 
   const loadExtraRoles = async () => {
     try {
@@ -374,7 +374,7 @@ export default function AdminStaffPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  {['Họ tên', 'Email / SĐT', 'Phòng', ...(luong ? ['Cấp bậc · Lương'] : []), 'Vai trò', 'Số CT', 'Trạng thái', ''].map((h, i) => (
+                  {['Nhân viên', 'Phòng', ...(luong ? ['Cấp bậc · Lương'] : []), 'Vai trò', 'Số CT', 'Trạng thái', ''].map((h, i) => (
                     <th key={i} className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -393,36 +393,33 @@ export default function AdminStaffPage() {
                     <Fragment key={s.id}>
                     <tr className={isEditing ? 'bg-blue-50' : 'hover:bg-gray-50'}>
 
-                      {/* Tên */}
-                      <td className="px-4 py-3">
-                        {isEditing ? (
-                          <input value={editForm.full_name} onChange={e => setEditForm(f => ({ ...f, full_name: e.target.value }))}
-                            className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none" />
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                              <span className="text-xs font-semibold text-blue-600">{s.full_name?.charAt(0)}</span>
-                            </div>
-                            <span className="font-medium text-gray-900 whitespace-nowrap">{s.full_name}</span>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Email / SĐT */}
-                      <td className="px-4 py-3">
+                      {/* Nhân viên: tên + email / SĐT (gộp một ô cho bảng vừa màn hình) */}
+                      <td className="px-4 py-3 min-w-[230px]">
                         {isEditing ? (
                           <div className="space-y-1">
+                            <input value={editForm.full_name} onChange={e => setEditForm(f => ({ ...f, full_name: e.target.value }))}
+                              placeholder="Họ tên" className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none" />
                             <input type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))}
-                              placeholder="Email"
-                              className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none" />
+                              placeholder="Email" className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none" />
                             <input value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))}
-                              placeholder="SĐT"
-                              className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none" />
+                              placeholder="SĐT" className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none" />
                           </div>
                         ) : (
-                          <div>
-                            <p className="text-gray-700">{s.email}</p>
-                            {s.phone && <p className="text-xs text-gray-400">{s.phone}</p>}
+                          <div className="flex items-center gap-2.5">
+                            {/* Mã nhân viên thay cho chữ cái đầu (anh yêu cầu 23/10/2026). Mã nằm ở dữ liệu lương (sql/38) nên
+                                chỉ người xem được lương thấy; chưa có mã / không có quyền thì vẫn hiện chữ cái đầu. */}
+                            {(() => {
+                              const ma = luong?.hoSo?.find(x => x.id === s.id)?.ma_nhan_vien
+                              return ma
+                                ? <div title={'Mã nhân viên ' + ma} className="min-w-[46px] h-8 px-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-mono text-[11px] font-bold flex items-center justify-center flex-shrink-0">{ma}</div>
+                                : <div title={luong ? 'Chưa có mã nhân viên' : ''} className="min-w-[46px] h-8 rounded-lg bg-gray-50 border border-dashed border-gray-200 flex items-center justify-center flex-shrink-0">
+                                    <span className="text-xs font-semibold text-gray-400">{s.full_name?.trim().split(' ').pop()?.charAt(0)}</span>
+                                  </div>
+                            })()}
+                            <div className="min-w-0">
+                              <div className="font-medium text-gray-900 whitespace-nowrap">{s.full_name}</div>
+                              <div className="text-xs text-gray-500 truncate">{s.email}{s.phone ? ' · ' + s.phone : ''}</div>
+                            </div>
                           </div>
                         )}
                       </td>
@@ -482,7 +479,7 @@ export default function AdminStaffPage() {
                                 </div>
                               ) : isAdmin ? (
                                 <button onClick={() => { setAddingFor(s.id); setNewExtra({ room_id: '', role: '' }) }}
-                                  className="text-xs text-amber-700 hover:underline">+ Kiêm nhiệm phòng khác</button>
+                                  className="text-xs text-amber-700 hover:underline">+ Kiêm nhiệm</button>
                               ) : null}
                             </div>
                           )
@@ -491,14 +488,14 @@ export default function AdminStaffPage() {
 
                       {luong && (
                         <td className="px-4 py-3 align-top">
-                          <OLuongNhanVien staffId={s.id} tenNv={s.full_name} capBac={luong.capBac} nganHang={luong.nganHang.find(x => x.staff_id === s.id) || null} dsNganHang={luong.nganHang} sua={luong.sua} onDaLuu={taiLuong}
+                          <OLuongNhanVien staffId={s.id} tenNv={s.full_name} capBac={luong.capBac} nganHang={luong.nganHang.find(x => x.staff_id === s.id) || null} dsNganHang={luong.nganHang} hoSo={luong.hoSo.find(x => x.id === s.id) || null} sua={luong.sua} onDaLuu={taiLuong}
                             hienHanh={luongCuaThang(luong.lichSu.filter(x => x.staff_id === s.id), thangNayVN.nam, thangNayVN.thang)
                               || luong.lichSu.filter(x => x.staff_id === s.id).sort((a, b) => String(a.ap_dung_tu).localeCompare(String(b.ap_dung_tu)))[0] || null} />
                         </td>
                       )}
 
                       {/* Vai trò — chỉ admin được đổi, trưởng phòng chỉ xem */}
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         {isEditing && isAdmin ? (
                           <select value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}
                             className="px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none">
@@ -525,7 +522,7 @@ export default function AdminStaffPage() {
                       </td>
 
                       {/* Trạng thái */}
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={'text-xs px-2 py-0.5 rounded-full font-medium ' + (s.is_active !== false ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')}>
                           {s.is_active !== false ? 'Hoạt động' : 'Vô hiệu'}
                         </span>
@@ -544,36 +541,25 @@ export default function AdminStaffPage() {
                             {error && <span className="text-xs text-red-500">{error}</span>}
                           </div>
                         ) : (
-                          <div className="flex gap-2">
-                            <button
+                          // Nút biểu tượng gọn (rê chuột xem tên) — 4 nút chữ cũ làm bảng tràn, cột cuối bị khuất.
+                          <div className="flex justify-end gap-1">
+                            <button title="Sửa thông tin"
                               onClick={() => { setEditId(s.id); setError(''); setEditForm({ email: s.email, full_name: s.full_name, phone: s.phone ?? '', room_id: s.room_id, role: s.role }) }}
-                              className="text-xs text-gray-500 hover:text-blue-600 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
-                            >
-                              Sửa
-                            </button>
-                            <button
+                              className="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-colors">✎</button>
+                            <button title={s.is_active !== false ? 'Vô hiệu hóa tài khoản' : 'Kích hoạt lại'}
                               onClick={() => toggleActive(s)}
-                              className={'text-xs px-2 py-1 rounded transition-colors ' + (s.is_active !== false
-                                ? 'text-gray-400 hover:text-red-500 hover:bg-red-50'
-                                : 'text-gray-400 hover:text-green-600 hover:bg-green-50')}
-                            >
-                              {s.is_active !== false ? 'Vô hiệu hóa' : 'Kích hoạt'}
-                            </button>
+                              className={'w-8 h-8 rounded-lg border border-gray-200 transition-colors ' + (s.is_active !== false
+                                ? 'text-gray-400 hover:text-red-500 hover:border-red-300 hover:bg-red-50'
+                                : 'text-green-600 hover:border-green-300 hover:bg-green-50')}>{s.is_active !== false ? '⏸' : '▶'}</button>
                             {isAdmin && (
-                              <button
+                              <button title="Đặt lại mật khẩu"
                                 onClick={() => { setResetId(s.id); setResetPass(''); setResetMsg(m => ({ ...m, [s.id]: '' })) }}
-                                className="text-xs text-gray-500 hover:text-amber-600 px-2 py-1 rounded hover:bg-amber-50 transition-colors"
-                              >
-                                Đặt lại MK
-                              </button>
+                                className="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:text-amber-600 hover:border-amber-300 hover:bg-amber-50 transition-colors">🔑</button>
                             )}
                             {isAdmin && (
-                              <button
+                              <button title="Xóa nhân viên"
                                 onClick={() => deleteStaff(s)}
-                                className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded hover:bg-red-50 transition-colors"
-                              >
-                                Xóa
-                              </button>
+                                className="w-8 h-8 rounded-lg border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 hover:bg-red-50 transition-colors">🗑</button>
                             )}
                           </div>
                         )}

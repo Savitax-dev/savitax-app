@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ngayCongChuan } from '@/lib/luong/ngayCong'
 import { pad, soNhap, thuVN, goi, HopThongBao } from './chung'
+import HoSoLuongExcel from './HoSoLuongExcel'
 
 // ── Cấp bậc & ngày lễ ────────────────────────────────────────────────────────
 export default function ThietLap() {
@@ -54,6 +55,7 @@ export default function ThietLap() {
 
   return (
     <div className="space-y-4">
+      <HoSoLuongExcel />
       <HopThongBao msg={msg} />
       <div className="grid grid-cols-1 2xl:grid-cols-5 gap-4 items-start">
         <div className="2xl:col-span-3 rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">

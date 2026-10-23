@@ -60,10 +60,11 @@ export default function LuongPage() {
         <div className="flex flex-wrap gap-2 mb-5 w-full p-2 rounded-2xl bg-white border border-gray-200 shadow-sm">
           {tabs.map(([k, l, ic]) => (
             <button key={k} onClick={() => setTab(k)}
-              className={'flex-1 min-w-[170px] flex items-center justify-center gap-2 px-4 py-2.5 text-sm rounded-xl border transition-all ' + (tab === k
+              // whitespace-nowrap: chữ đậm của tab đang chọn dài hơn → từng xuống 2 dòng, cả thanh cao lệch (anh báo 23/10).
+              className={'flex-1 min-w-[170px] flex items-center justify-center gap-2 px-3 py-2.5 text-sm whitespace-nowrap rounded-xl border transition-all ' + (tab === k
                 ? 'bg-[#8B1A1A] border-[#8B1A1A] text-white font-semibold shadow-md'
                 : 'bg-gray-50 border-gray-100 text-gray-700 hover:border-[#8B1A1A]/30 hover:bg-rose-50 hover:text-[#8B1A1A]')}>
-              <span className="text-lg leading-none">{ic}</span>{l}
+              <span className="text-lg leading-none">{ic}</span><span className="truncate">{l}</span>
             </button>
           ))}
         </div>

@@ -85,7 +85,7 @@ export default function BangLuong({ quyen }) {
 
       {d && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-6 2xl:grid-cols-11 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-7 2xl:grid-cols-13 gap-3">
             {[['Lương theo công', tong('luongTheoCong'), 'bg-blue-50 border-blue-200 text-blue-900'],
               ['Thưởng KPI công việc', tong('thuongViec'), 'bg-emerald-50 border-emerald-200 text-emerald-900'],
               ['Thưởng KPI công nợ', tong('thuongNo'), 'bg-teal-50 border-teal-200 text-teal-900'],
@@ -96,6 +96,9 @@ export default function BangLuong({ quyen }) {
               ['Thu nhập', tong('thuNhap'), 'bg-slate-50 border-slate-200 text-slate-900'],
               ['Khoản trừ', ds.reduce((a, x) => a + (x.khauTru?.tong || 0), 0), 'bg-rose-50 border-rose-200 text-rose-900'],
               ['Thuế TNCN', ds.reduce((a, x) => a + (x.thueTncn?.thue || 0), 0), 'bg-red-50 border-red-200 text-red-900'],
+              // Phần công ty đóng (không trừ lương) + tổng nộp cơ quan BHXH 32% (anh yêu cầu 23/10/2026).
+              ['Cty đóng BH + KPCĐ', ds.reduce((a, x) => a + (x.congTyDong?.tong || 0), 0), 'bg-indigo-50 border-indigo-200 text-indigo-900'],
+              ['Tổng nộp BHXH (32%)', ds.reduce((a, x) => a + (x.khauTru?.bhxh || 0) + (x.congTyDong?.nopBhxh || 0), 0), 'bg-indigo-100 border-indigo-300 text-indigo-950'],
               ['Thực lĩnh', tong('thucLinh'), 'bg-gray-900 border-gray-900 text-white']].map(([l, v, c]) => (
               <div key={l} className={'rounded-2xl border p-4 ' + c}><div className="text-xs font-medium opacity-80">{l}</div><div className="text-xl font-bold mt-1">{fmt(v)}</div></div>
             ))}

@@ -384,7 +384,8 @@ export default function AdminClientsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  {['Mã KH', 'Tên công ty', 'MST', 'NV phụ trách', 'Phòng', 'NV phụ', 'Loại BC', 'Phí/tháng', 'Trạng thái', ''].map(h => (
+                  {/* 10 cột cũ tràn ngang → gộp còn 6 (anh yêu cầu cân đối trang 23/10/2026) */}
+                  {['Công ty', 'NV phụ trách', 'NV phụ', 'Báo cáo · Phí', 'Trạng thái', ''].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -392,7 +393,7 @@ export default function AdminClientsPage() {
               <tbody className="divide-y divide-gray-50">
                 {displayed.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-sm text-gray-400">Không có công ty nào</td>
+                    <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400">Không có công ty nào</td>
                   </tr>
                 )}
                 {displayed.map(c => {
@@ -400,33 +401,30 @@ export default function AdminClientsPage() {
                   return (
                     <tr key={c.id} className={isEditing ? 'bg-blue-50' : 'hover:bg-gray-50'}>
 
-                      {/* Mã KH */}
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      {/* Công ty: tên + mã KH · MST */}
+                      <td className="px-4 py-3 min-w-[260px]">
                         {isEditing ? (
-                          <input value={editForm.client_code || ''} onChange={e => setEditForm(f => ({ ...f, client_code: e.target.value }))}
-                            placeholder="KH001"
-                            className="w-20 px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none font-mono" />
-                        ) : c.client_code ? (
-                          <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded font-mono font-semibold">{c.client_code}</span>
-                        ) : <span className="text-gray-300 text-xs">—</span>}
-                      </td>
-
-                      {/* Tên */}
-                      <td className="px-4 py-3 font-medium text-gray-900 max-w-48">
-                        {isEditing ? (
-                          <input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
-                            className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none" />
+                          <div className="space-y-1">
+                            <input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                              placeholder="Tên công ty" className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none" />
+                            <div className="flex gap-1">
+                              <input value={editForm.client_code || ''} onChange={e => setEditForm(f => ({ ...f, client_code: e.target.value }))}
+                                placeholder="Mã KH" className="w-24 px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none font-mono" />
+                              <input value={editForm.tax_code} onChange={e => setEditForm(f => ({ ...f, tax_code: e.target.value }))}
+                                placeholder="MST" className="flex-1 px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none" />
+                            </div>
+                          </div>
                         ) : (
-                          <span className="truncate block">{c.name}</span>
+                          <div>
+                            <div className="font-medium text-gray-900 leading-snug">{c.name}</div>
+                            <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500">
+                              {c.client_code
+                                ? <span className="bg-blue-50 text-blue-700 border border-blue-200 px-1.5 rounded font-mono font-semibold">{c.client_code}</span>
+                                : <span className="text-gray-300">chưa có mã</span>}
+                              {c.tax_code && <span>MST {c.tax_code}</span>}
+                            </div>
+                          </div>
                         )}
-                      </td>
-
-                      {/* MST */}
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
-                        {isEditing ? (
-                          <input value={editForm.tax_code} onChange={e => setEditForm(f => ({ ...f, tax_code: e.target.value }))}
-                            className="w-28 px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none" />
-                        ) : c.tax_code}
                       </td>
 
                       {/* NV phụ trách — dropdown thay đổi ngay */}
@@ -442,7 +440,7 @@ export default function AdminClientsPage() {
                           </select>
                         ) : (
                           <select value={c.assigned_to || ''} onChange={e => quickChangeStaff(c.id, e.target.value)}
-                            className="text-sm text-gray-700 bg-transparent border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 rounded max-w-36 truncate">
+                            className="text-sm text-gray-700 bg-transparent border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 rounded max-w-44 truncate -ml-1">
                             {staffByRoom.map(g => (
                               <optgroup key={g.room.id} label={g.room.name}>
                                 {g.staff.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
@@ -450,11 +448,7 @@ export default function AdminClientsPage() {
                             ))}
                           </select>
                         )}
-                      </td>
-
-                      {/* Phòng */}
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
-                        {c.staff?.rooms?.name ?? '—'}
+                        <div className="text-xs text-gray-400">{c.staff?.rooms?.name ? 'Phòng ' + c.staff.rooms.name : '—'}</div>
                       </td>
 
                       {/* NV phụ — có thể nhiều, khác phòng, chỉ theo dõi không tính doanh thu */}
@@ -488,34 +482,31 @@ export default function AdminClientsPage() {
                         </div>
                       </td>
 
-                      {/* Loại báo cáo */}
+                      {/* Báo cáo · Phí */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         {isEditing ? (
-                          <select value={editForm.report_type} onChange={e => setEditForm(f => ({ ...f, report_type: e.target.value }))}
-                            className="px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none">
-                            <option value="monthly">Tháng</option>
-                            <option value="quarterly">Quý</option>
-                          </select>
+                          <div className="space-y-1">
+                            <select value={editForm.report_type} onChange={e => setEditForm(f => ({ ...f, report_type: e.target.value }))}
+                              className="px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none">
+                              <option value="monthly">BC Tháng</option>
+                              <option value="quarterly">BC Quý</option>
+                            </select>
+                            <input type="number" min={0} value={editForm.monthly_fee}
+                              onChange={e => setEditForm(f => ({ ...f, monthly_fee: e.target.value }))}
+                              placeholder="Phí" className="block w-32 px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none" />
+                          </div>
                         ) : (
-                          <span className={'text-xs px-2 py-0.5 rounded-full font-medium ' + (c.report_type === 'quarterly' ? 'bg-purple-50 text-purple-600' : 'bg-gray-50 text-gray-600')}>
-                            {c.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Phí */}
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {isEditing ? (
-                          <input type="number" min={0} value={editForm.monthly_fee}
-                            onChange={e => setEditForm(f => ({ ...f, monthly_fee: e.target.value }))}
-                            className="w-28 px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none" />
-                        ) : (
-                          <span className="text-gray-700">{fmt(c.monthly_fee)}đ/{c.fee_period === 'quarterly' ? 'Quý' : 'Tháng'}</span>
+                          <div>
+                            <span className={'text-xs px-2 py-0.5 rounded-full font-medium ' + (c.report_type === 'quarterly' ? 'bg-purple-50 text-purple-600' : 'bg-gray-100 text-gray-600')}>
+                              BC {c.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
+                            </span>
+                            <div className="text-gray-800 mt-1">{fmt(c.monthly_fee)}đ<span className="text-xs text-gray-400">/{c.fee_period === 'quarterly' ? 'Quý' : 'Tháng'}</span></div>
+                          </div>
                         )}
                       </td>
 
                       {/* Trạng thái — dropdown thay đổi ngay */}
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         {isEditing ? (
                           <select value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}
                             className="px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none">
@@ -539,17 +530,13 @@ export default function AdminClientsPage() {
                               className="text-xs text-gray-400 hover:text-gray-600">Hủy</button>
                           </div>
                         ) : (
-                          <div className="flex gap-1.5">
-                            <button
+                          <div className="flex justify-end gap-1">
+                            <button title="Sửa thông tin công ty"
                               onClick={() => { setEditId(c.id); setEditForm({ name: c.name, tax_code: c.tax_code, client_code: c.client_code || '', assigned_to: c.assigned_to, report_type: c.report_type || 'monthly', monthly_fee: c.monthly_fee || '', status: c.status || 'active', address: c.address || '' }) }}
-                              className="text-xs text-gray-500 hover:text-blue-600 px-2 py-1 rounded hover:bg-blue-50 transition-colors">
-                              Sửa
-                            </button>
+                              className="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-colors">✎</button>
                             {myRole === 'admin' && (
-                              <button onClick={() => deleteClient(c)}
-                                className="text-xs text-gray-400 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors">
-                                Xóa
-                              </button>
+                              <button title="Xóa công ty" onClick={() => deleteClient(c)}
+                                className="w-8 h-8 rounded-lg border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 hover:bg-red-50 transition-colors">🗑</button>
                             )}
                           </div>
                         )}
