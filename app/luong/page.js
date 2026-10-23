@@ -47,22 +47,20 @@ export default function LuongPage() {
   return (
     <AppShell>
       <div className="px-4 md:px-8 py-5 w-full">
-        <div className="flex flex-wrap items-center gap-3 mb-4">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#8B1A1A] to-rose-500 flex items-center justify-center text-white text-xl shadow-sm">🗓️</div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Chấm công & Lương</h1>
-            <p className="text-sm text-gray-500">Ngày công chuẩn = số ngày của tháng trừ chủ nhật và ngày lễ · thứ Bảy tính đủ một công</p>
-          </div>
+        {/* Tiêu đề bên trái, bỏ dòng ghi chú (anh yêu cầu 23/10/2026) — cách tính công chuẩn đã ghi ở tab chấm công. */}
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#8B1A1A] to-rose-500 flex items-center justify-center text-white text-lg shadow-sm">🗓️</div>
+          <h1 className="text-xl font-bold text-gray-900">Chấm công & Lương</h1>
         </div>
 
         {/* Các tab là những KHỐI tách rời, chia đều hết bề ngang: quản trị 5 khối, nhân viên 2 khối thì
             mỗi khối tự giãn ra cho đều (flex-1), màn hẹp thì tự xuống dòng. */}
         {/* Một khung chung bao các khối — vẫn tách từng khối nhưng nhìn thành một thanh. */}
-        <div className="flex flex-wrap gap-2 mb-5 w-full p-2 rounded-2xl bg-white border border-gray-200 shadow-sm">
+        <div className="flex flex-wrap gap-1.5 mb-3 w-full p-1.5 rounded-2xl bg-white border border-gray-200 shadow-sm">
           {tabs.map(([k, l, ic]) => (
             <button key={k} onClick={() => setTab(k)}
               // whitespace-nowrap: chữ đậm của tab đang chọn dài hơn → từng xuống 2 dòng, cả thanh cao lệch (anh báo 23/10).
-              className={'flex-1 min-w-[170px] flex items-center justify-center gap-2 px-3 py-2.5 text-sm whitespace-nowrap rounded-xl border transition-all ' + (tab === k
+              className={'flex-1 min-w-[170px] flex items-center justify-center gap-2 px-3 py-2 text-sm whitespace-nowrap rounded-xl border transition-all ' + (tab === k
                 ? 'bg-[#8B1A1A] border-[#8B1A1A] text-white font-semibold shadow-md'
                 : 'bg-gray-50 border-gray-100 text-gray-700 hover:border-[#8B1A1A]/30 hover:bg-rose-50 hover:text-[#8B1A1A]')}>
               <span className="text-lg leading-none">{ic}</span><span className="truncate">{l}</span>

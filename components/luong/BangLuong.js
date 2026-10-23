@@ -56,25 +56,22 @@ export default function BangLuong({ quyen }) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
         <select value={ky.nam + '-' + ky.thang} onChange={e => { const [y, m] = e.target.value.split('-').map(Number); setKy({ nam: y, thang: m }) }}
-          className="border border-gray-200 bg-white rounded-xl px-3 py-2 text-sm font-medium shadow-sm">
+          className="border border-gray-200 bg-white rounded-xl px-3 py-1.5 text-sm font-medium shadow-sm">
           {thangChon.map(t => <option key={t.nam + '-' + t.thang} value={t.nam + '-' + t.thang}>Lương tháng {t.thang}/{t.nam}</option>)}
         </select>
         {dsPhong.length > 1 && (
-          <select value={phong} onChange={e => setPhong(e.target.value)} className="border border-gray-200 bg-white rounded-xl px-3 py-2 text-sm shadow-sm">
+          <select value={phong} onChange={e => setPhong(e.target.value)} className="border border-gray-200 bg-white rounded-xl px-3 py-1.5 text-sm shadow-sm">
             <option value="">Tất cả phòng</option>
             {dsPhong.map(p => <option key={p} value={p}>Phòng {p}</option>)}
           </select>
         )}
-        <input value={tim} onChange={e => setTim(e.target.value)} placeholder="🔍 Tìm nhân viên…" className="border border-gray-200 bg-white rounded-xl px-3 py-2 text-sm shadow-sm w-56" />
-        {d && <div className="flex flex-wrap gap-2 text-xs">
-          <span className="rounded-full bg-blue-50 text-blue-800 border border-blue-200 px-3 py-1">Công chuẩn {d.ngayCongChuan}</span>
-          <span className="rounded-full bg-violet-50 text-violet-800 border border-violet-200 px-3 py-1">%-công việc T{d.kyViec.thang}/{d.kyViec.nam}</span>
-          <span className="rounded-full bg-violet-50 text-violet-800 border border-violet-200 px-3 py-1">%-công nợ T{d.kyNo.thang}/{d.kyNo.nam}</span>
-          <span className="rounded-full bg-violet-50 text-violet-800 border border-violet-200 px-3 py-1">Doanh thu T{d.kyDoanhThu.thang}/{d.kyDoanhThu.nam} (chưa VAT)</span>
-        </div>}
+        <input value={tim} onChange={e => setTim(e.target.value)} placeholder="🔍 Tìm nhân viên…" className="border border-gray-200 bg-white rounded-xl px-3 py-1.5 text-sm shadow-sm w-56" />
+        {d && <span className="text-xs text-gray-500" title="Kỳ số liệu của bảng lương: %-công việc tháng N, %-công nợ tháng N−1, doanh thu tháng N (chưa VAT)">
+          Công chuẩn <b className="text-blue-800">{d.ngayCongChuan}</b> · việc <b className="text-violet-800">T{d.kyViec.thang}</b> · nợ <b className="text-violet-800">T{d.kyNo.thang}</b> · doanh thu <b className="text-violet-800">T{d.kyDoanhThu.thang}</b>
+        </span>}
       </div>
 
       {/* Bước 3: trạng thái chốt + nút Xuất Excel / Chốt / Mở chốt — components/luong/ThanhChotLuong.js */}
@@ -92,7 +89,8 @@ export default function BangLuong({ quyen }) {
 
       {d && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-7 2xl:grid-cols-14 gap-3">
+          {/* 14 thẻ chia 2 hàng × 7 (anh yêu cầu 23/10): hàng 1 các khoản thu nhập, hàng 2 tổng / khoản trừ / thực lĩnh. */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
             {[['Lương theo công', tong('luongTheoCong'), 'bg-blue-50 border-blue-200 text-blue-900'],
               ['Thưởng KPI công việc', tong('thuongViec'), 'bg-emerald-50 border-emerald-200 text-emerald-900'],
               ['Thưởng KPI công nợ', tong('thuongNo'), 'bg-teal-50 border-teal-200 text-teal-900'],
@@ -108,7 +106,7 @@ export default function BangLuong({ quyen }) {
               ['Cty đóng BH + KPCĐ', ds.reduce((a, x) => a + (x.congTyDong?.tong || 0), 0), 'bg-indigo-50 border-indigo-200 text-indigo-900'],
               ['Tổng nộp BHXH (32%)', ds.reduce((a, x) => a + (x.khauTru?.bhxh || 0) + (x.congTyDong?.nopBhxh || 0), 0), 'bg-indigo-100 border-indigo-300 text-indigo-950'],
               ['Thực lĩnh', tong('thucLinh'), 'bg-gray-900 border-gray-900 text-white']].map(([l, v, c]) => (
-              <div key={l} className={'rounded-2xl border p-4 ' + c}><div className="text-xs font-medium opacity-80">{l}</div><div className="text-xl font-bold mt-1">{fmt(v)}</div></div>
+              <div key={l} className={'rounded-xl border px-3 py-2 ' + c}><div className="text-[11px] font-medium opacity-80 leading-tight truncate">{l}</div><div className="text-lg font-bold leading-tight mt-0.5">{fmt(v)}</div></div>
             ))}
           </div>
 

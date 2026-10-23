@@ -6,6 +6,7 @@ import AppShell from '@/components/AppShell'
 import { hasPermission } from '@/lib/permissions'
 import OLuongNhanVien from '@/components/luong/OLuongNhanVien'
 import { luongCuaThang } from '@/lib/luong/ngayCong'
+import { soThangThamNien, chuThamNien } from '@/lib/luong/thamNien'
 import { layQuyenLuong } from '@/lib/khoiDong'
 
 const ROLE_BADGE_FALLBACK = [
@@ -67,7 +68,7 @@ export default function AdminStaffPage() {
   }
   useEffect(() => { taiLuong() }, [])
   const thangNayVN = (() => { const d = new Date(Date.now() + 7 * 3600e3); return { nam: d.getUTCFullYear(), thang: d.getUTCMonth() + 1 } })()
-  const soCot = luong ? 7 : 6   // email / SĐT gộp vào cột Họ tên (anh yêu cầu cân đối trang 23/10)
+  const soCot = luong ? 8 : 6   // email / SĐT gộp vào cột Họ tên (anh yêu cầu cân đối trang 23/10)
 
   const loadExtraRoles = async () => {
     try {
@@ -375,7 +376,7 @@ export default function AdminStaffPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  {['Nhân viên', 'Phòng', ...(luong ? ['Cấp bậc · Lương'] : []), 'Vai trò', 'Số CT', 'Trạng thái', ''].map((h, i) => (
+                  {['Nhân viên', 'Phòng', ...(luong ? ['Ngày vào làm', 'Cấp bậc · Lương'] : []), 'Vai trò', 'Số CT', 'Trạng thái', ''].map((h, i) => (
                     <th key={i} className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -486,6 +487,20 @@ export default function AdminStaffPage() {
                           )
                         })()}
                       </td>
+
+                      {/* Ngày vào làm chính thức + thâm niên tới hôm nay (anh yêu cầu 23/10/2026) */}
+                      {luong && (() => {
+                        const nv = luong.hoSo.find(x => x.id === s.id)?.ngay_vao_lam
+                        if (!nv) return <td className="px-4 py-3 text-xs text-gray-300">—</td>
+                        const [y, m, d] = String(nv).slice(0, 10).split('-')
+                        const t = soThangThamNien(nv, new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10))
+                        return (
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="text-sm text-gray-800">{d}/{m}/{y}</div>
+                            <div className="text-xs text-gray-400">{chuThamNien(t)}</div>
+                          </td>
+                        )
+                      })()}
 
                       {luong && (
                         <td className="px-4 py-3 align-top">
