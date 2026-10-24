@@ -61,7 +61,8 @@ kiem('thử việc 10% × 7.000.000', thueTncn({ thuNhap: 7000000, thamGiaBhxh: 
 kiem('thử việc thu nhập âm (điều chỉnh) → 0', thueTncn({ thuNhap: -500000, thamGiaBhxh: false }).thue, 0)
 
 console.log('\nKhác:')
-kiem('DVK 10.000.000 × 20%', tienThuongDvk(10000000, 20), 2000000)
+kiem('DVK 10.800.000 (gồm VAT) ÷ 1,08 × 20%', tienThuongDvk(10800000, 20), 2000000)
+kiem('DVK 31.752.000 ÷ 1,08 × 10%', tienThuongDvk(31752000, 10), 2940000)
 kiem('lương 7.700.000 × 25,5/26', luongTheoCong(7700000, 25.5, 26), 7551923)
 kiem('lùi 2 tháng từ T1/2027', thangLui(2027, 1, 2), { nam: 2026, thang: 11 })
 

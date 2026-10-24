@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { tienThuongDvk, chuaVatDvk } from '@/lib/luong/thuong'
 
 // Tab "Thưởng dịch vụ khác" — phân hệ Tiền lương bước 2 (sql/32).
 //   Nhân viên: chọn hồ sơ Dịch vụ khác ĐÃ CÓ THU → nhập số tiền thực nhận + tỉ lệ % → app tính thưởng.
@@ -57,7 +58,7 @@ export default function ThuongDvk({ quyen }) {
     return (d?.hoSo || []).filter(h => !k || searchKey(h.ten + ' ' + h.cty + ' ' + h.ma).includes(k))
   }, [d, tim])
   const chon = (d?.hoSo || []).find(h => h.id === f.service_id)
-  const thuong = f.so_tien && f.ty_le ? Math.round(Number(f.so_tien) * Number(f.ty_le) / 100) : 0
+  const thuong = f.so_tien && f.ty_le ? tienThuongDvk(f.so_tien, f.ty_le) : 0   // trên doanh thu trước thuế (÷ 1,08)
   const vuot = chon && f.so_tien ? chon.daKhai + Number(f.so_tien) > chon.daThu : false
 
   const them = async () => {
@@ -149,9 +150,10 @@ export default function ThuongDvk({ quyen }) {
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
-              <label className="text-xs text-gray-500">Số tiền thực nhận
+              <label className="text-xs text-gray-500">Số tiền thực nhận (gồm VAT)
                 <input value={f.so_tien === '' ? '' : Number(f.so_tien).toLocaleString('vi-VN')} onChange={e => setF(v => ({ ...v, so_tien: soNhap(e.target.value) }))}
                   className="block w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-base text-right font-semibold text-gray-900" placeholder="0" />
+                {f.so_tien !== '' && Number(f.so_tien) > 0 && <span className="block mt-1 text-right text-gray-500">Trước thuế (÷ 1,08): <b className="text-gray-800">{fmt(chuaVatDvk(f.so_tien))}</b></span>}
               </label>
               <label className="text-xs text-gray-500">Tỉ lệ được hưởng (%)
                 <input type="number" min="0" max="100" step="0.5" value={f.ty_le} onChange={e => setF(v => ({ ...v, ty_le: e.target.value }))}
@@ -163,7 +165,7 @@ export default function ThuongDvk({ quyen }) {
               placeholder={f.ngoai_app ? 'Ghi chú BẮT BUỘC: vì sao chưa có trên app, khách trả ngày nào, làm cùng ai…' : 'Ghi chú (vd: làm cùng chị X, phần của em 50%)'}
               className={'w-full border rounded-xl px-3 py-2 text-sm ' + (f.ngoai_app && f.ghi_chu.trim().length < 5 ? 'border-amber-400 bg-amber-50/40' : 'border-gray-200')} />
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Thưởng: <b className="text-orange-700 text-lg">{fmt(thuong)}</b></span>
+              <span className="text-sm text-gray-600" title="Thưởng = số tiền thực nhận ÷ 1,08 (bỏ VAT) × tỉ lệ %">Thưởng: <b className="text-orange-700 text-lg">{fmt(thuong)}</b> <span className="text-xs text-gray-400">(trước thuế × %)</span></span>
               <button onClick={them} className="text-sm px-5 py-2.5 rounded-xl bg-[#8B1A1A] text-white font-semibold shadow-sm">Gửi khai</button>
             </div>
           </div>
@@ -180,7 +182,7 @@ export default function ThuongDvk({ quyen }) {
               {d && !d.data.length && <tr><td className="px-4 py-6 text-center text-gray-400">Chưa khai dòng nào cho kỳ này.</td></tr>}
               {(d?.data || []).map(x => (
                 <tr key={x.id} className="border-t border-gray-100">
-                  <td className="px-4 py-2.5"><div className="text-gray-900">{x.ten_dv}</div><div className="text-xs text-gray-500">{fmt(x.so_tien)} × {Number(x.ty_le).toLocaleString('vi-VN')}%{x.ghi_chu ? ' · ' + x.ghi_chu : ''}{x.ly_do_tra ? ' · Lý do trả: ' + x.ly_do_tra : ''}</div></td>
+                  <td className="px-4 py-2.5"><div className="text-gray-900">{x.ten_dv}</div><div className="text-xs text-gray-500">{fmt(x.so_tien)} ÷ 1,08 × {Number(x.ty_le).toLocaleString('vi-VN')}%{x.ghi_chu ? ' · ' + x.ghi_chu : ''}{x.ly_do_tra ? ' · Lý do trả: ' + x.ly_do_tra : ''}</div></td>
                   <td className="px-4 py-2.5 text-right font-semibold text-orange-700 whitespace-nowrap">{fmt(x.tien_thuong)}</td>
                   <td className="px-4 py-2.5 whitespace-nowrap"><span className={'text-xs rounded-full border px-2.5 py-0.5 ' + TT[x.trang_thai][1]}>{TT[x.trang_thai][0]}</span></td>
                   <td className="px-4 py-2.5 text-right">{x.trang_thai !== 'da_duyet' && <button onClick={() => xoa(x.id)} className="text-xs text-rose-500 hover:underline">Xoá</button>}</td>
@@ -201,7 +203,7 @@ export default function ThuongDvk({ quyen }) {
             <table className="w-full text-sm">
               <thead><tr className="text-left text-xs uppercase tracking-wide text-gray-500 bg-gray-50">
                 <th className="px-4 py-2.5 font-semibold">Nhân viên</th><th className="px-4 py-2.5 font-semibold">Hồ sơ</th>
-                <th className="px-4 py-2.5 font-semibold text-right">Thực nhận × %</th><th className="px-4 py-2.5 font-semibold text-right text-orange-700">Thưởng</th>
+                <th className="px-4 py-2.5 font-semibold text-right">Thực nhận ÷ 1,08 × %</th><th className="px-4 py-2.5 font-semibold text-right text-orange-700">Thưởng</th>
                 <th className="px-4 py-2.5 font-semibold text-right">Đối chiếu đã thu</th><th className="px-4 py-2.5 font-semibold">Trạng thái</th><th className="px-4 py-2.5"></th>
               </tr></thead>
               <tbody>
@@ -212,7 +214,7 @@ export default function ThuongDvk({ quyen }) {
                     <tr key={x.id} className="border-t border-gray-100 align-top">
                       <td className="px-4 py-2.5"><div className="font-medium text-gray-900">{x.ten_nv}</div><div className="text-xs text-gray-500">{x.phong}</div></td>
                       <td className="px-4 py-2.5 text-gray-700 max-w-[320px]">{x.ten_dv}{x.ghi_chu && <div className="text-xs text-gray-500">{x.ghi_chu}</div>}</td>
-                      <td className="px-4 py-2.5 text-right whitespace-nowrap">{fmt(x.so_tien)} × {Number(x.ty_le).toLocaleString('vi-VN')}%</td>
+                      <td className="px-4 py-2.5 text-right whitespace-nowrap">{fmt(x.so_tien)} ÷ 1,08 × {Number(x.ty_le).toLocaleString('vi-VN')}%</td>
                       <td className="px-4 py-2.5 text-right font-semibold text-orange-700 whitespace-nowrap">{fmt(x.tien_thuong)}</td>
                       <td className={'px-4 py-2.5 text-right text-xs whitespace-nowrap ' + (vuotHs ? 'text-rose-600 font-semibold' : 'text-gray-500')}>
                         {x.service_id
