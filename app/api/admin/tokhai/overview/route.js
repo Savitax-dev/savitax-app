@@ -12,6 +12,7 @@ import { requireLogin } from '@/lib/serverAuth'
 import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
 import { cacKyTrongNam, kyQuyetToanNam, nhanKy } from '@/lib/taxDeadline'
 import { kyKhaiTai, quyBaoTrum } from '@/lib/tokhaiLich'
+import { hoSoTotHon } from '@/lib/tokhaiTrangThai'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -189,7 +190,8 @@ export async function GET(request) {
     // hẳn một ô mới, có cờ khongCoNghiaVu để giao diện nói rõ "đã nộp, ngoài lịch hạn nộp".
     const hoSoTheoNghiaVu = new Map()
     for (const h of hoSo) {
-      if (h.obligation_id) { hoSoTheoNghiaVu.set(h.obligation_id, h); continue }
+      // Kỳ nộp nhiều lần (vd bị từ chối rồi nộp lại): ô hiện hồ sơ TỐT NHẤT, không phải hồ sơ gặp sau cùng.
+      if (h.obligation_id) { if (hoSoTotHon(h, hoSoTheoNghiaVu.get(h.obligation_id))) hoSoTheoNghiaVu.set(h.obligation_id, h); continue }
       const ds = theoCty.get(h.client_id)
       if (!ds) continue
       if (ds.some(o => o.filing_type_id === h.filing_type_id)) continue   // đã có ô cùng loại
