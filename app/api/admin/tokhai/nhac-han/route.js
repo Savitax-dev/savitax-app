@@ -4,8 +4,8 @@
 //   Trả các mốc hạn ĐÁNG NHẮC trong phạm vi của người gọi, để hiện dải chữ chạy ở đầu trang.
 //
 // Theo đặc tả: nhắc 5 ngày trước hạn, đúng ngày hạn, và 1–2 ngày sau hạn. Ở đây nới thành
-// 10 ngày trước cho kế toán có thời gian xoay, và giữ nguyên các kỳ ĐÃ QUÁ HẠN mà chưa nộp —
-// quá hạn là thứ càng phải nhắc, không được im lặng.
+// 10 ngày trước cho kế toán có thời gian xoay; quá hạn nhắc thêm 2 ngày rồi thôi (từ 26/10/2026 —
+// trước đó nhắc mãi tới khi nộp, dải đầu trang đỏ cả tuần). Danh sách quá hạn đầy đủ ở tab Lịch hạn nộp.
 import { createClient } from '@supabase/supabase-js'
 import { roomsWithRole } from '@/lib/roleUnion'
 import { callerHasPermission } from '@/lib/serverAuth'
@@ -34,6 +34,10 @@ async function docHet(query) {
 // Mốc 3, 2, 1 và quá hạn hiện chữ ĐỎ ĐẬM.
 const CAC_MOC = [10, 5, 3, 2, 1, 0]
 const NGAY_NHAC_TRUOC = 10
+// Quá hạn chỉ nhắc thêm 2 ngày sau hạn rồi tự tắt (anh yêu cầu 26/10/2026: dải đầu trang cứ đỏ mãi kỳ
+// đã qua — vd 01/GTGT T9 hạn 20/10 tới 26/10 vẫn còn). Đúng đặc tả gốc "1–2 ngày sau hạn". Công ty chưa nộp
+// vẫn hiện "Quá hạn" ở tab Lịch hạn nộp — chỉ dải nhắc thôi không lặp lại nữa.
+const NGAY_NHAC_SAU = 2
 
 export async function GET() {
   // TỪ 15/10/2026 DẢI NHẮC NẰM Ở ĐẦU MỌI TRANG của app (như bảng tin MISA), không chỉ trong Phân hệ
@@ -61,6 +65,7 @@ export async function GET() {
 
   const homNay = new Date().toISOString().slice(0, 10)
   const denNgay = new Date(Date.now() + NGAY_NHAC_TRUOC * 864e5).toISOString().slice(0, 10)
+  const tuNgay = new Date(Date.now() - NGAY_NHAC_SAU * 864e5).toISOString().slice(0, 10)
 
   try {
     // Dải chữ nhắc hạn nằm ở MỌI trang của phân hệ, nên route này chạy theo mỗi lần mở trang.
@@ -76,7 +81,7 @@ export async function GET() {
       docHet(() => supabase.from('tax_obligations')
         .select('client_id, filing_type_id, period_code, due_date, state')
         .in('state', ['not_filed', 'rejected', 'overdue'])
-        .lte('due_date', denNgay)),
+        .gte('due_date', tuNgay).lte('due_date', denNgay)),
     ])
 
     const phu = new Set(dsPhu.map(r => r.client_id))
@@ -93,11 +98,11 @@ export async function GET() {
 
     let nghiaVu = dsNghiaVu.filter(o => trongPhamVi.has(o.client_id))
 
-    // Chỉ giữ đúng các mốc đã chốt, và các kỳ ĐÃ QUÁ HẠN (quá hạn thì ngày nào cũng phải nhắc).
+    // Chỉ giữ đúng các mốc đã chốt, và các kỳ vừa quá hạn trong NGAY_NHAC_SAU ngày.
     const soNgayConLai = han => Math.round((new Date(han) - new Date(homNay)) / 864e5)
     nghiaVu = nghiaVu.filter(o => {
       const c = soNgayConLai(o.due_date)
-      return c < 0 || CAC_MOC.includes(c)
+      return (c < 0 && c >= -NGAY_NHAC_SAU) || CAC_MOC.includes(c)
     })
 
     const tenLoai = new Map(dsLoai.map(t => [t.id, t.code]))
