@@ -24,6 +24,7 @@ export default function TrangKetNoi() {
   const [dangTai, setDangTai] = useState(true)
   const [loi, setLoi]       = useState('')
   const [timKiem, setTimKiem] = useState('')
+  const [locTT, setLocTT]   = useState('')   // '' | 'active' | 'not_connected' | 'wrong_password'
   const [mo, setMo]         = useState(null)   // công ty đang mở ô nhập
   const [tienIch, setTienIch] = useState(null) // { co, phienBan, loi }
 
@@ -46,7 +47,12 @@ export default function TrangKetNoi() {
   }
   useEffect(taiDs, [])
 
+  // Lọc trạng thái kết nối (anh yêu cầu 26/10/2026 — để soát nhanh công ty chưa nối / sai mật khẩu).
+  const ttCua = c => c.trangThaiTaiKhoan === 'active' || c.trangThaiTaiKhoan === 'wrong_password' ? c.trangThaiTaiKhoan : 'not_connected'
+  const demTT = { active: 0, not_connected: 0, wrong_password: 0 }
+  for (const c of dsCty) demTT[ttCua(c)]++
   const loc = dsCty.filter(c => {
+    if (locTT && ttCua(c) !== locTT) return false
     const t = timKiem.trim().toLowerCase()
     if (!t) return true
     return (c.ten || '').toLowerCase().includes(t)
@@ -66,6 +72,13 @@ export default function TrangKetNoi() {
           <input value={timKiem} onChange={e => setTimKiem(e.target.value)}
             placeholder="Tìm tên công ty, mã KH, MST…"
             className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm flex-1 min-w-[220px]" />
+          <select value={locTT} onChange={e => setLocTT(e.target.value)} aria-label="Lọc trạng thái kết nối"
+            className={'px-3 py-1.5 border rounded-lg text-sm bg-white ' + (locTT ? 'border-[#8B1A1A] text-[#8B1A1A] font-medium' : 'border-gray-200 text-gray-700')}>
+            <option value="">Tất cả trạng thái ({dsCty.length})</option>
+            <option value="active">Đã kết nối ({demTT.active})</option>
+            <option value="not_connected">Chưa kết nối ({demTT.not_connected})</option>
+            <option value="wrong_password">Sai mật khẩu ({demTT.wrong_password})</option>
+          </select>
         </div>
 
         {tienIch?.co ? (
@@ -86,13 +99,13 @@ export default function TrangKetNoi() {
         {dangTai && <p className="text-sm text-gray-400 py-8 text-center">Đang tải…</p>}
 
         <div className="space-y-2">
-          {!dangTai && loc.slice(0, 60).map(c => (
+          {!dangTai && loc.slice(0, locTT ? loc.length : 60).map(c => (
             <DongCongTy key={c.id} cty={c} dangMo={mo === c.id} coTienIch={!!tienIch?.co}
               onMo={() => setMo(mo === c.id ? null : c.id)} onXong={taiDs} />
           ))}
-          {!dangTai && loc.length > 60 && (
+          {!dangTai && !locTT && loc.length > 60 && (
             <p className="text-xs text-gray-400 text-center py-2">
-              Còn {loc.length - 60} công ty nữa — gõ vào ô tìm kiếm để thu hẹp.
+              Còn {loc.length - 60} công ty nữa — gõ vào ô tìm kiếm hoặc chọn trạng thái để thu hẹp.
             </p>
           )}
         </div>
