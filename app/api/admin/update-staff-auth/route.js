@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { toE164VN } from '@/lib/phone'
 import { callerHasPermission } from '@/lib/serverAuth'
+import { kiemNhanVienTrongPhamVi } from '@/lib/staffScope'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -18,10 +19,9 @@ export async function POST(request) {
   if (!staffId) return Response.json({ error: 'Thiếu staffId' }, { status: 400 })
 
   const supabase = getAdmin()
-  if (auth.caller.role !== 'admin') {
-    const { data: target } = await supabase.from('staff').select('role').eq('id', staffId).single()
-    if (target?.role === 'admin') return Response.json({ error: 'Không đủ quyền sửa tài khoản quản trị' }, { status: 403 })
-  }
+  // Không phải quản trị: chỉ nhân viên phòng mình quản lý (lib/staffScope.js), không đụng quản trị.
+  const pv = await kiemNhanVienTrongPhamVi(supabase, auth.caller, staffId)
+  if (!pv.ok) return Response.json({ error: pv.error }, { status: pv.status })
 
   const authUpdate = {}
   if (email !== undefined) { authUpdate.email = email; authUpdate.email_confirm = true }

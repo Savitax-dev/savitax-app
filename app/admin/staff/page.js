@@ -3,7 +3,6 @@ import { Fragment, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
-import { hasPermission } from '@/lib/permissions'
 import OLuongNhanVien from '@/components/luong/OLuongNhanVien'
 import { luongCuaThang } from '@/lib/luong/ngayCong'
 import { soThangThamNien, chuThamNien } from '@/lib/luong/thamNien'
@@ -22,7 +21,7 @@ const roleBadgeColor = (roleId, roleOpts) => {
 export default function AdminStaffPage() {
   const router = useRouter()
   const [myRole, setMyRole]       = useState(null)
-  const [myRoomId, setMyRoomId]   = useState(null)
+  const [phamVi, setPhamVi]       = useState({ tatCa: false, phong: [] })   // phòng được quản lý
   const [staffList, setStaffList] = useState([])
   const [rooms, setRooms]         = useState([])
   const [clientCounts, setClientCounts] = useState({})
@@ -100,17 +99,16 @@ export default function AdminStaffPage() {
     await loadExtraRoles()
   }
 
-  const loadData = async (supabase, roomId, role) => {
-    let query = supabase
-      .from('staff')
-      .select('*, rooms(name)')
-      .order('full_name')
-    // Leader chỉ thấy nhân viên phòng mình
-    if (role !== 'admin' && roomId) {
-      query = query.eq('room_id', roomId)
-    }
-    const { data: sl } = await query
-    setStaffList(sl ?? [])
+  // Danh sách lấy qua máy chủ theo phạm vi (lib/staffScope.js, 27/10/2026): quản trị thấy tất cả, trưởng
+  // phòng thấy phòng mình, người KIÊM NHIỆM trưởng phòng thấy đúng phòng kiêm nhiệm — không thấy phòng cũ
+  // nơi mình chỉ là nhân viên. Trước đây trang đọc thẳng bảng staff theo phòng CHÍNH.
+  // Trả false khi không có quyền (để init chuyển về trang chủ).
+  const loadData = async (supabase) => {
+    const res = await fetch('/api/admin/staff?quanLy=1', { cache: 'no-store' })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok || j.error) return false
+    setStaffList(j.data ?? [])
+    setPhamVi(j.phamVi || { tatCa: false, phong: [] })
 
     const { data: clientData } = await supabase
       .from('clients').select('assigned_to').eq('is_active', true)
@@ -119,6 +117,7 @@ export default function AdminStaffPage() {
       counts[c.assigned_to] = (counts[c.assigned_to] ?? 0) + 1
     }
     setClientCounts(counts)
+    return true
   }
 
   useEffect(() => {
@@ -129,23 +128,20 @@ export default function AdminStaffPage() {
       if (!session) { router.push('/login'); return }
 
       const { data: me } = await supabase
-        .from('staff').select('role, room_id').eq('id', session.user.id).single()
-      const role   = me?.role
-      const roomId = me?.room_id
-      setMyRole(role)
-      setMyRoomId(roomId)
+        .from('staff').select('role').eq('id', session.user.id).single()
+      setMyRole(me?.role)
 
-      const allowed = await hasPermission(role, 'manage_staff')
-      if (!allowed) { router.push('/dashboard'); return }
-
+      // Quyền vào trang do MÁY CHỦ quyết (xét cả vai trò kiêm nhiệm) — /api/admin/staff?quanLy=1 trả
+      // lỗi là không có manage_staff. Trước đây xét vai trò CHÍNH nên người kiêm trưởng phòng bị đẩy về.
       // Giữ nguyên THỨ TỰ 3 phần tử đầu — bên dưới lấy kết quả theo vị trí. Thêm việc mới thì
       // nối vào CUỐI mảng, chèn vào giữa sẽ làm lệch resRooms/resRoles.
-      const [, resRooms, resRoles] = await Promise.all([
-        loadData(supabase, roomId, role),
+      const [duocVao, resRooms, resRoles] = await Promise.all([
+        loadData(supabase),
         supabase.from('rooms').select('*').order('name'),
         fetch('/api/admin/roles').then(r => r.json()),
         loadExtraRoles(),
       ])
+      if (!duocVao) { router.push('/dashboard'); return }
       setRooms(resRooms.data ?? [])
       setRoleOpts((resRoles.data || []).map(r => ({ v: r.id, l: r.label })))
       setLoading(false)
@@ -169,7 +165,7 @@ export default function AdminStaffPage() {
       setForm({ full_name:'', email:'', password:'', phone:'', room_id:'', role:'staff' })
       setShowForm(false)
       const supabase = createClient()
-      await loadData(supabase, myRoomId, myRole)
+      await loadData(supabase)
     }
     setSaving(false)
   }
@@ -186,16 +182,20 @@ export default function AdminStaffPage() {
     const json = await res.json()
     if (json.error) { setError(json.error); return }
     // room_id/role đi qua API admin/staff (đã kiểm tra quyền server-side), không ghi thẳng bằng anon key.
-    const res2 = await fetch('/api/admin/staff', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, room_id: editForm.room_id || null, role: editForm.role }),
-    })
-    const json2 = await res2.json()
-    if (json2.error) { setError(json2.error); return }
+    // Phòng / vai trò chỉ quản trị đổi (ô chọn chỉ hiện cho quản trị). Gửi kèm khi không phải quản trị
+    // thì máy chủ từ chối cả lần lưu — trưởng phòng sửa tên/SĐT nhân viên báo lỗi oan.
+    if (isAdmin) {
+      const res2 = await fetch('/api/admin/staff', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, room_id: editForm.room_id || null, role: editForm.role }),
+      })
+      const json2 = await res2.json()
+      if (json2.error) { setError(json2.error); return }
+    }
     setError('')
     setEditId(null)
-    await loadData(supabase, myRoomId, myRole)
+    await loadData(supabase)
   }
 
   const toggleActive = async (s) => {
@@ -205,7 +205,7 @@ export default function AdminStaffPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: s.id, is_active: !s.is_active }),
     })
-    await loadData(supabase, myRoomId, myRole)
+    await loadData(supabase)
   }
 
   const changeRole = async (id, newRole) => {
@@ -229,7 +229,7 @@ export default function AdminStaffPage() {
     const json = await res.json()
     if (json.error) { setError('Lỗi xóa: ' + json.error); return }
     const supabase = createClient()
-    await loadData(supabase, myRoomId, myRole)
+    await loadData(supabase)
   }
 
   const submitReset = async (staffId) => {
@@ -361,11 +361,11 @@ export default function AdminStaffPage() {
           <input type="text" placeholder="🔍 Tìm tên, email, SĐT..." value={search}
             onChange={e => setSearch(e.target.value)}
             className="flex-1 min-w-48 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          {isAdmin && (
+          {(isAdmin || phamVi.phong.length > 1) && (
             <select value={filterRoom} onChange={e => setFilterRoom(e.target.value)}
               className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Tất cả phòng</option>
-              {rooms.map(r => <option key={r.id} value={r.id}>Phòng {r.name}</option>)}
+              {rooms.filter(r => phamVi.tatCa || phamVi.phong.includes(r.id)).map(r => <option key={r.id} value={r.id}>Phòng {r.name}</option>)}
             </select>
           )}
         </div>
@@ -568,7 +568,7 @@ export default function AdminStaffPage() {
                                 ? 'text-gray-400 hover:text-red-500 hover:border-red-300 hover:bg-red-50'
                                 : 'text-green-600 hover:border-green-300 hover:bg-green-50')}>{s.is_active !== false ? '⏸' : '▶'}</button>
                             {/* Trưởng phòng đặt lại được mật khẩu nhân viên phòng mình (27/10/2026) — máy chủ kiểm lại phòng. */}
-                            {(isAdmin || (s.role !== 'admin' && myRoomId && s.room_id === myRoomId)) && (
+                            {(isAdmin || (s.role !== 'admin' && phamVi.phong.includes(s.room_id))) && (
                               <button title="Đặt lại mật khẩu"
                                 onClick={() => { setResetId(s.id); setResetPass(''); setResetMsg(m => ({ ...m, [s.id]: '' })) }}
                                 className="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:text-amber-600 hover:border-amber-300 hover:bg-amber-50 transition-colors">🔑</button>

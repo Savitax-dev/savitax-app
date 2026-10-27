@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { callerHasPermission, requireLogin } from '@/lib/serverAuth'
 import { SHARED_ROOM_IDS } from '@/lib/specialRooms'
+import { phongQuanLyNhanVien, kiemNhanVienTrongPhamVi } from '@/lib/staffScope'
 
 function getAdmin() {
   return createClient(
@@ -14,7 +15,22 @@ function getAdmin() {
 // về theo role: admin thấy tất cả, trưởng phòng thấy cả phòng mình + phòng "đặc thù" (mọi trưởng
 // phòng đều làm việc chung, xem lib/specialRooms.js), nhân viên thường chỉ thấy CHÍNH MÌNH (chỉ
 // tự gán công ty cho bản thân khi thêm mới).
-export async function GET() {
+export async function GET(request) {
+  // ?quanLy=1 — danh sách cho trang "Quản lý nhân viên": cần manage_staff, phạm vi theo lib/staffScope.js
+  // (quản trị: tất cả; trưởng phòng / kiêm nhiệm trưởng phòng: ĐÚNG các phòng mình quản lý).
+  if (new URL(request.url).searchParams.get('quanLy')) {
+    const a = await callerHasPermission('manage_staff')
+    if (!a.ok) return Response.json({ error: a.error }, { status: a.status })
+    const sb = getAdmin()
+    const phong = await phongQuanLyNhanVien(sb, a.caller)
+    if (phong !== null && !phong.length) return Response.json({ data: [], phamVi: { tatCa: false, phong: [] } })
+    let q = sb.from('staff').select('*, rooms(name)').order('full_name')
+    if (phong !== null) q = q.in('room_id', phong)
+    const { data, error } = await q
+    if (error) return Response.json({ error: error.message }, { status: 400 })
+    return Response.json({ data, phamVi: { tatCa: phong === null, phong: phong || [] } })
+  }
+
   const auth = await requireLogin()
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
@@ -44,11 +60,9 @@ export async function DELETE(request) {
   if (!id) return Response.json({ error: 'Missing id' }, { status: 400 })
 
   const supabase = getAdmin()
-  // Chỉ admin mới được xóa tài khoản admin khác — tránh leader xóa tài khoản quản trị.
-  const { data: target } = await supabase.from('staff').select('role').eq('id', id).single()
-  if (target?.role === 'admin' && auth.caller.role !== 'admin') {
-    return Response.json({ error: 'Không đủ quyền xóa tài khoản quản trị' }, { status: 403 })
-  }
+  // Không phải quản trị: chỉ nhân viên phòng mình quản lý, không đụng tài khoản quản trị.
+  const pv = await kiemNhanVienTrongPhamVi(supabase, auth.caller, id)
+  if (!pv.ok) return Response.json({ error: pv.error }, { status: pv.status })
 
   const { error } = await supabase.auth.admin.deleteUser(id)
   if (error) {
@@ -75,9 +89,12 @@ export async function PATCH(request) {
   if (role !== undefined && auth.caller.role !== 'admin') {
     return Response.json({ error: 'Chỉ quản trị viên được đổi vai trò' }, { status: 403 })
   }
-  if (auth.caller.role !== 'admin') {
-    const { data: target } = await supabase.from('staff').select('role').eq('id', id).single()
-    if (target?.role === 'admin') return Response.json({ error: 'Không đủ quyền sửa tài khoản quản trị' }, { status: 403 })
+  // Không phải quản trị: chỉ sửa / khoá nhân viên phòng mình quản lý, và chỉ chuyển sang phòng cũng
+  // trong phạm vi (kiêm nhiệm trưởng phòng Danxia không kéo được người Grand về, cũng không đẩy người đi).
+  const pv = await kiemNhanVienTrongPhamVi(supabase, auth.caller, id)
+  if (!pv.ok) return Response.json({ error: pv.error }, { status: pv.status })
+  if (pv.phong !== null && room_id !== undefined && !pv.phong.includes(room_id)) {
+    return Response.json({ error: 'Chỉ chuyển được sang phòng mình quản lý' }, { status: 403 })
   }
 
   const updateData = {}
