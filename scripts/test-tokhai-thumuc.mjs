@@ -151,5 +151,22 @@ kiem('thông báo của kỳ năm bổ sung lần 1',
   duongDanThongBao({ periodCode: 'NAM.2025', maKH: 'VANLANG', boSung: 1 }),
   ['BỘ BÁO CÁO TÀI CHÍNH_2025_VANLANG_BSL1', 'THÔNG BÁO CHẤP NHẬN'])
 
+console.log('')
+console.log('Mã KH dính dấu cách / ký tự cấm (ca SOHNEX 27/10/2026 — Chrome báo "Name is not allowed"):')
+kiem('mã "SOHNEX " có dấu cách cuối',
+  duongDanToKhai({ periodCode: 'Q3.2026', maKH: 'SOHNEX ' }),
+  ['BAOCAOTHUE_Q3_2026_SOHNEX', 'TỜ KHAI THUẾ'])
+kiem('tên file không còn dấu cách trước đuôi',
+  tenFileToKhai({ sacThue: 'TNCN', periodCode: 'Q3.2026', maKH: 'SOHNEX ', duoi: 'zip' }),
+  'TK_TNCN_Q3.2026_SOHNEX.zip')
+kiem('mã " HUNGPHUC " cách hai đầu',
+  tenFileThongBao({ loaiThongBao: 'tiep_nhan', sacThue: 'GTGT', periodCode: 'Q3.2026', maKH: ' HUNGPHUC ' }),
+  'TBTN_GTGT_Q3.2026_HUNGPHUC.xml')
+kiem('mã "82/7" — dấu / không được tách thành thư mục con',
+  duongDanToKhai({ periodCode: 'Q3.2026', maKH: '82/7' }),
+  ['BAOCAOTHUE_Q3_2026_82-7', 'TỜ KHAI THUẾ'])
+kiem('thư mục cũ tạo với mã có dấu cách vẫn được dùng lại',
+  laCungThuMuc('BAOCAOTHUE_Q3_2026_ HOANGSONPHAT', duongDanToKhai({ periodCode: 'Q3.2026', maKH: ' HOANGSONPHAT' })[0]), true)
+
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)

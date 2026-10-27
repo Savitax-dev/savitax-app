@@ -154,7 +154,8 @@ export async function POST(request) {
   if (tax_status) insertData.tax_status = tax_status
   if (fee_period) insertData.fee_period = fee_period
   if (other_debt) insertData.other_debt = Number(other_debt)
-  if (client_code)    insertData.client_code    = client_code
+  // Mã KH gõ tay hay dính dấu cách đầu-cuối → tên thư mục tờ khai hỏng (ca SOHNEX 27/10/2026). Cắt luôn khi lưu.
+  if (client_code && String(client_code).trim()) insertData.client_code = String(client_code).trim()
   if (representative) insertData.representative = representative
   // Bỏ trống "Ngày bắt đầu hợp đồng" nhưng có chọn "Áp dụng từ tháng" -> lấy luôn ngày 01 của
   // tháng đó làm mốc hợp đồng. Thiếu mốc này thì countsForMonth rơi về THÁNG NHẬP LÊN APP, công ty
@@ -269,7 +270,7 @@ export async function PATCH(request) {
   if (contract_start !== undefined) updateData.contract_start = contract_start || null
   if (monthly_fee !== undefined) updateData.monthly_fee = Number(monthly_fee)
   if (other_debt   !== undefined) updateData.other_debt   = Number(other_debt)
-  if (client_code    !== undefined) updateData.client_code    = client_code
+  if (client_code    !== undefined) updateData.client_code    = typeof client_code === 'string' ? client_code.trim() : client_code
   if (representative !== undefined) updateData.representative = representative
   if (name         !== undefined) updateData.name         = name
   if (tax_code     !== undefined) updateData.tax_code     = tax_code
