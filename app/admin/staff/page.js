@@ -567,7 +567,8 @@ export default function AdminStaffPage() {
                               className={'w-8 h-8 rounded-lg border border-gray-200 transition-colors ' + (s.is_active !== false
                                 ? 'text-gray-400 hover:text-red-500 hover:border-red-300 hover:bg-red-50'
                                 : 'text-green-600 hover:border-green-300 hover:bg-green-50')}>{s.is_active !== false ? '⏸' : '▶'}</button>
-                            {isAdmin && (
+                            {/* Trưởng phòng đặt lại được mật khẩu nhân viên phòng mình (27/10/2026) — máy chủ kiểm lại phòng. */}
+                            {(isAdmin || (s.role !== 'admin' && myRoomId && s.room_id === myRoomId)) && (
                               <button title="Đặt lại mật khẩu"
                                 onClick={() => { setResetId(s.id); setResetPass(''); setResetMsg(m => ({ ...m, [s.id]: '' })) }}
                                 className="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:text-amber-600 hover:border-amber-300 hover:bg-amber-50 transition-colors">🔑</button>
