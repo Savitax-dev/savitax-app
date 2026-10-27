@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<HSoThueDTu xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://kekhaithue.gdt.gov.vn/TKhaiThue">
+  <HSoKhaiThue id="ID_1">
+    <TTinChung>
+      <TTinDVu>
+        <maDVu>HTKK</maDVu>
+        <tenDVu>HỖ TRỢ KÊ KHAI THUẾ</tenDVu>
+        <pbanDVu>5.6.6</pbanDVu>
+        <ttinNhaCCapDVu>00000000000000000000000000000000</ttinNhaCCapDVu>
+      </TTinDVu>
+      <TTinTKhaiThue>
+        <TKhaiThue>
+          <maTKhai>842</maTKhai>
+          <tenTKhai>TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (Mẫu số 01/GTGT)</tenTKhai>
+          <moTaBMau>(Ban hành kèm theo Thông tư số 80/2021/TT-BTC ngày 29 tháng 9 năm 2021 của Bộ trưởng Bộ Tài chính)</moTaBMau>
+          <pbanTKhaiXML>2.8.3</pbanTKhaiXML>
+          <loaiTKhai>B</loaiTKhai>
+          <soLan>1</soLan>
+          <KyKKhaiThue>
+            <kieuKy>M</kieuKy>
+            <kyKKhai>11/2024</kyKKhai>
+            <kyKKhaiTuNgay>01/11/2024</kyKKhaiTuNgay>
+            <kyKKhaiDenNgay>30/11/2024</kyKKhaiDenNgay>
+            <kyKKhaiTuThang />
+            <kyKKhaiDenThang />
+          </KyKKhaiThue>
+          <maCQTNoiNop>10100</maCQTNoiNop>
+          <tenCQTNoiNop>Thuế Thành phố Hà Nội</tenCQTNoiNop>
+          <ngayLapTKhai>2025-01-22</ngayLapTKhai>
+          <GiaHan>
+            <maLyDoGiaHan />
+            <lyDoGiaHan />
+          </GiaHan>
+          <nguoiKy>NGUYỄN VĂN GIẢ LẬP</nguoiKy>
+          <ngayKy>2025-01-22</ngayKy>
+          <nganhNgheKD />
+        </TKhaiThue>
+        <NNT>
+          <mst>0109999982</mst>
+          <tenNNT>CÔNG TY TNHH MẪU RỦI RO</tenNNT>
+          <dchiNNT>Số 99 Phố Giả Lập, Phường Thử Nghiệm, Thành phố Hà Nội</dchiNNT>
+          <phuongXa />
+          <maHuyenNNT />
+          <tenHuyenNNT />
+          <maTinhNNT>101</maTinhNNT>
+          <tenTinhNNT>Thành phố Hà Nội</tenTinhNNT>
+          <dthoaiNNT />
+          <faxNNT />
+          <emailNNT />
+        </NNT>
+      </TTinTKhaiThue>
+    </TTinChung>
+    <CTieuTKhaiChinh>
+      <ma_NganhNghe>00</ma_NganhNghe>
+      <ten_NganhNghe>Hoạt động sản xuất kinh doanh thông thường</ten_NganhNghe>
+      <tieuMucHachToan>1701</tieuMucHachToan>
+      <Header>
+        <ct09 />
+        <ct10 />
+        <DiaChiHDSXKDKhacTinhNDTSC>
+          <ct11a_phuongXa_ma />
+          <ct11a_phuongXa_ten />
+          <ct11b_quanHuyen_ma />
+          <ct11b_quanHuyen_ten />
+          <ct11c_tinhTP_ma />
+          <ct11c_tinhTP_ten />
+        </DiaChiHDSXKDKhacTinhNDTSC>
+      </Header>
+      <ct21>0</ct21>
+      <ct22>0</ct22>
+      <GiaTriVaThueGTGTHHDVMuaVao>
+        <ct23>2733953167</ct23>
+        <ct24>221811295</ct24>
+      </GiaTriVaThueGTGTHHDVMuaVao>
+      <HangHoaDichVuNhapKhau>
+        <ct23a>0</ct23a>
+        <ct24a>0</ct24a>
+      </HangHoaDichVuNhapKhau>
+      <ct25>221811295</ct25>
+      <ct26>0</ct26>
+      <HHDVBRaChiuThueGTGT>
+        <ct27>3448760330</ct27>
+        <ct28>282975207</ct28>
+      </HHDVBRaChiuThueGTGT>
+      <ct29>0</ct29>
+      <HHDVBRaChiuTSuat5>
+        <ct30>0</ct30>
+        <ct31>0</ct31>
+      </HHDVBRaChiuTSuat5>
+      <HHDVBRaChiuTSuat10>
+        <ct32>3448760330</ct32>
+        <ct33>282975207</ct33>
+      </HHDVBRaChiuTSuat10>
+      <ct32a>0</ct32a>
+      <TongDThuVaThueGTGTHHDVBRa>
+        <ct34>3448760330</ct34>
+        <ct35>282975207</ct35>
+      </TongDThuVaThueGTGTHHDVBRa>
+      <ct36>61163912</ct36>
+      <ct37>0</ct37>
+      <ct38>0</ct38>
+      <ct39a>0</ct39a>
+      <ct40a>61163912</ct40a>
+      <ct40b>0</ct40b>
+      <ct40>61163912</ct40>
+      <ct41>0</ct41>
+      <ct42>0</ct42>
+      <ct43>0</ct43>
+    </CTieuTKhaiChinh>
+    <PLuc>
+      <PL_NQ142_GTGT>
+        <HH_DV_MuaVaoTrongKy>
+          <BangKeTenHHDV ID="ID_1">
+            <tenHHDVMuaVao>Hàng hóa nhóm A (đồ dùng gia đình)</tenHHDVMuaVao>
+            <giaTriHHDVMuaVao>1640371900</giaTriHHDVMuaVao>
+            <thueGTGTHHDV>131229752</thueGTGTHHDV>
+          </BangKeTenHHDV>
+          <BangKeTenHHDV ID="ID_2">
+            <tenHHDVMuaVao>Hàng hóa nhóm B (thực phẩm đóng gói)</tenHHDVMuaVao>
+            <giaTriHHDVMuaVao>820185950</giaTriHHDVMuaVao>
+            <thueGTGTHHDV>65614876</thueGTGTHHDV>
+          </BangKeTenHHDV>
+          <BangKeTenHHDV ID="ID_3">
+            <tenHHDVMuaVao>Hàng hóa nhóm C (văn phòng phẩm)</tenHHDVMuaVao>
+            <giaTriHHDVMuaVao>273395317</giaTriHHDVMuaVao>
+            <thueGTGTHHDV>21871625</thueGTGTHHDV>
+          </BangKeTenHHDV>
+          <tongCongGiaTriHHDVMuaVao>2733953167</tongCongGiaTriHHDVMuaVao>
+          <tongCongThueGTGTHHDV>218716253</tongCongThueGTGTHHDV>
+        </HH_DV_MuaVaoTrongKy>
+        <HH_DV_BanRaTrongKy>
+          <BangKeTenHHDV ID="ID_1">
+            <tenHHDV>Hàng hóa nhóm A (đồ dùng gia đình)</tenHHDV>
+            <giaTriHHDV>1547520661</giaTriHHDV>
+            <thueSuatTheoQuyDinh>10</thueSuatTheoQuyDinh>
+            <thueSuatSauGiam>8</thueSuatSauGiam>
+            <thueGTGTDuocGiam>30950413</thueGTGTDuocGiam>
+          </BangKeTenHHDV>
+          <BangKeTenHHDV ID="ID_2">
+            <tenHHDV>Hàng hóa nhóm B (thực phẩm đóng gói)</tenHHDV>
+            <giaTriHHDV>928512396</giaTriHHDV>
+            <thueSuatTheoQuyDinh>10</thueSuatTheoQuyDinh>
+            <thueSuatSauGiam>8</thueSuatSauGiam>
+            <thueGTGTDuocGiam>18570248</thueGTGTDuocGiam>
+          </BangKeTenHHDV>
+          <BangKeTenHHDV ID="ID_3">
+            <tenHHDV>Hàng hóa nhóm C (văn phòng phẩm)</tenHHDV>
+            <giaTriHHDV>619008265</giaTriHHDV>
+            <thueSuatTheoQuyDinh>10</thueSuatTheoQuyDinh>
+            <thueSuatSauGiam>8</thueSuatSauGiam>
+            <thueGTGTDuocGiam>12380165</thueGTGTDuocGiam>
+          </BangKeTenHHDV>
+          <tongCongGiaTriHHDV>3095041322</tongCongGiaTriHHDV>
+          <tongCongThueGTGTDuocGiam>61900826</tongCongThueGTGTDuocGiam>
+        </HH_DV_BanRaTrongKy>
+        <ChenhLech>
+          <ct9>18157575</ct9>
+        </ChenhLech>
+      </PL_NQ142_GTGT>
+      <PL01_KHBS>
+        <Header>
+          <maTKhai>842</maTKhai>
+          <tenTKhai>TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (Mẫu số 01/GTGT)</tenTKhai>
+          <maGiaoDich />
+          <KyKKhaiThue>
+            <kieuKy>M</kieuKy>
+            <kyKKhai>11/2024</kyKKhai>
+            <kyKKhaiTuNgay>01/11/2024</kyKKhaiTuNgay>
+            <kyKKhaiDenNgay>30/11/2024</kyKKhaiDenNgay>
+            <kyKKhaiTuThang />
+            <kyKKhaiDenThang />
+          </KyKKhaiThue>
+          <soLan>1</soLan>
+          <mst>0109999982</mst>
+          <tenNNT>CÔNG TY TNHH MẪU RỦI RO</tenNNT>
+          <mstDLyThue xsi:nil="true" />
+          <tenDLyThue />
+          <soHDongDLyThue />
+          <ngayKyHDDLyThue xsi:nil="true" />
+        </Header>
+        <ma_DonViTien>VND</ma_DonViTien>
+        <ten_DonViTien>Đồng Việt Nam</ten_DonViTien>
+        <Muc_A>
+          <Muc_I>
+            <Muc_1>
+              <ChiTiet id="ID_1">
+                <ct2_ma>1701</ct2_ma>
+                <ct2_ten>Thuế giá trị gia tăng hàng sản xuất, kinh doanh trong nước (gồm cả dịch vụ trong lĩnh vực dầu khí)</ct2_ten>
+                <ct3>9600000</ct3>
+              </ChiTiet>
+              <tongCong_ct10>9600000</tongCong_ct10>
+            </Muc_1>
+            <Muc_2>
+              <DSachPLuc>
+                <BKePLuc id="ID_1">
+                  <ma_PLuc />
+                  <ten_PLuc />
+                  <CTietPLuc>
+                    <ChiTiet id="ID_1">
+                      <ct7>0</ct7>
+                    </ChiTiet>
+                  </CTietPLuc>
+                </BKePLuc>
+                <tongCong_ct11>0</tongCong_ct11>
+              </DSachPLuc>
+            </Muc_2>
+            <Muc_3>
+              <ct3a_1>2025-01-22</ct3a_1>
+              <ct3a_2>35</ct3a_2>
+              <ct3b>100800</ct3b>
+            </Muc_3>
+          </Muc_I>
+          <Muc_II>
+            <ChiTiet id="ID_1">
+              <ct2_ma />
+              <ct2_ten />
+              <ct3>0</ct3>
+            </ChiTiet>
+            <tongCong_ct12>0</tongCong_ct12>
+          </Muc_II>
+          <Muc_III>
+            <ChiTiet id="ID_1">
+              <ct2_ma />
+              <ct2_ten />
+              <ct3>0</ct3>
+            </ChiTiet>
+            <tongCong_ct13>0</tongCong_ct13>
+          </Muc_III>
+        </Muc_A>
+        <Muc_B>
+          <Muc_I>
+            <ct_1>0</ct_1>
+            <ct_2_so />
+            <ct_2_ngay xsi:nil="true" />
+            <ct_2_CQT_ma />
+            <ct_2_CQT_ten />
+            <ct_3_so />
+            <ct_3_ngay xsi:nil="true" />
+          </Muc_I>
+          <Muc_II>
+            <ct_1>0</ct_1>
+            <ct_2>0</ct_2>
+          </Muc_II>
+        </Muc_B>
+      </PL01_KHBS>
+      <PL01_1_KHBS>
+        <Header>
+          <maTKhai>842</maTKhai>
+          <tenTKhai>TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (Mẫu số 01/GTGT)</tenTKhai>
+          <maGiaoDich />
+          <KyKKhaiThue>
+            <kieuKy>M</kieuKy>
+            <kyKKhai>11/2024</kyKKhai>
+            <kyKKhaiTuNgay>01/11/2024</kyKKhaiTuNgay>
+            <kyKKhaiDenNgay>30/11/2024</kyKKhaiDenNgay>
+            <kyKKhaiTuThang />
+            <kyKKhaiDenThang />
+          </KyKKhaiThue>
+          <soLan>1</soLan>
+          <mst>0109999982</mst>
+          <tenNNT>CÔNG TY TNHH MẪU RỦI RO</tenNNT>
+          <mstDLyThue xsi:nil="true" />
+          <tenDLyThue />
+          <soHDongDLyThue />
+          <ngayKyHDDLyThue xsi:nil="true" />
+        </Header>
+        <ma_DonViTien>VND</ma_DonViTien>
+        <ten_DonViTien>Đồng Việt Nam</ten_DonViTien>
+        <Muc_A>
+          <DSachHSo>
+            <BKeHSo id="ID_1">
+              <ma_HSo>0026</ma_HSo>
+              <ten_HSo>01/GTGT</ten_HSo>
+              <CTietHSo>
+                <ChiTiet id="ID_1">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>[23]</ct3_ma>
+                  <ct3_ten>Giá trị của hàng hóa, dịch vụ mua vào</ct3_ten>
+                  <ct04>2853953167</ct04>
+                  <ct05>2733953167</ct05>
+                  <ct06>-120000000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_2">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>[24]</ct3_ma>
+                  <ct3_ten>Thuế GTGT của hàng hóa, dịch vụ mua vào</ct3_ten>
+                  <ct04>231411295</ct04>
+                  <ct05>221811295</ct05>
+                  <ct06>-9600000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_3">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>[25]</ct3_ma>
+                  <ct3_ten>Tổng số thuế GTGT được khấu trừ kỳ này</ct3_ten>
+                  <ct04>231411295</ct04>
+                  <ct05>221811295</ct05>
+                  <ct06>-9600000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_4">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>[36]</ct3_ma>
+                  <ct3_ten>Thuế giá trị gia tăng phát sinh trong kỳ</ct3_ten>
+                  <ct04>51563912</ct04>
+                  <ct05>61163912</ct05>
+                  <ct06>9600000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_5">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>[40a]</ct3_ma>
+                  <ct3_ten>Thuế giá trị gia tăng phải nộp của hoạt động sản xuất kinh doanh trong kỳ</ct3_ten>
+                  <ct04>51563912</ct04>
+                  <ct05>61163912</ct05>
+                  <ct06>9600000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_6">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>[40]</ct3_ma>
+                  <ct3_ten>Thuế giá trị gia tăng còn phải nộp trong kỳ ([40]=[40a]-[40b])</ct3_ten>
+                  <ct04>51563912</ct04>
+                  <ct05>61163912</ct05>
+                  <ct06>9600000</ct06>
+                  <ct7>9600000</ct7>
+                  <ct8>Loại hóa đơn đầu vào kê trùng</ct8>
+                </ChiTiet>
+              </CTietHSo>
+            </BKeHSo>
+            <TongCong>
+              <tongCong_7>9600000</tongCong_7>
+              <tongCong_8>0</tongCong_8>
+              <tongCong_9>0</tongCong_9>
+            </TongCong>
+          </DSachHSo>
+        </Muc_A>
+        <Muc_B>
+          <CTietTaiLieu id="ID_1">
+            <ma_TLieu />
+            <ten_TLieu />
+          </CTietTaiLieu>
+        </Muc_B>
+      </PL01_1_KHBS>
+    </PLuc>
+  </HSoKhaiThue>
+</HSoThueDTu>

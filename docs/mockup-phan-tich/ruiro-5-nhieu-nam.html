@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="chieu-cao" content="1150"><title>R5 · Nhiều năm · Rủi ro thuế</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script><script src="du-lieu-mau.js"></script></head>
+<body><script>
+// So sánh chênh lệch 13 tiêu chí đối chiếu qua các năm (số mẫu giả lập 2023–2025).
+const NAM = [2023, 2024, 2025]
+const theoNam = Object.fromEntries(NAM.map(n => [n, Object.fromEntries(DU_LIEU_MAU[n].map(r => [r.id, r]))]))
+const ids = DU_LIEU_MAU[2025].filter(r => r.doiChieu).map(r => r.id)
+const o = r => {
+  if (r && r.id === 'R09') return `<td class="px-3 text-right text-xs text-gray-400" colspan="2">không phát sinh</td>`
+  if (!r || r.trangThai !== 'co') return `<td class="px-3 text-center text-xs text-gray-300" colspan="2">—</td>`
+  if (Math.abs(r.cl) < 1000) return `<td class="px-3 text-right text-xs text-gray-400">khớp</td><td class="px-3"></td>`
+  return `<td class="px-3 text-right tabular-nums text-xs font-semibold">${so(r.cl)}</td><td class="px-3 text-right text-xs tabular-nums text-slate-600">${pt(Math.abs(r.tyLe))}</td>`
+}
+// Mini đồ thị cột tỷ lệ 3 năm — trung tính, chỉ để thấy xu hướng.
+const xuHuong = id => `<div class="flex items-end gap-1 h-6">${NAM.map(n => { const r = theoNam[n][id]; const v = r && r.trangThai === 'co' ? Math.min(1, Math.abs(r.tyLe || 0) / 0.06) : 0
+  return `<div title="${n}" class="w-3 rounded-sm ${v ? 'bg-slate-400' : 'bg-gray-100'}" style="height:${Math.max(8, v * 100)}%"></div>` }).join('')}</div>`
+const dong = ids.map(id => { const r = theoNam[2025][id]
+  return `<tr><td class="px-4 py-2 font-mono text-xs font-bold" style="color:${DO}">${id}</td><td class="px-3 py-2 text-sm max-w-[330px] leading-snug">${r.ten}</td>${NAM.map(n => o(theoNam[n][id])).join('')}<td class="px-4">${xuHuong(id)}</td></tr>` }).join('')
+const hd = NAM.map(n => `<th class="text-right px-3 border-l border-gray-100">${n} · chênh lệch</th><th class="text-right px-3">tỷ lệ</th>`).join('')
+trang({ dangMo: 'ruiro', icon: '⚖️', tieuDe: 'Rủi ro thuế', tabs: TABS_RUIRO, tabMo: 'Nhiều năm', noiDung: `
+  ${banChuaChamDiem()}
+  <div class="flex items-center gap-2 mb-3 text-xs text-gray-600">
+    <span>So sánh:</span>${NAM.map(n => `<span class="rounded-full border px-2.5 py-1 border-[#8B1A1A] text-[#8B1A1A] bg-red-50 font-semibold">${n}</span>`).join('')}
+    <span class="rounded-full border px-2.5 py-1 border-gray-200 text-gray-400 bg-white">2026 · mới có đến quý 3</span>
+    <span class="ml-auto text-gray-400">Năm nào thiếu hồ sơ thì ô hiện "—" kèm lý do khi rê chuột</span></div>
+  ${bang(`<th class="text-left px-4 py-2.5">Mã</th><th class="text-left px-3">Tiêu chí đối chiếu</th>${hd}<th class="text-left px-4">Xu hướng tỷ lệ</th>`, dong)}
+  <div class="grid grid-cols-3 gap-4 mt-4">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3"><p class="text-sm font-semibold text-gray-700 mb-1">Chênh lệch lặp lại 2 năm liền</p><p class="text-xs text-gray-600">R01, R02, R03, R08, R11, R12 có chênh lệch cả 2024 và 2025.</p></div>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3"><p class="text-sm font-semibold text-gray-700 mb-1">Số dư đầu năm 2025 ≠ cuối năm 2024</p><p class="text-xs text-gray-600">[22] kỳ đầu 2025 = 30.000.000, nhưng [43] kỳ cuối 2024 = 0 (R05).</p></div>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3"><p class="text-sm font-semibold text-gray-700 mb-1">Mới xuất hiện năm 2025</p><p class="text-xs text-gray-600">R05, R06, R07, R10, R22 năm 2024 khớp, năm 2025 có chênh lệch.</p></div>
+  </div>` })
+</script></body></html>

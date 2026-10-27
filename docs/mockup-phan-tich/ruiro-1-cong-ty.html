@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>R1 · Công ty của tôi · Rủi ro thuế</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Màn hình vào phân hệ: chỉ hiện công ty nhân viên phụ trách chính/phụ (TP: cả phòng).
+const ds = [
+  ['CÔNG TY TNHH MẪU SAVITAX', 'MAUSAVITAX', '0300000001', 'Chính', 'ok', '5.MẪU SAVITAX', [2024, 2025, 2026]],
+  ['CÔNG TY CỔ PHẦN THƯƠNG MẠI AN BÌNH (mẫu)', 'ANBINH', '0300000002', 'Chính', 'ok', '1.AN BÌNH', [2025, 2026]],
+  ['CÔNG TY TNHH DỊCH VỤ HOÀNG GIA (mẫu)', 'HOANGGIA', '0300000003', 'Chính', 'chua', '', []],
+  ['CÔNG TY TNHH XÂY DỰNG MINH KHANG (mẫu)', 'MINHKHANG', '0300000004', 'Phụ', 'ok', '7.MINH KHANG', [2024, 2025]],
+  ['CÔNG TY TNHH SẢN XUẤT PHÚ THỊNH (mẫu)', 'PHUTHINH', '0300000005', 'Chính', 'loi', '3.PHÚ THỊNH', []],
+  ['HỘ KINH DOANH BÁCH HÓA HỒNG (mẫu)', 'HKDHONG', '8000000006', 'Chính', 'hkd', '', []],
+]
+const dong = ds.map(([ten, ma, mst, vt, tt, tm, nam]) => {
+  const thuMuc = tt === 'ok' ? `<p class="text-green-700 font-mono text-xs">✓ ${tm}</p><p class="text-[11px] text-gray-400 font-mono">→ ${tm} \\ 2. HỒ SƠ KẾ TOÁN \\ Năm &lt;năm&gt;</p>`
+    : tt === 'chua' ? `<p class="text-xs text-gray-500">Chưa trỏ thư mục</p><p class="text-[11px] text-gray-400">Dùng chung với phân hệ Tờ khai</p>`
+    : tt === 'loi' ? `<p class="text-xs text-red-700">✗ Mất quyền đọc thư mục</p><p class="text-[11px] text-gray-400">Bấm "Cấp lại quyền" để trình duyệt hỏi lại</p>`
+    : `<p class="text-xs text-gray-400">Hộ kinh doanh: chưa áp dụng phân hệ này</p>`
+  const nut = tt === 'ok' ? `<button class="px-3 py-1.5 rounded-xl text-xs text-white" style="background:${DO}">Mở phân tích</button>`
+    : tt === 'chua' ? `<button class="px-3 py-1.5 rounded-xl text-xs border border-gray-200 bg-white whitespace-nowrap">📁 Chọn thư mục công ty</button>`
+    : tt === 'loi' ? `<button class="px-3 py-1.5 rounded-xl text-xs border border-red-200 bg-red-50 text-red-700">Cấp lại quyền</button>` : ''
+  return `<tr class="${tt === 'hkd' ? 'opacity-60' : ''}"><td class="px-4 py-3"><p class="font-medium text-gray-800">${ten}</p><p class="text-[11px] text-gray-400">${ma} · MST ${mst}</p></td>
+    <td class="px-3 py-3 text-xs">${vt === 'Chính' ? chip('Phụ trách chính', 'xanhDuong') : chip('Phụ trách phụ', 'xam')}</td>
+    <td class="px-3 py-3">${thuMuc}</td>
+    <td class="px-3 py-3">${nam.length ? nam.map(n => `<span class="inline-block mr-1 rounded-md bg-slate-100 text-slate-700 text-xs px-1.5 py-0.5">${n}</span>`).join('') : '<span class="text-gray-300">—</span>'}</td>
+    <td class="px-4 py-3 text-right">${nut}</td></tr>`
+}).join('')
+trang({ dangMo: 'ruiro', icon: '⚖️', tieuDe: 'Rủi ro thuế', tabs: TABS_RUIRO, tabMo: 'Công ty của tôi', coThanh: false, noiDung: `
+  <div class="flex items-center gap-3 mb-4">
+    <input class="flex-1 max-w-md border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white" placeholder="Tìm tên công ty, mã KH, MST…">
+    <span class="text-xs text-gray-500">Chỉ hiện công ty anh/chị phụ trách chính hoặc phụ.</span></div>
+  <div class="grid grid-cols-4 gap-3 mb-4">
+    ${oTong(6, 'Công ty phụ trách', 'xanhDuong')}${oTong(3, 'Đã trỏ thư mục', 'xanhLa')}${oTong(1, 'Chưa trỏ thư mục', 'xam')}${oTong(1, 'Mất quyền đọc', 'do')}</div>
+  ${bang(`<th class="text-left px-4 py-2.5">Công ty</th><th class="text-left px-3">Vai trò</th><th class="text-left px-3">Thư mục công ty trên Drive</th><th class="text-left px-3">Năm có hồ sơ</th><th></th>`, dong)}
+  <p class="text-xs text-gray-400 mt-3">Thư mục đã chọn ở phân hệ Tờ khai được dùng lại, không phải chọn lần nữa. App chỉ xin quyền <b>đọc</b>.</p>` })
+</script></body></html>

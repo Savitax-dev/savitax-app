@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="chieu-cao" content="1680"><title>S6 · Tăng trưởng & phí · Soát xét báo cáo</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script><script src="tang-truong-mau.js"></script></head>
+<body><script>
+// Dashboard: 6 chỉ tiêu theo quý (mỗi chỉ tiêu một màu), % so quý trước / cùng kỳ / mốc đổi phí, và căn cứ điều chỉnh
+// phí (chỉ trưởng phòng, admin) tính bằng engine biểu phí đang chạy. Mọi số phí GỒM VAT. Không ghi gì.
+const dauTrang = `
+  <div class="rounded-3xl p-5 mb-5 text-white shadow-md relative overflow-hidden" style="background:linear-gradient(120deg,#8B1A1A 0%,#A3282B 45%,#C9A84C 100%)">
+    <div class="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-white/10"></div><div class="absolute right-40 -bottom-16 w-40 h-40 rounded-full bg-white/10"></div>
+    <div class="flex items-start gap-6 relative">
+      <div><p class="text-xs uppercase tracking-widest text-white/70">Tăng trưởng quý 3/2026</p><p class="text-2xl font-bold mt-1">CÔNG TY TNHH MẪU SAVITAX</p>
+        <p class="text-sm text-white/80 mt-1">So với mốc đổi phí gần nhất <b>quý 3/2024</b> · 11 quý dữ liệu</p></div>
+      <div class="ml-auto grid grid-cols-3 gap-3">
+        ${[['Chứng từ/tháng', '206', '+79% so mốc'], ['Doanh thu 4 quý', '63,8 tỷ', '+45,7% so mốc'], ['Lao động', '30 người', '+50% so mốc']].map(([n, g, p]) => `
+        <div class="rounded-2xl bg-white/15 backdrop-blur px-4 py-2.5 min-w-[150px]"><p class="text-[11px] text-white/75">${n}</p><p class="text-2xl font-bold tabular-nums leading-tight">${g}</p><p class="text-[11px] font-semibold text-amber-100">▲ ${p}</p></div>`).join('')}</div></div></div>`
+const the = CHI_TIEU.map(c => {
+  const v = c.v, nay = v[NAY]
+  return `<div class="bg-white rounded-2xl shadow-sm overflow-hidden border" style="border-color:${c.mau}33">
+    <div class="px-4 py-2.5 flex items-center gap-2 text-white" style="background:linear-gradient(90deg,${c.mau},${c.mau}cc)">
+      <span class="text-lg">${c.icon}</span><p class="text-sm font-semibold">${c.ten}</p><span class="ml-auto bg-white/90 rounded">${nguon(c.nguon)}</span></div>
+    <div class="px-4 pt-3 pb-3" style="background:linear-gradient(180deg,${c.nhat},#fff 70%)">
+      <div class="flex items-end gap-2"><p class="text-4xl font-extrabold tabular-nums leading-none" style="color:${c.mau}">${c.k === 'dt' ? soVN(nay, 1) : soVN(nay)}</p><p class="text-xs text-gray-500 mb-1">${c.dv} · Q3/2026</p></div>
+      <p class="text-[11px] text-gray-400 mt-1">${c.mo}</p>
+      <div class="flex flex-wrap gap-1.5 mt-2.5">${huy(tang(nay, v[NAY - 1]), 'quý trước')}${huy(tang(nay, v[NAY - 4]), 'cùng kỳ')}${huy(tang(nay, v[MOC]), 'mốc')}</div>
+      <div class="mt-3">${cot(v, 54, false, NAY, MOC, c.mau)}</div>
+      <div class="flex justify-between text-[9px] text-gray-400 mt-1"><span>${QUY[0]}</span><span class="text-[#B7791F] font-semibold">● mốc ${QUY[MOC]}</span><span>${QUY[NAY]}</span></div></div></div>`
+}).join('')
+const hang = (c, f, dam = false) => `<tr class="${dam ? 'font-semibold' : ''}" ${dam ? 'style="background:#FFF8E6"' : ''}>
+  <td class="px-4 py-2 text-xs whitespace-nowrap"><span class="inline-block w-2.5 h-2.5 rounded-full mr-2 align-middle" style="background:${c ? c.mau : '#C9A84C'}"></span>${c ? c.ten + (c.k === 'dt' ? ' (tỷ)' : '') : 'Chứng từ/tháng (biểu phí)'}</td>
+  ${QUY.map((q, i) => `<td class="px-2 text-right text-xs tabular-nums ${i === MOC ? 'border-x-2 border-[#C9A84C]/60' : ''}" ${i === NAY ? `style="background:${c ? c.nhat : '#FDEFC8'};color:${c ? c.mau : '#8a6a1f'};font-weight:700"` : ''}>${f(i)}</td>`).join('')}</tr>`
+const bangQuy = bang(`<th class="text-left px-4 py-2.5">Chỉ tiêu</th>${QUY.map((q, i) => `<th class="text-right px-2 ${i === MOC ? 'text-[#B7791F]' : ''}">${q}${i === MOC ? '<br><span class="normal-case">mốc phí</span>' : ''}</th>`).join('')}`,
+  CHI_TIEU.map(c => hang(c, i => c.v[i] === 0 ? '<span class="text-gray-300">0</span>' : soVN(c.v[i], 1))).join('') + hang(null, i => soVN(Math.round(ctThang(i))), true))
+const chenh = PHI.deXuat - PHI.dangThu
+const oPhi = (nhan, gt, phu) => `<div class="rounded-2xl bg-white px-4 py-3 shadow-sm"><p class="text-[11px] text-gray-500">${nhan}</p><p class="text-xl font-bold tabular-nums mt-0.5 text-gray-800">${gt}</p><p class="text-[11px] text-gray-500 mt-0.5">${phu}</p></div>`
+const khoiPhi = `
+  <div class="rounded-3xl p-1 shadow-md" style="background:linear-gradient(120deg,#8B1A1A,#C9A84C)">
+   <div class="rounded-[22px] bg-[#FFFBF5] p-4">
+    <div class="flex items-center gap-2 mb-3"><span class="text-lg">💼</span><p class="text-base font-bold" style="color:${DO}">Căn cứ điều chỉnh phí</p>
+      <span class="text-[11px] font-semibold rounded-full px-2 py-0.5 bg-[#8B1A1A] text-white">🔒 Chỉ trưởng phòng, admin</span>
+      <span class="ml-auto text-[11px] text-gray-500">Engine biểu phí của phân hệ Kinh doanh · kê khai tháng · <b>mọi số đã gồm VAT</b></span></div>
+    <div class="grid grid-cols-4 gap-3 items-stretch">
+      ${oPhi('Phí đang thu (từ ' + PHI.tuNgay + ')', so(PHI.dangThu) + ' đ', 'mỗi tháng · đã gồm VAT')}
+      ${oPhi('Biểu phí ở mốc Q3/2024', so(PHI.moc.gomVat) + ' đ', PHI.moc.ct + ' chứng từ/tháng · không hải quan · DT 4 quý ' + soVN(PHI.moc.dt, 1) + ' tỷ')}
+      ${oPhi('Biểu phí hiện tại Q3/2026', so(PHI.nay.gomVat) + ' đ', PHI.nay.ct + ' chứng từ/tháng · có hải quan · DT 4 quý ' + soVN(PHI.nay.dt, 1) + ' tỷ')}
+      <div class="rounded-2xl px-4 py-3 text-white shadow" style="background:linear-gradient(135deg,#8B1A1A,#B8323A)">
+        <p class="text-[11px] text-white/80">Phí đề xuất · sửa được</p>
+        <div class="mt-1 flex items-center gap-1 rounded-xl bg-white text-gray-900 px-2.5 py-1.5"><span class="text-xl font-extrabold tabular-nums">${so(PHI.deXuat)}</span><span class="text-sm text-gray-500">đ/tháng</span><span class="ml-auto text-gray-400 text-xs">✎</span></div>
+        <p class="text-[11px] mt-1 text-amber-100">Giá đã bao gồm VAT · không lưu, chỉ dùng để in</p>
+        <p class="text-sm font-bold mt-1.5">▲ +${so(chenh)} đ <span class="font-normal text-white/80">(+${soVN(chenh / PHI.dangThu * 100, 1)}% so phí đang thu)</span></p></div></div>
+    <div class="mt-3 text-xs text-gray-700 space-y-1">${PHI.canCu.map(x => `<p>• ${x}</p>`).join('')}<p>• Biểu phí là giá chưa VAT, app nhân 1,08 để cùng cơ sở với phí đang thu.</p></div>
+    <p class="mt-2 text-xs text-amber-900 bg-amber-100 border border-amber-200 rounded-xl px-3 py-1.5">⚠ ${PHI.canhBao}</p>
+   </div></div>`
+trang({ dangMo: 'soat', icon: '🔎', tieuDe: 'Soát xét báo cáo', tabs: TABS_SOAT, tabMo: 'Tăng trưởng & phí', nam: 2026, noiDung: `
+  <div class="flex items-center gap-2 mb-4 flex-wrap">
+    <span class="text-xs text-gray-500">Khoảng</span><span class="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm">Q1/2024 → Q3/2026 ▾</span>
+    <span class="text-xs text-gray-500 ml-3">Mốc so sánh phí</span><span class="rounded-xl border border-[#C9A84C] bg-amber-50 px-3 py-1.5 text-sm text-[#8a6a1f]">Q3/2024 · lần đổi phí gần nhất ▾</span>
+    <div class="ml-auto flex gap-2"><button class="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-sm">👁 Xem bản gửi khách hàng</button><button class="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-sm">⬇ PDF</button><button class="px-3 py-1.5 rounded-xl text-sm text-white" style="background:${DO}">⬇ Excel</button></div></div>
+  ${dauTrang}
+  <div class="grid grid-cols-3 gap-4 mb-5">${the}</div>
+  <h2 class="text-sm font-bold text-gray-700 mb-2">Số liệu theo quý</h2>
+  ${bangQuy}
+  <p class="text-[11px] text-gray-400 mt-1.5 mb-5">Chứng từ/tháng = (hóa đơn đầu vào + hóa đơn đầu ra + giao dịch sao kê) ÷ 3, đúng đơn vị biểu phí. Màu chỉ để phân biệt chỉ tiêu; ▲▼ là tăng/giảm, không phải đánh giá.</p>
+  ${khoiPhi}` })
+</script></body></html>

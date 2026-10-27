@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="chieu-cao" content="1600"><title>S1 · Hồ sơ dữ liệu · Soát xét báo cáo</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Soát xét báo cáo đọc toàn bộ cây "Năm <năm>" — theo đúng cấu trúc thư mục chuẩn của Savitax.
+const TT = { co: ['Đã có', 'xanhLa'], thieu: ['Thiếu kỳ', 'do'], kps: ['Không phát sinh', 'xam'], xem: ['Cần xem', 'hoPhach'], ko: ['Không cần cho soát xét', 'xam'] }
+const cay = [
+  ['1. HỢP ĐỒNG MUA VÀO_BÁN RA', 'ko', 'Chỉ liệt kê, không đọc số', [], 23],
+  ['2. HÓA ĐƠN MUA VÀO_BÁN RA', 'xem', 'Bảng kê cổng HĐĐT 4 quý (mua vào, bán ra) · 744 file hóa đơn · 2 scan không đọc chắc chắn · 1 bảng kê để nhầm thư mục', ['excel', 'xml', 'pdf', 'html', 'scan'], 752],
+  ['3. HỢP ĐỒNG KHÁC', 'ko', 'Chỉ liệt kê', [], 4],
+  ['4. TỜ KHAI HẢI QUAN', 'co', '1 tờ khai nhập khẩu (quý 3)', ['pdf', 'xml'], 2],
+  ['5. BẢO HIỂM XÃ HỘI \\ 1. C12', 'co', 'C12 tháng 1–12', ['pdf'], 12],
+  ['6. LƯƠNG \\ 1. BẢNG LƯƠNG_BẢNG CHẤM CÔNG', 'thieu', 'Có tháng 1–10, thiếu tháng 11, 12', ['excel'], 10],
+  ['7. BỘ BÁO CÁO \\ BỘ BÁO CÁO THUẾ QUÝ_THÁNG', 'co', '01/GTGT 12 tháng · 05/KK-TNCN 4 quý', ['xml', 'pdf'], 31],
+  ['7. BỘ BÁO CÁO \\ BAOCAOTHUE_&lt;kỳ&gt; \\ BẢNG KÊ', 'thieu', 'Bảng kê phần mềm kế toán Q1–Q3 · chưa có Q4', ['excel'], 3],
+  ['7. BỘ BÁO CÁO \\ BỘ BÁO CÁO TÀI CHÍNH_2025', 'co', 'BCTC đủ 4 báo cáo · 03/TNDN · 05/QTT-TNCN', ['xml', 'excel', 'pdf'], 9],
+  ['8. SỔ SÁCH KẾ TOÁN \\ 1. PHIẾU THU_PHIẾU CHI', 'co', 'Sổ quỹ tiền mặt', ['excel'], 1],
+  ['8. SỔ SÁCH KẾ TOÁN \\ 2. PHIẾU XUẤT KHO_PHIẾU NHẬP KHO', 'ko', 'Chứng từ, chỉ liệt kê', ['pdf'], 6],
+  ['8. SỔ SÁCH KẾ TOÁN \\ 3. BẢNG CÂN ĐỐI TÀI KHOẢN MẪU 2 BÊN', 'co', 'Cấp 3, 61 tài khoản', ['excel'], 1],
+  ['8. SỔ SÁCH KẾ TOÁN \\ 4. CÔNG NỢ PHẢI THU_PHẢI TRẢ', 'co', '131: 48 đối tượng · 331: 35 đối tượng', ['excel'], 2],
+  ['8. SỔ SÁCH KẾ TOÁN \\ 5. HÀNG TỒN KHO', 'co', 'Nhập – xuất – tồn 126 mã hàng', ['excel'], 1],
+  ['8. SỔ SÁCH KẾ TOÁN \\ 6. BẢNG TÍNH KHẤU HAO CCDC_TSCĐ', 'co', '14 TSCĐ · 22 CCDC', ['excel'], 1],
+  ['8. SỔ SÁCH KẾ TOÁN \\ 7. SỔ NHẬT KÝ CHUNG', 'co', '18.420 dòng', ['excel'], 1],
+  ['8. SỔ SÁCH KẾ TOÁN \\ 8. SỔ CHI TIẾT CÁC TÀI KHOẢN', 'xem', '1 file .rar chưa giải nén', ['excel'], 3],
+  ['8. SỔ SÁCH KẾ TOÁN \\ 9. BẢNG TÍNH GIÁ THÀNH(KPS)', 'kps', 'Đuôi (KPS): không phát sinh', [], 0],
+  ['9. SỔ PHỤ NGÂN HÀNG \\ QUÝ 1–4', 'thieu', '2 tài khoản · thiếu quý 4 tài khoản Techcombank', ['excel', 'pdf'], 7],
+  ['10. GIẤY NỘP TIỀN', 'co', '16 giấy nộp tiền · đối chiếu số thuế đã nộp', ['pdf'], 16],
+  ['11. CÁC THÔNG BÁO_CÔNG VĂN (Nếu có)', 'co', '3 thông báo (không có quyết định hoàn thuế)', ['pdf', 'xml'], 3],
+]
+const dong = cay.map(([tm, t, ct, ng, sl]) => `<tr class="${t === 'ko' ? 'text-gray-400' : ''}">
+  <td class="px-4 py-2.5 font-mono text-xs ${t === 'ko' ? 'text-gray-400' : 'text-gray-700'}">📁 ${tm}</td>
+  <td class="px-3">${chip(...TT[t])}</td><td class="px-3 text-xs ${t === 'ko' ? '' : 'text-gray-600'}">${ct}</td>
+  <td class="px-3"><div class="flex gap-1">${ng.map(nguon).join('')}</div></td><td class="px-4 text-right text-xs text-gray-500">${sl || '—'}</td></tr>`).join('')
+// Bảng kiểm soát theo kỳ: hồ sơ phải có đủ 12 tháng / 4 quý.
+const o = (nhan, tt) => `<span class="inline-flex items-center justify-center w-10 h-7 rounded-md border text-[11px] font-semibold ${MAU[tt]}">${nhan}</span>`
+const thang = (thieu = []) => Array.from({ length: 12 }, (_, i) => o('T' + (i + 1), thieu.includes(i + 1) ? 'do' : 'xanhLa')).join('')
+const quy = (thieu = []) => [1, 2, 3, 4].map(q => o('Q' + q, thieu.includes(q) ? 'do' : 'xanhLa')).join('')
+const ky = [
+  ['Tờ khai 01/GTGT', thang()], ['Bảng lương', thang([11, 12])], ['C12 BHXH', thang()],
+  ['Bảng kê cổng HĐĐT', quy()], ['Bảng kê phần mềm kế toán', quy([4])], ['Sổ phụ NH · ACB', quy()], ['Sổ phụ NH · Techcombank', quy([4])], ['05/KK-TNCN', quy()],
+]
+trang({ dangMo: 'soat', icon: '🔎', tieuDe: 'Soát xét báo cáo', tabs: TABS_SOAT, tabMo: 'Hồ sơ dữ liệu', noiDung: `
+  <div class="grid grid-cols-5 gap-3 mb-4">
+    ${oTong(21, 'Thư mục trong Năm 2025', 'xanhDuong')}${oTong(13, 'Đã có', 'xanhLa')}${oTong(3, 'Thiếu kỳ', 'do', 'Lương T11–12 · sổ phụ NH Q4 · bảng kê PM Q4')}${oTong(1, 'Không phát sinh (kps)', 'xam', '9. Bảng tính giá thành')}${oTong(4, 'File cần xem', 'hoPhach', '2 scan, 1 .rar, 1 PDF có mật khẩu')}</div>
+  <div class="grid grid-cols-3 gap-4">
+    <div class="col-span-2">${bang(`<th class="text-left px-4 py-2.5">Thư mục (đúng cây chuẩn Savitax)</th><th class="text-left px-3">Trạng thái</th><th class="text-left px-3">App đọc được</th><th class="text-left px-3">Nguồn</th><th class="text-right px-4">File</th>`, dong)}</div>
+    <div class="space-y-4">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm"><div class="px-4 py-2.5 border-b border-gray-100 text-sm font-semibold text-gray-700">Đủ kỳ chưa</div>
+        <div class="px-4 py-3 space-y-3">${ky.map(([n, h]) => `<div><p class="text-xs text-gray-600 mb-1">${n}</p><div class="flex gap-1 flex-wrap">${h}</div></div>`).join('')}</div></div>
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 text-xs text-gray-600 space-y-1.5">
+        <p class="text-sm font-semibold text-gray-700 mb-1">Cách app nhận thư mục</p>
+        <p>• So theo <b>số thứ tự + từ khóa</b>, không so nguyên tên, vì tên mỗi năm mỗi khác.</p>
+        <p>• Thư mục đuôi <b>(kps)</b> = không phát sinh: không báo thiếu.</p>
+        <p>• Thư mục mờ: có trong cây nhưng soát xét không cần đọc số.</p>
+        <p>• App <b>chỉ đọc</b>, không tạo, đổi tên hay xóa gì trong Drive.</p></div>
+    </div></div>` })
+</script></body></html>

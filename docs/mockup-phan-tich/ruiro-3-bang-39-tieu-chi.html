@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="chieu-cao" content="2780"><title>R3 · Bảng 39 tiêu chí · Rủi ro thuế</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script><script src="du-lieu-mau.js"></script></head>
+<body><script>
+// Số liệu: kết quả bộ máy 39 tiêu chí chạy trên bộ dữ liệu mẫu giả lập năm 2025.
+// Tạm chỉnh 2 dòng để minh họa trạng thái: R09 không phát sinh hoàn thuế, R39 thiếu BCTC kiểm toán.
+const kq = DU_LIEU_MAU[2025].map(r => r.id === 'R09' ? { ...r, trangThai: 'kps' } : r.id === 'R39' ? { ...r, trangThai: 'thieu' } : r)
+const NGUON_TC = { R01: ['xml', 'excel'], R02: ['xml', 'excel'], R03: ['xml', 'excel'], R04: ['xml'], R05: ['xml', 'excel'], R06: ['xml', 'excel'], R07: ['xml', 'excel'], R08: ['xml', 'excel'], R10: ['xml', 'excel'], R11: ['xml', 'excel'], R12: ['excel'], R22: ['xml'] }
+const maChip = ma => (ma || []).map(m => `<span class="inline-block rounded bg-slate-100 text-slate-600 text-[10px] font-semibold px-1 mr-0.5">${m}</span>`).join('')
+const ten = r => `<p class="font-medium text-gray-800 leading-snug">${r.ten}</p><div class="mt-0.5">${maChip(r.ma)}</div>`
+const trangThaiO = r => r.trangThai === 'kps' ? chip('Không phát sinh', 'xam') : r.trangThai === 'thieu' ? chip('Thiếu dữ liệu', 'do', 'Cần BCTC đã kiểm toán') : r.trangThai === 'na' ? chip('Không áp dụng', 'xam') : ''
+
+const doiChieu = kq.filter(r => r.doiChieu).sort((a, b) => (b.trangThai === 'co') - (a.trangThai === 'co') || Math.abs(b.tyLe || 0) - Math.abs(a.tyLe || 0))
+// Tiêu chí số dư: so với số của chính tiêu chí đó năm 2024 (không dùng "đầu năm" của bộ máy cũ,
+// vì với chỉ tiêu tờ khai TNDN nó trả lại đúng số năm nay → luôn 0%).
+const truoc = Object.fromEntries(DU_LIEU_MAU[2024].map(r => [r.id, r.sl1]))
+const soDu = kq.filter(r => !r.doiChieu).map(r => {
+  const t = typeof truoc[r.id] === 'number' ? truoc[r.id] : null
+  return { ...r, sl2: t, cl: r.sl1 != null && t != null ? r.sl1 - t : null, tyLe: t ? (r.sl1 - t) / Math.abs(t) : null }
+})
+const coCL = doiChieu.filter(r => r.trangThai === 'co' && Math.abs(r.cl) >= 1000).length
+
+const dongDC = doiChieu.map(r => r.trangThai !== 'co'
+  ? `<tr><td class="px-4 py-2.5 font-mono text-xs font-bold" style="color:${DO}">${r.id}</td><td class="px-3 py-2.5">${ten(r)}</td><td colspan="4" class="px-3 text-xs text-gray-500">${trangThaiO(r)} <span class="ml-2">${r.id === 'R09' ? 'Không có quyết định hoàn thuế, [42] cả năm = 0' : ''}</span></td><td></td></tr>`
+  : `<tr><td class="px-4 py-2.5 font-mono text-xs font-bold" style="color:${DO}">${r.id}</td><td class="px-3 py-2.5 max-w-[360px]">${ten(r)}</td>
+    <td class="px-3 text-right tabular-nums">${so(r.sl1)}</td><td class="px-3 text-right tabular-nums">${so(r.sl2)}</td>
+    <td class="px-3 text-right tabular-nums font-semibold ${Math.abs(r.cl) >= 1000 ? 'text-gray-900' : 'text-gray-300'}">${Math.abs(r.cl) >= 1000 ? so(r.cl) : '0'}</td>
+    <td class="px-3">${Math.abs(r.cl) >= 1000 ? thanhTyLe(r.tyLe) : '<span class="text-xs text-gray-400 float-right">khớp</span>'}</td>
+    <td class="px-4"><div class="flex gap-1">${(NGUON_TC[r.id] || ['xml']).map(nguon).join('')}</div></td></tr>`).join('')
+
+const dongSD = soDu.map(r => r.trangThai !== 'co'
+  ? `<tr><td class="px-4 py-2 font-mono text-xs font-bold" style="color:${DO}">${r.id}</td><td class="px-3 py-2">${ten(r)}</td><td colspan="4" class="px-3">${trangThaiO(r)}</td></tr>`
+  : `<tr><td class="px-4 py-2 font-mono text-xs font-bold" style="color:${DO}">${r.id}</td><td class="px-3 py-2 max-w-[420px]">${ten(r)}</td>
+    <td class="px-3 text-right tabular-nums">${r.sl1 ? so(r.sl1) : '<span class="text-gray-300">0</span>'}</td><td class="px-3 text-right tabular-nums text-gray-500">${r.sl2 ? so(r.sl2) : '<span class="text-gray-300">0</span>'}</td>
+    <td class="px-3 text-right tabular-nums">${r.cl ? so(r.cl) : '<span class="text-gray-300">—</span>'}</td>
+    <td class="px-4 text-right text-xs tabular-nums text-slate-700">${r.tyLe == null ? (r.sl1 ? '<span class="text-gray-400">mới phát sinh</span>' : '<span class="text-gray-300">—</span>') : (r.tyLe > 0 ? '+' : '') + pt(r.tyLe, 1)}</td></tr>`).join('')
+
+const loc = (ds, mo) => ds.map(x => `<span class="rounded-full border px-2.5 py-1 text-xs ${x === mo ? 'border-[#8B1A1A] text-[#8B1A1A] bg-red-50 font-semibold' : 'border-gray-200 text-gray-600 bg-white'}">${x}</span>`).join('')
+
+trang({ dangMo: 'ruiro', icon: '⚖️', tieuDe: 'Rủi ro thuế', tabs: TABS_RUIRO, tabMo: 'Bảng 39 tiêu chí', noiDung: `
+  ${banChuaChamDiem()}
+  <div class="grid grid-cols-5 gap-3 mb-4">
+    ${oTong(39, 'Tiêu chí', 'xanhDuong')}${oTong(coCL, 'Đối chiếu có chênh lệch', 'hoPhach', 'trên 13 tiêu chí đối chiếu')}${oTong(soDu.filter(r => r.trangThai === 'co' && r.sl1).length, 'Tiêu chí số dư có phát sinh', 'tim', 'trên 26 tiêu chí số dư')}${oTong(1, 'Thiếu dữ liệu', 'do', 'R39')}${oTong(2, 'Không phát sinh / không áp dụng', 'xam', 'R09, R31')}</div>
+  <div class="flex items-center gap-2 mb-3 flex-wrap"><span class="text-xs text-gray-500 w-16">Nhóm</span>${loc(['Tất cả', 'GTGT', 'TNDN', 'BCTC', 'LCTT', 'Khác'], 'Tất cả')}
+    <span class="text-xs text-gray-500 ml-4">Mã rủi ro</span>${loc(['DT', 'ĐR', 'KT', 'HT', 'CP', 'PN', 'UĐ', 'HĐ', 'KH'], '')}</div>
+  <h2 class="text-sm font-bold text-gray-700 mb-2">A. 13 tiêu chí đối chiếu · sắp theo tỷ lệ chênh lệch lớn nhất</h2>
+  ${bang(`<th class="text-left px-4 py-2.5 w-14">Mã</th><th class="text-left px-3">Tiêu chí</th><th class="text-right px-3">SL1</th><th class="text-right px-3">SL2</th><th class="text-right px-3">Chênh lệch SL1 − SL2</th><th class="text-right px-3">Tỷ lệ chênh lệch</th><th class="text-left px-4">Nguồn</th>`, dongDC, 'mb-5')}
+  <h2 class="text-sm font-bold text-gray-700 mb-2">B. 26 tiêu chí số dư · năm 2025 so với năm 2024</h2>
+  ${bang(`<th class="text-left px-4 py-2.5 w-14">Mã</th><th class="text-left px-3">Tiêu chí</th><th class="text-right px-3">Năm 2025</th><th class="text-right px-3">Năm 2024</th><th class="text-right px-3">Tăng (giảm)</th><th class="text-right px-4">% thay đổi</th>`, dongSD)}
+  <p class="text-xs text-gray-400 mt-3">Tỷ lệ chênh lệch = |SL1 − SL2| ÷ số lớn hơn. Thanh tỷ lệ chỉ để so độ lớn, không phải đánh giá. Bấm một dòng để xem chi tiết và file nguồn.</p>` })
+</script></body></html>

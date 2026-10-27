@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="chieu-cao" content="1260"><title>S5 · Chỉ số tài chính · Soát xét báo cáo</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// 35 chỉ số: chỉ hiện giá trị qua các năm + công thức. Chưa so ngưỡng ngành, chưa chấm điểm.
+const NHOM = [
+  ['Khả năng sinh lời', [['Biên lợi nhuận gộp', 'LN gộp ÷ DT thuần', '%', [24.1, 25.6, 23.7]], ['Biên lợi nhuận ròng', 'LNST ÷ DT thuần', '%', [3.2, 3.6, 2.4]], ['ROA', 'LNST ÷ tổng tài sản bình quân', '%', [6.8, 7.1, 4.9]], ['ROE', 'LNST ÷ VCSH bình quân', '%', [14.2, 15.0, 10.3]]]],
+  ['Thanh khoản', [['Thanh toán hiện hành', 'TS ngắn hạn ÷ nợ ngắn hạn', 'lần', [1.52, 1.48, 1.31]], ['Thanh toán nhanh', '(TS ngắn hạn − HTK) ÷ nợ ngắn hạn', 'lần', [0.94, 0.91, 0.86]], ['Thanh toán tức thời', 'Tiền ÷ nợ ngắn hạn', 'lần', [0.21, 0.18, 0.12]]]],
+  ['Đòn bẩy tài chính', [['Nợ phải trả ÷ VCSH', '', 'lần', [1.08, 1.11, 1.36]], ['Nợ vay ÷ VCSH', '', 'lần', [0.31, 0.29, 0.41]], ['Khả năng trả lãi vay', 'EBIT ÷ chi phí lãi vay', 'lần', [6.4, 7.2, 4.1]]]],
+  ['Hiệu quả hoạt động', [['Số ngày thu tiền', 'Phải thu bình quân ÷ DT × 365', 'ngày', [31, 30, 68]], ['Số ngày tồn kho', 'HTK bình quân ÷ giá vốn × 365', 'ngày', [44, 46, 49]], ['Số ngày trả tiền', 'Phải trả bình quân ÷ giá vốn × 365', 'ngày', [38, 37, 41]], ['Vòng quay tổng tài sản', 'DT thuần ÷ tổng TS bình quân', 'vòng', [2.1, 2.0, 2.0]]]],
+  ['Dòng tiền', [['Dòng tiền KD ÷ LNST', '', 'lần', [1.12, 0.96, 0.58]], ['Dòng tiền tự do', 'Dòng tiền KD − chi mua TSCĐ', 'triệu', [820, 610, -240]]]],
+  ['Tăng trưởng', [['Doanh thu thuần', 'so với năm trước', '%', [null, 17.0, 24.4]], ['Lợi nhuận sau thuế', 'so với năm trước', '%', [null, 31.6, -17.1]], ['Tổng tài sản', 'so với năm trước', '%', [null, 11.8, 38.5]]]],
+]
+const fm = (v, dv) => v == null ? '<span class="text-gray-300">—</span>' : v.toLocaleString('vi-VN', { maximumFractionDigits: dv === 'lần' ? 2 : 1 }) + (dv === '%' ? '%' : '')
+const dong = NHOM.map(([n, ds]) => `<tr class="nhom"><td colspan="6" class="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500">${n}</td></tr>` +
+  ds.map(([ten, ct, dv, v]) => `<tr><td class="px-4 py-2 text-sm text-gray-800">${ten}</td><td class="px-3 text-[11px] text-gray-400">${ct}</td><td class="px-3 text-xs text-gray-500">${dv}</td>${v.map((x, i) => `<td class="px-4 text-right tabular-nums text-sm ${i === 2 ? 'font-semibold' : 'text-gray-600'}">${fm(x, dv)}</td>`).join('')}</tr>`).join('')).join('')
+// Cột ngang: doanh thu → lợi nhuận, 3 năm (triệu đồng)
+const kq = [['Doanh thu thuần', [40000, 46800, 58200]], ['Giá vốn', [30360, 34820, 44380]], ['Lợi nhuận gộp', [9640, 11980, 13820]], ['Chi phí QLKD', [7900, 9400, 11500]], ['Lợi nhuận sau thuế', [1280, 1685, 1397]]]
+const max = 58200
+const doThi = kq.map(([n, v]) => `<div class="mb-2"><p class="text-xs text-gray-600 mb-0.5">${n}</p>${v.map((x, i) => `<div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 w-8">${2023 + i}</span><div class="h-2.5 rounded-sm ${i === 2 ? 'bg-[#8B1A1A]' : 'bg-[#E9C4C4]'}" style="width:${x / max * 100}%"></div><span class="text-[10px] tabular-nums text-gray-500">${x.toLocaleString('vi-VN')}</span></div>`).join('')}</div>`).join('')
+trang({ dangMo: 'soat', icon: '🔎', tieuDe: 'Soát xét báo cáo', tabs: TABS_SOAT, tabMo: 'Chỉ số tài chính', noiDung: `
+  ${banChuaChamDiem()}
+  <div class="grid grid-cols-3 gap-4">
+    <div class="col-span-2">${bang(`<th class="text-left px-4 py-2.5">Chỉ số</th><th class="text-left px-3">Công thức</th><th class="text-left px-3">Đơn vị</th><th class="text-right px-4">2023</th><th class="text-right px-4">2024</th><th class="text-right px-4">2025</th>`, dong)}
+      <p class="text-[11px] text-gray-400 mt-2">Hiện 19/35 chỉ số. Chỉ số đặc thù ngành (thương mại) ở cuối bảng. Chưa so với ngưỡng ngành.</p></div>
+    <div class="space-y-4">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3"><p class="text-sm font-semibold text-gray-700 mb-2">Từ doanh thu đến lợi nhuận (triệu đồng)</p>${doThi}</div>
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 text-xs text-gray-600">
+        <p class="text-sm font-semibold text-gray-700 mb-1">Thay đổi lớn nhất 2025 so với 2024</p>
+        <p>• Số ngày thu tiền: 30 → 68 ngày</p><p>• Tổng tài sản tăng 38,5%, doanh thu tăng 24,4%</p><p>• Dòng tiền tự do chuyển âm: −240 triệu</p>
+        <p class="text-[11px] text-gray-400 mt-2">Chỉ nêu số, không đánh giá tốt/xấu.</p></div>
+    </div></div>` })
+</script></body></html>

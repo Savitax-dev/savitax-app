@@ -60,6 +60,9 @@ export default function NhacHanNop() {
   const [giay, setGiay] = useState(30)
 
   useEffect(() => {
+    // CHẠY TRÊN MÁY (localhost) THÌ TẮT (anh dặn 26/10/2026): API nhắc hạn đọc toàn bộ công ty + nghĩa vụ thuế,
+    // gọi từ máy ở VN tới Supabase Singapore rất chậm và làm app local nặng. Bản thật (app.savitax.vn) giữ nguyên.
+    if (/^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname)) return
     let conSong = true
     layNhac().then(d => { if (conSong) setDs(d) })
     return () => { conSong = false }

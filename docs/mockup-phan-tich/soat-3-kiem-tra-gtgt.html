@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="chieu-cao" content="920"><title>S3 · Kiểm tra Thuế GTGT · Soát xét báo cáo</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Một trang kiểm tra theo khuôn chung: số chính → bảng đối chiếu theo kỳ → phát hiện (chỉ nêu sự việc + căn cứ đúng năm).
+const nhom = ['Cân đối BCTC', 'Cân đối phát sinh', 'Sổ sách', 'Ngân hàng', 'Thuế GTGT', 'Thuế TNDN', 'TNCN, bảo hiểm', 'Đối chiếu chéo']
+// Cộng cả năm khớp R03 bên Rủi ro thuế: [24] = 3.700 triệu, PS Nợ 1331 = 3.550 triệu.
+const thang = [
+  [290, 290, 285], [280, 280, 280], [315, 330, 330], [285, 285, 285], [300, 300, 300], [320, 320, 275],
+  [325, 329, 325], [300, 301.25, 300], [310, 312.3, 310], [315, 315, 315], [330, 312, 312], [330, 330, 233],
+].map(a => a.map(x => x * 1e6))
+const dong = thang.map(([tk, hd, so_], i) => {
+  const a = tk - hd, b = tk - so_
+  const o = v => v ? `<td class="px-3 text-right tabular-nums text-xs font-semibold bg-amber-100 text-amber-900">${so(v)}</td>` : `<td class="px-3 text-right text-xs text-gray-300">0</td>`
+  return `<tr><td class="px-4 py-1.5 text-xs">T${String(i + 1).padStart(2, '0')}</td><td class="px-3 text-right tabular-nums text-xs">${so(tk)}</td><td class="px-3 text-right tabular-nums text-xs">${so(hd)}</td><td class="px-3 text-right tabular-nums text-xs">${so(so_)}</td>${o(a)}${o(b)}</tr>`
+}).join('')
+const cong = thang.reduce((s, r) => r.map((v, k) => s[k] + v), [0, 0, 0])
+const phatHien = [
+  ['Hóa đơn từ 5 triệu (gồm thuế) thanh toán bằng tiền mặt', '6 hóa đơn từ 01/07/2025 · tiền thuế 84.300.000', 'HĐ từ 01/07/2025: ngưỡng 5 triệu (NĐ 181/2025). HĐ trước 01/07/2025: ngưỡng 20 triệu (TT 219/2013).', 'Bảng kê cổng HĐĐT ↔ sổ quỹ 111'],
+  ['Hóa đơn đầu vào trùng', '2 hóa đơn · tiền thuế 18.400.000', 'Luật GTGT 48/2024', 'Bảng kê cổng HĐĐT (Excel)'],
+  ['Kê khai [24] khác bảng kê cổng HĐĐT', '5 tháng: T03, T07, T08, T09, T11 · chi tiết từng hóa đơn ở tab Bảng kê hóa đơn', 'TT 80/2021 (mẫu 01/GTGT)', 'Tờ khai XML ↔ bảng kê cổng (Excel)'],
+  ['Có doanh thu không chịu thuế nhưng [25] = [24]', '[26] cả năm 2.000.000.000 = 3,5% tổng doanh thu', 'Luật GTGT 48/2024; NĐ 181/2025 (phân bổ thuế đầu vào dùng chung)', 'Tờ khai 12 tháng'],
+]
+trang({ dangMo: 'soat', icon: '🔎', tieuDe: 'Soát xét báo cáo', tabs: TABS_SOAT, tabMo: 'Kiểm tra', noiDung: `
+  <div class="flex gap-1.5 mb-4 flex-wrap">${nhom.map(n => `<span class="rounded-full border px-3 py-1 text-xs ${n === 'Thuế GTGT' ? 'border-[#8B1A1A] text-white font-semibold' : 'border-gray-200 bg-white text-gray-600'}" ${n === 'Thuế GTGT' ? `style="background:${DO}"` : ''}>${n}</span>`).join('')}</div>
+  <div class="grid grid-cols-4 gap-3 mb-4">
+    ${oTong(so(3.7e9), 'Σ[24] thuế đầu vào trên tờ khai', 'xanhDuong')}${oTong(so(3.70455e9), 'Thuế trên bảng kê cổng HĐĐT', 'tim', '286 hóa đơn mua vào · 4 file bảng kê quý')}${oTong(so(3.55e9), 'PS Nợ 1331 trên sổ', 'xanhLa')}${oTong(4, 'Phép đối chiếu có chênh lệch', 'hoPhach', 'trên 16 phép')}</div>
+  <div class="grid grid-cols-5 gap-4">
+    <div class="col-span-3">
+      <h2 class="text-sm font-bold text-gray-700 mb-2">Thuế GTGT đầu vào theo tháng</h2>
+      ${bang(`<th class="text-left px-4 py-2.5">Kỳ</th><th class="text-right px-3">[24] tờ khai</th><th class="text-right px-3">Bảng kê cổng</th><th class="text-right px-3">PS Nợ 1331</th><th class="text-right px-3">Tờ khai − cổng</th><th class="text-right px-3">Tờ khai − sổ</th>`,
+        dong + `<tr class="font-semibold"><td class="px-4 py-2 text-xs">Cả năm</td>${cong.map(v => `<td class="px-3 text-right tabular-nums text-xs">${so(v)}</td>`).join('')}<td class="px-3 text-right tabular-nums text-xs">${so(cong[0] - cong[1])}</td><td class="px-3 text-right tabular-nums text-xs">${so(cong[0] - cong[2])}</td></tr>`)}
+      <p class="text-[11px] text-gray-400 mt-2">Ô nền vàng = có chênh lệch. Bấm ô để xem danh sách hóa đơn hoặc bút toán tạo ra chênh lệch.</p></div>
+    <div class="col-span-2 space-y-3">
+      <h2 class="text-sm font-bold text-gray-700">Phát hiện</h2>
+      ${phatHien.map(([t, sl, cc, ng]) => `<div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
+        <p class="text-sm font-semibold text-gray-800">${t}</p><p class="text-xs text-gray-700 mt-1">${sl}</p>
+        <p class="text-[11px] text-gray-500 mt-1.5"><b>Căn cứ năm 2025:</b> ${cc}</p><p class="text-[11px] text-gray-400 font-mono mt-0.5">Nguồn: ${ng}</p></div>`).join('')}
+    </div></div>` })
+</script></body></html>

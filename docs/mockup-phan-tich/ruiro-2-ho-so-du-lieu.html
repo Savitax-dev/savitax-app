@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="chieu-cao" content="1640"><title>R2 · Hồ sơ dữ liệu · Rủi ro thuế</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Kiểm kê tài liệu app đọc được trong thư mục năm, chỉ những loại 39 tiêu chí cần.
+const ky = Array.from({ length: 12 }, (_, i) => i + 1).map(t => {
+  const bs = t === 3 ? 'BSL1' : t === 6 ? 'BSL2' : t === 11 ? 'BSL1' : ''
+  return `<span class="inline-flex flex-col items-center justify-center w-11 h-10 rounded-lg border text-[11px] leading-tight ${MAU.xanhLa}"><b>T${t}</b>${bs ? `<span class="text-[9px]">${bs}</span>` : ''}</span>`
+}).join('')
+const tt = { co: ['Đã có', 'xanhLa'], thieu: ['Không tìm thấy', 'do'], kps: ['Không phát sinh', 'xam'], chu_y: ['Cần xem', 'hoPhach'] }
+const ds = [
+  ['Tờ khai 01/GTGT (tháng)', '7. BỘ BÁO CÁO \\ BỘ BÁO CÁO THUẾ QUÝ_THÁNG', 'co', `<div class="flex gap-1 flex-wrap">${ky}</div><p class="text-[11px] text-gray-400 mt-1">Kỳ có bổ sung: app lấy <b>bản nộp sau cùng</b> của kỳ đó.</p>`, ['xml'], '15 file'],
+  ['Quyết toán 03/TNDN + phụ lục 03-1A, 03-2', '7. BỘ BÁO CÁO \\ BỘ BÁO CÁO TÀI CHÍNH_2025', 'co', 'Năm 2025 · bổ sung lần 1 (dùng bản này)', ['xml'], '2 file'],
+  ['BCTC TT133 B01a: BCĐKT, KQKD, LCTT trực tiếp, thuyết minh', '7. BỘ BÁO CÁO \\ BỘ BÁO CÁO TÀI CHÍNH_2025', 'co', 'Đủ 4 báo cáo', ['xml', 'excel', 'pdf'], '3 file'],
+  ['Bảng cân đối tài khoản', '8. SỔ SÁCH KẾ TOÁN \\ 3. BẢNG CÂN ĐỐI TÀI KHOẢN MẪU 2 BÊN', 'co', 'Cấp 3, 61 tài khoản', ['excel'], '1 file'],
+  ['Công nợ phải thu / phải trả', '8. SỔ SÁCH KẾ TOÁN \\ 4. CÔNG NỢ PHẢI THU_PHẢI TRẢ', 'co', 'TK 131: 48 đối tượng · TK 331: 35 đối tượng', ['excel'], '2 file'],
+  ['Bảng kê hóa đơn tải từ cổng HĐĐT', '2. HÓA ĐƠN MUA VÀO_BÁN RA \\ QUÝ n \\ HĐ MUA VÀO · HĐ BÁN RA', 'co', '4 quý · mua vào 286, bán ra 412 hóa đơn', ['excel'], '8 file'],
+  ['Bảng kê xuất từ phần mềm kế toán', '7. BỘ BÁO CÁO \\ BAOCAOTHUE_&lt;kỳ&gt; \\ BẢNG KÊ', 'chu_y', 'Có Q1–Q3 · chưa có Q4 (bỏ vào khi làm xong báo cáo quý)', ['excel'], '3 file'],
+  ['File hóa đơn từng tờ (để xem chi tiết)', '2. HÓA ĐƠN MUA VÀO_BÁN RA \\ QUÝ 1–4', 'chu_y', '744 file · 2 hóa đơn scan không đọc chắc chắn', ['xml', 'pdf', 'html', 'scan'], '744 file'],
+  ['Số hoàn thuế GTGT (quyết định hoàn)', '11. CÁC THÔNG BÁO_CÔNG VĂN (Nếu có)', 'kps', 'Không có quyết định hoàn · [42] cả năm = 0', [], '—'],
+  ['Lỗ còn được chuyển (phụ lục 03-2 các năm trước)', 'Năm 2023, Năm 2024 \\ 7. BỘ BÁO CÁO', 'co', 'Lỗ 2023 còn chuyển: 500.000.000', ['xml'], '2 file'],
+  ['Ý kiến kiểm toán BCTC', '7. BỘ BÁO CÁO \\ BÁO CÁO KHÁC', 'thieu', 'Không thấy BCTC đã kiểm toán → R39 "Thiếu dữ liệu"', [], '—'],
+  ['Tờ khai hải quan', '4. TỜ KHAI HẢI QUAN', 'co', '1 tờ khai nhập khẩu (quý 3)', ['pdf', 'xml'], '2 file'],
+  ['Bảng tính giá thành', '8. SỔ SÁCH KẾ TOÁN \\ 9. BẢNG TÍNH GIÁ THÀNH(KPS)', 'kps', 'Thư mục đuôi (KPS): công ty không phát sinh', [], '—'],
+]
+const dong = ds.map(([loai, tm, t, ct, ng, sl]) => `<tr>
+  <td class="px-4 py-3 align-top"><p class="font-medium text-gray-800">${loai}</p><p class="text-[11px] text-gray-400 font-mono mt-0.5">${tm}</p></td>
+  <td class="px-3 py-3 align-top">${chip(...tt[t])}</td>
+  <td class="px-3 py-3 align-top text-xs text-gray-600">${ct}</td>
+  <td class="px-3 py-3 align-top"><div class="flex gap-1 flex-wrap">${ng.map(nguon).join('')}</div></td>
+  <td class="px-4 py-3 align-top text-right text-xs text-gray-500 whitespace-nowrap">${sl}</td></tr>`).join('')
+const canXem = [
+  ['HD_0000871_NCC-THANHDAT.pdf', 'Ảnh scan · tiền hàng + thuế ≠ tổng thanh toán', 'Không đọc chắc chắn: mở file xem tay, chưa đưa vào phép tính'],
+  ['HD_0001204_NCC-PHUOCLOC.pdf', 'Ảnh scan · không thấy số hóa đơn', 'Không đọc chắc chắn'],
+  ['SO CHI TIET 2025.rar', '8. SỔ SÁCH KẾ TOÁN', 'Trình duyệt không mở được .rar: nhờ giải nén ra thư mục'],
+]
+trang({ dangMo: 'ruiro', icon: '⚖️', tieuDe: 'Rủi ro thuế', tabs: TABS_RUIRO, tabMo: 'Hồ sơ dữ liệu', noiDung: `
+  <div class="grid grid-cols-5 gap-3 mb-4">
+    ${oTong(13, 'Loại tài liệu cần', 'xanhDuong')}${oTong(8, 'Đã có', 'xanhLa')}${oTong(2, 'Không phát sinh', 'xam')}${oTong(1, 'Không tìm thấy', 'do')}${oTong(2, 'Cần xem', 'hoPhach', 'thiếu bảng kê PM Q4 · 2 scan · 1 .rar')}</div>
+  ${bang(`<th class="text-left px-4 py-2.5">Loại tài liệu · thư mục</th><th class="text-left px-3">Trạng thái</th><th class="text-left px-3">Chi tiết</th><th class="text-left px-3">Nguồn</th><th class="text-right px-4">Số file</th>`, dong)}
+  <div class="mt-4 bg-white rounded-2xl border border-amber-200 shadow-sm">
+    <div class="px-4 py-2.5 border-b border-amber-100 text-sm font-semibold text-amber-800">File cần xem tay (${canXem.length})</div>
+    ${canXem.map(([f, a, b]) => `<div class="px-4 py-2.5 flex items-center gap-4 text-sm border-b border-gray-50"><span class="font-mono text-xs text-gray-700 w-72">${f}</span><span class="text-xs text-gray-500 w-80">${a}</span><span class="text-xs text-amber-800">${b}</span></div>`).join('')}
+  </div>
+  <p class="text-xs text-gray-400 mt-3">Thứ tự tin cậy khi một giấy tờ có nhiều bản: ${nguon('xml')} → ${nguon('pdf')} → ${nguon('html')} → ${nguon('scan')}. Chỉ lấy bản tin cậy nhất, không cộng hai lần.</p>` })
+</script></body></html>

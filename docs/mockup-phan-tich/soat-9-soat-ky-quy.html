@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>S9 · Soát kỳ · công ty khai quý</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Soát kỳ cho CÔNG TY KHAI QUÝ. Ca mẫu: AN BÌNH, doanh thu 2025 = 38,4 tỷ (dưới 50 tỷ) → năm 2026 khai quý cả năm,
+// hồ sơ công ty trên app cũng là "Quý" (khớp). Hôm nay 26/10/2026, quý 3 hạn 31/10 → đang soát BẢN CHƯA NỘP
+// (XML xuất từ HTKK để trong BẢNG KÊ). Hai lệch cần sửa trước khi nộp: 1 HĐ bán ra chưa kê khai, 1 HĐ mua vào
+// chưa đưa vào phần mềm. Chỉ đọc, không lưu. Dữ liệu giả lập.
+const CTY = { ten: 'CÔNG TY CỔ PHẦN THƯƠNG MẠI AN BÌNH (mẫu)', ma: 'ANBINH', mst: '0300000002', cheDo: 'TT133 (B01a)', thuMuc: '1.AN BÌNH' }
+const KY = [['Q1', 'nop'], ['Q2', 'nop'], ['Q3', 'chuaNop'], ['Q4', 'chuaDen']]
+const TT_KY = { nop: ['Đã nộp', '#059669', '#E6F7F1'], chuaNop: ['Bản chưa nộp · hạn 31/10', '#D97706', '#FEF4E6'], chuaDen: ['Chưa đến kỳ', '#94A3B8', '#F1F5F9'] }
+const MO = 'Q3'
+const THANG = { Q1: 'T01 – T03', Q2: 'T04 – T06', Q3: 'T07 – T09', Q4: 'T10 – T12' }
+const daiKy = KY.map(([k, t]) => { const [n, m, nen] = TT_KY[t], mo = k === MO
+  return `<div class="flex-1 flex items-center gap-3 rounded-xl border-2 h-16 px-4 ${mo ? 'shadow-md' : ''}" style="border-color:${mo ? DO : m + '55'};background:${mo ? '#FFF5F5' : nen}">
+    <span class="text-2xl font-extrabold" style="color:${mo ? DO : '#1F2937'}">${k}</span>
+    <div class="leading-tight"><p class="text-[11px] text-gray-500">${THANG[k]}/2026</p><p class="text-xs font-semibold flex items-center gap-1" style="color:${m}"><span class="w-1.5 h-1.5 rounded-full" style="background:${m}"></span>${n}</p></div></div>` }).join('')
+const KQ = { khop: ['Khớp', 'xanhLa'], lech: ['Có chênh lệch', 'hoPhach'], thieu: ['Thiếu hồ sơ', 'do'] }
+// [nhóm, màu, kiểm tra, số 1, nguồn 1, số 2, nguồn 2, chênh lệch, kết quả]
+const dong = [
+  ['GTGT đầu ra', '#059669', '[34] tờ khai ↔ bảng kê cổng bán ra', 9.6e9, 'Tờ khai Q3 (chưa nộp)', 9.65e9, 'Bảng kê cổng · 96 HĐ', -50e6, 'lech'],
+  ['GTGT đầu vào', '#7C3AED', '[24] tờ khai ↔ thuế trên bảng kê cổng mua vào', 610e6, 'Tờ khai Q3 (chưa nộp)', 618.4e6, 'Bảng kê cổng · 68 HĐ', -8.4e6, 'lech'],
+  ['Hóa đơn', '#2563EB', 'Hóa đơn từ 5 triệu (gồm thuế) trả tiền mặt', null, '', null, '', '1 hóa đơn · thuế 800.000', 'lech'],
+  ['Bảo hiểm', '#475569', 'Người tham gia trên C12 ↔ người đóng BHXH trên bảng lương', 12, 'C12 tháng 9', 13, 'Bảng lương T09', -1, 'lech'],
+  ['Kỳ khai', '#7C3AED', 'Loại báo cáo trong hồ sơ công ty ↔ kỳ trên tờ khai 2026', 'Quý', 'Hồ sơ công ty trên app', 'Quý', 'Tờ khai Q1–Q3/2026', 0, 'khop'],
+  ['Kỳ khai', '#7C3AED', 'Ngưỡng 50 tỷ: doanh thu năm trước ↔ kỳ khai năm nay', '38,4 tỷ', 'Σ[34] năm 2025', 'Quý', 'Đúng: từ 50 tỷ trở xuống khai quý', 0, 'khop'],
+  ['GTGT', '#8B1A1A', 'Chuỗi khấu trừ: [22] Q3 = [43] Q2', 120e6, '[22] Q3', 120e6, '[43] Q2 (đã nộp)', 0, 'khop'],
+  ['GTGT', '#8B1A1A', 'Tờ khai tự khớp: [36] = [35] − [25]', 295e6, '[36]', 295e6, '[35] − [25]', 0, 'khop'],
+  ['GTGT', '#8B1A1A', 'Tờ khai tự khớp: [40] = [36] − [22]', 175e6, '[40]', 175e6, '[36] − [22]', 0, 'khop'],
+  ['GTGT', '#8B1A1A', 'Sheet tờ khai trong file phần mềm ↔ XML tờ khai', 610e6, 'File phần mềm', 610e6, 'XML xuất HTKK', 0, 'khop'],
+  ['Hóa đơn', '#2563EB', 'Hóa đơn bị thay thế / hủy mà phần mềm vẫn kê', null, '', null, '', 'không có', 'khop'],
+  ['Hóa đơn', '#2563EB', 'Hóa đơn ngày ngoài kỳ (kê khai quý 3)', null, '', null, '', 'không có', 'khop'],
+  ['TNCN', '#DB2777', 'Thu nhập chịu thuế: 05/KK-TNCN ↔ bảng lương T7–T9', 540e6, '05/KK-TNCN Q3', 540e6, 'Bảng lương T7–T9', 0, 'khop'],
+  ['TNCN', '#DB2777', 'Số người: 05/KK-TNCN ↔ bảng lương bình quân quý', 14, '05/KK-TNCN Q3', 14, 'Bảng lương T7–T9', 0, 'khop'],
+  ['TNCN', '#DB2777', 'Thuế TNCN khấu trừ: 05/KK-TNCN ↔ bảng lương', 9.6e6, '05/KK-TNCN Q3', 9.6e6, 'Bảng lương T7–T9', 0, 'khop'],
+  ['Ngân hàng', '#0891B2', 'Sổ phụ ngân hàng ↔ sổ TGNH 112', 1.85e9, 'Sổ phụ Vietcombank Q3', 1.85e9, 'Sổ chi tiết 112 Q3', 0, 'khop'],
+]
+const gt = v => v == null ? '<span class="text-gray-400">—</span>' : typeof v === 'string' ? v : (Math.abs(v) < 1000 ? v.toLocaleString('vi-VN') : so(v))
+const oCl = (cl, kq) => typeof cl === 'string'
+  ? `<span class="text-xs font-semibold ${kq === 'lech' ? 'text-amber-800' : 'text-gray-400'}">${cl}</span>`
+  : cl == null ? '<span class="text-gray-400">—</span>' : cl === 0 ? '<span class="text-gray-400">0</span>'
+  : `<span class="text-sm font-bold tabular-nums text-amber-800">${Math.abs(cl) < 1000 ? cl.toLocaleString('vi-VN') + ' người' : so(cl)}</span>`
+const hang = dong.map(([nh, m, kt, a, na, b, nb, cl, kq]) => `<tr>
+  <td class="px-4 py-2.5 w-32"><span class="inline-block rounded-lg px-2 py-0.5 text-[11px] font-semibold text-white whitespace-nowrap" style="background:${m}">${nh}</span></td>
+  <td class="px-3 text-sm text-gray-800">${kt}</td>
+  <td class="px-3 text-right whitespace-nowrap w-40"><p class="text-sm font-semibold tabular-nums text-gray-900">${gt(a)}</p><p class="text-[10px] text-gray-500">${na}</p></td>
+  <td class="px-3 text-right whitespace-nowrap w-48"><p class="text-sm font-semibold tabular-nums text-gray-900">${gt(b)}</p><p class="text-[10px] text-gray-500">${nb}</p></td>
+  <td class="px-3 text-right whitespace-nowrap w-44">${oCl(cl, kq)}</td>
+  <td class="px-4 whitespace-nowrap w-36">${chip(...KQ[kq])}</td></tr>`).join('')
+const hoSo = [
+  ['Tờ khai 01/GTGT Q3 (bản xuất HTKK 24/10)', 1], ['Bảng kê cổng · mua vào Q3', 1], ['Bảng kê cổng · bán ra Q3', 1],
+  ['Bảng kê phần mềm kế toán Q3', 1], ['05/KK-TNCN Q3', 1], ['Bảng lương T7, T8, T9', 1],
+  ['C12 tháng 7–9', 1], ['Sổ phụ ngân hàng Q3', 1], ['Sổ chi tiết TK 112 Q3', 1],
+]
+const luyKe = [['R02', 'Thuế GTGT đầu ra', '0,2%'], ['R03', 'Thuế GTGT đầu vào', '0,9%'], ['R04', 'Phân bổ đầu vào dùng chung', 'khớp'], ['R05', 'Khấu trừ chuyển kỳ', 'khớp'], ['R07', 'Bán ra ↔ phải thu 131', '1,1%'], ['R08', 'Mua vào ↔ phải trả 331', '1,6%']]
+const ctHd = [
+  ['Bán ra · chưa có trong tờ khai', '#059669', '29/09/2026', '1C26TAB · 0000731', 'CÔNG TY TNHH NỘI THẤT HẢI MINH · MST 0377712345', 50e6, 5e6],
+  ['Mua vào · chưa có trong phần mềm', '#7C3AED', '30/09/2026', '1C26TPL · 0002214', 'CÔNG TY CP THIẾT BỊ PHƯỚC LỘC · MST 0322222222', 84e6, 8.4e6],
+]
+trang({ dangMo: 'soat', icon: '🔎', tieuDe: 'Soát xét báo cáo', tabs: TABS_SOAT, tabMo: 'Soát kỳ', nam: 2026, cty: CTY, noiDung: `
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 mb-4">
+    <div class="flex items-center gap-3 mb-2.5 flex-wrap"><p class="text-sm font-bold text-gray-800">Kỳ khai năm 2026: Quý (cả năm)</p>
+      <span class="text-[11px] rounded-full px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">Theo tờ khai · doanh thu 2025 = 38,4 tỷ, từ 50 tỷ trở xuống</span>
+      <span class="text-[11px] rounded-full px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">✓ Hồ sơ công ty trên app: Quý — khớp</span>
+      <span class="ml-auto text-[11px] text-gray-500">Kỳ khai cố định trọn năm · trạng thái tính từ thư mục, không lưu</span></div>
+    <div class="flex items-center gap-3">${daiKy}</div></div>
+  <div class="rounded-2xl px-4 py-3 mb-4 flex items-center gap-4 text-white shadow-sm" style="background:linear-gradient(90deg,#B45309,#D97706 55%,#F59E0B)">
+    <span class="text-2xl">📝</span>
+    <div><p class="text-sm font-bold">Đang soát BẢN CHƯA NỘP · tờ khai 01/GTGT quý 3/2026</p>
+      <p class="text-xs text-white/90 font-mono">BAOCAOTHUE_Q3_2026_ANBINH\\BẢNG KÊ\\TK_GTGT_Q3.2026.xml · xuất từ HTKK 24/10/2026 16:05</p></div>
+    <div class="ml-auto text-right"><p class="text-xs text-white/85">Hạn nộp</p><p class="text-lg font-extrabold leading-tight">31/10/2026 · còn 5 ngày</p><p class="text-[11px] text-white/85">Phân hệ Tờ khai: chưa có hồ sơ nộp kỳ này</p></div></div>
+  <div class="grid grid-cols-4 gap-3 mb-4">
+    ${oTong(16, 'Phép kiểm tra trong kỳ', 'xanhDuong')}${oTong(12, 'Khớp', 'xanhLa')}${oTong(4, 'Có chênh lệch', 'hoPhach', 'đầu ra, đầu vào, tiền mặt, C12')}${oTong(0, 'Thiếu hồ sơ', 'xam', 'đủ 9/9 hồ sơ của kỳ')}</div>
+  <div class="grid grid-cols-5 gap-4 mb-5">
+    <div class="col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
+      <div class="px-4 py-2.5 border-b border-gray-100 text-sm font-semibold text-gray-700">Hồ sơ kỳ Q3/2026 · đủ 9/9</div>
+      <div class="px-4 py-3 grid grid-cols-2 gap-x-6 gap-y-2">${hoSo.map(([n, c]) => `<div class="flex items-center gap-2 text-xs"><span class="w-5 h-5 flex-shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold text-white" style="background:${c ? '#059669' : '#DC2626'}">${c ? '✓' : '!'}</span><span class="${c ? 'text-gray-700' : 'text-red-700 font-semibold'}">${n}</span></div>`).join('')}</div></div>
+    <div class="col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm">
+      <div class="px-4 py-2.5 border-b border-gray-100 text-sm font-semibold text-gray-700 flex items-center">Rủi ro thuế · lũy kế đến Q3/2026<span class="ml-auto text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">Tạm tính</span></div>
+      <div class="px-4 py-2 grid grid-cols-2 gap-x-5">${luyKe.map(([id, t, v]) => `<div class="flex items-center gap-2 py-1 text-xs border-b border-gray-50"><span class="font-mono font-bold" style="color:${DO}">${id}</span><span class="text-gray-700 flex-1 truncate">${t}</span><span class="font-semibold tabular-nums ${v === 'khớp' ? 'text-gray-400' : 'text-slate-800'}">${v}</span></div>`).join('')}</div>
+      <div class="px-4 pb-3 flex items-center gap-2"><p class="text-[11px] text-gray-500">33 tiêu chí còn lại chờ BCTC / quyết toán.</p><button class="ml-auto px-3 py-1 rounded-xl text-xs text-white whitespace-nowrap" style="background:${DO}">Mở Rủi ro thuế · lũy kế</button></div></div>
+  </div>
+  <h2 class="text-sm font-bold text-gray-700 mb-2">Kết quả soát quý 3/2026 · dòng có chênh lệch lên trước</h2>
+  ${bang(`<th class="text-left px-4 py-2.5">Nhóm</th><th class="text-left px-3">Kiểm tra</th><th class="text-right px-3">Số 1</th><th class="text-right px-3">Số 2</th><th class="text-right px-3">Chênh lệch</th><th class="text-left px-4">Kết quả</th>`, hang)}
+  <div class="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+    <div class="px-4 py-2.5 border-b border-gray-100 text-sm font-semibold text-gray-700">Chi tiết · 2 hóa đơn trên cổng chưa có trong tờ khai / phần mềm</div>
+    <table class="w-full text-sm"><tbody>${ctHd.map(([nhan, m, ng, kh, dt, tien, thue]) => `
+      <tr><td class="px-4 w-60"><span class="inline-block rounded-lg px-2 py-0.5 text-[11px] font-semibold text-white whitespace-nowrap" style="background:${m}">${nhan}</span></td><td class="px-3 text-xs">${ng}</td><td class="px-3 text-xs font-mono">${kh}</td><td class="px-3 text-xs">${dt}</td><td class="px-3 text-right text-xs tabular-nums">${so(tien)}</td><td class="px-3 text-right text-xs tabular-nums font-semibold">${so(thue)}</td><td class="px-4">${nguon('excel')}</td></tr>`).join('')}
+    </tbody></table>
+    <p class="px-4 pb-3 text-[11px] text-amber-800 font-semibold">Còn trong hạn nộp (31/10/2026): bổ sung 2 hóa đơn vào phần mềm, xuất lại bảng kê và tờ khai vào thư mục, bấm "Đọc lại" để soát lại trước khi nộp.</p></div>` })
+</script></body></html>

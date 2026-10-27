@@ -258,6 +258,52 @@ hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công 
 - ⏸ **Đang chờ người dùng, đừng tự làm**: GĐ 5 Checklist + KPI (hoãn tới sau khi chạy demo), danh
   mục tờ khai 01/CNKD, và bản PDF thật do cổng xuất.
 
+## Phân hệ Soát xét báo cáo (`/soatbaocao`) + Rủi ro thuế (`/ruirothue`)
+
+Soát hồ sơ khách ngay trên thư mục Drive của công ty, dựng 25–28/10/2026. Kế hoạch + mockup:
+`docs/phan-he-phan-tich-ke-hoach.md`, `docs/mockup-phan-tich/`. Hướng dẫn nhân viên xếp hồ sơ: `docs/huong-dan-ho-so-soat-ky.md`.
+SQL `sql/40_phantich_xem_phi.sql` (đã chạy). **KHÔNG đưa vào bản clone**: bỏ `app/soatbaocao`, `app/ruirothue`,
+`app/api/admin/phantich`, `lib/phanTich`, `lib/ruiro`, `lib/soatbaocao`, `components/phanTich`, 2 mục menu trong
+`components/Sidebar.js`, `sql/40`; hai thư viện `jszip`, `pdfjs-dist` chỉ phân hệ này dùng.
+
+- ⚠ **BẤT BIẾN: CHỈ ĐỌC.** Thư mục mở bằng File System Access API chế độ `read`; không ghi file nào vào Drive, không lưu
+  gì lên Supabase (anh chốt 25/10). Máy chủ chỉ có 3 route `api/admin/phantich/*` (danh sách công ty, phí, hạn nộp) —
+  không nhận file của khách. Bộ nhớ đệm đọc file nằm ở IndexedDB trên máy (`lib/phanTich/khoMay.js`). Kiểm nhanh:
+  `grep -rnE "createWritable|removeEntry|\.insert\(|\.update\(" lib/phanTich lib/ruiro lib/soatbaocao components/phanTich` phải rỗng.
+- **Chưa chấm điểm / xếp loại** — chỉ số liệu, chênh lệch, tỷ lệ (ngưỡng giữ trong mã nhưng tắt). Chỉ soát từ 2026; năm cũ
+  nhân viên trỏ thư mục năm riêng ("＋ Năm cũ"), thư mục năm trỏ riêng THẮNG thư mục chính khi trùng năm.
+- **Thư mục chính dùng chung tay cầm với Tờ khai** (`layThuMucCongTy(…, { cheDo: 'read' })`) — trỏ lại ở đây là đổi luôn chỗ
+  Tờ khai tải file về. Trỏ nhầm tầng "7. BỘ BÁO CÁO" thì nhắc trỏ lại thư mục công ty; thư mục con hỏng / bị đổi tên giữa
+  chừng chỉ cảnh báo (`conAnToan`), thư mục gốc hỏng thì báo đỏ.
+- **Phạm vi** như Tờ khai: nhân viên công ty mình chính/phụ, trưởng phòng phòng mình làm trưởng, admin hết. Phí (Tăng trưởng &
+  phí, bản gửi khách) cần quyền `xem_phi_de_xuat` (gán leader) **và** làm trưởng đúng phòng của công ty. Phí luôn GỒM VAT.
+- **Kỳ khai cố định cả năm**, lấy theo tờ khai XML; hồ sơ công ty khác kỳ = nhân viên tick nhầm, chỉ báo không sửa.
+- **Cây "7. BỘ BÁO CÁO" có hai kiểu, đều có thật**: nhân viên tự xếp qua nhóm `BỘ BÁO CÁO THUẾ QUÝ_THÁNG\BAOCAOTHUE_…`, và phân
+  hệ Tờ khai tải về đặt `BAOCAOTHUE_<kỳ>_<năm>_<mã KH>[_BSLn]` + `BAOCAOTHUE_PS<mmdd>_…` THẲNG trong bộ báo cáo. Thư mục nhóm
+  tên giống kỳ ("QUÝ 1-2-3-4") có kỳ con thì vẫn là nhóm; thư mục phát sinh xét trước kỳ.
+- **Đối chiếu bảng kê cổng HĐĐT ↔ phần mềm ↔ tờ khai** (`lib/phanTich/soatKy.js`): khoá MST đối tác + ký hiệu + số. Bảng kê cổng
+  MUA VÀO có thể không có cột MST người bán → khi MỘT bên thiếu MST ghép theo ký hiệu + số (bán ra) / + ngày (mua vào), khoá
+  trùng thì không đoán. Bỏ trùng giữa sheet bằng MST + số + ngày CHỈ khi một bên thiếu ký hiệu (từng nuốt hóa đơn thật).
+  Sheet "BẢNG KÊ HÓA ĐƠN GIẢM THUẾ GTGT THEO NGHỊ QUYẾT…" trong file HTKK là PHỤ LỤC (liệt kê lại hóa đơn bán ra) → bỏ. Sheet
+  "TỜ KHAI THUẾ GTGT" trong file phần mềm → `mau: 'tk_pm'` (không có tiền tố `pm_`, không lẫn vào đếm hóa đơn), so từng chỉ
+  tiêu với XML đã nộp. Cả năm chỉ cộng kỳ có ĐỦ bảng kê cổng + phần mềm (`gopBangKeKy` kyDu/kyBo). Đổi cách đọc bảng kê thì
+  đổi khoá đệm (`'bangke4|'` ở `docHoSo.js`) — không thì máy nhân viên dùng kết quả đọc cũ.
+- **05/KK-TNCN mã chỉ tiêu theo MẪU**: TT80/2021 (HTKK 2.9.x, maTKhai 864) [16] số lao động, [21] thu nhập chịu thuế, [29]
+  thuế đã khấu trừ ([32] chỉ là thuế trên phí bảo hiểm); TT156/2013 lùi 5 ([26], [32], có [33][34]).
+- **Hạn nộp + trạng thái nộp** ở Soát kỳ lấy từ phân hệ Tờ khai (`api/admin/phantich/han-nop`, chỉ đọc), GỘP lịch nghĩa vụ +
+  hồ sơ đồng bộ theo (kỳ, loại) — lịch có thể chỉ sinh từ giữa năm trong khi hồ sơ kỳ trước vẫn có. Hạn theo lịch (đã đẩy
+  ngày nghỉ) ưu tiên hơn hạn app tự tính.
+- **Soát xét năm** — `lib/soatbaocao/boMay.js` là bộ máy bản offline SINH TỰ ĐỘNG (script sinh để ngoài repo), mọi chỗ sửa nằm
+  sau công tắc `__SUA.B1…B18`, danh sách + lý do ở `lib/soatbaocao/suaLoi.js`; sửa tay boMay thì sửa cả script sinh.
+  **Rủi ro thuế** — `lib/ruiro` giữ nguyên logic bản 3.2.0; chỗ sửa ghi "Savitax sửa" tại chỗ hoặc trong `quyTac.js` SUA_LOI.
+- **Thương hiệu**: không ghi tên đơn vị nguồn cũ ở đâu cả — `node scripts/test-phantich-thuong-hieu.mjs` (từ khóa ở
+  `~/.savitax-keys/`, ngoài repo).
+- Bộ kiểm (đều chạy offline, dữ liệu giả): `test-phantich-{thumuc,doc,kiemke,soatky,sotien,tangtruong,luong,pdf,thuong-hieu}`,
+  `test-ruiro-{mau,thumuc}`, `test-soatbaocao-{mau,thumuc}`. Thử trên thư mục thật (CHỈ ĐỌC, anh cho phép từng công ty):
+  `scripts/soat-thu-muc-that.mjs`, `soat-ruiro-thu-muc-that.mjs`, `soat-soatbaocao-thu-muc-that.mjs`.
+- ⏳ Chưa làm: màn Hóa đơn (danh sách từng hóa đơn từ file XML/PDF/HTML), đọc BCTC PDF ở Soát xét năm, đọc ảnh scan, bảng
+  lương DOEL quý 2 chỉ đọc ra 1/2 người (anh để sau), mẫu 05/KK theo TT89/2026.
+
 ## Phân hệ Tiền lương (`/luong`)
 
 Chấm công + thưởng + khoản trừ + chốt bảng lương + Excel + phiếu lương, dựng 17–19/10/2026 (production

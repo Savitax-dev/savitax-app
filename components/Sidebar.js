@@ -323,6 +323,16 @@ export default function Sidebar({ onClose }) {
         {canViewToKhai && !noAccounting && (
           <NavItem href="/tokhai" icon="🧾" label="Tờ khai & Hạn nộp" pathname={pathname} onClose={onClose} />
         )}
+        {/* Soát xét báo cáo: mọi nhân viên kế toán, API tự giới hạn theo công ty phụ trách / phòng.
+            Module rời — KHÔNG đưa vào bản clone (bỏ mục này cùng app/soatbaocao, lib/phanTich). */}
+        {!noAccounting && (
+          <NavItem href="/soatbaocao" icon="🔎" label="Soát xét báo cáo" pathname={pathname} onClose={onClose} />
+        )}
+        {/* Rủi ro thuế (39 tiêu chí): cùng phạm vi + cùng thư mục với Soát xét. Module rời — KHÔNG đưa vào bản clone
+            (bỏ mục này cùng app/ruirothue, lib/ruiro). */}
+        {!noAccounting && (
+          <NavItem href="/ruirothue" icon="⚖️" label="Rủi ro thuế" pathname={pathname} onClose={onClose} />
+        )}
         {/* Nhật ký mail báo cáo: ai cũng vào được, nhưng API tự giới hạn phạm vi — nhân viên chỉ
             thấy mail mình gửi hoặc mail của công ty mình phụ trách (app/api/admin/mail-log). */}
         {!noAccounting && (

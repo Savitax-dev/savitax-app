@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="chieu-cao" content="1680"><title>S7 · Bản gửi khách hàng · Tăng trưởng</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script><script src="tang-truong-mau.js"></script></head>
+<body><script>
+// Bản gửi khách hàng: khổ A4, thương hiệu Savitax. Không in phí theo biểu phí ở mốc, cảnh báo nội bộ, tên nhân viên.
+const Q8 = QUY.slice(3), tu = 3
+const oDo = CHI_TIEU.map(c => {
+  const v = c.v.slice(tu), nay = c.v[NAY], ck = tang(nay, c.v[NAY - 4])
+  return `<div class="rounded-lg overflow-hidden border" style="border-color:${c.mau}40">
+    <div class="flex items-center gap-1.5 px-3 py-1.5 text-white" style="background:${c.mau}"><span>${c.icon}</span><p class="text-[13px] font-semibold">${c.ten}</p></div>
+    <div class="px-3 py-2" style="background:linear-gradient(180deg,${c.nhat},#fff 75%)">
+    <div class="flex items-end gap-2"><p class="text-2xl font-extrabold tabular-nums" style="color:${c.mau}">${c.k === 'dt' ? soVN(nay, 1) : soVN(nay)}</p><p class="text-[11px] text-gray-500 mb-0.5">${c.dv} quý 3/2026</p></div>
+    <div class="mt-1">${huy(ck, 'so cùng kỳ')}</div>
+    <div class="mt-2">${cot(v.map(Number), 70, true, v.length - 1, -1, c.mau)}</div>
+    <div class="flex justify-between text-[9px] text-gray-400 mt-0.5"><span>${Q8[0]}</span><span>${Q8[Q8.length - 1]}</span></div></div></div>`
+}).join('')
+const bangKH = `<table class="w-full text-[11px] border border-gray-200"><thead><tr class="text-white" style="background:${DO}"><th class="text-left px-2 py-1.5">Chỉ tiêu</th>${Q8.map(q => `<th class="text-right px-2">${q}</th>`).join('')}<th class="text-right px-2">So cùng kỳ</th></tr></thead>
+  <tbody>${CHI_TIEU.map((c, r) => `<tr class="${r % 2 ? 'bg-gray-50' : ''}"><td class="px-2 py-1"><span class="inline-block w-2 h-2 rounded-full mr-1.5" style="background:${c.mau}"></span>${c.ten}${c.k === 'dt' ? ' (tỷ đồng)' : ''}</td>${c.v.slice(tu).map(x => `<td class="text-right px-2 tabular-nums">${soVN(x, 1)}</td>`).join('')}<td class="text-right px-2">${ptTang(tang(c.v[NAY], c.v[NAY - 4]))}</td></tr>`).join('')}</tbody></table>`
+const giuaTrang = `
+<div class="bg-gray-100 min-h-full py-6" style="width:1440px;font-family:Arial,Helvetica,sans-serif">
+  <div class="mx-auto mb-4 flex items-center gap-3" style="width:860px">
+    <button class="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-sm">← Quay lại dashboard</button>
+    <label class="flex items-center gap-2 text-sm bg-white border border-gray-200 rounded-xl px-3 py-1.5"><span class="w-4 h-4 rounded border-2 flex items-center justify-center text-[10px] text-white" style="background:${DO};border-color:${DO}">✓</span>In mục đề xuất điều chỉnh phí</label>
+    <span class="ml-auto text-[11px] font-semibold rounded-full px-2.5 py-1 bg-amber-100 text-amber-800 border border-amber-200">MOCKUP · dữ liệu giả lập</span>
+    <button class="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-sm">⬇ Excel</button><button class="px-3 py-1.5 rounded-xl text-sm text-white" style="background:${DO}">🖨 In / Tải PDF</button></div>
+  <div class="mx-auto bg-white shadow-md px-12 py-10 text-gray-800" style="width:860px">
+    <div class="flex items-center gap-4 pb-3 border-b-2" style="border-color:${DO}">
+      <img src="../../public/logo-savitax.png" class="w-14 h-14 object-contain">
+      <div><p class="text-sm font-bold" style="color:${DO}">CÔNG TY CỔ PHẦN TƯ VẤN THUẾ SAVITAX</p><p class="text-[11px] text-gray-500">Dịch vụ kế toán – thuế – hành chính nhân sự</p></div>
+      <div class="ml-auto h-1 w-24 rounded" style="background:${VANG}"></div></div>
+    <h1 class="text-center text-lg font-bold mt-6 leading-snug">BÁO CÁO TÌNH HÌNH HOẠT ĐỘNG<br>VÀ KHỐI LƯỢNG CÔNG VIỆC KẾ TOÁN</h1>
+    <p class="text-center text-sm text-gray-600 mt-1">Từ quý 4/2024 đến quý 3/2026</p>
+    <p class="text-sm mt-5"><b>Kính gửi:</b> Ban Giám đốc CÔNG TY TNHH MẪU SAVITAX (MST 0300000001)</p>
+    <p class="text-sm mt-2 leading-relaxed">Savitax trân trọng gửi Quý Công ty số liệu tổng hợp từ hồ sơ kế toán, tờ khai thuế, hóa đơn điện tử và sổ phụ ngân hàng của 8 quý gần nhất.</p>
+    <h2 class="text-sm font-bold mt-6 mb-2" style="color:${DO}">1. Các chỉ tiêu chính</h2>
+    <div class="grid grid-cols-3 gap-3">${oDo}</div>
+    <h2 class="text-sm font-bold mt-6 mb-2" style="color:${DO}">2. Số liệu theo quý</h2>
+    ${bangKH}
+    <h2 class="text-sm font-bold mt-6 mb-2" style="color:${DO}">3. Nhận xét</h2>
+    <ul class="text-sm space-y-1 list-disc pl-5">
+      <li>Doanh thu quý 3/2026 đạt 17,0 tỷ đồng, tăng 17,2% so với cùng kỳ năm 2025.</li>
+      <li>Số hóa đơn đầu ra tăng 34,0%, số giao dịch ngân hàng tăng 32,0% so với cùng kỳ.</li>
+      <li>Từ năm 2026 Quý Công ty phát sinh hoạt động nhập khẩu: 10 tờ khai hải quan trong 3 quý.</li>
+      <li>Số lao động bình quân tăng từ 25 lên 30 người so với cùng kỳ.</li></ul>
+    <h2 class="text-sm font-bold mt-6 mb-2" style="color:${DO}">4. Đề xuất điều chỉnh phí dịch vụ</h2>
+    <div class="text-sm leading-relaxed border-l-4 pl-4 py-1" style="border-color:${VANG}">
+      <p>Khối lượng chứng từ bình quân đã tăng từ <b>115</b> lên <b>206 chứng từ/tháng</b> (+79%) so với thời điểm áp dụng mức phí hiện tại (quý 3/2024), đồng thời phát sinh thêm nghiệp vụ hải quan.</p>
+      <p class="mt-1.5">Theo biểu phí dịch vụ hiện hành của Savitax, mức phí đề xuất tương ứng với khối lượng hiện tại là <b>${so(PHI.deXuat)} đ/tháng</b>; mức phí Quý Công ty đang áp dụng là ${so(PHI.dangThu)} đ/tháng.</p>
+      <p class="mt-1 text-[12px] italic text-gray-600">Các mức phí trên đã bao gồm thuế GTGT (VAT).</p>
+      <p class="mt-1.5">Savitax xin được trao đổi với Quý Công ty về việc điều chỉnh phí dịch vụ áp dụng từ kỳ …………</p></div>
+    <div class="flex justify-end mt-10 text-center text-sm"><div><p class="italic text-gray-600">TP. Hồ Chí Minh, ngày … tháng … năm 2026</p><p class="font-bold mt-1">CÔNG TY CỔ PHẦN TƯ VẤN THUẾ SAVITAX</p><p class="h-16"></p></div></div>
+  </div></div>`
+document.body.className = 'm-0'
+document.body.innerHTML = giuaTrang
+</script></body></html>

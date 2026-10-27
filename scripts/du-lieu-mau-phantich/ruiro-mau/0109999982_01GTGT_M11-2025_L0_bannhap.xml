@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<HSoThueDTu xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://kekhaithue.gdt.gov.vn/TKhaiThue">
+  <HSoKhaiThue id="ID_1">
+    <TTinChung>
+      <TTinDVu>
+        <maDVu>HTKK</maDVu>
+        <tenDVu>HỖ TRỢ KÊ KHAI THUẾ</tenDVu>
+        <pbanDVu>5.6.6</pbanDVu>
+        <ttinNhaCCapDVu>00000000000000000000000000000000</ttinNhaCCapDVu>
+      </TTinDVu>
+      <TTinTKhaiThue>
+        <TKhaiThue>
+          <maTKhai>842</maTKhai>
+          <tenTKhai>TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (Mẫu số 01/GTGT)</tenTKhai>
+          <moTaBMau>(Ban hành kèm theo Thông tư số 80/2021/TT-BTC ngày 29 tháng 9 năm 2021 của Bộ trưởng Bộ Tài chính)</moTaBMau>
+          <pbanTKhaiXML>2.8.3</pbanTKhaiXML>
+          <loaiTKhai>C</loaiTKhai>
+          <soLan>0</soLan>
+          <KyKKhaiThue>
+            <kieuKy>M</kieuKy>
+            <kyKKhai>11/2025</kyKKhai>
+            <kyKKhaiTuNgay>01/11/2025</kyKKhaiTuNgay>
+            <kyKKhaiDenNgay>30/11/2025</kyKKhaiDenNgay>
+            <kyKKhaiTuThang />
+            <kyKKhaiDenThang />
+          </KyKKhaiThue>
+          <maCQTNoiNop>10100</maCQTNoiNop>
+          <tenCQTNoiNop>Thuế Thành phố Hà Nội</tenCQTNoiNop>
+          <ngayLapTKhai>2025-12-09</ngayLapTKhai>
+          <GiaHan>
+            <maLyDoGiaHan />
+            <lyDoGiaHan />
+          </GiaHan>
+          <nguoiKy>NGUYỄN VĂN GIẢ LẬP</nguoiKy>
+          <ngayKy>2025-12-09</ngayKy>
+          <nganhNgheKD />
+        </TKhaiThue>
+        <NNT>
+          <mst>0109999982</mst>
+          <tenNNT>CÔNG TY TNHH MẪU RỦI RO</tenNNT>
+          <dchiNNT>Số 99 Phố Giả Lập, Phường Thử Nghiệm, Thành phố Hà Nội</dchiNNT>
+          <phuongXa />
+          <maHuyenNNT />
+          <tenHuyenNNT />
+          <maTinhNNT>101</maTinhNNT>
+          <tenTinhNNT>Thành phố Hà Nội</tenTinhNNT>
+          <dthoaiNNT />
+          <faxNNT />
+          <emailNNT />
+        </NNT>
+      </TTinTKhaiThue>
+    </TTinChung>
+    <CTieuTKhaiChinh>
+      <ma_NganhNghe>00</ma_NganhNghe>
+      <ten_NganhNghe>Hoạt động sản xuất kinh doanh thông thường</ten_NganhNghe>
+      <tieuMucHachToan>1701</tieuMucHachToan>
+      <Header>
+        <ct09 />
+        <ct10 />
+        <DiaChiHDSXKDKhacTinhNDTSC>
+          <ct11a_phuongXa_ma />
+          <ct11a_phuongXa_ten />
+          <ct11b_quanHuyen_ma />
+          <ct11b_quanHuyen_ten />
+          <ct11c_tinhTP_ma />
+          <ct11c_tinhTP_ten />
+        </DiaChiHDSXKDKhacTinhNDTSC>
+      </Header>
+      <ct21>0</ct21>
+      <ct22>0</ct22>
+      <GiaTriVaThueGTGTHHDVMuaVao>
+        <ct23>3358488291</ct23>
+        <ct24>272658402</ct24>
+      </GiaTriVaThueGTGTHHDVMuaVao>
+      <HangHoaDichVuNhapKhau>
+        <ct23a>0</ct23a>
+        <ct24a>0</ct24a>
+      </HangHoaDichVuNhapKhau>
+      <ct25>272658402</ct25>
+      <ct26>147382920</ct26>
+      <HHDVBRaChiuThueGTGT>
+        <ct27>3553030302</ct27>
+        <ct28>291611570</ct28>
+      </HHDVBRaChiuThueGTGT>
+      <ct29>0</ct29>
+      <HHDVBRaChiuTSuat5>
+        <ct30>0</ct30>
+        <ct31>0</ct31>
+      </HHDVBRaChiuTSuat5>
+      <HHDVBRaChiuTSuat10>
+        <ct32>3553030302</ct32>
+        <ct33>291611570</ct33>
+      </HHDVBRaChiuTSuat10>
+      <ct32a>0</ct32a>
+      <TongDThuVaThueGTGTHHDVBRa>
+        <ct34>3700413222</ct34>
+        <ct35>291611570</ct35>
+      </TongDThuVaThueGTGTHHDVBRa>
+      <ct36>18953168</ct36>
+      <ct37>0</ct37>
+      <ct38>0</ct38>
+      <ct39a>0</ct39a>
+      <ct40a>18953168</ct40a>
+      <ct40b>0</ct40b>
+      <ct40>18953168</ct40>
+      <ct41>0</ct41>
+      <ct42>0</ct42>
+      <ct43>0</ct43>
+    </CTieuTKhaiChinh>
+    <PLuc>
+    </PLuc>
+  </HSoKhaiThue>
+</HSoThueDTu>

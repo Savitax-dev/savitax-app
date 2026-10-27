@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="chieu-cao" content="1060"><title>S2 · Tổng quan · Soát xét báo cáo</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Tổng quan: không có điểm. Mỗi nhóm kiểm tra cho biết bao nhiêu phép đối chiếu, bao nhiêu phép có chênh lệch.
+// Mỗi nhóm một màu riêng (để phân biệt nhóm, không phải đánh giá). Mô tả cố định 1 dòng, khối số đặt sát đáy
+// thẻ → số của 8 thẻ luôn thẳng hàng. Cả hai số đều đậm, không dùng chữ xám nhạt.
+const nhom = [
+  ['⚖️', 'Cân đối BCTC', 18, 1, 'BCĐKT, KQKD, LCTT khớp nhau và khớp thuyết minh', '#8B1A1A'],
+  ['📊', 'Cân đối phát sinh', 12, 0, 'Tổng PS Nợ = PS Có, số dư khớp BCĐKT', '#2563EB'],
+  ['📒', 'Sổ sách, chứng từ', 24, 3, 'NKC, sổ chi tiết, quỹ âm, kho âm', '#D97706'],
+  ['🏦', 'Ngân hàng', 8, 1, 'Sổ phụ ↔ sổ TGNH 112 theo tháng', '#0891B2'],
+  ['🧾', 'Thuế GTGT', 16, 4, 'Tờ khai ↔ hóa đơn ↔ sổ 1331/33311', '#7C3AED'],
+  ['🏛️', 'Thuế TNDN', 10, 2, 'Quyết toán ↔ KQKD, chi phí không được trừ', '#059669'],
+  ['👥', 'TNCN, bảo hiểm', 9, 2, 'Bảng lương ↔ 334 ↔ 05/KK ↔ C12', '#DB2777'],
+  ['🔗', 'Đối chiếu chéo', 14, 2, 'Liên kết các phân hệ và năm trước', '#475569'],
+]
+const the = nhom.map(([ic, ten, tong, lech, mt, m]) => `<div class="rounded-2xl shadow-sm overflow-hidden border flex flex-col bg-white" style="border-color:${m}40">
+  <div class="px-4 py-2.5 flex items-center gap-2 text-white" style="background:linear-gradient(90deg,${m},${m}cc)"><span class="text-lg">${ic}</span><p class="font-semibold text-sm">${ten}</p></div>
+  <div class="px-4 pt-2 pb-3 flex-1 flex flex-col" style="background:linear-gradient(180deg,${m}12,#fff 70%)">
+    <p class="text-[11px] text-gray-600 truncate" title="${mt}">${mt}</p>
+    <div class="mt-auto pt-3 grid grid-cols-2 items-end">
+      <div><p class="text-3xl font-extrabold tabular-nums leading-none" style="color:${m}">${lech}</p><p class="text-[11px] font-semibold text-gray-700 mt-1">có chênh lệch</p></div>
+      <div class="border-l pl-3" style="border-color:${m}33"><p class="text-3xl font-extrabold tabular-nums leading-none text-slate-800">${tong}</p><p class="text-[11px] font-semibold text-gray-700 mt-1">phép đối chiếu</p></div></div>
+    <div class="mt-2.5 h-1.5 rounded-full bg-gray-100 overflow-hidden"><div class="h-full rounded-full" style="width:${Math.max(3, lech / tong * 100)}%;background:${m}"></div></div>
+    <p class="text-[10px] text-gray-500 mt-1">${lech}/${tong} phép đối chiếu có chênh lệch</p></div></div>`).join('')
+const loi = [
+  ['Số dư đầu năm 2025 ≠ số cuối năm 2024', 'TK 131: đầu năm 4.112.500.000, cuối 2024 4.100.000.000', 'lệch 12.500.000', 'BCĐTK 2025 ↔ BCĐTK 2024'],
+  ['Hóa đơn đầu vào trùng', '2 hóa đơn cùng MST người bán + ký hiệu + số', 'thuế 18.400.000', 'Bảng kê cổng HĐĐT (Excel)'],
+  ['Quỹ tiền mặt âm', 'Sổ quỹ ngày 14/08/2025 tồn −35.200.000', '1 ngày', 'Sổ quỹ tiền mặt'],
+  ['Tờ khai cộng sai', 'T06/2025 bổ sung lần 2: [36] ≠ [35] − [25]', 'lệch 1.000', 'TK_GTGT_T06.2025_BSL2.xml'],
+]
+const lon = [
+  ['Thuế GTGT', 'Σ[24] tờ khai ↔ PS Nợ 1331', '3.700.000.000', '3.550.000.000', '150.000.000', 0.0405],
+  ['Ngân hàng', 'Sổ phụ ACB T09 ↔ sổ 1121', '2.412.000.000', '2.297.000.000', '115.000.000', 0.0477],
+  ['TNCN, bảo hiểm', 'Quỹ lương bảng lương ↔ PS Có 334', '2.640.000.000', '2.580.000.000', '60.000.000', 0.0227],
+  ['Thuế TNDN', 'Chi phí 811 ↔ [B4] chi phí không được trừ', '35.000.000', '0', '35.000.000', 1],
+  ['Sổ sách', 'Xuất kho ↔ giá vốn 632', '44.050.000.000', '44.380.000.000', '(330.000.000)', 0.0074],
+]
+trang({ dangMo: 'soat', icon: '🔎', tieuDe: 'Soát xét báo cáo', tabs: TABS_SOAT, tabMo: 'Tổng quan', noiDung: `
+  ${banChuaChamDiem()}
+  <div class="grid grid-cols-4 gap-3 mb-5">${the}</div>
+  <div class="bg-white rounded-2xl border border-red-200 shadow-sm mb-4"><div class="px-4 py-2.5 border-b border-red-100 text-sm font-semibold text-red-800">Số liệu sai (không phụ thuộc ngưỡng) · ${loi.length}</div>
+    <div class="grid grid-cols-2">${loi.map(([t, ct, sl, ng]) => `<div class="px-4 py-2.5 border-b border-r border-gray-50"><div class="flex"><p class="text-sm font-medium text-gray-800">${t}</p><span class="ml-auto text-xs font-semibold tabular-nums text-red-700">${sl}</span></div><p class="text-xs text-gray-500 mt-0.5">${ct}</p><p class="text-[11px] text-gray-400 font-mono mt-0.5">${ng}</p></div>`).join('')}</div></div>
+  <h2 class="text-sm font-bold text-gray-700 mb-2">Chênh lệch lớn nhất · sắp theo tỷ lệ</h2>
+  ${bang(`<th class="text-left px-4 py-2.5">Nhóm</th><th class="text-left px-3">Phép đối chiếu</th><th class="text-right px-3">Số 1</th><th class="text-right px-3">Số 2</th><th class="text-right px-3">Chênh lệch</th><th class="text-right px-4">Tỷ lệ</th>`,
+    lon.sort((x, y) => y[5] - x[5]).map(([n, t, a, b, c, r]) => `<tr><td class="px-4 py-2 text-xs text-gray-500 whitespace-nowrap">${n}</td><td class="px-3 text-sm text-gray-800">${t}</td><td class="px-3 text-right text-xs tabular-nums">${a}</td><td class="px-3 text-right text-xs tabular-nums">${b}</td><td class="px-3 text-right text-xs tabular-nums font-semibold">${c}</td><td class="px-4">${thanhTyLe(r)}</td></tr>`).join(''))}` })
+</script></body></html>

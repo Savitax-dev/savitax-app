@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="chieu-cao" content="1500"><title>S4 · Bảng kê hóa đơn · Soát xét báo cáo</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Đối chiếu 3 nguồn theo quý: bảng kê cổng HĐĐT (Excel nhân viên tải) ↔ bảng kê phần mềm kế toán (Excel xuất sau khi
+// làm báo cáo quý) ↔ tờ khai 01/GTGT đã nộp (XML). Người bán là tên giả. Quý 3/2025, mua vào.
+// Cộng: cổng 98 HĐ = 91 khớp + 2 lệch + 5 chưa có trong PM · phần mềm 96 HĐ = 91 + 2 + 3 không có trên cổng.
+const nguonFile = (ten, file, tt, phu) => `<div class="flex-1 bg-white rounded-2xl border ${tt === 'ok' ? 'border-green-200' : 'border-gray-200'} shadow-sm px-4 py-3">
+  <div class="flex items-center gap-2"><span class="text-base">${tt === 'ok' ? '✅' : '⏳'}</span><p class="text-sm font-semibold text-gray-800">${ten}</p></div>
+  <p class="text-[11px] font-mono text-gray-500 mt-1 break-all">${file}</p><p class="text-[11px] text-gray-400 mt-0.5">${phu}</p></div>`
+const quy = (q, a, b, c) => `<div class="flex items-center gap-2"><span class="text-xs font-semibold text-gray-600 w-6">${q}</span>${[a, b, c].map((x, i) => `<span title="${['Cổng HĐĐT', 'Phần mềm', 'Tờ khai'][i]}" class="w-6 h-5 rounded text-[10px] flex items-center justify-center border ${x ? MAU.xanhLa : MAU.xam}">${x ? '✓' : '—'}</span>`).join('')}</div>`
+const tong = [
+  ['Bảng kê cổng HĐĐT', 98, 9479e6, 942.55e6],
+  ['Bảng kê phần mềm kế toán', 96, 9412e6, 935e6],
+  ['Tờ khai 01/GTGT đã nộp · [23] [24] T7–T9', '', 9412e6, 935e6],
+]
+const nhom = [
+  ['Có trên cổng, chưa có trong phần mềm', 5, 'do', [
+    ['14/07/2025', '1C25TAA', '0000452', 'CÔNG TY TNHH VẬT TƯ THÀNH ĐẠT', '0311111111', 48e6, 4.8e6, 'Hóa đơn mới · Đã cấp mã', ''],
+    ['21/08/2025', '1C25TKK', '0001033', 'CÔNG TY TNHH VIỄN THÔNG SAO MAI', '0388888888', 2.5e6, 0.25e6, 'Hóa đơn mới · Đã cấp mã', ''],
+    ['29/09/2025', '1C25TBB', '0001988', 'CÔNG TY CP THIẾT BỊ PHƯỚC LỘC', '0322222222', 98e6, 9.8e6, 'Hóa đơn mới · Đã cấp mã', 'Ngày cuối quý'],
+  ]],
+  ['Có trong phần mềm, không có trên cổng', 3, 'tim', [
+    ['03/07/2024', '1C24TMM', '0000035', 'CÔNG TY TNHH NÔNG SẢN AN MIÊN', '0399999999', 31e6, 2.48e6, '—', 'Ngày hóa đơn năm 2024, ngoài khoảng tra cứu của bảng kê cổng'],
+    ['16/08/2025', 'TK HQ', '107xxxxxx23', 'Tờ khai hải quan nhập khẩu', '—', 26e6, 2.6e6, '—', 'Chứng từ nhập khẩu, không có trên cổng HĐĐT'],
+    ['25/09/2025', '1C25TZZ', '0000210', 'CÔNG TY TNHH DỊCH VỤ HẢI ĐĂNG', '0311122233', 11.2e6, 1.12e6, '—', 'Không tìm thấy trên cổng'],
+  ]],
+  ['Lệch tiền / thuế', 2, 'hoPhach', [
+    ['09/08/2025', '1C25TCC', '0000097', 'CÔNG TY TNHH VẬN TẢI NAM PHONG', '0333333333', 12e6, 1.2e6, 'Cổng: 12.000.000 / 960.000', 'Phần mềm ghi thuế suất 10%, cổng 8%'],
+    ['18/09/2025', '1C25TFF', '0000171', 'CÔNG TY CP DỊCH VỤ AN KHANG', '0355555555', 108e6, 10.9e6, 'Cổng: 108.000.000 / 10.040.000', 'Thuế lệch 860.000'],
+  ]],
+  ['Trạng thái trên cổng', 1, 'do', [
+    ['12/07/2025', '1C25TAA', '0000431', 'CÔNG TY TNHH VẬT TƯ THÀNH ĐẠT', '0311111111', 120e6, 12e6, 'Hóa đơn bị thay thế', 'Phần mềm vẫn kê hóa đơn gốc; hóa đơn thay thế là 0000452'],
+  ]],
+]
+const khoi = nhom.map(([ten, sl, mau, ds]) => `
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm mb-3 overflow-hidden">
+    <div class="px-4 py-2 flex items-center gap-2 border-b border-gray-100">${chip(ten, mau)}<span class="text-xs text-gray-500">${sl} hóa đơn${ds.length < sl ? ` · hiện ${ds.length}` : ''}</span></div>
+    <table class="w-full text-sm"><tbody class="divide-y divide-gray-50">${ds.map(([ng, kh, s, t, mst, tien, thue, cong, gc]) => `<tr>
+      <td class="px-4 py-2 text-xs whitespace-nowrap w-24">${ng}</td><td class="px-3 text-xs font-mono w-36">${kh} · ${s}</td>
+      <td class="px-3"><p class="text-xs text-gray-800">${t}</p><p class="text-[11px] text-gray-400">MST ${mst}</p></td>
+      <td class="px-3 text-right text-xs tabular-nums w-28">${so(tien)}</td><td class="px-3 text-right text-xs tabular-nums font-semibold w-24">${so(thue)}</td>
+      <td class="px-3 text-[11px] text-gray-600 w-52">${cong}</td><td class="px-4 text-[11px] text-gray-500 w-72">${gc}</td></tr>`).join('')}</tbody></table></div>`).join('')
+const loc = (ds, mo) => ds.map(x => `<span class="rounded-full border px-2.5 py-1 text-xs ${x === mo ? 'border-[#8B1A1A] text-[#8B1A1A] bg-red-50 font-semibold' : 'border-gray-200 text-gray-600 bg-white'}">${x}</span>`).join('')
+
+trang({ dangMo: 'soat', icon: '🔎', tieuDe: 'Soát xét báo cáo', tabs: TABS_SOAT, tabMo: 'Bảng kê hóa đơn', noiDung: `
+  <div class="flex items-center gap-2 mb-3">${loc(['Mua vào', 'Bán ra'], 'Mua vào')}<span class="w-4"></span>${loc(['Quý 1', 'Quý 2', 'Quý 3', 'Quý 4'], 'Quý 3')}
+    <div class="ml-auto flex items-center gap-4 bg-white rounded-xl border border-gray-100 px-3 py-1.5">
+      <span class="text-[11px] text-gray-500">Đủ bảng kê:<br><span class="text-gray-400">cổng · PM · tờ khai</span></span>${quy('Q1', 1, 1, 1)}${quy('Q2', 1, 1, 1)}${quy('Q3', 1, 1, 1)}${quy('Q4', 1, 0, 0)}</div></div>
+  <div class="flex gap-3 mb-3">
+    ${nguonFile('Bảng kê cổng hóa đơn điện tử', '2. HÓA ĐƠN MUA VÀO_BÁN RA\\QUÝ 3\\HĐ MUA VÀO\\0300000001_HDTQMuaVao 1-7-2025_30-9-2025.xlsx', 'ok', 'Danh sách 98 hóa đơn · tải ngày 06/10/2025')}
+    ${nguonFile('Bảng kê phần mềm kế toán', 'BAOCAOTHUE_Q3_2025_MAUSAVITAX\\BẢNG KÊ\\To khai thue GTGT khau tru 01GTGT.xlsx', 'ok', 'Sheet "Bảng kê HĐ mua vào" · 96 hóa đơn')}
+    ${nguonFile('Tờ khai 01/GTGT đã nộp', 'BAOCAOTHUE_Q3_2025_MAUSAVITAX\\TỜ KHAI THUẾ\\TK_GTGT_T07–T09.2025_MAUSAVITAX.xml', 'ok', '3 tháng · bản nộp sau cùng')}</div>
+  <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800">📂 File <span class="font-mono">0300000001_HDTQBanra 1-4-2026_30-6-2026.xlsx</span> nằm trong thư mục <b>HĐ MUA VÀO</b> (quý 2/2026). App đọc nội dung, nhận đúng là bảng kê <b>bán ra</b>.</div>
+  <div class="grid grid-cols-6 gap-3 mb-4">
+    ${oTong(98, 'Hóa đơn trên cổng', 'xanhDuong')}${oTong(96, 'Hóa đơn trong phần mềm', 'xanhDuong')}${oTong(91, 'Khớp', 'xanhLa')}
+    ${oTong(5, 'Có trên cổng, chưa có trong phần mềm', 'do', 'thuế 14.850.000')}${oTong(3, 'Có trong phần mềm, không có trên cổng', 'tim', 'thuế 6.200.000')}${oTong(3, 'Lệch tiền + trạng thái bất thường', 'hoPhach', '2 lệch · 1 bị thay thế')}</div>
+  <h2 class="text-sm font-bold text-gray-700 mb-2">Tổng theo nguồn · quý 3/2025 · mua vào</h2>
+  ${bang(`<th class="text-left px-4 py-2.5">Nguồn</th><th class="text-right px-3">Số hóa đơn</th><th class="text-right px-3">Tiền chưa thuế</th><th class="text-right px-3">Thuế GTGT</th><th class="text-right px-4">Thuế: chênh với phần mềm</th>`,
+    tong.map(([n, s, t, th]) => `<tr><td class="px-4 py-2 text-sm">${n}</td><td class="px-3 text-right text-xs tabular-nums">${s}</td><td class="px-3 text-right text-xs tabular-nums">${so(t)}</td><td class="px-3 text-right text-xs tabular-nums font-semibold">${so(th)}</td><td class="px-4 text-right text-xs tabular-nums">${th === 935e6 ? '<span class="text-gray-400">0</span>' : so(th - 935e6)}</td></tr>`).join('') +
+    `<tr><td colspan="5" class="px-4 py-1.5 text-[11px] text-gray-400">Cổng − phần mềm = +14.850.000 (chưa có trong PM) − 6.200.000 (không có trên cổng) − 1.100.000 (lệch) = +7.550.000. Sheet tờ khai trong file phần mềm khớp XML đã nộp.</td></tr>`, 'mb-5')}
+  <h2 class="text-sm font-bold text-gray-700 mb-2">Hóa đơn chênh lệch</h2>
+  ${khoi}
+  <p class="text-[11px] text-gray-400">Ghép theo MST đối tác + ký hiệu + số hóa đơn. Bấm một dòng để mở file XML/PDF của hóa đơn đó (nếu có trong thư mục).</p>` })
+</script></body></html>

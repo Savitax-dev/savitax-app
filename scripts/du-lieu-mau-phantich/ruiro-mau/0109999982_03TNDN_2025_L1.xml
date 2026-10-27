@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<HSoThueDTu xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://kekhaithue.gdt.gov.vn/TKhaiThue">
+  <HSoKhaiThue id="ID_1">
+    <TTinChung>
+      <TTinDVu>
+        <maDVu>HTKK</maDVu>
+        <tenDVu>HỖ TRỢ KÊ KHAI THUẾ</tenDVu>
+        <pbanDVu>5.6.6</pbanDVu>
+        <ttinNhaCCapDVu>00000000000000000000000000000000</ttinNhaCCapDVu>
+      </TTinDVu>
+      <TTinTKhaiThue>
+        <TKhaiThue>
+          <maTKhai>892</maTKhai>
+          <tenTKhai>TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP DOANH NGHIỆP (Mẫu số 03/TNDN)</tenTKhai>
+          <moTaBMau>(Ban hành kèm theo Thông tư số 80/2021/TT-BTC ngày 29 tháng 9 năm 2021 của Bộ trưởng Bộ Tài chính)</moTaBMau>
+          <pbanTKhaiXML>2.9.4</pbanTKhaiXML>
+          <loaiTKhai>B</loaiTKhai>
+          <soLan>1</soLan>
+          <KyKKhaiThue>
+            <kieuKy>Y</kieuKy>
+            <kyKKhai>2025</kyKKhai>
+            <kyKKhaiTuNgay>01/01/2025</kyKKhaiTuNgay>
+            <kyKKhaiDenNgay>31/12/2025</kyKKhaiDenNgay>
+            <kyKKhaiTuThang />
+            <kyKKhaiDenThang />
+          </KyKKhaiThue>
+          <maCQTNoiNop>10100</maCQTNoiNop>
+          <tenCQTNoiNop>Thuế Thành phố Hà Nội</tenCQTNoiNop>
+          <ngayLapTKhai>2026-06-15</ngayLapTKhai>
+          <GiaHan>
+            <maLyDoGiaHan />
+            <lyDoGiaHan />
+          </GiaHan>
+          <nguoiKy>NGUYỄN VĂN GIẢ LẬP</nguoiKy>
+          <ngayKy>2026-06-15</ngayKy>
+          <nganhNgheKD />
+        </TKhaiThue>
+        <NNT>
+          <mst>0109999982</mst>
+          <tenNNT>CÔNG TY TNHH MẪU RỦI RO</tenNNT>
+          <dchiNNT>Số 99 Phố Giả Lập, Phường Thử Nghiệm, Thành phố Hà Nội</dchiNNT>
+          <phuongXa />
+          <maHuyenNNT />
+          <tenHuyenNNT />
+          <maTinhNNT>101</maTinhNNT>
+          <tenTinhNNT>Thành phố Hà Nội</tenTinhNNT>
+          <dthoaiNNT />
+          <faxNNT />
+          <emailNNT />
+        </NNT>
+      </TTinTKhaiThue>
+    </TTinChung>
+    <CTieuTKhaiChinh>
+      <Header>
+        <kyTaiChinh_Tu>01/01</kyTaiChinh_Tu>
+        <kyTaiChinh_Den>31/12</kyTaiChinh_Den>
+        <ma_THQuyetToan>01</ma_THQuyetToan>
+        <ten_THQuyetToan>QT định kỳ</ten_THQuyetToan>
+        <ct04_ma>G46</ct04_ma>
+        <ct04_ten>G46 - Bán buôn (trừ ô tô, mô tô, xe máy và xe có động cơ khác)</ct04_ten>
+        <ct05>100.00</ct05>
+      </Header>
+      <ctA1>5525000000</ctA1>
+      <ctB1>230000000</ctB1>
+      <ctB2>120000000</ctB2>
+      <ctB3>0</ctB3>
+      <ctB4>85000000</ctB4>
+      <ctB5>0</ctB5>
+      <ctB6>0</ctB6>
+      <ctB7>25000000</ctB7>
+      <ctB8>100000000</ctB8>
+      <ctB9>60000000</ctB9>
+      <ctB10>0</ctB10>
+      <ctB11>40000000</ctB11>
+      <ctB12>0</ctB12>
+      <ctB13>5655000000</ctB13>
+      <ctB14>5655000000</ctB14>
+      <ctB15>0</ctB15>
+      <ctC1>5655000000</ctC1>
+      <ctC2>0</ctC2>
+      <dsThMienThue>
+        <thMienThue id="ID_1">
+          <ma_loaiMien />
+          <ten_loaiMien />
+          <ctC2_soThuNhap>0</ctC2_soThuNhap>
+        </thMienThue>
+      </dsThMienThue>
+      <ctC3>300000000</ctC3>
+      <ctC3a>300000000</ctC3a>
+      <ctC3b>0</ctC3b>
+      <ctC4>5355000000</ctC4>
+      <ctC5>0</ctC5>
+      <ctC6>5355000000</ctC6>
+      <ctC7_thuNhap>5355000000</ctC7_thuNhap>
+      <ctC7_tenThueSuat>+ Thu nhập tính thuế áp dụng thuế suất 20%</ctC7_tenThueSuat>
+      <ctC7_thueSuat>20</ctC7_thueSuat>
+      <ctC8>0</ctC8>
+      <ctC8a>0</ctC8a>
+      <ctC9>1071000000</ctC9>
+      <ctC10>0</ctC10>
+      <ctC11>0</ctC11>
+      <ctC12>0</ctC12>
+      <ctC13>0</ctC13>
+      <ctC14>0</ctC14>
+      <ctC15>0</ctC15>
+      <ctC16>0</ctC16>
+      <ctC17>1071000000</ctC17>
+      <ctD1>0</ctD1>
+      <ctD2>0</ctD2>
+      <ctD3>0</ctD3>
+      <ctD4>0</ctD4>
+      <ctD5>0</ctD5>
+      <ctD6>0</ctD6>
+      <ctD7>0</ctD7>
+      <ctD8>0</ctD8>
+      <ctE>1071000000</ctE>
+      <ctE1>1071000000</ctE1>
+      <ctE2>0</ctE2>
+      <ctE3>0</ctE3>
+      <ctE4>0</ctE4>
+      <ctE5>0</ctE5>
+      <ctE6>0</ctE6>
+      <ctG>900000000</ctG>
+      <thueTNDN_tamnop_sxkd>900000000</thueTNDN_tamnop_sxkd>
+      <ctG1>0</ctG1>
+      <ctG2>900000000</ctG2>
+      <thueTNDN_tamnop_cnbds>0</thueTNDN_tamnop_cnbds>
+      <ctG3>0</ctG3>
+      <ctG4>0</ctG4>
+      <ctG5>0</ctG5>
+      <ctH1>171000000</ctH1>
+      <ctH2>0</ctH2>
+      <ctH3>0</ctH3>
+      <ctI>171000000</ctI>
+      <ctI1>171000000</ctI1>
+      <ctI2>0</ctI2>
+      <NghiaVuThue>
+        <CtE1>
+          <soKK>1071000000</soKK>
+          <tieuMuc1052>1071000000</tieuMuc1052>
+          <tieuMuc1056>0</tieuMuc1056>
+          <tieuMuc1057>0</tieuMuc1057>
+          <tieuMuc1099>0</tieuMuc1099>
+        </CtE1>
+        <CtE2>
+          <soKK>0</soKK>
+          <tieuMuc1053>0</tieuMuc1053>
+        </CtE2>
+        <CtE5>
+          <soKK>0</soKK>
+          <tieuMuc1052>0</tieuMuc1052>
+          <tieuMuc1056>0</tieuMuc1056>
+          <tieuMuc1057>0</tieuMuc1057>
+          <tieuMuc1099>0</tieuMuc1099>
+        </CtE5>
+        <tong1052>1071000000</tong1052>
+        <tong1056>0</tong1056>
+        <tong1057>0</tong1057>
+        <tong1053>0</tong1053>
+      </NghiaVuThue>
+    </CTieuTKhaiChinh>
+    <PLuc>
+      <PLuc_03_1A_TNDN>
+        <ct04>59050000000</ct04>
+        <ct05>0</ct05>
+        <ct06>850000000</ct06>
+        <ct07>850000000</ct07>
+        <ct08>0</ct08>
+        <ct09>0</ct09>
+        <ct10>30000000</ct10>
+        <ct11>0</ct11>
+        <ct12>53900000000</ct12>
+        <ct13>44380000000</ct13>
+        <ct14>0</ct14>
+        <ct15>9520000000</ct15>
+        <ct16>260000000</ct16>
+        <ct17>260000000</ct17>
+        <ct18>4070000000</ct18>
+        <ct19>1500000000</ct19>
+        <ct20>45000000</ct20>
+        <ct21>1455000000</ct21>
+        <ct22>5525000000</ct22>
+      </PLuc_03_1A_TNDN>
+      <PL01_KHBS>
+        <Header>
+          <maTKhai>892</maTKhai>
+          <tenTKhai>TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP DOANH NGHIỆP (Mẫu số 03/TNDN)</tenTKhai>
+          <maGiaoDich>BS-L01</maGiaoDich>
+          <KyKKhaiThue>
+            <kieuKy>Y</kieuKy>
+            <kyKKhai>2025</kyKKhai>
+            <kyKKhaiTuNgay>01/01/2025</kyKKhaiTuNgay>
+            <kyKKhaiDenNgay>31/12/2025</kyKKhaiDenNgay>
+            <kyKKhaiTuThang />
+            <kyKKhaiDenThang />
+          </KyKKhaiThue>
+          <soLan>1</soLan>
+          <mst>0109999982</mst>
+          <tenNNT>CÔNG TY TNHH MẪU RỦI RO</tenNNT>
+          <mstDLyThue xsi:nil="true" />
+          <tenDLyThue />
+          <soHDongDLyThue />
+          <ngayKyHDDLyThue xsi:nil="true" />
+        </Header>
+        <ma_DonViTien>VND</ma_DonViTien>
+        <ten_DonViTien>Đồng Việt Nam</ten_DonViTien>
+        <Muc_A>
+          <Muc_I>
+            <Muc_1>
+              <ChiTiet id="ID_1">
+                <ct2_ma>1052</ct2_ma>
+                <ct2_ten>Thuế thu nhập doanh nghiệp từ hoạt động sản xuất kinh doanh (gồm cả dịch vụ trong lĩnh vực dầu khí)</ct2_ten>
+                <ct3>17000000</ct3>
+              </ChiTiet>
+              <tongCong_ct10>17000000</tongCong_ct10>
+            </Muc_1>
+            <Muc_2>
+              <DSachPLuc>
+                <BKePLuc id="ID_1">
+                  <ma_PLuc />
+                  <ten_PLuc />
+                  <CTietPLuc>
+                    <ChiTiet id="ID_1">
+                      <ct7>0</ct7>
+                    </ChiTiet>
+                  </CTietPLuc>
+                </BKePLuc>
+                <tongCong_ct11>0</tongCong_ct11>
+              </DSachPLuc>
+            </Muc_2>
+            <Muc_3>
+              <ct3a_1>2026-06-15</ct3a_1>
+              <ct3a_2>45</ct3a_2>
+              <ct3b>0</ct3b>
+            </Muc_3>
+          </Muc_I>
+          <Muc_II>
+            <ChiTiet id="ID_1">
+              <ct2_ma />
+              <ct2_ten />
+              <ct3>0</ct3>
+            </ChiTiet>
+            <tongCong_ct12>0</tongCong_ct12>
+          </Muc_II>
+          <Muc_III>
+            <ChiTiet id="ID_1">
+              <ct2_ma />
+              <ct2_ten />
+              <ct3>0</ct3>
+            </ChiTiet>
+            <tongCong_ct13>0</tongCong_ct13>
+          </Muc_III>
+        </Muc_A>
+        <Muc_B>
+          <Muc_I>
+            <ct_1>0</ct_1>
+            <ct_2_so />
+            <ct_2_ngay xsi:nil="true" />
+            <ct_2_CQT_ma />
+            <ct_2_CQT_ten />
+            <ct_3_so />
+            <ct_3_ngay xsi:nil="true" />
+          </Muc_I>
+          <Muc_II>
+            <ct_1>0</ct_1>
+            <ct_2>0</ct_2>
+          </Muc_II>
+        </Muc_B>
+      </PL01_KHBS>
+      <PL01_1_KHBS>
+        <Header>
+          <maTKhai>892</maTKhai>
+          <tenTKhai>TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP DOANH NGHIỆP (Mẫu số 03/TNDN)</tenTKhai>
+          <maGiaoDich>BS-L01</maGiaoDich>
+          <KyKKhaiThue>
+            <kieuKy>Y</kieuKy>
+            <kyKKhai>2025</kyKKhai>
+            <kyKKhaiTuNgay>01/01/2025</kyKKhaiTuNgay>
+            <kyKKhaiDenNgay>31/12/2025</kyKKhaiDenNgay>
+            <kyKKhaiTuThang />
+            <kyKKhaiDenThang />
+          </KyKKhaiThue>
+          <soLan>1</soLan>
+          <mst>0109999982</mst>
+          <tenNNT>CÔNG TY TNHH MẪU RỦI RO</tenNNT>
+          <mstDLyThue xsi:nil="true" />
+          <tenDLyThue />
+          <soHDongDLyThue />
+          <ngayKyHDDLyThue xsi:nil="true" />
+        </Header>
+        <ma_DonViTien>VND</ma_DonViTien>
+        <ten_DonViTien>Đồng Việt Nam</ten_DonViTien>
+        <Muc_A>
+          <DSachHSo>
+            <BKeHSo id="ID_1">
+              <ma_HSo>0066</ma_HSo>
+              <ten_HSo>03/TNDN</ten_HSo>
+              <CTietHSo>
+                <ChiTiet id="ID_1">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>B1</ct3_ma>
+                  <ct3_ten>Điều chỉnh tăng tổng lợi nhuận trước thuế thu nhập doanh nghiệp (B1= B2+B3+B4+B5+B6+B7)</ct3_ten>
+                  <ct04>145000000</ct04>
+                  <ct05>230000000</ct05>
+                  <ct06>85000000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_2">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>B4</ct3_ma>
+                  <ct3_ten>Các khoản chi không được trừ khi xác định thu nhập chịu thuế</ct3_ten>
+                  <ct04>0</ct04>
+                  <ct05>85000000</ct05>
+                  <ct06>85000000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_3">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>B13</ct3_ma>
+                  <ct3_ten>Tổng thu nhập chịu thuế (B13=A1+B1-B8)</ct3_ten>
+                  <ct04>5570000000</ct04>
+                  <ct05>5655000000</ct05>
+                  <ct06>85000000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_4">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>B14</ct3_ma>
+                  <ct3_ten>Thu nhập chịu thuế từ hoạt động sản xuất kinh doanh</ct3_ten>
+                  <ct04>5570000000</ct04>
+                  <ct05>5655000000</ct05>
+                  <ct06>85000000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_5">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>C1</ct3_ma>
+                  <ct3_ten>Thu nhập chịu thuế (C1 = B14)</ct3_ten>
+                  <ct04>5570000000</ct04>
+                  <ct05>5655000000</ct05>
+                  <ct06>85000000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_6">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>C4</ct3_ma>
+                  <ct3_ten>Thu nhập tính thuế (TNTT) (C4=C1-C2-C3)</ct3_ten>
+                  <ct04>5270000000</ct04>
+                  <ct05>5355000000</ct05>
+                  <ct06>85000000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_7">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>C6</ct3_ma>
+                  <ct3_ten>TNTT sau khi đã trích lập quỹ khoa học công nghệ (C6=C4-C5=C7+C8)</ct3_ten>
+                  <ct04>5270000000</ct04>
+                  <ct05>5355000000</ct05>
+                  <ct06>85000000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_8">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>C9</ct3_ma>
+                  <ct3_ten>Thuế TNDN từ hoạt động SXKD tính theo thuế suất không ưu đãi (C9 =(C7 x 20%) + (C8 x C8a))</ct3_ten>
+                  <ct04>1054000000</ct04>
+                  <ct05>1071000000</ct05>
+                  <ct06>17000000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_9">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>C17</ct3_ma>
+                  <ct3_ten>Thuế TNDN phải nộp của hoạt động sản xuất kinh doanh (C17=C9-C10-C14-C15-C16)</ct3_ten>
+                  <ct04>1054000000</ct04>
+                  <ct05>1071000000</ct05>
+                  <ct06>17000000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_10">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>E</ct3_ma>
+                  <ct3_ten>Số thuế TNDN phải nộp quyết toán trong kỳ (E=E1+E2+E5)</ct3_ten>
+                  <ct04>1054000000</ct04>
+                  <ct05>1071000000</ct05>
+                  <ct06>17000000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_11">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>E1</ct3_ma>
+                  <ct3_ten>Thuế TNDN của hoạt động sản xuất kinh doanh</ct3_ten>
+                  <ct04>1054000000</ct04>
+                  <ct05>1071000000</ct05>
+                  <ct06>17000000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+                <ChiTiet id="ID_12">
+                  <ct2_ma />
+                  <ct2_ten />
+                  <ct3_ma>I</ct3_ma>
+                  <ct3_ten>Số thuế TNDN còn phải nộp đến thời hạn nộp hồ sơ khai quyết toán thuế (I=E-G=I1+I2)</ct3_ten>
+                  <ct04>154000000</ct04>
+                  <ct05>171000000</ct05>
+                  <ct06>17000000</ct06>
+                  <ct7>0</ct7>
+                  <ct8 />
+                </ChiTiet>
+              </CTietHSo>
+            </BKeHSo>
+            <TongCong>
+              <tongCong_7>17000000</tongCong_7>
+              <tongCong_8>0</tongCong_8>
+              <tongCong_9>0</tongCong_9>
+            </TongCong>
+          </DSachHSo>
+        </Muc_A>
+        <Muc_B>
+          <CTietTaiLieu id="ID_1">
+            <ma_TLieu />
+            <ten_TLieu />
+          </CTietTaiLieu>
+        </Muc_B>
+      </PL01_1_KHBS>
+    </PLuc>
+  </HSoKhaiThue>
+</HSoThueDTu>

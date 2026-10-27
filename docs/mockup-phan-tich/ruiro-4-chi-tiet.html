@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="chieu-cao" content="1220"><title>R4 · Chi tiết tiêu chí R01 · Rủi ro thuế</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Chi tiết 1 tiêu chí: mỗi con số đều chỉ ra được file, sheet/ô hoặc chỉ tiêu nguồn. Chỉ xem.
+const thang = [4.2, 4.4, 4.8, 4.5, 4.6, 4.9, 5.0, 4.7, 4.8, 4.9, 5.1, 5.1].map(x => x * 1e9)
+const lan = { 3: 'BSL1', 6: 'BSL2', 11: 'BSL1' }
+const dongThang = thang.map((v, i) => `<tr><td class="px-4 py-1.5 text-xs">T${String(i + 1).padStart(2, '0')}/2025</td>
+  <td class="px-3 text-right tabular-nums text-xs">${so(v)}</td>
+  <td class="px-3 text-xs">${lan[i + 1] ? chip('Bổ sung ' + lan[i + 1].slice(3), 'hoPhach') : '<span class="text-gray-400">Lần đầu</span>'}</td>
+  <td class="px-3 text-[11px] font-mono text-gray-500">TK_GTGT_T${String(i + 1).padStart(2, '0')}.2025_MAUSAVITAX${lan[i + 1] ? '_' + lan[i + 1] : ''}.xml</td>
+  <td class="px-4">${nguon('xml')}</td></tr>`).join('')
+// Ô số có màu như ô tổng chung: SL1 xanh dương, SL2 tím, chênh lệch hổ phách, tỷ lệ xám-xanh.
+const o = (nhan, gt, phu = '', mau = 'xam') => { const h = HEX[mau]; return `<div class="rounded-2xl bg-white shadow-sm overflow-hidden border" style="border-color:${h}33">
+  <div class="h-1.5" style="background:linear-gradient(90deg,${h},${h}66)"></div>
+  <div class="px-4 pt-2.5 pb-3" style="background:linear-gradient(180deg,${h}14,#fff 80%)"><p class="text-xs font-semibold text-gray-600">${nhan}</p>
+  <p class="text-2xl font-extrabold tabular-nums mt-1" style="color:${h}">${gt}</p>${phu ? `<p class="text-[11px] text-gray-500 mt-0.5">${phu}</p>` : ''}</div></div>` }
+const the = (tieuDe, noiDung, lop = '') => `<div class="bg-white rounded-2xl border border-gray-100 shadow-sm ${lop}"><div class="px-4 py-2.5 border-b border-gray-100 text-sm font-semibold text-gray-700">${tieuDe}</div><div class="px-4 py-3 text-sm text-gray-700">${noiDung}</div></div>`
+const ds = a => `<ul class="space-y-1.5">${a.map(x => `<li class="flex gap-2"><span class="text-gray-300">•</span><span>${x}</span></li>`).join('')}</ul>`
+
+trang({ dangMo: 'ruiro', icon: '⚖️', tieuDe: 'Rủi ro thuế', tabs: TABS_RUIRO, tabMo: 'Chi tiết tiêu chí', noiDung: `
+  <div class="flex items-start gap-3 mb-4">
+    <span class="font-mono text-sm font-bold text-white rounded-lg px-2.5 py-1.5" style="background:${DO}">R01</span>
+    <div class="flex-1"><h2 class="text-lg font-bold text-gray-800 leading-snug">Chênh lệch giữa doanh thu tính thuế GTGT và doanh thu tính thuế TNDN</h2>
+      <p class="text-xs text-gray-500 mt-1">Nhóm GTGT · mã rủi ro <b>DT</b> (doanh thu tính thuế), <b>HĐ</b> (hóa đơn) · Công thức: SL1 − SL2</p></div>
+    <div class="flex gap-2"><button class="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-sm">← R12</button><button class="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-sm">R02 →</button></div></div>
+  <div class="grid grid-cols-4 gap-3 mb-4">
+    ${o('SL1 · Σ[34] tờ khai 01/GTGT 12 tháng', so(57e9), 'bản nộp sau cùng của mỗi kỳ', 'xanhDuong')}
+    ${o('SL2 · DT thuần BCTC + [B2] − [B9]', so(58.26e9), '58.200.000.000 + 120.000.000 − 60.000.000', 'tim')}
+    ${o('Chênh lệch SL1 − SL2', so(-1.26e9), 'doanh thu tờ khai GTGT thấp hơn', 'hoPhach')}
+    ${o('Tỷ lệ chênh lệch', pt(1.26e9 / 58.26e9), '|SL1 − SL2| ÷ số lớn hơn', 'xam')}</div>
+  <div class="grid grid-cols-5 gap-4">
+    <div class="col-span-3 space-y-4">
+      ${the('SL1 · chỉ tiêu [34] từng kỳ', `<table class="w-full -mx-4" style="width:calc(100% + 2rem)"><thead><tr class="text-[11px] uppercase text-gray-400"><th class="text-left px-4 pb-1">Kỳ</th><th class="text-right px-3">[34]</th><th class="text-left px-3">Lần nộp dùng</th><th class="text-left px-3">File</th><th></th></tr></thead><tbody class="divide-y divide-gray-50">${dongThang}
+        <tr class="font-semibold"><td class="px-4 py-2 text-xs">Cộng</td><td class="px-3 text-right tabular-nums text-xs">${so(57e9)}</td><td colspan="3" class="px-3 text-[11px] text-gray-400">15 file trong thư mục · 3 bản bổ sung thay bản trước</td></tr></tbody></table>`)}
+      ${the('SL2 · cách tính', `<table class="w-full text-xs"><tbody class="divide-y divide-gray-50">
+        <tr><td class="py-1.5">Doanh thu thuần (KQKD mã số 10)</td><td class="text-right tabular-nums">${so(58.2e9)}</td><td class="pl-3 font-mono text-[11px] text-gray-500">BCTC_2025_MAUSAVITAX.xlsx · sheet B02 · ô E15</td><td>${nguon('excel')}</td></tr>
+        <tr><td class="py-1.5">+ [B2] Điều chỉnh tăng doanh thu</td><td class="text-right tabular-nums">${so(120e6)}</td><td class="pl-3 font-mono text-[11px] text-gray-500">TK_TNDN_NAM.2025_MAUSAVITAX_BSL1.xml</td><td>${nguon('xml')}</td></tr>
+        <tr><td class="py-1.5">− [B9] Giảm trừ DT đã tính thuế năm trước</td><td class="text-right tabular-nums">${so(60e6)}</td><td class="pl-3 font-mono text-[11px] text-gray-500">TK_TNDN_NAM.2025_MAUSAVITAX_BSL1.xml</td><td>${nguon('xml')}</td></tr>
+        <tr class="font-semibold"><td class="py-1.5">SL2</td><td class="text-right tabular-nums">${so(58.26e9)}</td><td></td><td></td></tr></tbody></table>`)}
+      ${the('Số tham chiếu thêm (không dùng để tính SL1, SL2)', `<table class="w-full text-xs"><tbody class="divide-y divide-gray-50">
+        <tr><td class="py-1.5">Bảng kê bán ra trên cổng HĐĐT (412 hóa đơn, 4 quý)</td><td class="text-right tabular-nums">${so(57.05e9)}</td><td class="pl-3 text-gray-500">khác [34] cả năm ${so(50e6)}</td><td class="pl-2">${nguon('excel')}</td></tr>
+        <tr><td class="py-1.5">Doanh thu gộp (KQKD mã số 01) + B2 − B9</td><td class="text-right tabular-nums">${so(59.11e9)}</td><td class="pl-3 text-gray-500">chênh với SL1 ${so(-2.11e9)}</td><td class="pl-2">${nguon('excel')}</td></tr></tbody></table>`)}
+    </div>
+    <div class="col-span-2 space-y-4">
+      ${the('Nguyên nhân thường gặp', ds(['Khoản thu không phải kê khai, tính nộp thuế [32a] (thu hộ, bồi thường, hỗ trợ)', 'Thu nhập khác hoặc doanh thu tài chính có lập hóa đơn (thanh lý TSCĐ, cho thuê) nằm trong [34] nhưng không nằm trong 511', 'Hàng khuyến mại, biếu tặng, tiêu dùng nội bộ kê khai GTGT nhưng không ghi doanh thu', 'Lệch thời điểm: thu tiền trước dịch vụ (3387), hóa đơn điều chỉnh lập ở năm sau', 'Sai sót đã khai bổ sung sau khi lập BCTC']))}
+      ${the('Hồ sơ nên chuẩn bị', ds(['Bảng đối chiếu doanh thu theo tháng: hóa đơn – [34] – sổ 511, 515, 711', 'Danh sách hóa đơn điều chỉnh, thay thế trong năm và quý 1 năm sau', 'Sổ chi tiết 3387, 131 dư Có', 'Tờ khai bổ sung và bản giải trình khai bổ sung (nếu có)']))}
+      ${the('Căn cứ áp dụng cho năm 2025', ds(['Thuế GTGT: Luật 13/2008/QH12 và TT 219/2013 cho kỳ đến 30/06/2025; Luật 48/2024/QH15 và NĐ 181/2025 từ 01/07/2025', 'Thuế TNDN: Luật 67/2025/QH15 (kỳ tính thuế 2025), NĐ 320/2025', 'Mẫu tờ khai 01/GTGT, 03/TNDN theo TT 80/2021']) + '<p class="text-[11px] text-gray-400 mt-2">Căn cứ lọc theo năm đang xem.</p>')}
+    </div>
+  </div>` })
+</script></body></html>
