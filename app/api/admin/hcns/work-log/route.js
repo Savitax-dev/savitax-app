@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { callerHasPermission } from '@/lib/serverAuth'
 import { HCNS_STATUS_LABEL } from '@/lib/hcnsStatus'
 import { getHcnsTeam } from '@/lib/hcnsTeam'
+import { vaiTroCoQuyen } from '@/lib/quyenCache'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -139,9 +140,5 @@ async function hasPerm(supabase, caller, permKey) {
   if (!caller?.staffId) return false
   const roles = caller.roles?.length ? caller.roles : [caller.role]
   if (roles.includes('admin')) return true
-  const { data: roleRows } = await supabase.from('roles').select('is_system').in('id', roles)
-  if ((roleRows || []).some(r => r.is_system)) return true
-  const { data } = await supabase.from('role_permissions').select('permission_key')
-    .in('role_id', roles).eq('permission_key', permKey).limit(1)
-  return !!(data && data.length)
+  return vaiTroCoQuyen(supabase, roles, permKey)   // bộ nhớ tạm 5 phút — lib/quyenCache.js
 }

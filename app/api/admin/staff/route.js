@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { callerHasPermission, requireLogin } from '@/lib/serverAuth'
 import { SHARED_ROOM_IDS } from '@/lib/specialRooms'
+import { xoaBoNhoQuyen } from '@/lib/quyenCache'
 import { phongQuanLyNhanVien, kiemNhanVienTrongPhamVi } from '@/lib/staffScope'
 
 function getAdmin() {
@@ -73,6 +74,7 @@ export async function DELETE(request) {
     }
     return Response.json({ error: error.message }, { status: 400 })
   }
+  xoaBoNhoQuyen()
   return Response.json({ success: true })
 }
 
@@ -109,5 +111,6 @@ export async function PATCH(request) {
     .eq('id', id)
 
   if (error) return Response.json({ error: error.message }, { status: 400 })
+  xoaBoNhoQuyen()   // đổi vai trò / phòng / khoá tài khoản: bỏ thông tin người gọi đang nhớ tạm
   return Response.json({ success: true })
 }

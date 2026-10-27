@@ -5,6 +5,7 @@ import { resolveFeeForMonthWithSource } from '@/lib/feeDue'
 import { hcnsStartMonth } from '@/lib/hcnsFee'
 import { evaluateCap, CAP_OK, CAP_UNVERIFIABLE } from '@/lib/feeCap'
 import { checkPrevMonthUnpaid, prevMonthOf } from '@/lib/prevMonthDebt'
+import { vaiTroCoQuyen } from '@/lib/quyenCache'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -171,9 +172,5 @@ async function canWriteHcnsDebt(supabase, caller, hcnsClient) {
     if (c?.room_id && roomsWithRole(caller, ['leader']).includes(c.room_id)) return true
   }
 
-  const { data: roleRows } = await supabase.from('roles').select('is_system').in('id', roles)
-  if ((roleRows || []).some(r => r.is_system)) return true
-  const { data: rp } = await supabase.from('role_permissions').select('permission_key')
-    .in('role_id', roles).eq('permission_key', 'manage_hcns').limit(1)
-  return !!(rp && rp.length)
+  return vaiTroCoQuyen(supabase, roles, 'manage_hcns')   // bộ nhớ tạm 5 phút — lib/quyenCache.js
 }

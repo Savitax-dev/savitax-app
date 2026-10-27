@@ -9,6 +9,7 @@
 //   [2] CÓ quyền rồi vẫn phải ĐÚNG PHẠM VI — anh chốt 01/10/2026: "cty của nhân viên nào là nv
 //       đó, tp nào quản lý phòng đó, không đụng lẫn nhau"
 import { canUncheckTask } from '../lib/checklistScope.js'
+import { xoaBoNhoQuyen } from '../lib/quyenCache.js'
 
 let dat = 0, hong = 0
 const kiem = (ten, dieuKien) => {
@@ -18,6 +19,7 @@ const kiem = (ten, dieuKien) => {
 
 // db giả: chỉ trả đúng những bảng canUncheckTask hỏi tới.
 function dungDb({ client, secondary = [], systemRoles = [], perms = [], nhanVien = [] }) {
+  xoaBoNhoQuyen()   // mỗi ca một bộ dữ liệu giả — bỏ bảng quyền nhớ tạm của ca trước (lib/quyenCache.js)
   const q = rows => {
     const o = {
       _r: rows,

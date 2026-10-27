@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { xoaBoNhoQuyen } from '@/lib/quyenCache'
 import { callerHasPermission, requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
@@ -38,7 +39,8 @@ export async function PUT(request) {
   if (permissionKeys.length > 0) {
     const rows = permissionKeys.map(k => ({ role_id: roleId, permission_key: k }))
     const { error } = await supabase.from('role_permissions').insert(rows)
-    if (error) return Response.json({ error: error.message }, { status: 400 })
+    if (error) { xoaBoNhoQuyen(); return Response.json({ error: error.message }, { status: 400 }) }
   }
+  xoaBoNhoQuyen()   // quyền mới áp ngay ở bản máy chủ này, các bản khác tối đa 5 phút (lib/quyenCache.js)
   return Response.json({ ok: true })
 }

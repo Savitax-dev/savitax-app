@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
-import { callerHasPermission } from '@/lib/serverAuth'
+import { callerHasPermission, requireAdmin } from '@/lib/serverAuth'
+import { xoaBoNhoQuyen } from '@/lib/quyenCache'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -22,7 +23,9 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const auth = await callerHasPermission('manage_staff')
+  // CHỈ QUẢN TRỊ (27/10/2026). Trước đây chỉ đòi manage_staff → trưởng phòng gửi thẳng yêu cầu là tự
+  // gán được cho mình vai trò 'admin' ở một phòng bất kỳ (giao diện chỉ giấu nút, máy chủ không chặn).
+  const auth = await requireAdmin()
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
   const { staffId, roomId, role } = await request.json()
@@ -47,11 +50,14 @@ export async function POST(request) {
     }
     return Response.json({ error: error.message }, { status: 400 })
   }
+  xoaBoNhoQuyen()
   return Response.json({ data })
 }
 
 export async function DELETE(request) {
-  const auth = await callerHasPermission('manage_staff')
+  // CHỈ QUẢN TRỊ (27/10/2026). Trước đây chỉ đòi manage_staff → trưởng phòng gửi thẳng yêu cầu là tự
+  // gán được cho mình vai trò 'admin' ở một phòng bất kỳ (giao diện chỉ giấu nút, máy chủ không chặn).
+  const auth = await requireAdmin()
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
 
   const { searchParams } = new URL(request.url)
@@ -61,5 +67,6 @@ export async function DELETE(request) {
   const supabase = getAdmin()
   const { error } = await supabase.from('staff_extra_roles').delete().eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 400 })
+  xoaBoNhoQuyen()
   return Response.json({ ok: true })
 }

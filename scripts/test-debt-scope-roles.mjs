@@ -7,12 +7,14 @@
 // không được tính — Báo cáo phòng HCNS thu hẹp về "chỉ mình tôi", chị không thấy Minh và Tài
 // khoản test dù là trưởng phòng.
 import { canWriteAccountingDebt } from '../lib/debtScope.js'
+import { xoaBoNhoQuyen } from '../lib/quyenCache.js'
 
 let pass = 0, fail = 0
 const check = (n, c, x) => { if (c) { pass++; console.log('  ✓ ' + n) } else { fail++; console.log('  ✗ ' + n + (x ? '  → ' + x : '')) } }
 
 // db giả: chỉ trả về đúng những gì canWriteAccountingDebt hỏi.
 function makeDb({ client, secondary = [], systemRoles = [], perms = [] }) {
+  xoaBoNhoQuyen()   // mỗi ca một bộ dữ liệu giả — bỏ bảng quyền nhớ tạm của ca trước (lib/quyenCache.js)
   const q = (rows) => {
     const o = {
       _r: rows,

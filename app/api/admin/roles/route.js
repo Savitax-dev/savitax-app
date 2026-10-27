@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { xoaBoNhoQuyen } from '@/lib/quyenCache'
 import { callerHasPermission, requireLogin } from '@/lib/serverAuth'
 
 function getAdmin() {
@@ -48,6 +49,7 @@ export async function POST(request) {
     if (error.code === '23505') return Response.json({ error: 'Mã vai trò này đã tồn tại' }, { status: 400 })
     return Response.json({ error: error.message }, { status: 400 })
   }
+  xoaBoNhoQuyen()
   return Response.json({ ok: true, id: slug })
 }
 
@@ -69,5 +71,6 @@ export async function DELETE(request) {
 
   const { error } = await supabase.from('roles').delete().eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 400 })
+  xoaBoNhoQuyen()
   return Response.json({ ok: true })
 }
