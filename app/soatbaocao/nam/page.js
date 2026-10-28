@@ -145,7 +145,7 @@ function BangPhep({ ds, coNhom }) {
   return (
     <div className="pt-bang overflow-x-auto mb-6">
       <table className="text-sm">
-        <thead><tr>{coNhom && <th>Nhóm</th>}<th>Phép kiểm</th><th className="text-right">Số 1</th><th className="text-right">Số 2</th><th className="text-right">Chênh lệch</th><th className="text-right">Tỷ lệ</th><th>Kết quả</th></tr></thead>
+        <thead><tr>{coNhom && <th>Nhóm</th>}<th>Phép kiểm</th><th className="text-right" title="Số của hồ sơ / chứng từ đang soát — nguồn ghi ngay dưới số">Số cần soát</th><th className="text-right" title="Số đem ra so — nguồn ghi ngay dưới số">Số đối chiếu</th><th className="text-right">Chênh lệch</th><th className="text-right">Tỷ lệ</th><th>Kết quả</th></tr></thead>
         <tbody>
           {ds.map((p, i) => (
             <tr key={i}>

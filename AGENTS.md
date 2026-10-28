@@ -294,6 +294,10 @@ SQL `sql/40_phantich_xem_phi.sql` (đã chạy). **KHÔNG đưa vào bản clone
   đổi khoá đệm (`'bangke4|'` ở `docHoSo.js`) — không thì máy nhân viên dùng kết quả đọc cũ.
 - **05/KK-TNCN mã chỉ tiêu theo MẪU**: TT80/2021 (HTKK 2.9.x, maTKhai 864) [16] số lao động, [21] thu nhập chịu thuế, [29]
   thuế đã khấu trừ ([32] chỉ là thuế trên phí bảo hiểm); TT156/2013 lùi 5 ([26], [32], có [33][34]).
+- **Bảng lương / C12** (HOANGTIENSG 28/10): file `.xls` có liên kết ngoài tên trống làm SheetJS ném "Unexpected SupBook type: 0"
+  và bỏ cả file → mọi chỗ đọc Excel đi qua `docWorkbook` (`lib/phanTich/doc/excel.js`, tự vá rồi đọc lại). Một năm có thể
+  có 2 file lương mỗi file để trống nửa năm → tháng nào lấy sheet CÓ NGƯỜI. Một công ty có thể có NHIỀU mã đơn vị BHXH
+  (người lao động + giám đốc), mỗi mã một C12 → cộng theo mã, cùng mã chỉ tính một lần.
 - **Hạn nộp + trạng thái nộp** ở Soát kỳ lấy từ phân hệ Tờ khai (`api/admin/phantich/han-nop`, chỉ đọc), GỘP lịch nghĩa vụ +
   hồ sơ đồng bộ theo (kỳ, loại) — lịch có thể chỉ sinh từ giữa năm trong khi hồ sơ kỳ trước vẫn có. Hạn theo lịch (đã đẩy
   ngày nghỉ) ưu tiên hơn hạn app tự tính.

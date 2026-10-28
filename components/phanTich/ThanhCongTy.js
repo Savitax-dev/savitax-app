@@ -1,6 +1,7 @@
 'use client'
 // Thanh chọn công ty / năm / thư mục + các thông báo trạng thái thư mục — dùng chung cho các màn Soát xét báo cáo.
 // Nhận nguyên kết quả của useHoSoCty. `duongDan`: trang hiện tại (đổi công ty thì ở lại đúng màn).
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { NAM_BAT_DAU } from '@/lib/phanTich/thuMuc'
 
@@ -9,6 +10,13 @@ export function Bao({ mau, children }) {
   return <div className={`mb-3 px-3 py-2 rounded-xl border text-sm ${lop}`}>{children}</div>
 }
 
+// Bỏ dấu để tìm "hoang tien" ra "HOÀNG TIẾN"
+const khongDau = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase()
+// Bộ lọc danh sách công ty nhớ trên máy này (chuyển màn / tải lại không mất); trình duyệt chặn bộ nhớ thì thôi
+const KHOA_LOC = 'phanTich.locCty'
+const docLoc = () => { try { return JSON.parse(localStorage.getItem(KHOA_LOC) || '{}') } catch { return {} } }
+const ghiLoc = o => { try { localStorage.setItem(KHOA_LOC, JSON.stringify(o)) } catch { /* bỏ qua */ } }
+
 const NUT = 'px-2.5 py-1.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#8B1A1A] hover:text-[#8B1A1A] disabled:opacity-40 whitespace-nowrap flex-shrink-0'
 
 //   anNamThuMuc: ẩn ô chọn năm theo thư mục (Rủi ro thuế chọn năm theo nội dung tờ khai, truyền ô riêng qua `oNam`).
@@ -16,17 +24,77 @@ export default function ThanhCongTy({ hs, duongDan, themTruoc, onDoiNam, chuChon
   const router = useRouter()
   const { ctyId, dsCty, dsDaTai, cty, loi, hoTro, thuMuc, namCu, quet, nam, setNam, cacNam, qn, buoc, daChuyen, canCho } = hs
   const chonCty = id => router.replace(`${duongDan}${id ? '?cty=' + id + giuThamSo : ''}`)
+
+  // Lọc danh sách công ty: tìm theo tên / mã KH / MST, lọc phòng, nhân viên phụ trách (chính hoặc phụ) — anh yêu cầu 28/10/2026
+  const [tim, setTim] = useState('')
+  const [locPhong, setLocPhong] = useState('')
+  const [locNV, setLocNV] = useState('')
+  useEffect(() => { const o = docLoc(); setTim(o.tim || ''); setLocPhong(o.phong || ''); setLocNV(o.nv || '') }, [])
+  useEffect(() => { ghiLoc({ tim, phong: locPhong, nv: locNV }) }, [tim, locPhong, locNV])
+  const dsPhong = useMemo(() => [...new Set(dsCty.map(c => c.phong).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi')), [dsCty])
+  const dsNV = useMemo(() => [...new Set(dsCty.filter(c => !locPhong || c.phong === locPhong).flatMap(c => [c.nhanVien, ...(c.nhanVienPhu || [])]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi')), [dsCty, locPhong])
+  const dsLoc = useMemo(() => {
+    const q = khongDau(tim).trim()
+    const ra = dsCty.filter(c => (!locPhong || c.phong === locPhong) && (!locNV || c.nhanVien === locNV || (c.nhanVienPhu || []).includes(locNV))
+      && (!q || khongDau(`${c.ten} ${c.maKH} ${c.mst}`).includes(q) || String(c.mst || '').replace(/^0+/, '').includes(q.replace(/^0+/, ''))))
+    return ra
+  }, [dsCty, tim, locPhong, locNV])
+  const dangLoc = !!(tim || locPhong || locNV)
+  // Danh sách xổ xuống của ô tìm: tối đa 100 dòng (gõ thêm để thu hẹp), mũi tên lên/xuống + Enter
+  const [mo, setMo] = useState(false)
+  const [tro, setTro] = useState(0)
+  const dsHien = dsLoc.slice(0, 100)
+  const moCty = id => { setMo(false); chonCty(id) }
   return (
     <>
-      {/* MỘT DÒNG (anh chỉ 26/10/2026: nút bị rớt xuống dòng 2) — ô công ty co giãn, phần chữ phụ rút gọn, rê chuột xem đủ */}
-      <div className="flex items-center gap-2 mb-4 rounded-2xl bg-white border border-gray-100 shadow-sm px-3 py-2.5 min-w-0">
-        <select value={ctyId} onChange={e => chonCty(e.target.value)}
-          className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white font-semibold flex-1 min-w-[200px] max-w-[400px]">
-          <option value="">{dsDaTai ? '— Chọn công ty —' : 'Đang tải danh sách công ty…'}</option>
-          {dsCty.map(c => <option key={c.id} value={c.id}>{c.ten}{c.maKH ? ` (${c.maKH})` : ''}</option>)}
-        </select>
+      {/* Dòng lọc RIÊNG, y hệt màn "Công ty của tôi" (anh chỉ 28/10/2026): phòng → nhân viên → ô tìm dài hết dòng */}
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        {dsPhong.length > 1 && (
+          <select value={locPhong} onChange={e => { setLocPhong(e.target.value); setLocNV('') }} className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white">
+            <option value="">Tất cả phòng</option>
+            {dsPhong.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+        )}
+        {dsNV.length > 1 && (
+          <select value={locNV} onChange={e => setLocNV(e.target.value)} className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white">
+            <option value="">Tất cả nhân viên</option>
+            {dsNV.map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+        )}
+        {/* Ô tìm = chọn công ty luôn (anh chỉ 28/10/2026): gõ / bấm vào là xổ danh sách, bấm một dòng là mở công ty đó */}
+        <div className="relative flex-1 min-w-[220px]">
+          <input value={tim} onChange={e => { setTim(e.target.value); setMo(true); setTro(0) }} onFocus={() => setMo(true)} onBlur={() => setTimeout(() => setMo(false), 150)}
+            onKeyDown={e => {
+              if (e.key === 'ArrowDown') { e.preventDefault(); setMo(true); setTro(i => Math.min(i + 1, dsHien.length - 1)) }
+              else if (e.key === 'ArrowUp') { e.preventDefault(); setTro(i => Math.max(i - 1, 0)) }
+              else if (e.key === 'Enter' && mo && dsHien[tro]) { e.preventDefault(); moCty(dsHien[tro].id) }
+              else if (e.key === 'Escape') setMo(false)
+            }}
+            placeholder={dsDaTai ? 'Tìm và chọn công ty — tên, mã KH, MST…' : 'Đang tải danh sách công ty…'} title="Gõ không dấu cũng được · mũi tên lên/xuống + Enter để chọn"
+            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm w-full bg-white" />
+          {mo && dsDaTai && (
+            <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-xl shadow-lg max-h-80 overflow-auto">
+              <p className="px-3 py-1.5 text-[11px] text-gray-500 border-b border-gray-100 sticky top-0 bg-white">
+                {dsLoc.length}/{dsCty.length} công ty{dsLoc.length > dsHien.length ? ` · hiện ${dsHien.length} đầu tiên, gõ thêm để thu hẹp` : ''}
+              </p>
+              {!dsHien.length && <p className="px-3 py-3 text-sm text-gray-500">Không có công ty nào khớp.</p>}
+              {dsHien.map((c, i) => (
+                <button key={c.id} type="button" onMouseDown={e => { e.preventDefault(); moCty(c.id) }} onMouseEnter={() => setTro(i)}
+                  className={`w-full text-left px-3 py-1.5 border-b border-gray-50 ${i === tro ? 'bg-[#8B1A1A]/5' : ''} ${String(c.id) === String(ctyId) ? 'font-semibold' : ''}`}>
+                  <span className="block text-sm text-gray-800 truncate">{c.ten}</span>
+                  <span className="block text-[11px] text-gray-500 truncate">{[c.maKH, c.mst && 'MST ' + c.mst, c.nhanVien, c.phong].filter(Boolean).join(' · ')}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {dangLoc && <button type="button" onClick={() => { setTim(''); setLocPhong(''); setLocNV('') }} className="text-xs text-gray-500 hover:text-[#8B1A1A] whitespace-nowrap" title="Bỏ mọi bộ lọc">Bỏ lọc</button>}
+      </div>
+      {/* MỘT DÒNG (anh chỉ 26/10/2026: nút bị rớt xuống dòng 2) — chỉ hiện khi đã chọn công ty */}
+      {ctyId && <div className="flex items-center gap-2 mb-4 rounded-2xl bg-white border border-gray-100 shadow-sm px-3 py-2.5 min-w-0">
+        <span className="text-sm font-bold text-gray-800 truncate min-w-0" title={cty?.ten}>{cty ? `${cty.ten}${cty.maKH ? ` (${cty.maKH})` : ''}` : 'Đang tải…'}</span>
         {cty && (
-          <span className="hidden 2xl:inline text-xs text-gray-500 tabular-nums whitespace-nowrap" title={`MST ${cty.mst || '—'} · hồ sơ công ty ghi khai ${cty.kyKhai === 'thang' ? 'tháng' : 'quý'}`}>
+          <span className="hidden xl:inline text-xs text-gray-500 tabular-nums whitespace-nowrap" title={`MST ${cty.mst || '—'} · hồ sơ công ty ghi khai ${cty.kyKhai === 'thang' ? 'tháng' : 'quý'}`}>
             MST {cty.mst || '—'} · khai {cty.kyKhai === 'thang' ? 'tháng' : 'quý'}{cty.laHkd ? ' · HKD' : ''}
           </span>
         )}
@@ -52,7 +120,7 @@ export default function ThanhCongTy({ hs, duongDan, themTruoc, onDoiNam, chuChon
           )}
           {quet && <button type="button" onClick={hs.docLai} disabled={!!buoc} className={NUT}>↻ Đọc lại</button>}
         </div>
-      </div>
+      </div>}
 
       {!hoTro && <Bao mau="amber">Trình duyệt này không mở được thư mục trên máy. Dùng Chrome hoặc Edge trên máy tính.</Bao>}
       {loi && <Bao mau="red">{loi}</Bao>}

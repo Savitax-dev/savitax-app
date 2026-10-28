@@ -99,7 +99,7 @@ function SoatKy() {
     const tieuDe = `SOÁT KỲ ${kq.ky.ma}/${kq.nam} — ${cty.ten}`
     themSheetMang(wb, 'Kết quả soát', [
       [tieuDe], [`MST ${cty.mst} · soát ${kq.banSoat === 'chua_nop' ? 'bản chưa nộp' : kq.banSoat === 'da_nop' ? 'bản đã nộp' : 'chưa có tờ khai'} · xuất ${new Date().toLocaleString('vi-VN')}`],
-      ['Nhóm', 'Kiểm tra', 'Số 1', 'Nguồn số 1', 'Số 2', 'Nguồn số 2', 'Chênh lệch', 'Kết quả', 'Ghi chú / hồ sơ cần có'],
+      ['Nhóm', 'Kiểm tra', 'Số cần soát', 'Nguồn số cần soát', 'Số đối chiếu', 'Nguồn số đối chiếu', 'Chênh lệch', 'Kết quả', 'Ghi chú / hồ sơ cần có'],
       ...kq.dong.map(d => [NHOM[d.nhom]?.nhan || d.nhom, d.ten, typeof d.so1 === 'number' ? d.so1 : d.so1 ?? '', d.nhan1 || '', typeof d.so2 === 'number' ? d.so2 : d.so2 ?? '',
         d.nhan2 || '', d.chenh ?? d.chenhChu ?? '', KQ[d.kq][0], d.thieuFile || d.ghiChu || '']),
     ], { doRong: [14, 52, 16, 26, 16, 26, 16, 14, 50], cotTien: [2, 4, 6] })
@@ -191,7 +191,7 @@ function SoatKy() {
                 <h2 className="text-sm font-bold text-gray-800 mb-1 pl-2 border-l-4 border-[#8B1A1A]">Kết quả soát {kq.ky.loai === 'Q' ? 'quý' : 'tháng'} {kq.ky.so}/{kq.nam} · dòng có chênh lệch lên trước</h2>
                 <div className="pt-bang overflow-x-auto mb-5">
                   <table className="text-sm">
-                    <thead><tr><th>Nhóm</th><th>Kiểm tra</th><th className="text-right">Số 1</th><th className="text-right">Số 2</th><th className="text-right">Chênh lệch</th><th>Kết quả</th></tr></thead>
+                    <thead><tr><th>Nhóm</th><th>Kiểm tra</th><th className="text-right" title="Số của hồ sơ / chứng từ đang soát — nguồn ghi ngay dưới số">Số cần soát</th><th className="text-right" title="Số đem ra so — nguồn ghi ngay dưới số">Số đối chiếu</th><th className="text-right">Chênh lệch</th><th>Kết quả</th></tr></thead>
                     <tbody>
                       {kq.dong.map((d, i) => (
                         <tr key={i}>
