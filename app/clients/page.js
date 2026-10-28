@@ -1125,9 +1125,9 @@ export default function ClientsPage() {
                 </p>
               </div>
               {/* Hộ kinh doanh — chỉ ảnh hưởng Phân hệ Tờ khai, KHÔNG đụng checklist hay công nợ.
-                  Hộ kinh doanh nộp 01/CNKD (TT40/2021), không nộp 01/GTGT, 05/KK-TNCN, 03/TNDN,
-                  BCTC — nên lịch hạn nộp bỏ qua nhóm này. Tick sai thì công ty mất lịch hạn nộp,
-                  bỏ sót thì lãnh nguyên bộ nghĩa vụ không có thật. */}
+                  Hộ kinh doanh nộp 01/CNKD (TT40/2021); 05/KK-TNCN / 01/GTGT chỉ khi đã từng nộp;
+                  không quyết toán năm (lib/tokhaiLich.js loaiApDung, 28/10/2026). Tick sai thì
+                  công ty lãnh lịch hạn nộp của loại hình kia. */}
               <div className="border border-amber-200 bg-amber-50 rounded-lg p-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={form.is_hkd}
@@ -1136,10 +1136,10 @@ export default function ClientsPage() {
                   <span className="text-sm font-semibold text-amber-900">Là hộ kinh doanh</span>
                 </label>
                 <p className="text-[11px] text-amber-800 mt-1.5 leading-relaxed">
-                  Hộ kinh doanh nộp <b>01/CNKD</b> (TT40/2021), không nộp 01/GTGT, 05/KK-TNCN,
-                  03/TNDN, BCTC. Tick ô này thì <b>Tờ khai &amp; Hạn nộp</b> bỏ qua công ty,
-                  không sinh lịch hạn nộp của doanh nghiệp. Checklist công việc và công nợ
-                  <b> không đổi gì</b>.
+                  Hộ kinh doanh nộp <b>01/CNKD</b> (TT40/2021) — gộp GTGT và TNCN của chủ hộ. Có
+                  khấu trừ TNCN cho người lao động thì nộp thêm 05/KK-TNCN: <b>Tờ khai &amp; Hạn nộp</b>
+                  tự theo dõi sau lần đầu thấy tờ đó trên cổng. Không quyết toán năm, không BCTC.
+                  Checklist công việc và công nợ <b> không đổi gì</b>.
                 </p>
               </div>
               {/* Dịch vụ HCNS — tick thì mới cho nhập phí. Bật ô này sẽ tự sinh công ty tương ứng
@@ -1489,8 +1489,8 @@ export default function ClientsPage() {
                           <span>
                             <span className="text-sm font-semibold text-amber-900">Là hộ kinh doanh</span>
                             <span className="block text-[11px] text-amber-800 leading-relaxed">
-                              Nộp 01/CNKD (TT40/2021) — <b>Tờ khai &amp; Hạn nộp</b> sẽ bỏ qua công ty
-                              này. Checklist công việc và công nợ không đổi.
+                              Nộp 01/CNKD (TT40/2021) thay cho tờ khai doanh nghiệp; 05/KK-TNCN chỉ khi có
+                              người lao động. Checklist công việc và công nợ không đổi.
                             </span>
                           </span>
                         </label>
@@ -1522,7 +1522,7 @@ export default function ClientsPage() {
                           )}
                           {client.is_hkd && (
                             <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2 py-1 rounded-lg font-semibold"
-                              title="Hộ kinh doanh — nộp 01/CNKD, Tờ khai & Hạn nộp bỏ qua công ty này">
+                              title="Hộ kinh doanh — nộp 01/CNKD (05/KK-TNCN nếu có người lao động)">
                               Hộ kinh doanh
                             </span>
                           )}

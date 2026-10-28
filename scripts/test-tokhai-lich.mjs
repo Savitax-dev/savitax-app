@@ -5,7 +5,7 @@
 // Vì sao phải có bộ kiểm riêng: lịch hạn nộp là thứ nhân viên dựa vào để khỏi trễ hạn. Sinh thừa
 // một kỳ là báo "Quá hạn" oan; sinh thiếu một kỳ là để trễ hạn mà app im lặng — cái sau nguy hiểm
 // hơn nhiều vì không ai thấy để mà sửa.
-import { kyKhaiTai, nghiaVuDinhKy, ngayDauQuy, timKyKhaiTheoCong, kieuCuaKy, quyCuaKy, ngaySauKy } from '../lib/tokhaiLich.js'
+import { kyKhaiTai, nghiaVuDinhKy, ngayDauQuy, timKyKhaiTheoCong, kieuCuaKy, quyCuaKy, ngaySauKy, loaiApDung } from '../lib/tokhaiLich.js'
 
 let dat = 0, hong = 0
 const kiem = (ten, thucTe, mongDoi) => {
@@ -129,6 +129,26 @@ kiem('ca CHARGEPOINT thật: nộp 16/10, đồng bộ 19/10 11:38 -> đổi',
 const doiCP = tim([hs('tncn', 'Q3.2026')]).doi.map(d => ({ period_kind: d.periodKind, effective_from: d.tuNgay }))
 kiem('lịch TNCN sau khi tự đổi = T01..T06 + Q3 + Q4', ma(nghiaVuDinhKy({ client: thang, loai: TNCN, nam: 2026, ghiDe: doiCP })),
   ['T01.2026','T02.2026','T03.2026','T04.2026','T05.2026','T06.2026','Q3.2026','Q4.2026'])
+
+console.log('\n[10] Hộ kinh doanh — loại tờ khai nào áp cho ai (loaiApDung, anh chốt 28/10/2026):')
+const L = code => ({ id: code, code })
+const hkd = { id: 'h1', report_type: 'quarterly', is_hkd: true }
+const dn = { id: 'd1', report_type: 'quarterly', is_hkd: false }
+kiem('hộ kinh doanh LUÔN có 01/CNKD', loaiApDung(hkd, L('01/CNKD')), true)
+kiem('hộ chưa từng nộp 05/KK → KHÔNG sinh 05/KK (khỏi báo "chưa nộp" oan)', loaiApDung(hkd, L('05/KK-TNCN'), false), false)
+kiem('hộ đã nộp 05/KK (có người lao động) → sinh 05/KK', loaiApDung(hkd, L('05/KK-TNCN'), true), true)
+kiem('hộ chưa nộp 01/GTGT → không sinh', loaiApDung(hkd, L('01/GTGT'), false), false)
+kiem('hộ đã nộp 01/GTGT (LETHANHNHAN, 1MIL) → sinh', loaiApDung(hkd, L('01/GTGT'), true), true)
+kiem('hộ không quyết toán năm 03/TNDN dù có hồ sơ', loaiApDung(hkd, L('03/TNDN'), true), false)
+kiem('hộ không có BCTC', loaiApDung(hkd, L('BCTC'), false), false)
+kiem('doanh nghiệp KHÔNG BAO GIỜ có 01/CNKD', loaiApDung(dn, L('01/CNKD'), true), false)
+kiem('doanh nghiệp có 05/KK dù chưa nộp lần nào', loaiApDung(dn, L('05/KK-TNCN'), false), true)
+kiem('doanh nghiệp có BCTC', loaiApDung(dn, L('BCTC'), false), true)
+kiem('chưa nạp cột is_hkd → không lọc (giữ hành vi cũ, không xoá nhầm lịch)', loaiApDung({ id: 'x', report_type: 'quarterly' }, L('01/CNKD')), true)
+kiem('01/CNKD hộ khai quý → hạn Q3 là 02/11 (31/10 thứ Bảy)',
+  nghiaVuDinhKy({ client: hkd, loai: L('01/CNKD'), nam: 2026 }).find(o => o.period_code === 'Q3.2026')?.due_date, '2026-11-02')
+kiem('01/CNKD hộ khai tháng → hạn T10 là 20/11',
+  nghiaVuDinhKy({ client: { ...hkd, report_type: 'monthly' }, loai: L('01/CNKD'), nam: 2026 }).find(o => o.period_code === 'T10.2026')?.due_date, '2026-11-20')
 
 console.log(hong === 0 ? `\nTẤT CẢ ${dat} MỤC ĐỀU ĐẠT.` : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)

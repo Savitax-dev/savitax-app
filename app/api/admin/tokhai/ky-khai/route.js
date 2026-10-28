@@ -86,7 +86,7 @@ export async function POST(request) {
 
   const supabase = getAdmin()
   const [{ data: client }, { data: loai }] = await Promise.all([
-    supabase.from('clients').select('id, name, report_type, contract_start, assigned_to, room_id, status').eq('id', clientId).maybeSingle(),
+    supabase.from('clients').select('id, name, report_type, contract_start, assigned_to, room_id, status, is_hkd').eq('id', clientId).maybeSingle(),
     supabase.from('tax_filing_types').select('id, code, period_kind').eq('id', filingTypeId).maybeSingle(),
   ])
   if (!client) return Response.json({ error: 'Không tìm thấy công ty' }, { status: 404 })

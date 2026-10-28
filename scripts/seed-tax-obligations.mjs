@@ -13,7 +13,7 @@ import { createClient } from '@supabase/supabase-js'
 import { nhanKy } from '../lib/taxDeadline.js'
 // Luật sinh lịch dùng CHUNG với nút "Lưu kỳ khai" trong app (19/10/2026). Đừng viết lại luật ở
 // đây — viết riêng là năm sau chạy script, nó lại sinh TNCN theo tháng cho công ty đã đổi sang quý.
-import { nghiaVuDinhKy, nghiaVuQuyetToan } from '../lib/tokhaiLich.js'
+import { nghiaVuDinhKy, nghiaVuQuyetToan, loaiApDung } from '../lib/tokhaiLich.js'
 
 const APPLY = process.argv.includes('--apply')
 const iNam = process.argv.indexOf('--nam')
@@ -53,15 +53,13 @@ console.log(`Ngày lễ đang có: ${ngayLe.size} ngày`)
 const clients = await docHet('clients', 'id, name, client_code, report_type, is_active, status, contract_start, is_hkd')
 const conPhucVu = clients.filter(c => c.is_active !== false && c.status !== 'inactive')
 
-// HỘ KINH DOANH KHÔNG nộp danh mục tờ khai của doanh nghiệp (01/GTGT, 05/KK-TNCN, 03/TNDN,
-// 05/QTT-TNCN, BCTC) — họ nộp 01/CNKD theo TT40/2021. Sinh cho họ là đẻ ra việc không có thật, tới
-// hạn là màn hình báo "Quá hạn" đỏ cho cả nhóm. Bỏ qua tới khi có danh mục tờ khai riêng.
-// Dọn nhóm đã lỡ sinh: scripts/soat-hkd.mjs
+// HỘ KINH DOANH (từ 28/10/2026): nộp 01/CNKD; 05/KK-TNCN và 01/GTGT CHỈ khi hộ đã từng nộp loại đó;
+// không quyết toán năm. Doanh nghiệp không bao giờ có 01/CNKD. Luật ở lib/tokhaiLich.js (loaiApDung).
+const dangPhucVu = conPhucVu
 const hkd = conPhucVu.filter(c => c.is_hkd)
-const dangPhucVu = conPhucVu.filter(c => !c.is_hkd)
-console.log(`Công ty đang phục vụ: ${conPhucVu.length}`)
-console.log(`  bỏ qua hộ kinh doanh: ${hkd.length} (chưa có danh mục tờ khai riêng)`)
-console.log(`  sẽ sinh lịch cho     : ${dangPhucVu.length}`)
+const daNop = new Set((await docHet('tax_filings', 'client_id, filing_type_id', q => q.not('filing_type_id', 'is', null).order('id')))
+  .map(f => f.client_id + '|' + f.filing_type_id))
+console.log(`Công ty đang phục vụ: ${conPhucVu.length} (trong đó hộ kinh doanh: ${hkd.length})`)
 
 // Tờ khai định kỳ (GTGT, TNCN khấu trừ) đi theo kỳ khai của công ty; quyết toán năm đi theo năm.
 const dinhKy = dangDung.filter(t => ['month', 'quarter'].includes(t.period_kind))
@@ -83,6 +81,7 @@ for (const c of dangPhucVu) {
   // Tờ khai định kỳ: kỳ khai lấy theo ghi đè nếu có, không có thì theo report_type. Hợp đồng ký
   // giữa năm thì không sinh cho các kỳ TRƯỚC khi ký — đều đã nằm trong lib/tokhaiLich.js.
   for (const t of dinhKy) {
+    if (!loaiApDung(c, t, daNop.has(c.id + '|' + t.id))) continue
     const ghiDe = ghiDeTatCa.filter(g => g.client_id === c.id && g.filing_type_id === t.id)
     for (const o of nghiaVuDinhKy({ client: c, loai: t, nam: NAM, ngayLe, ghiDe })) {
       if (daCo.has(`${c.id}|${t.id}|${o.period_code}`)) continue
@@ -92,6 +91,7 @@ for (const c of dangPhucVu) {
   }
 
   for (const t of quyetToan) {
+    if (!loaiApDung(c, t, daNop.has(c.id + '|' + t.id))) continue
     for (const o of nghiaVuQuyetToan({ client: c, loai: t, nam: NAM, ngayLe })) {
       if (daCo.has(`${c.id}|${t.id}|${o.period_code}`)) continue
       if (!CA_QUA_KHU && o.due_date <= HOM_NAY) continue

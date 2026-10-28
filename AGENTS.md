@@ -246,17 +246,21 @@ hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công 
 - **Cổng trả TỜ KHAI dạng .zip** chứa XML tên máy (mở nén bằng `pizzip` rồi đổi tên), **thông báo
   dạng .xml**. ⛔ **Phần dựng PDF ĐANG TẮT** (cờ `DUNG_PDF` ở `lib/tokhaiTaiFileClient.js`): bản in
   còn sai, và chưa từng có bản gốc cơ quan thuế phát để đối chiếu. Đừng bật lại khi chưa có bản gốc.
-- **Hộ kinh doanh**: `clients.is_hkd` (ô tick ở hồ sơ công ty) — nhóm này nộp 01/CNKD (TT40/2021),
-  KHÔNG nộp 01/GTGT/05/KK-TNCN/03/TNDN/BCTC. Lịch hạn nộp **bỏ qua** nhóm này cho tới khi có danh
-  mục riêng — CỐ Ý, thà trống còn hơn báo "Quá hạn" cho việc không tồn tại (đã dọn 421 nghĩa vụ ảo
-  của 59 hộ, `scripts/soat-hkd.mjs`).
+- **Hộ kinh doanh**: `clients.is_hkd` (ô tick ở hồ sơ công ty). Từ 28/10/2026 (anh chốt, `sql/41`):
+  nộp **01/CNKD** (TT40/2021, gộp GTGT + TNCN chủ hộ, kỳ/hạn như 01/GTGT); **05/KK-TNCN và 01/GTGT CHỈ
+  sinh lịch khi hộ đã TỪNG nộp loại đó** trên cổng (có người lao động…), không quyết toán năm; doanh
+  nghiệp KHÔNG BAO GIỜ có 01/CNKD. Một luật duy nhất `loaiApDung` (`lib/tokhaiLich.js`) — script năm,
+  nút Lưu kỳ khai, tự đổi kỳ, đồng bộ đều đi qua nó; chỗ nào nạp `clients` để sinh lịch PHẢI chọn cột
+  `is_hkd` (thiếu cột thì luật không lọc). Cổng không kèm mã tờ khai cho 01/CNKD → nhận theo mã thủ tục
+  `1.011022`. Hộ lần đầu nộp 05/KK thì đồng bộ tự sinh lịch (`boSungLichHkdTheoHoSo`). Nạp một lần:
+  `scripts/hkd-01cnkd.mjs` (xem trước, `--ghi` mới ghi).
 - **Phạm vi xem**: 8 route đều có `requireLogin` **và** lọc theo vai trò. Nhân viên chỉ thấy công ty
   mình phụ trách chính/phụ; trưởng phòng thấy cả phòng; admin thấy hết. Route đụng mật khẩu kiểm
   từng công ty qua `lib/credentialScope.js`, kiểm cả trong vòng lặp nên chọn hàng loạt không lọt.
 - Mọi câu truy vấn không giới hạn phải lật trang (`docHet`) — **PostgREST cắt im lặng ở 1000 dòng**.
 - Bộ kiểm: `test-tokhai-xml | -thumuc | -ghidia | -thongke | -tienich | -pdf`.
-- ⏸ **Đang chờ người dùng, đừng tự làm**: GĐ 5 Checklist + KPI (hoãn tới sau khi chạy demo), danh
-  mục tờ khai 01/CNKD, và bản PDF thật do cổng xuất.
+- ⏸ **Đang chờ người dùng, đừng tự làm**: GĐ 5 Checklist + KPI (hoãn tới sau khi chạy demo), và bản
+  PDF thật do cổng xuất.
 
 ## Phân hệ Soát xét báo cáo (`/soatbaocao`) + Rủi ro thuế (`/ruirothue`)
 
