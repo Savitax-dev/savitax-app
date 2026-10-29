@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { roomsWithRole } from '@/lib/roleUnion'
+import { emailChinh } from '@/lib/emailNhanVien'
 
 // GET /api/admin/mail-log?nam=2026&thang=10&loc=all|khop|chua
 //
@@ -49,7 +50,7 @@ export async function GET(request) {
   const clientIds = [...new Set((rows || []).map(r => r.client_id).filter(Boolean))]
   const taskIds = [...new Set((rows || []).map(r => r.task_def_id).filter(Boolean))]
 
-  const [{ data: clients }, { data: tasks }, { data: me }] = await Promise.all([
+  const [{ data: clients }, { data: tasks }, { data: me }, { data: dsNV }] = await Promise.all([
     clientIds.length
       ? supabase.from('clients').select('id, name, client_code, assigned_to').in('id', clientIds)
       : { data: [] },
@@ -57,7 +58,10 @@ export async function GET(request) {
       ? supabase.from('task_definitions').select('id, name').in('id', taskIds)
       : { data: [] },
     supabase.from('staff').select('id, email').eq('id', caller.staffId).maybeSingle(),
+    // Tên nhân viên theo email gửi — anh muốn thấy TÊN thay vì địa chỉ mail (29/10/2026).
+    supabase.from('staff').select('email, full_name').not('email', 'is', null),
   ])
+  const tenNV = new Map((dsNV || []).map(n => [String(n.email).trim().toLowerCase(), n.full_name]))
   const tenCty = new Map((clients || []).map(c => [c.id, c]))
   const tenViec = new Map((tasks || []).map(t => [t.id, t.name]))
 
@@ -65,9 +69,9 @@ export async function GET(request) {
   const laQuanLy = caller.role === 'admin' || roomsWithRole(caller, ['leader', 'manager']).length > 0
   let ds = rows || []
   if (!laQuanLy) {
-    const emailToi = String(me?.email || '').trim().toLowerCase()
+    const emailToi = emailChinh(me?.email)
     ds = ds.filter(r =>
-      (emailToi && r.from_email === emailToi) ||
+      (emailToi && emailChinh(r.from_email) === emailToi) ||
       (r.client_id && tenCty.get(r.client_id)?.assigned_to === caller.staffId))
   }
 
@@ -87,6 +91,8 @@ export async function GET(request) {
       id: r.id,
       subject: r.subject,
       fromEmail: r.from_email,
+      // Mail của nhân viên → tên; mail khách trả lời / chuyển tiếp → null, giao diện hiện email.
+      fromName: tenNV.get(emailChinh(r.from_email)) || null,
       sentAt: r.sent_at,
       matched: r.matched,
       ticked: r.ticked,
