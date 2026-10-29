@@ -44,12 +44,12 @@ const nam = docBangLuong([{ ten: 'TTCTY', hang: [['THÔNG TIN CÔNG TY']] }, she
 kiem('cả file: chỉ lấy sheet bảng lương các tháng', nam.map(b => b.thang), [7, 8, 9])
 
 console.log('\nĐọc C12 (PDF có chữ):')
-const C12 = (thang, n, ql) => [[
-  'Mẫu C12-TS', 'CHI TIẾT KẾT QUẢ ĐÓNG BHXH, BHYT, BHTN, BHTNLĐ, BNN', `Tháng ${String(thang).padStart(2, '0')} năm 2026`,
+const C12 = (thang, n, ql, ma = 'TZ0001P') => [[
+  'Mẫu C12-TS', 'CHI TIẾT KẾT QUẢ ĐÓNG BHXH, BHYT, BHTN, BHTNLĐ, BNN', `Mã đơn vị: ${ma} Điện thoại: 0280000000`, `Tháng ${String(thang).padStart(2, '0')} năm 2026`,
   'A Kỳ trước mang sang', `1 Số lao động ${n} ${n} ${n} ${n} ${n}`, 'B Phát sinh trong kỳ 1 2 3 4 5 6',
   `2 Quỹ lương ${ql.toLocaleString('vi-VN')} ${ql.toLocaleString('vi-VN')} ${ql.toLocaleString('vi-VN')} 0 0`, '3 Phải đóng 1 2 3 4 5 6',
 ], ['Đ Chuyển kỳ sau', `1 Số lao động ${n} ${n} ${n} ${n} ${n}`, `a) Kết quả đơn vị đã đóng BHXH bắt buộc cho ${n} lao động đến hết tháng ${thang}/2026`]]
-kiem('tháng, số lao động, quỹ lương BHXH', docC12PdfChu(C12(9, 2, 13e6)), { ok: true, thang: 9, nam: 2026, soLaoDong: 2, quyLuong: 13e6 })
+kiem('tháng, số lao động, quỹ lương BHXH', docC12PdfChu(C12(9, 2, 13e6)), { ok: true, thang: 9, nam: 2026, soLaoDong: 2, quyLuong: 13e6, maDonVi: 'TZ0001P' })
 kiem('PDF không phải C12', docC12PdfChu([['Hợp đồng lao động']]).khongPhai, true)
 kiem('PDF ảnh scan', docC12PdfChu([[]]).scan, true)
 
@@ -84,6 +84,42 @@ console.log('\nNgân hàng / tiền mặt:')
 const r5 = soatKy({ nam: 2026, ma: 'Q3', toKhai: [tk3], bangKe: [{ mau: 'cong', chieu: 'mua_vao', hoaDon: [] }], soSach: { coSoPhu: true, coSo112: false, coSoQuy: false }, cty: { kyKhai: 'quy' } })
 kiem('có sổ phụ, chưa có sổ 112 → Thiếu hồ sơ sổ chi tiết TK 112', r5.dong.find(x => x.nhom === 'ngan_hang').thieuFile.includes('TK 112'), true)
 kiem('chưa có sổ quỹ → tiền mặt từ 5 triệu "Thiếu hồ sơ"', r5.dong.find(x => x.ten.includes('5 triệu')).kq, 'thieu')
+
+console.log('\nHai file lương cùng năm, mỗi file để trống nửa năm (HOANGTIENSG 28/10/2026):')
+{
+  // File "từ 01/07" có sheet T7–T9 TRỐNG đứng trước file có số → phải lấy sheet có người
+  const trong = docBangLuong([sheetLuong(7, []), sheetLuong(8, []), sheetLuong(9, [])]).map(b => ({ ...b, tep: {} }))
+  const rT = soatKy({ nam: 2026, ma: 'Q3', toKhai: [tk3, tncn(tong21, tong29, 3)], bangLuong: [...trong, ...luong], c12, cty: { kyKhai: 'quy' } })
+  const dT = ten => rT.dong.find(x => x.ten.includes(ten))
+  kiem('sheet trống đứng trước → vẫn lấy sheet có người: [21], [16], C12 khớp', [dT('[21]').so2, dT('[16]').so2, dT('người tham gia').kq], [tong21, 3, 'khop'])
+}
+
+console.log('\nC12 hai mã đơn vị cùng tháng (HOANGTIENSG: người lao động 3 + giám đốc 1):')
+{
+  const nld = { ...docC12PdfChu(C12(9, 2, 13e6, 'TZ0759P')), tep: { ten: 'NLD.pdf' } }, gd = { ...docC12PdfChu(C12(9, 1, 5e6, 'QA0001P')), tep: { ten: 'GD.pdf' } }
+  const banSao = { ...nld, tep: { ten: 'NLD (1).pdf' } }
+  const rM = soatKy({ nam: 2026, ma: 'Q3', toKhai: [tk3, tncn(tong21, tong29, 3)], bangLuong: luong, c12: [gd, nld, banSao], cty: { kyKhai: 'quy' } })
+  const dM = ten => rM.dong.find(x => x.ten.includes(ten))
+  kiem('khác mã thì cộng (1 + 2 = 3), cùng mã bản chép trùng tính một lần; nhãn ghi rõ 2 mã', [dM('người tham gia').so1, dM('quỹ lương').so1, /2 mã đơn vị \(1 \+ 2\)/.test(dM('người tham gia').nhan1)], [3, 18e6, true])
+}
+
+console.log('\nFile .xls có liên kết ngoài tên file trống (SheetJS "Unexpected SupBook type: 0"):')
+{
+  const { docWorkbook } = await import('../lib/phanTich/doc/excel.js')
+  // Luồng Workbook giả: SupBook tự tham chiếu (cch 0x0401) + SupBook HỎNG (cch 0) + bản ghi khác
+  const luong = Uint8Array.from([0xAE, 0x01, 4, 0, 1, 0, 0x01, 0x04, 0xAE, 0x01, 6, 0, 2, 0, 0, 0, 9, 9, 0x3C, 0x00, 2, 0, 7, 7])
+  let soLanDoc = 0
+  const XL = {
+    read: (u8) => { soLanDoc++; for (let i = 0; i + 4 <= u8.length;) { const t = u8[i] | (u8[i + 1] << 8), n = u8[i + 2] | (u8[i + 3] << 8); if (t === 0x01AE && (u8[i + 6] | (u8[i + 7] << 8)) === 0) throw new Error('Unexpected SupBook type: 0'); i += 4 + n } return { ok: true, u8 } },
+    CFB: { read: () => ({}), find: () => ({ content: luong }), write: () => luong },
+  }
+  const kq = docWorkbook(XL, luong.slice(), {})
+  kiem('đọc lại được sau khi vá: chỉ bản ghi hỏng đổi sang 0x3A01, độ dài + bản ghi khác giữ nguyên',
+    [kq.ok, soLanDoc, [...luong.slice(14, 16)], [...luong.slice(6, 8)], [...luong.slice(16)]], [true, 2, [0x01, 0x3A], [0x01, 0x04], [9, 9, 0x3C, 0x00, 2, 0, 7, 7]])
+  let loi = ''
+  try { docWorkbook({ read: () => { throw new Error('File is password-protected') } }, new Uint8Array(4), {}) } catch (e) { loi = e.message }
+  kiem('lỗi khác (không phải SupBook) vẫn báo nguyên văn', loi, 'File is password-protected')
+}
 
 console.log(hong ? `\n${hong} kiểm tra HỎNG` : '\nTất cả đạt.')
 process.exit(hong ? 1 : 0)

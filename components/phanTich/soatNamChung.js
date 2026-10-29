@@ -58,7 +58,7 @@ export async function xuatExcelSoatNam({ cty, nam, gom, C, file }) {
   const nhomTen = m => NHOM_THEO_MA[m]?.ten || m
   themSheetMang(wb, `Đối chiếu ${nam}`, [
     [`SOÁT XÉT BÁO CÁO NĂM ${nam} — ${cty.ten}`], [moTa],
-    ['Nhóm', 'Phép kiểm', 'Số 1', 'Nguồn số 1', 'Số 2', 'Nguồn số 2', 'Chênh lệch', 'Tỷ lệ', 'Kết quả'],
+    ['Nhóm', 'Phép kiểm', 'Số cần soát', 'Nguồn số cần soát', 'Số đối chiếu', 'Nguồn số đối chiếu', 'Chênh lệch', 'Tỷ lệ', 'Kết quả'],
     ...[...gom.phep].sort((x, y) => NHOM.findIndex(n => n.ma === x.nhom) - NHOM.findIndex(n => n.ma === y.nhom) || (coChenh(y) - coChenh(x))).map(p => [nhomTen(p.nhom), p.ten + (p.ky ? ` (${p.ky})` : ''), soChu(p.a), p.la || '', soChu(p.b), p.lb || '', soChu(p.d), ptChu(p.tl), ST[p.st] || p.st]),
   ], { doRong: [24, 56, 18, 22, 18, 22, 16, 10, 16], cotTien: [2, 4, 6] })
   const dongPH = []
