@@ -117,7 +117,11 @@ export default function MailLogPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap mt-1 pl-24 text-xs">
-                  {m.fromEmail && <span className="text-gray-400">{m.fromEmail}</span>}
+                  {/* Tên nhân viên thay cho email (anh yêu cầu 29/10/2026); rê chuột vẫn xem được email.
+                      Mail khách gửi không thuộc nhân viên nào thì hiện email như cũ. */}
+                  {m.fromName
+                    ? <span className="text-gray-700 font-medium" title={m.fromEmail || ''}>{m.fromName}</span>
+                    : m.fromEmail && <span className="text-gray-400">{m.fromEmail}</span>}
                   {m.clientName && (
                     <span className="text-gray-600">
                       → {m.clientName}{m.clientCode ? ' [' + m.clientCode + ']' : ''}{m.ky ? ' · ' + m.ky : ''}
