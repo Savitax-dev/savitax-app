@@ -11,6 +11,9 @@ import { catDenKy } from '@/lib/ruiro/luyKe'
 
 const so = n => (n == null ? '—' : typeof n === 'number' ? (n < 0 ? `(${Math.round(-n).toLocaleString('vi-VN')})` : Math.round(n).toLocaleString('vi-VN')) : String(n))
 
+// Hồ sơ đã đọc giữ theo lượt quét thư mục (chuyển tab quay lại không đọc lại; "Tải lại thư mục" ra lượt quét mới)
+const NHO_LK = new WeakMap()   // quet → Map(`${nam}|${mst}` → hồ sơ)
+
 export default function RuiRoLuyKe({ quet, nam, ky, mst, ctyId }) {
   const [kq, setKq] = useState(null)
   const [loi, setLoi] = useState('')
@@ -23,9 +26,15 @@ export default function RuiRoLuyKe({ quet, nam, ky, mst, ctyId }) {
     ;(async () => {
       try {
         const [{ default: Risk }, { docHoSoRuiRo }, { laDoiChieu, tyLe }] = await Promise.all([import('@/lib/ruiro/risk'), import('@/lib/ruiro/docThuMuc'), import('@/components/phanTich/ruiRoChung')])
-        const hs = await docHoSoRuiRo({ nam, quetTheoNam: quet.nam, mst, dem: DEM })
+        let nho = NHO_LK.get(quet); if (!nho) NHO_LK.set(quet, (nho = new Map()))
+        let hs = nho.get(`${nam}|${mst}`)
+        if (!hs) {
+          hs = await docHoSoRuiRo({ nam, quetTheoNam: quet.nam, mst, dem: DEM })
+          if (huy) return
+          if (!hs.client.mst) hs.client.mst = hs.client.decls[0]?.mst || ''
+          nho.set(`${nam}|${mst}`, hs)
+        }
         if (huy) return
-        if (!hs.client.mst) hs.client.mst = hs.client.decls[0]?.mst || ''
         const ev = Risk.evaluateYear(catDenKy(hs.client, nam, thangCuoi), nam)
         const coSo = ev.results.filter(r => r.level !== 'missing' && r.level !== 'na')
         setKq({ coSo: coSo.map(r => ({ id: r.id, ten: r.name, dc: laDoiChieu(r), sl1: r.sl1, sl2: r.sl2, cl: r.cl, tl: tyLe(r) })), cho: ev.results.length - coSo.length, tong: ev.results.length })

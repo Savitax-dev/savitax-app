@@ -4,7 +4,7 @@
 // Danh sách công ty (máy chủ lọc phạm vi) → tay cầm thư mục đã nhớ → quét cây → đọc tờ khai + bảng kê (tóm tắt) của
 // năm đang xem, có bộ nhớ đệm trên máy. CHỈ ĐỌC. Tách ra từ màn Hồ sơ dữ liệu để các màn khác khỏi viết lặp.
 //   docNamTruoc: đọc thêm tờ khai NĂM TRƯỚC (Soát kỳ cần cho chuỗi [22] kỳ đầu năm và ngưỡng 50 tỷ).
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import {
@@ -15,6 +15,16 @@ import { quetCongTy, gopNamTroRieng } from '@/lib/phanTich/thuMuc'
 import { docToKhaiCuaNam, docBangKeCuaNam, docBangLuongCuaNam, docC12CuaNam, docSaoKeCuaNam, docSoTienCuaNam } from '@/lib/phanTich/docHoSo'
 
 export const DEM = { khoa: khoaDem, lay: layDem, ghi: ghiDem }
+
+// Kết quả đọc của từng công ty, GIỮ TRONG PHIÊN (anh yêu cầu 29/10/2026): chuyển tab Hồ sơ dữ liệu ↔ Soát kỳ ↔ Tăng trưởng ↔
+// Soát xét năm ↔ Rủi ro thuế không quét / đọc lại thư mục. Chỉ "↻ Tải lại thư mục" (docLai), Trỏ lại, Năm cũ mới đọc lại
+// từ Drive; tải lại trang (F5) thì bộ nhớ này mất. Các màn khác giữ kết quả riêng theo đúng đối tượng `quet` này (WeakMap),
+// nên quét lại là tự đọc lại. Giữ tối đa vài công ty gần nhất cho nhẹ máy.
+const NHO = new Map()      // ctyId → { thuMuc, namCu, daChuyen, quet, nam, luc, doc: Map }
+const NHO_TOI_DA = 6
+const nhoLuu = (id, gt) => { NHO.delete(id); NHO.set(id, gt); while (NHO.size > NHO_TOI_DA) NHO.delete(NHO.keys().next().value) }
+// Bản đọc dùng được cho nhu cầu hiện tại: cùng năm, có đủ phần cần (đã đọc năm trước / bảng lương… thì dùng chung được)
+const timDoc = (c, nam, can) => [...(c?.doc?.values() || [])].find(x => x.nam === nam && (!can.namTruoc || x.namTruoc) && (!can.luong || x.luong))
 
 // Thư viện nặng (SheetJS, pdfjs) chỉ nạp khi thật sự có file cần đọc
 export async function docExcelBuf(buf) {
@@ -48,6 +58,11 @@ export function useHoSoCty(ctyId, { docNamTruoc = false, docLuong = false, chiQu
   const [buoc, setBuoc] = useState('')              // chữ tiến độ
   const [lanDoc, setLanDoc] = useState(0)
   const [daChuyen, setDaChuyen] = useState('')      // thư mục năm vừa gỡ khỏi chỗ dùng chung với Tờ khai
+  const [lucDoc, setLucDoc] = useState(null)        // lúc quét thư mục lần cuối (hiện cạnh nút Tải lại thư mục)
+  const lanDocTruoc = useRef(0)                     // lanDoc đổi (Tải lại / Trỏ lại / Năm cũ) → bỏ bộ nhớ, đọc lại
+  const boQuaQuet = useRef(false)                   // vừa lấy lại từ bộ nhớ → lượt quét kế tiếp bỏ qua
+  const namRef = useRef(null)                       // năm đang xem (đọc trong lượt quét, khỏi phụ thuộc closure cũ)
+  const id = String(ctyId || '')
 
   const cty = dsCty.find(c => String(c.id) === String(ctyId)) || null
   const mstCty = cty?.mst || ''
@@ -65,6 +80,13 @@ export function useHoSoCty(ctyId, { docNamTruoc = false, docLuong = false, chiQu
   useEffect(() => {
     setThuMuc(null); setNamCu([]); setQuet(null); setDoc(null); setDocTruoc(null); setLoi('')   // lỗi của công ty trước không được ở lại
     if (!ctyId || !coHoTro()) return
+    if (lanDoc !== lanDocTruoc.current) { lanDocTruoc.current = lanDoc; NHO.delete(id) }   // bấm Tải lại / Trỏ lại / Năm cũ
+    const c = NHO.get(id)
+    if (c) {
+      boQuaQuet.current = true
+      setThuMuc(c.thuMuc); setNamCu(c.namCu); setDaChuyen(c.daChuyen || ''); setQuet(c.quet); setNam(c.nam); setLucDoc(c.luc)
+      return
+    }
     let huy = false
     ;(async () => {
       const tm = await layThuMucChinh(ctyId)
@@ -79,6 +101,7 @@ export function useHoSoCty(ctyId, { docNamTruoc = false, docLuong = false, chiQu
   // Quét cây thư mục khi đã có quyền đọc
   useEffect(() => {
     if (!thuMuc) return
+    if (boQuaQuet.current) { boQuaQuet.current = false; return }
     const coChinh = thuMuc.trangThai === 'san_sang'
     const cuDuocDoc = namCu.filter(x => x.coQuyen)
     if (!coChinh && !cuDuocDoc.length) return
@@ -116,7 +139,14 @@ export function useHoSoCty(ctyId, { docNamTruoc = false, docLuong = false, chiQu
         setQuet(gop)
         const cacNam = Object.keys(gop.nam).map(Number).sort((a, b) => b - a)
         const namNay = new Date().getFullYear()
-        setNam(n => (n && gop.nam[n] ? n : cacNam.includes(namNay) ? namNay : cacNam[0] ?? null))
+        // Tính năm ngay tại đây (không trong hàm cập nhật state) để lưu vào bộ nhớ đúng năm đang xem
+        const n0 = namRef.current
+        const namChon = n0 && gop.nam[n0] ? n0 : cacNam.includes(namNay) ? namNay : cacNam[0] ?? null
+        setNam(namChon)
+        const luc = Date.now()
+        setLucDoc(luc)
+        // Lỗi thư mục chính thì không giữ — lần sau vào lại vẫn thử quét lại
+        if (!loiChinh) nhoLuu(id, { thuMuc, namCu, daChuyen: thuMuc.daChuyen || '', quet: gop, nam: namChon, luc, doc: new Map() })
       } catch (e) {
         if (!huy) setLoi('Không quét được thư mục: ' + e.message)
       } finally {
@@ -130,6 +160,9 @@ export function useHoSoCty(ctyId, { docNamTruoc = false, docLuong = false, chiQu
   useEffect(() => {
     const qn = quet?.nam?.[nam]
     if (!qn || chiQuet) { setDoc(null); setDocTruoc(null); return }
+    const c = NHO.get(id)
+    const san = c && c.quet === quet && timDoc(c, nam, { namTruoc: docNamTruoc, luong: docLuong })
+    if (san) { setDoc(san.doc); setDocTruoc(san.docTruoc); return }
     let huy = false
     ;(async () => {
       try {
@@ -154,9 +187,12 @@ export function useHoSoCty(ctyId, { docNamTruoc = false, docLuong = false, chiQu
         truoc = await docToKhaiCuaNam(qTruoc, { dem: DEM, docPdf })
       }
       if (!huy) {
-        setDoc({ ...kq, bangKe: bk.bangKe, bangLuong: luong?.bangLuong || [], c12: luong?.c12 || [], saoKeTien: luong?.saoKeTien || [], soTien: luong?.soTien || [], loi: [...kq.loi, ...bk.loi, ...(luong?.loi || [])], tuDem: kq.tuDem + bk.tuDem })
+        const docMoi = { ...kq, bangKe: bk.bangKe, bangLuong: luong?.bangLuong || [], c12: luong?.c12 || [], saoKeTien: luong?.saoKeTien || [], soTien: luong?.soTien || [], loi: [...kq.loi, ...bk.loi, ...(luong?.loi || [])], tuDem: kq.tuDem + bk.tuDem }
+        setDoc(docMoi)
         setDocTruoc(truoc)
         setBuoc('')
+        const c2 = NHO.get(id)
+        if (c2 && c2.quet === quet) c2.doc.set(`${nam}|${docNamTruoc}|${docLuong}`, { nam, namTruoc: docNamTruoc, luong: docLuong, doc: docMoi, docTruoc: truoc })
       }
       } catch (e) {
         // Lỗi IndexedDB / file hỏng giữa chừng: báo, và KHÔNG để chữ tiến độ treo (nút Đọc lại bị khoá)
@@ -166,6 +202,7 @@ export function useHoSoCty(ctyId, { docNamTruoc = false, docLuong = false, chiQu
     return () => { huy = true }
   }, [quet, nam, mstCty, docNamTruoc, docLuong, chiQuet])
 
+  useEffect(() => { namRef.current = nam; const c = NHO.get(id); if (c && nam) c.nam = nam }, [id, nam])
   const docLai = useCallback(() => setLanDoc(n => n + 1), [])
   const troThuMuc = useCallback(async () => {
     try { await chonThuMucChinh(ctyId); setLanDoc(n => n + 1) } catch (e) { if (e?.name !== 'AbortError') setLoi(e.message) }
@@ -186,7 +223,7 @@ export function useHoSoCty(ctyId, { docNamTruoc = false, docLuong = false, chiQu
   const canCho = (thuMuc && ['can_xin_lai', 'bi_tu_choi'].includes(thuMuc.trangThai)) || namCu.some(x => !x.coQuyen)
 
   return {
-    ctyId, dsCty, dsDaTai, cty, mstCty, loi: loiDs || loi, setLoi, lanDoc, hoTro, thuMuc, namCu, quet, nam, setNam, cacNam, qn,
+    ctyId, dsCty, dsDaTai, cty, mstCty, loi: loiDs || loi, setLoi, lanDoc, lucDoc, hoTro, thuMuc, namCu, quet, nam, setNam, cacNam, qn,
     doc, docTruoc, buoc, daChuyen, canCho, docLai, troThuMuc, choPhepLai, themNamCu, boNamCu,
   }
 }

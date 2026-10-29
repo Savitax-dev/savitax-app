@@ -11,6 +11,10 @@ function namMacDinh(X, cacNam) {
   return coBctc[0] ?? cacNam[0] ?? null
 }
 
+// Kết quả đọc giữ theo đúng lượt quét thư mục (useHoSoCty giữ `quet` khi chuyển tab) → quay lại tab không đọc lại.
+// Bấm "Tải lại thư mục" là ra `quet` mới → tự đọc lại. Giữ cả năm / loại hình đang xem.
+const NHO_SOAT = new WeakMap()   // quet → { kq, nam, loai }
+
 export function useSoatNam(hs) {
   const { quet, cty } = hs
   const [bm, setBm] = useState(null)
@@ -25,12 +29,15 @@ export function useSoatNam(hs) {
   useEffect(() => {
     setHoSo(null); setLoi('')
     if (!bm || !quet || !Object.keys(quet.nam).length) return
+    const san = NHO_SOAT.get(quet)
+    if (san) { setHoSo(san.kq); setNam(san.nam ?? namMacDinh(san.kq.X, san.kq.cacNam)); setLoai(san.loai); return }
     let huy = false
     ;(async () => {
       setBuoc('Đang đọc BCTC, tờ khai, sổ sách trong thư mục…')
       try {
         const kq = await bm.docHoSoSoat({ quetTheoNam: quet.nam, meta: { ten: cty?.ten || '', mst: cty?.mst || '' }, dem: DEM, tienDo: (x, n) => !huy && setBuoc(`Đang đọc file ${x}/${n}…`) })
         if (huy) return
+        NHO_SOAT.set(quet, { kq, nam: null, loai: 'tm' })   // năm / loại hình do effect bên dưới ghi sau khi hiện
         setHoSo(kq)
         setNam(n => (n && kq.cacNam.includes(n) ? n : namMacDinh(kq.X, kq.cacNam)))
       } catch (e) {
@@ -41,6 +48,12 @@ export function useSoatNam(hs) {
     })()
     return () => { huy = true }
   }, [bm, quet, cty?.ten, cty?.mst])
+
+  // Nhớ năm / loại hình đang xem (chỉ khi hồ sơ trên màn hình đúng là của lượt quét này)
+  useEffect(() => {
+    const c = quet && NHO_SOAT.get(quet)
+    if (c && hoSo === c.kq) { if (nam) c.nam = nam; c.loai = loai }
+  }, [quet, hoSo, nam, loai])
 
   // Bộ máy giữ trạng thái (năm đang mở) — mỗi lần đổi năm / loại hình thì đặt lại rồi tính
   const C = useMemo(() => {

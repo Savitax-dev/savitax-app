@@ -156,6 +156,20 @@ console.log('\nGhép hóa đơn khi thiếu MST + phụ lục giảm thuế (fil
   const cong1Cot = { ten: 'sheet 1', hang: [['STT', 'Ký hiệu mẫu số', 'Ký hiệu hóa đơn', 'Số hóa đơn', 'Ngày lập', 'MST người mua/MST người nhận hàng', 'Tên người mua/Tên người nhận hàng', 'Tổng tiền chưa thuế', 'Tổng tiền thuế', 'Tổng tiền thanh toán', 'Trạng thái hóa đơn'],
     [1, 1, 'C26TDE', 36, '28/04/2026', '0300000001', 'KH 1', 1000000, 80000, 1080000, 'Hóa đơn mới']] }
   kiem('cổng một cột MST → không cảnh báo nhầm', docBangKe([cong1Cot], { chieu: 'ban_ra', mstCty: '0399999999' })[0].canhBao, [])
+  // HONGDUC 29/10: một file cổng 2 sheet "MV" / "BR", cả hai đều ghi cột "MST người mua", tên file "BẢNG KÊ MV-BR" chứa cả hai chiều
+  const sheetCong = ten => ({ ...cong1Cot, ten })
+  kiem('file cổng 2 sheet MV / BR → nhận chiều theo tên sheet, không cảnh báo "chưa xác định"',
+    docBangKe([sheetCong('MV'), sheetCong('BR'), sheetCong('Mua vào'), sheetCong('HĐ bán ra')], { mstCty: '0399999999' }).map(b => [b.chieu, b.canhBao.length]),
+    [['mua_vao', 0], ['ban_ra', 0], ['mua_vao', 0], ['ban_ra', 0]])
+  // Không có bảng kê phần mềm, chỉ có bảng kê cổng trong thư mục BẢNG KÊ của kỳ → các dòng "phần mềm" là Để biết, không Thiếu hồ sơ
+  const tkQ2 = tk(2026, 'Q', 2, { c23: 1000, c24: 100, c32: 2000, c33: 200 })
+  const hdC = (so, ngay) => ({ mauSo: '1', kyHieu: 'C26TAA', so: String(so), ngay, mst: '0311111111', tienChuaThue: 1000, thue: 100, trangThai: 'Hóa đơn mới' })
+  const bkCong = (chieu, kyThuMuc) => ({ mau: 'cong', chieu, kyThuMuc, hoaDon: [hdC(1, '2026-05-10')] })
+  const rC = soatKy({ nam: 2026, ma: 'Q2', toKhai: [tkQ2], bangKe: [bkCong('mua_vao', { loai: 'Q', so: 2, nam: 2026 }), bkCong('ban_ra', { loai: 'Q', so: 2, nam: 2026 })], cty: { kyKhai: 'quy' } })
+  const pmDong = rC.dong.filter(d => /phần mềm/.test(d.ten) && !/file phần mềm/.test(d.ten))
+  kiem('chỉ có bảng kê cổng trong thư mục kỳ → dòng phần mềm "Để biết", không "Thiếu hồ sơ"', [pmDong.length > 0, pmDong.every(d => d.kq === 'thong_tin')], [true, true])
+  const rC2 = soatKy({ nam: 2026, ma: 'Q2', toKhai: [tkQ2], bangKe: [bkCong('mua_vao', null), bkCong('ban_ra', null)], cty: { kyKhai: 'quy' } })
+  kiem('bảng kê cổng nằm ngoài thư mục kỳ (thư mục hóa đơn) → thiếu bảng kê phần mềm vẫn "Thiếu hồ sơ"', rC2.dong.filter(d => /phần mềm/.test(d.ten) && !/file phần mềm/.test(d.ten)).every(d => d.kq === 'thieu'), true)
 
   const hd = (kh, so, ngay, mst, tien = 100) => ({ mauSo: '1', kyHieu: kh, so: String(so), ngay, mst, tienChuaThue: tien, thue: tien / 10, trangThai: 'Hóa đơn mới' })
   const Q2 = { loai: 'Q', so: 2 }

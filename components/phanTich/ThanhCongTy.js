@@ -118,7 +118,8 @@ export default function ThanhCongTy({ hs, duongDan, themTruoc, onDoiNam, chuChon
           {cty && hoTro && (thuMuc?.trangThai === 'san_sang' || namCu.length > 0) && (
             <button type="button" onClick={hs.troThuMuc} className={NUT} title="Trỏ lại vào thư mục CÔNG TY (dùng chung với Tờ khai)">{thuMuc?.trangThai === 'san_sang' ? 'Trỏ lại' : '📁 Trỏ thư mục'}</button>
           )}
-          {quet && <button type="button" onClick={hs.docLai} disabled={!!buoc} className={NUT}>↻ Đọc lại</button>}
+          {quet && hs.lucDoc && <span className="text-[11px] text-gray-400 whitespace-nowrap" title="Chuyển tab không đọc lại thư mục. Vừa thêm / sửa file trên Drive thì bấm Tải lại thư mục.">đọc lúc {new Date(hs.lucDoc).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>}
+          {quet && <button type="button" onClick={hs.docLai} disabled={!!buoc} className={NUT} title="Đọc lại thư mục từ Drive — dùng khi vừa thêm, sửa hoặc xoá file">↻ Tải lại thư mục</button>}
         </div>
       </div>}
 

@@ -172,6 +172,9 @@ const qNhom = await quetNam(thu('Năm 2026', thu('7. BỘ BÁO CÁO', thu('BỘ 
 kiem('nhóm "BỘ BÁO CÁO THUẾ QUÝ 1-2-3-4" chứa thư mục kỳ → vẫn là nhóm, nhận Q1 + Q2', qNhom.boBaoCao.ky.map(k => k.ky?.ma).sort(), ['Q1', 'Q2'])
 const qPs = await quetNam(thu('Năm 2026', thu('7. BỘ BÁO CÁO', kyTk('BAOCAOTHUE_PS0929_2026_AQ2', 'TK_HDDT_PS0929.2026_AQ2.xml'))))
 kiem('thư mục phát sinh mã KH "AQ2" không bị đọc thành kỳ Q2', qPs.boBaoCao.ky.map(k => [k.phatSinh, k.ky?.ma ?? null]), [[true, null]])
+// HONGDUC 29/10: "BAOCAOTHUE -Q1.rar" nằm cạnh thư mục "BAOCAOTHUE -Q1" đã giải nén → không phải file để lẻ
+const qRar = await quetNam(thu('2026', thu('7. BỘ BÁO CÁO', thu('BỘ BÁO CÁO THUẾ QUÝ_THÁNG', kyTk('BAOCAOTHUE -Q1', 'TK_GTGT_Q1.2026_X.xml'), tep('BAOCAOTHUE -Q1.rar'), tep('BAOCAOTHUE -Q5.rar'), tep('le.xlsx')))))
+kiem('file nén có thư mục cùng tên bên cạnh → bỏ qua; nén không có thư mục + file lẻ khác vẫn báo', qRar.boBaoCao.khongRo.map(t => t.ten).sort(), ['BAOCAOTHUE -Q5.rar', 'le.xlsx'])
 kiem('cây cũ (nhóm "BỘ BÁO CÁO THUẾ QUÝ_THÁNG") vẫn đọc như trước', kq.nam[2026].boBaoCao.ky.filter(k => k.ky).map(k => k.ky.ma), ['Q3'])
 
 console.log('\nTrùng năm giữa thư mục chính và thư mục năm trỏ riêng (ca DOEL, 27/10/2026):')
