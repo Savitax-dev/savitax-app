@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
+/* App LUÔN giao diện sáng (30/10/2026). Đoạn mẫu create-next-app cũ đổi nền đen + chữ xám nhạt theo chế độ tối của
+   Windows/Chrome, trong khi các khung của app tô màu sáng cố định → nền đen loang lổ, chữ sáng trên khung trắng.
+   "only light" còn bảo Chrome KHÔNG tự làm tối trang (Auto Dark Mode). */
 :root {
+  color-scheme: only light;
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -10,13 +14,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

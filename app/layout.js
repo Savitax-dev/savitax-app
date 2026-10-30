@@ -22,6 +22,9 @@ export const metadata = {
   other: { google: "notranslate" },
 };
 
+// Thẻ <meta name="color-scheme" content="only light">: app không theo chế độ tối của máy / Chrome (xem globals.css).
+export const viewport = { colorScheme: "only light" };
+
 export default function RootLayout({ children }) {
   return (
     <html
