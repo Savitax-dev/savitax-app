@@ -95,7 +95,7 @@ function HoSoDuLieu() {
                   <p>• Kỳ đã hết nhưng chưa tới hạn nộp thì chỉ “chờ”, chưa báo thiếu.</p>
                   <p>• <b>Bán ra</b>: chỉ cần bảng kê chi tiết tải từ cổng HĐĐT. <b>Mua vào</b>: bảng kê cổng + file hóa đơn XML theo tháng.</p>
                   <p>• Bảng kê cổng: app tự nhận mua vào / bán ra theo MST công ty, tháng theo ngày lập hóa đơn.</p>
-                  <p>• App <b>chỉ đọc</b>: không tạo, đổi tên hay xoá gì trong Drive. Sửa file gốc rồi bấm “Đọc lại”.</p>
+                  <p>• App <b>chỉ đọc</b>: không tạo, đổi tên hay xoá gì trong Drive. Sửa file gốc rồi bấm “Tải lại thư mục”.</p>
                 </div>
               </div>
             </div>

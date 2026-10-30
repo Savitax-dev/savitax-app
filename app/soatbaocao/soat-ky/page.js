@@ -249,7 +249,7 @@ function SoatKy() {
                   </div>
                 )}
                 {kyDangChon && conNgay(han) >= 0 && kq.oTong.chenh > 0 && (
-                  <p className="text-xs text-orange-700 mb-6">Còn trong hạn nộp ({ngayVN(han)}): sửa trong phần mềm, xuất lại bảng kê và tờ khai vào thư mục kỳ, bấm “Đọc lại” để soát lại trước khi nộp.</p>
+                  <p className="text-xs text-orange-700 mb-6">Còn trong hạn nộp ({ngayVN(han)}): sửa trong phần mềm, xuất lại bảng kê và tờ khai vào thư mục kỳ, bấm “Tải lại thư mục” để soát lại trước khi nộp.</p>
                 )}
                 <RuiRoLuyKe quet={hs.quet} nam={kq.nam} ky={kq.ky} mst={mstCty || toKhai[0]?.mst || ''} ctyId={ctyId} />
               </>

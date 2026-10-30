@@ -20,6 +20,11 @@ function namMacDinh(items, cacNam) {
   return coNam[0] ?? cacNam[0] ?? null
 }
 
+// Kết quả đọc giữ theo đúng lượt quét thư mục (useHoSoCty giữ `quet` khi chuyển tab) → quay lại tab không đọc lại.
+// Bấm "Tải lại thư mục" là ra `quet` mới → tự đọc lại. Giữ luôn năm đang soát, lựa chọn đọc hóa đơn, số sửa tạm.
+const NHO_RR = new WeakMap()   // quet → { kq: Map(namHoaDon → kết quả), ui: { namSoat, docHoaDon, suaTay } }
+const nhoRR = quet => { let c = NHO_RR.get(quet); if (!c) NHO_RR.set(quet, (c = { kq: new Map(), ui: null })); return c }
+
 export function useRuiRo(hs) {
   const { quet, mstCty, ctyId } = hs
   const [bm, setBm] = useState(null)
@@ -37,9 +42,22 @@ export function useRuiRo(hs) {
 
   // Hóa đơn chỉ đọc cho năm đang soát, và chỉ khi người dùng bấm (một năm có thể vài nghìn file)
   const namHoaDon = docHoaDon ? namSoat : null
+
+  // Quay lại tab: lấy lại năm đang soát / đọc hóa đơn / số sửa tạm của lượt quét này
+  useEffect(() => {
+    const ui = quet && NHO_RR.get(quet)?.ui
+    if (ui) { setNamSoat(ui.namSoat); setDocHoaDon(ui.docHoaDon); setSuaTay(ui.suaTay) }
+  }, [quet])
+
   useEffect(() => {
     setHoSo(null); setLoi('')
     if (!bm || !quet || !Object.keys(quet.nam).length) return
+    const san = NHO_RR.get(quet)?.kq.get(namHoaDon)
+    if (san) {
+      setHoSo(san)
+      setNamSoat(n => (n && san.cacNamCoDuLieu.includes(n) ? n : namMacDinh(san.items, san.cacNamCoDuLieu)))
+      return
+    }
     let huy = false
     ;(async () => {
       setBuoc('Đang tìm tờ khai, quyết toán, BCTC trong thư mục…')
@@ -52,6 +70,7 @@ export function useRuiRo(hs) {
         if (huy) return
         if (!kq.client.mst) kq.client.mst = kq.client.decls[0]?.mst || ''
         kq.hoaDonNam = namHoaDon
+        nhoRR(quet).kq.set(namHoaDon, kq)
         setHoSo(kq)
         setNamSoat(n => (n && kq.cacNamCoDuLieu.includes(n) ? n : namMacDinh(kq.items, kq.cacNamCoDuLieu)))
       } catch (e) {
@@ -62,6 +81,12 @@ export function useRuiRo(hs) {
     })()
     return () => { huy = true }
   }, [bm, quet, mstCty, namHoaDon])
+
+  // Nhớ lựa chọn trên màn hình — chỉ khi hồ sơ đang hiện đúng là của lượt quét này (tránh ghi đè bằng trạng thái rỗng lúc vừa vào)
+  useEffect(() => {
+    const c = quet && NHO_RR.get(quet)
+    if (c && hoSo && [...c.kq.values()].includes(hoSo)) c.ui = { namSoat, docHoaDon, suaTay }
+  }, [quet, hoSo, namSoat, docHoaDon, suaTay])
 
   const tuTim = useMemo(() => (bm && hoSo && namSoat ? bm.tuTimSoLieu(hoSo.client, namSoat, { hoaDon: hoSo.hoaDonNam === namSoat ? hoSo.hoaDon : null }) : null), [bm, hoSo, namSoat])
   const suaNam = useMemo(() => suaTay[namSoat] || {}, [suaTay, namSoat])
