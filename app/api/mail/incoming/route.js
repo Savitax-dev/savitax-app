@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { timingSafeEqual } from 'node:crypto'
-import { docMail, khopCty } from '@/lib/mailBaoCao'
+import { docMail, khopCty, laTraLoi } from '@/lib/mailBaoCao'
+import { emailChinh } from '@/lib/emailNhanVien'
 
 // POST /api/mail/incoming — VPS (/root/acb_zalo/mail_sync.py) đẩy tiêu đề mail "bộ báo cáo thuế"
 // nhân viên gửi khách lên đây. App đối chiếu rồi TỰ TICK việc "Gửi mail bộ báo cáo thuế ..." trong
@@ -84,6 +85,9 @@ export async function POST(request) {
     if (daXuLy.has(messageId)) { ketQua.trungLap++; continue }
 
     const subject = String(m?.subject || '').slice(0, 500)
+    // THƯ QUA LẠI (Re:/Fwd:/Trả lời/Chuyển tiếp) KHÔNG LƯU — anh bảo 29/10/2026 "các mail qua lại ko cần đẩy
+    // lên app". Chúng không bao giờ được tính là lượt gửi bộ hồ sơ, lưu vào chỉ làm rối nhật ký.
+    if (laTraLoi(subject)) { ketQua.boQuaTraLoi = (ketQua.boQuaTraLoi || 0) + 1; continue }
     const fromEmail = m?.from_email ? String(m.from_email).trim().toLowerCase().slice(0, 200) : null
     const sentAt = m?.sent_at ? new Date(m.sent_at) : null
     const sentOk = sentAt && !Number.isNaN(sentAt.getTime())
@@ -138,7 +142,7 @@ export async function POST(request) {
       client_id: r.client.id, task_def_id: r.task.id,
       year: r.dich.year, month: r.dich.month,
       is_done: true, done_at: sentAt.toISOString(),
-      done_by: (fromEmail && staffByEmail.get(fromEmail)) || null,
+      done_by: (fromEmail && staffByEmail.get(emailChinh(fromEmail))) || null,   // hộp thư phụ → đúng người
     }
     const { error } = rec?.id
       ? await supabase.from('task_records').update(payload).eq('id', rec.id)

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { isSharedRoom } from '@/lib/specialRooms'
 import { emailChinh } from '@/lib/emailNhanVien'
+import { laTraLoi } from '@/lib/mailBaoCao'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -223,6 +224,7 @@ export async function GET(request) {
     if (s.email) staffByEmail[String(s.email).trim().toLowerCase()] = s.id
   }
   for (const m of (mailLogs || [])) {
+    if (laTraLoi(m.subject)) continue   // thư qua lại không phải lượt gửi bộ hồ sơ (29/10/2026)
     // emailChinh: mail gửi từ hộp thư phụ của nhân viên vẫn ghi đúng người (lib/emailNhanVien.js).
     const actorId = m.from_email ? staffByEmail[emailChinh(m.from_email)] : null
     // Nhân viên / trưởng phòng: chỉ mail do người TRONG PHẠM VI gửi. Quản trị: thấy cả mail người gửi

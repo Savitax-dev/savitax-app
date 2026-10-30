@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { roomsWithRole } from '@/lib/roleUnion'
 import { emailChinh } from '@/lib/emailNhanVien'
+import { laTraLoi } from '@/lib/mailBaoCao'
 
 // GET /api/admin/mail-log?nam=2026&thang=10&loc=all|khop|chua
 //
@@ -67,7 +68,8 @@ export async function GET(request) {
 
   // Nhân viên thường: lọc còn mail của mình.
   const laQuanLy = caller.role === 'admin' || roomsWithRole(caller, ['leader', 'manager']).length > 0
-  let ds = rows || []
+  // Thư qua lại lưu TRƯỚC 29/10/2026 thì ẩn (không xoá) — từ đó trở đi mail/incoming không lưu nữa.
+  let ds = (rows || []).filter(r => !laTraLoi(r.subject))
   if (!laQuanLy) {
     const emailToi = emailChinh(me?.email)
     ds = ds.filter(r =>
