@@ -12,8 +12,8 @@ const so = n => (n == null || n === '' ? <span className="text-gray-300">—</sp
 const ngayVN = s => (s ? `${String(s).slice(8, 10)}/${String(s).slice(5, 7)}/${String(s).slice(0, 4)}` : '—')
 const tong = (ds, f) => ds.reduce((s, x) => s + (Number((x.hd || x)[f]) || 0), 0)
 const NHOM_HD = [
-  ['chiCong', 'Có trên cổng, chưa có trong phần mềm', 'do'], ['chiPm', 'Có trong phần mềm, không có trên cổng', 'tim'],
-  ['lech', 'Lệch tiền / thuế', 'hoPhach'], ['hetHieuLuc', 'Hóa đơn bị thay thế / hủy mà phần mềm vẫn kê', 'do'], ['ngoaiKy', 'Ngày ngoài kỳ (kê khai muộn — để biết)', 'xanhDuong'],
+  ['chiCong', 'Có trên cổng, chưa có trong bảng kê kèm tờ khai', 'do'], ['chiPm', 'Có trong bảng kê kèm tờ khai, không có trên cổng', 'tim'],
+  ['lech', 'Lệch tiền / thuế', 'hoPhach'], ['hetHieuLuc', 'Hóa đơn bị thay thế / hủy mà bảng kê kèm tờ khai vẫn kê', 'do'], ['ngoaiKy', 'Ngày ngoài kỳ (kê khai muộn — để biết)', 'xanhDuong'],
 ]
 
 export default function SoatNamBangKe({ hs, nam, cty }) {
@@ -62,8 +62,8 @@ export default function SoatNamBangKe({ hs, nam, cty }) {
     for (const c of ['mua_vao', 'ban_ra']) {
       const ten = c === 'ban_ra' ? 'Bán ra' : 'Mua vào'
       themSheetMang(wb, `Tổng ${ten}`, [
-        [`BẢNG KÊ HÓA ĐƠN ${ten.toUpperCase()} NĂM ${nam} — ${cty.ten}`], ['Cổng HĐĐT ↔ phần mềm kế toán ↔ tờ khai 01/GTGT, theo kỳ'],
-        ['Kỳ', 'HĐ trên cổng', 'Tiền cổng', 'Thuế cổng', 'HĐ phần mềm', 'Tiền PM', 'Thuế PM', 'Tiền tờ khai', 'Thuế tờ khai', 'Khớp', 'Chưa vào PM', 'Không có trên cổng', 'Lệch tiền', 'Bị thay thế mà vẫn kê'],
+        [`BẢNG KÊ HÓA ĐƠN ${ten.toUpperCase()} NĂM ${nam} — ${cty.ten}`], ['Bảng kê cổng HĐĐT (2. HÓA ĐƠN) ↔ bảng kê kèm tờ khai (7. BỘ BÁO CÁO) ↔ tờ khai 01/GTGT, theo kỳ'],
+        ['Kỳ', 'HĐ trên cổng', 'Tiền cổng', 'Thuế cổng', 'HĐ kèm tờ khai', 'Tiền kèm TK', 'Thuế kèm TK', 'Tiền tờ khai', 'Thuế tờ khai', 'Khớp', 'Chưa có trong BK kèm TK', 'Không có trên cổng', 'Lệch tiền', 'Bị thay thế mà vẫn kê'],
         ...theoKy[c].map(x => [x.ky.ma, x.cong.so, x.cong.tien ?? '', x.cong.thue ?? '', x.pm.so, x.pm.tien ?? '', x.pm.thue ?? '', x.tk.tien ?? '', x.tk.thue ?? '', x.khop ?? '', x.chiCong.length, x.chiPm.length, x.lech.length, x.hetHieuLuc.length]),
       ], { doRong: [8, 12, 18, 16, 12, 18, 16, 18, 16, 8, 12, 14, 10, 14], cotTien: [2, 3, 5, 6, 7, 8] })
       const g = gopBangKeKy(theoKy[c])
@@ -85,19 +85,19 @@ export default function SoatNamBangKe({ hs, nam, cty }) {
         <button type="button" onClick={taiExcel} className="ml-auto px-3 py-1.5 rounded-xl text-sm text-white font-semibold bg-[#8B1A1A] hover:bg-[#6B1212]">⬇ Excel bảng kê</button>
       </div>
 
-      {/* Đủ bảng kê từng kỳ chưa: cổng · phần mềm · tờ khai */}
+      {/* Đủ bảng kê từng kỳ chưa: cổng · kèm tờ khai · tờ khai */}
       <div className="rounded-2xl bg-white border border-gray-100 shadow-sm px-4 py-2.5 mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
         <span className="text-[11px] text-gray-500">Đủ hồ sơ {tenChieu}:<br />cổng · PM · tờ khai</span>
         {dsKy.map(x => (
           <span key={x.ky.ma} className="inline-flex items-center gap-1 text-xs">
             <b className="text-gray-700 w-7">{x.ky.ma.replace(/^T0/, 'T')}</b>
-            {[x.coCong, x.coPm, x.coTk].map((c, i) => <span key={i} title={['Bảng kê cổng HĐĐT', 'Bảng kê phần mềm kế toán', 'Tờ khai 01/GTGT'][i] + (c ? ': có' : ': chưa có')} className={`w-5 h-5 inline-flex items-center justify-center rounded border text-[10px] ${c ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>{c ? '✓' : '—'}</span>)}
+            {[x.coCong, x.coPm, x.coTk].map((c, i) => <span key={i} title={['Bảng kê cổng HĐĐT (2. HÓA ĐƠN)', 'Bảng kê kèm tờ khai (7. BỘ BÁO CÁO)', 'Tờ khai 01/GTGT'][i] + (c ? ': có' : ': chưa có')} className={`w-5 h-5 inline-flex items-center justify-center rounded border text-[10px] ${c ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>{c ? '✓' : '—'}</span>)}
           </span>
         ))}
       </div>
 
       <div className="grid md:grid-cols-3 gap-3 mb-3">
-        {[['Bảng kê cổng hóa đơn điện tử', r.nguon.cong, r.cong.so ? `${r.cong.so} hóa đơn` : ''], ['Bảng kê phần mềm kế toán', r.nguon.pm, r.pm.so ? `${r.pm.so} hóa đơn` : ''], ['Tờ khai 01/GTGT', r.nguon.tk, r.tk.banChuaNop ? 'bản chưa nộp' : '']].map(([t, tep, phu]) => (
+        {[['Bảng kê cổng hóa đơn điện tử', r.nguon.cong, r.cong.so ? `${r.cong.so} hóa đơn` : ''], ['Bảng kê kèm tờ khai (7. BỘ BÁO CÁO)', r.nguon.pm, r.pm.so ? `${r.pm.so} hóa đơn` : ''], ['Tờ khai 01/GTGT', r.nguon.tk, r.tk.banChuaNop ? 'bản chưa nộp' : '']].map(([t, tep, phu]) => (
           <div key={t} className={`rounded-2xl border px-4 py-2.5 ${tep.length ? 'bg-emerald-50/40 border-emerald-200' : 'bg-gray-50 border-gray-200'}`}>
             <p className="text-sm font-bold text-gray-800">{tep.length ? '✅' : '⬜'} {t}</p>
             {tep.slice(0, 3).map((x, i) => <p key={i} className="text-[11px] text-gray-500 font-mono truncate" title={[...(x?.duongDan || []), x?.ten].join('\\')}>{x?.ten}</p>)}
@@ -109,24 +109,24 @@ export default function SoatNamBangKe({ hs, nam, cty }) {
 
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
         <OTongSinhDong so={r.cong.so} nhan="Hóa đơn trên cổng" mau="xanhDuong" />
-        <OTongSinhDong so={r.pm.so} nhan="Hóa đơn trong phần mềm" mau="xanhDuong" />
+        <OTongSinhDong so={r.pm.so} nhan="Hóa đơn trên bảng kê kèm tờ khai" mau="xanhDuong" />
         <OTongSinhDong so={r.khop ?? '—'} nhan="Khớp" mau="xanhLa" />
-        <OTongSinhDong so={r.chiCong.length} nhan="Có trên cổng, chưa có trong phần mềm" mau="do" phu={r.chiCong.length ? 'thuế ' + Math.round(tong(r.chiCong, 'thue')).toLocaleString('vi-VN') : ''} />
-        <OTongSinhDong so={r.chiPm.length} nhan="Có trong phần mềm, không có trên cổng" mau="tim" phu={r.chiPm.length ? 'thuế ' + Math.round(tong(r.chiPm, 'thue')).toLocaleString('vi-VN') : ''} />
+        <OTongSinhDong so={r.chiCong.length} nhan="Có trên cổng, chưa có trong bảng kê kèm tờ khai" mau="do" phu={r.chiCong.length ? 'thuế ' + Math.round(tong(r.chiCong, 'thue')).toLocaleString('vi-VN') : ''} />
+        <OTongSinhDong so={r.chiPm.length} nhan="Có trong bảng kê kèm tờ khai, không có trên cổng" mau="tim" phu={r.chiPm.length ? 'thuế ' + Math.round(tong(r.chiPm, 'thue')).toLocaleString('vi-VN') : ''} />
         <OTongSinhDong so={r.lech.length + r.hetHieuLuc.length} nhan="Lệch tiền + trạng thái bất thường" mau="hoPhach" phu={`${r.lech.length} lệch · ${r.hetHieuLuc.length} bị thay thế`} />
       </div>
 
       <h2 className="text-sm font-bold text-gray-800 mb-1 pl-2 border-l-4 border-[#8B1A1A]">Tổng theo nguồn · {tenKy} · {tenChieu}</h2>
       {laCaNam && r.kyBo?.length > 0 && (
         <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 mb-1.5">
-          Chỉ cộng các kỳ có đủ bảng kê cổng và bảng kê phần mềm: <b>{r.kyDu.join(', ')}</b>. Không cộng {r.kyBo.map(b => `${b.ma} (thiếu ${b.thieu})`).join(', ')} — cộng vào thì tổng hai bên lệch giả.
+          Chỉ cộng các kỳ có đủ bảng kê cổng và bảng kê kèm tờ khai: <b>{r.kyDu.join(', ')}</b>. Không cộng {r.kyBo.map(b => `${b.ma} (thiếu ${b.thieu})`).join(', ')} — cộng vào thì tổng hai bên lệch giả.
         </p>
       )}
       <div className="pt-bang overflow-x-auto mb-1">
         <table className="text-sm">
-          <thead><tr><th>Nguồn</th><th className="text-right">Số hóa đơn</th><th className="text-right">Tiền chưa thuế</th><th className="text-right">Thuế GTGT</th><th className="text-right">Thuế: chênh với phần mềm</th></tr></thead>
+          <thead><tr><th>Nguồn</th><th className="text-right">Số hóa đơn</th><th className="text-right">Tiền chưa thuế</th><th className="text-right">Thuế GTGT</th><th className="text-right">Thuế: chênh với bảng kê kèm tờ khai</th></tr></thead>
           <tbody>
-            {[['Bảng kê cổng HĐĐT', r.cong.so, r.cong.tien, r.cong.thue], ['Bảng kê phần mềm kế toán', r.pm.so, r.pm.tien, r.pm.thue], [`Tờ khai 01/GTGT ${chieu === 'ban_ra' ? '[34] [35]' : '[23] [24]'}`, null, r.tk.tien, r.tk.thue]].map(([t, n, a, b], i) => {
+            {[['Bảng kê cổng HĐĐT', r.cong.so, r.cong.tien, r.cong.thue], ['Bảng kê kèm tờ khai', r.pm.so, r.pm.tien, r.pm.thue], [`Tờ khai 01/GTGT ${chieu === 'ban_ra' ? '[34] [35]' : '[23] [24]'}`, null, r.tk.tien, r.tk.thue]].map(([t, n, a, b], i) => {
               const d = i !== 1 && b != null && r.pm.thue != null ? b - r.pm.thue : null
               return <tr key={t}><td className="text-gray-800">{t}</td><td className="text-right tabular-nums">{n == null ? '' : n}</td><td className="text-right tabular-nums">{so(a)}</td><td className="text-right tabular-nums font-semibold">{so(b)}</td><td className={`text-right tabular-nums ${d && Math.abs(d) >= 1 ? 'font-semibold bg-amber-50/70' : 'text-gray-300'}`}>{i === 1 ? '' : d == null ? '—' : so(d)}</td></tr>
             })}
@@ -136,7 +136,7 @@ export default function SoatNamBangKe({ hs, nam, cty }) {
       <p className="text-[11px] text-gray-400 mb-5">Ghép theo MST người bán + ký hiệu + số hóa đơn (không có ký hiệu thì MST + số + ngày). Hóa đơn bị thay thế / hủy trên cổng không tính vào tổng cổng.{thueLe ? '' : ''}</p>
 
       <h2 className="text-sm font-bold text-gray-800 mb-1 pl-2 border-l-4 border-[#8B1A1A]">Hóa đơn chênh lệch</h2>
-      {!r.coCong || !r.coPm ? <p className="text-sm text-gray-500 mb-6">Cần cả bảng kê cổng HĐĐT và bảng kê phần mềm kế toán của {tenKy} để đối chiếu từng hóa đơn.</p> : null}
+      {!r.coCong || !r.coPm ? <p className="text-sm text-gray-500 mb-6">Cần cả bảng kê cổng HĐĐT (2. HÓA ĐƠN) và bảng kê kèm tờ khai (7. BỘ BÁO CÁO) của {tenKy} để đối chiếu từng hóa đơn.</p> : null}
       {NHOM_HD.map(([l, nhan, mau]) => r[l].length > 0 && (
         <div key={l} className="mb-4">
           <div className="flex items-center gap-2 mb-1"><ChipMau nhan={nhan} mau={mau} /><span className="text-xs text-gray-500">{r[l].length} hóa đơn · thuế {Math.round(tong(r[l], 'thue')).toLocaleString('vi-VN')}</span></div>
@@ -154,7 +154,7 @@ export default function SoatNamBangKe({ hs, nam, cty }) {
                       <td className="text-right tabular-nums">{so(h.tienChuaThue)}</td>
                       <td className="text-right tabular-nums font-semibold">{so(h.thue)}</td>
                       <td className="text-gray-500 whitespace-nowrap">{x.cong ? `${so(x.cong.tienChuaThue)} / ${so(x.cong.thue)}${x.cong.trangThai ? ' · ' + x.cong.trangThai : ''}` : h.trangThai || '—'}</td>
-                      <td className="text-gray-600 max-w-[320px]">{x.lyDo || (l === 'lech' ? `Lệch tiền ${so(x.lechTien)} · thuế ${so(x.lechThue)} (phần mềm − cổng)` : '')}</td>
+                      <td className="text-gray-600 max-w-[320px]">{x.lyDo || (l === 'lech' ? `Lệch tiền ${so(x.lechTien)} · thuế ${so(x.lechThue)} (kèm tờ khai − cổng)` : '')}</td>
                     </tr>
                   )
                 })}
@@ -164,7 +164,7 @@ export default function SoatNamBangKe({ hs, nam, cty }) {
           </div>
         </div>
       ))}
-      {r.coCong && r.coPm && !NHOM_HD.some(([l]) => r[l].length) && <p className="text-sm text-emerald-700 mb-6">✓ Bảng kê cổng và bảng kê phần mềm {tenKy} khớp từng hóa đơn.</p>}
+      {r.coCong && r.coPm && !NHOM_HD.some(([l]) => r[l].length) && <p className="text-sm text-emerald-700 mb-6">✓ Bảng kê cổng và bảng kê kèm tờ khai {tenKy} khớp từng hóa đơn.</p>}
     </>
   )
 }

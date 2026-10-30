@@ -59,7 +59,7 @@ kiem('Q3/2026: bản chưa nộp T9 không đè bản đã nộp', Q('Q3/26').ch
 const nguoc = tinhQuy({ 2026: { ...D2026, toKhai: [tk(2026, 'Q', 3, 9e9, { chuaNop: true }), tk(2026, 'Q', 3, 2e9)] } }, { homNay: '2026-10-26' })
 kiem('… kể cả khi bản chưa nộp đứng trước trong danh sách', nguoc.find(q => q.ma === 'Q3/26').chiTieu.doanhThu.v, 2e9)
 kiem('HĐ đầu vào Q1/2026 từ cổng = 45', [Q('Q1/26').chiTieu.hdVao.v, Q('Q1/26').chiTieu.hdVao.nguon], [45, 'Bảng kê mua vào cổng HĐĐT'])
-kiem('HĐ đầu vào Q2/2026 dự phòng phần mềm, 2 file trùng T4 đếm 1 lần = 36', [Q('Q2/26').chiTieu.hdVao.v, Q('Q2/26').chiTieu.hdVao.nguon], [36, 'Bảng kê mua vào phần mềm kế toán'])
+kiem('HĐ đầu vào Q2/2026 dự phòng phần mềm, 2 file trùng T4 đếm 1 lần = 36', [Q('Q2/26').chiTieu.hdVao.v, Q('Q2/26').chiTieu.hdVao.nguon], [36, 'Bảng kê mua vào kèm tờ khai'])
 kiem('HĐ đầu ra Q3/2026: file "Tổng quan" tháng 8 trùng khoá không cộng đôi = 120', Q('Q3/26').chiTieu.hdRa.v, 120)
 kiem('HĐ đầu ra Q2/2026 không có nguồn → "—"', Q('Q2/26').chiTieu.hdRa.v, null)
 kiem('lao động Q1/2025: không có bảng lương → [16] 05/KK-TNCN', [Q('Q1/25').chiTieu.laoDong.v, Q('Q1/25').chiTieu.laoDong.nguon], [5, '[16] tờ khai 05/KK-TNCN'])

@@ -5,7 +5,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { quetCongTy } from '../lib/phanTich/thuMuc.js'
-import { docToKhaiCuaNam } from '../lib/phanTich/docHoSo.js'
+import { docToKhaiCuaNam, vaiTroBangKe } from '../lib/phanTich/docHoSo.js'
 import { kiemKeNam, cacKy, gomCay } from '../lib/phanTich/kiemKe.js'
 
 let hong = 0
@@ -111,7 +111,7 @@ const lb = ten => kb.luoi.find(l => l.nhan === ten).o
 kiem('cổng mua vào: Q1 đủ 3 tháng, Q2–Q3 thiếu', lb('Bảng kê cổng HĐĐT — mua vào').map(x => x.tt), ['co', 'thieu', 'thieu', 'chua_toi'])
 kiem('cổng bán ra: Q1 không phát sinh (thư mục HĐ BÁN RA (KPS)), Q3 thiếu một phần T9 — T9 năm trước không tính', lb('Bảng kê cổng HĐĐT — bán ra').map(x => [x.tt, x.ghiChu || '']),
   [['kps', ''], ['thieu', 'thiếu T4, T5, T6'], ['mot_phan', 'thiếu T9'], ['chua_toi', '']])
-kiem('phần mềm: Q1 có mua vào thiếu bán ra, Q2 có bán ra thiếu mua vào (kỳ theo tháng nhiều HĐ nhất)', lb('Bảng kê trong thư mục kỳ (phần mềm / tải từ cổng)').slice(0, 3).map(x => [x.tt, x.ghiChu || '']),
+kiem('phần mềm: Q1 có mua vào thiếu bán ra, Q2 có bán ra thiếu mua vào (kỳ theo tháng nhiều HĐ nhất)', lb('Bảng kê kèm tờ khai (7. BỘ BÁO CÁO)').slice(0, 3).map(x => [x.tt, x.ghiChu || '']),
   [['mot_phan', 'thiếu bán ra'], ['mot_phan', 'thiếu mua vào'], ['thieu', '']])
 const nhomHd = gomCay(kb.dong).find(n => n.loai === 'nhom' && n.ten === '2. HÓA ĐƠN MUA VÀO_BÁN RA')
 kiem('hóa đơn dạng cây: con theo thư mục quý/tháng, nhóm → Thiếu kỳ khi bảng kê cổng thiếu', [nhomHd.con.map(c => c.d.tenCon), nhomHd.trangThai], [['QUÝ 1', 'QUÝ 3'], 'thieu_ky'])
@@ -121,13 +121,16 @@ kiem('ô tổng Thiếu kỳ đếm theo thư mục cấp 1 (hóa đơn + bộ b
 const tk0 = [{ loai: '01/GTGT', ky: { loai: 'Q', so: 2, nam: 2026 }, maKy: 'Q2.2026', lanBoSung: 0, chiTieu: { 23: 0, 34: 7000000 } }]
 const kz = kiemKeNam(quet, tk0, { kyKhai: 'quy', homNay: '2026-11-05', bangKe: BK })
 kiem('tờ khai Q2 ghi [23] = 0 → không đòi bảng kê / XML mua vào Q2', [kz.luoi.find(l => l.nhan === 'Bảng kê cổng HĐĐT — mua vào').o[1].tt, kz.luoi.find(l => l.nhan === 'HĐ mua vào (file XML)').o[1].tt], ['kps', 'kps'])
-kiem('… và bảng kê phần mềm Q2 chỉ cần bán ra → đủ', kz.luoi.find(l => l.nhan === 'Bảng kê trong thư mục kỳ (phần mềm / tải từ cổng)').o[1].tt, 'co')
-// HONGDUC 29/10: thư mục BẢNG KÊ của kỳ chỉ có bảng kê TẢI TỪ CỔNG ("BẢNG KÊ MV-BR.xlsx", sheet MV + BR) → đủ, ghi chú rõ loại
-const BKH = [{ mau: 'cong', chieu: 'mua_vao', kyThuMuc: { ma: 'Q2', nam: 2026 }, thang: ['2026-04', '2026-05', '2026-06'] },
-  { mau: 'cong', chieu: 'ban_ra', kyThuMuc: { ma: 'Q2', nam: 2026 }, thang: ['2026-04', '2026-05', '2026-06'] },
-  { mau: 'cong', chieu: 'mua_vao', kyThuMuc: null, thang: ['2026-07', '2026-08', '2026-09'] }]   // file ở thư mục hóa đơn → không phải bảng kê kỳ
-const kh = kiemKeNam(quet, lan1.toKhai, { kyKhai: 'quy', homNay: '2026-11-05', bangKe: BKH }).luoi.find(l => l.nhan === 'Bảng kê trong thư mục kỳ (phần mềm / tải từ cổng)').o
-kiem('bảng kê tải từ cổng trong thư mục kỳ Q2 → Q2 "có" kèm ghi chú; Q3 (file nằm ở thư mục hóa đơn) vẫn thiếu', [kh[1].tt, /tải từ cổng/.test(kh[1].ghiChu || ''), kh[2].tt], ['co', true, 'thieu'])
+kiem('… và bảng kê phần mềm Q2 chỉ cần bán ra → đủ', kz.luoi.find(l => l.nhan === 'Bảng kê kèm tờ khai (7. BỘ BÁO CÁO)').o[1].tt, 'co')
+// HONGDUC (anh chốt 30/10): "BẢNG KÊ MV-BR.xlsx" ở BAOCAOTHUE_Q2\BẢNG KÊ (mục 7) là bảng kê KÈM TỜ KHAI, không phải bảng kê cổng
+// → docHoSo trả mau 'pm_kem_tk'. Bảng kê cổng chỉ là file ở 2. HÓA ĐƠN (ở đây có Q3).
+const BKH = [vaiTroBangKe({ mau: 'cong', chieu: 'mua_vao', kyThuMuc: { ma: 'Q2', nam: 2026 }, thang: ['2026-04', '2026-05', '2026-06'], soTheoThang: { '2026-05': 3 } }, true),
+  vaiTroBangKe({ mau: 'cong', chieu: 'ban_ra', kyThuMuc: { ma: 'Q2', nam: 2026 }, thang: ['2026-04', '2026-05', '2026-06'], soTheoThang: { '2026-05': 3 } }, true),
+  vaiTroBangKe({ mau: 'cong', chieu: 'mua_vao', kyThuMuc: null, thang: ['2026-07', '2026-08', '2026-09'] }, false)]
+const kh = kiemKeNam(quet, lan1.toKhai, { kyKhai: 'quy', homNay: '2026-11-05', bangKe: BKH }).luoi
+const oKh = ten => kh.find(l => l.nhan === ten).o.slice(1, 3).map(x => x.tt)
+kiem('MV-BR mục 7 Q2 → "Bảng kê kèm tờ khai" Q2 có, Q3 thiếu', oKh('Bảng kê kèm tờ khai (7. BỘ BÁO CÁO)'), ['co', 'thieu'])
+kiem('… và KHÔNG làm xanh "Bảng kê cổng HĐĐT — mua vào" Q2; Q3 (file ở 2. HÓA ĐƠN) có', oKh('Bảng kê cổng HĐĐT — mua vào'), ['thieu', 'co'])
 
 console.log('\nThiếu hẳn thư mục bắt buộc:')
 const kk5 = kiemKeNam({ nam: 2026, thuMuc: [{ ten: '6. LƯƠNG', ma: 'luong', kps: false }], vung: { luong: [] } }, [], { kyKhai: 'quy', homNay: '2026-10-26' })

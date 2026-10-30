@@ -6,6 +6,7 @@
 // tờ khai cộng sai, bảng kê phần mềm ghi từng dòng hàng, cùng hóa đơn ở 2 file cổng, hóa đơn bị thay thế kê số 0.
 import { soatKy, daiKy, kyKhaiNam, doanhThuNam, gopHoaDon, laBanChuaNop, bangKeKy, gopBangKeKy } from '../lib/phanTich/soatKy.js'
 import { ngayO } from '../lib/phanTich/doc/bangKe.js'
+import { vaiTroBangKe } from '../lib/phanTich/docHoSo.js'
 
 let hong = 0
 const kiem = (ten, thucTe, mongDoi) => {
@@ -93,7 +94,7 @@ const rb = soatKy({ nam: 2026, ma: 'Q2', toKhai: [q1, qBan], toKhaiTruoc: nam25,
 const d34 = dong(rb, '[34] tờ khai ↔ giá trị chưa thuế trên bảng kê cổng bán ra')
 kiem('[34] ↔ cổng: chỉ hóa đơn trong kỳ còn hiệu lực, bỏ trùng 2 file (60+30+10 = 100tr)', [d34.so2, d34.kq], [100e6, 'khop'])
 kiem('[35] ↔ cổng bán ra khớp', dong(rb, '[35] tờ khai ↔ thuế GTGT trên bảng kê cổng bán ra').kq, 'khop')
-const dPm = dong(rb, '[34] tờ khai ↔ giá trị chưa thuế trên bảng kê phần mềm bán ra')
+const dPm = dong(rb, '[34] tờ khai ↔ giá trị chưa thuế trên bảng kê kèm tờ khai bán ra')
 kiem('[34] ↔ phần mềm: cộng cả dòng hàng + hóa đơn tháng 3 + hóa đơn thay thế còn tiền → lệch', [dPm.so2, dPm.chenh], [60e6 + 30e6 + 7e6 + 2e6, 100e6 - 99e6])
 const ct = loai => rb.chiTiet.filter(c => c.chieu === 'ban_ra' && c.loai === loai).map(c => c.hd.so)
 kiem('có trên cổng chưa vào phần mềm: HĐ 12', ct('chi_cong'), ['12'])
@@ -126,7 +127,7 @@ console.log('\nBảng kê hóa đơn theo kỳ (màn Soát xét năm):')
 
 console.log('\nThiếu hồ sơ / không phát sinh:')
 const rt = soatKy({ nam: 2026, ma: 'Q2', toKhai: [q1, qBan], toKhaiTruoc: nam25, bangKe: [], cty: { kyKhai: 'quy' }, homNay: '2026-10-26' })
-kiem('tên file cần có ghi đúng đường dẫn (không mất dấu \\)', dong(rt, 'giá trị chưa thuế trên bảng kê phần mềm bán ra').thieuFile.includes('BAOCAOTHUE_Q2\\BẢNG KÊ'), true)
+kiem('tên file cần có ghi đúng đường dẫn (không mất dấu \\)', dong(rt, 'giá trị chưa thuế trên bảng kê kèm tờ khai bán ra').thieuFile.includes('BAOCAOTHUE_Q2\\BẢNG KÊ'), true)
 kiem('không có bảng kê → các dòng bảng kê "Thiếu hồ sơ", dòng tờ khai vẫn chạy', [dong(rt, 'bảng kê cổng bán ra').kq, dong(rt, '[36] = [35] − [25]').kq], ['thieu', 'khop'])
 const q0 = tk(2026, 'Q', 2, { c22: q1.chiTieu[43], c23: 50e6, c24: 5e6 })   // doanh thu 0
 const r0 = soatKy({ nam: 2026, ma: 'Q2', toKhai: [q1, q0], bangKe: [], cty: { kyKhai: 'quy' }, homNay: '2026-10-26' })
@@ -161,15 +162,24 @@ console.log('\nGhép hóa đơn khi thiếu MST + phụ lục giảm thuế (fil
   kiem('file cổng 2 sheet MV / BR → nhận chiều theo tên sheet, không cảnh báo "chưa xác định"',
     docBangKe([sheetCong('MV'), sheetCong('BR'), sheetCong('Mua vào'), sheetCong('HĐ bán ra')], { mstCty: '0399999999' }).map(b => [b.chieu, b.canhBao.length]),
     [['mua_vao', 0], ['ban_ra', 0], ['mua_vao', 0], ['ban_ra', 0]])
-  // Không có bảng kê phần mềm, chỉ có bảng kê cổng trong thư mục BẢNG KÊ của kỳ → các dòng "phần mềm" là Để biết, không Thiếu hồ sơ
-  const tkQ2 = tk(2026, 'Q', 2, { c23: 1000, c24: 100, c32: 2000, c33: 200 })
-  const hdC = (so, ngay) => ({ mauSo: '1', kyHieu: 'C26TAA', so: String(so), ngay, mst: '0311111111', tienChuaThue: 1000, thue: 100, trangThai: 'Hóa đơn mới' })
-  const bkCong = (chieu, kyThuMuc) => ({ mau: 'cong', chieu, kyThuMuc, hoaDon: [hdC(1, '2026-05-10')] })
-  const rC = soatKy({ nam: 2026, ma: 'Q2', toKhai: [tkQ2], bangKe: [bkCong('mua_vao', { loai: 'Q', so: 2, nam: 2026 }), bkCong('ban_ra', { loai: 'Q', so: 2, nam: 2026 })], cty: { kyKhai: 'quy' } })
-  const pmDong = rC.dong.filter(d => /phần mềm/.test(d.ten) && !/file phần mềm/.test(d.ten))
-  kiem('chỉ có bảng kê cổng trong thư mục kỳ → dòng phần mềm "Để biết", không "Thiếu hồ sơ"', [pmDong.length > 0, pmDong.every(d => d.kq === 'thong_tin')], [true, true])
-  const rC2 = soatKy({ nam: 2026, ma: 'Q2', toKhai: [tkQ2], bangKe: [bkCong('mua_vao', null), bkCong('ban_ra', null)], cty: { kyKhai: 'quy' } })
-  kiem('bảng kê cổng nằm ngoài thư mục kỳ (thư mục hóa đơn) → thiếu bảng kê phần mềm vẫn "Thiếu hồ sơ"', rC2.dong.filter(d => /phần mềm/.test(d.ten) && !/file phần mềm/.test(d.ten)).every(d => d.kq === 'thieu'), true)
+  // Anh chốt 30/10: vai trò bảng kê theo NGUỒN. Mục 2 (thư mục hóa đơn) = bảng kê cổng; mục 7 (bộ báo cáo) = bảng kê kèm tờ khai,
+  // kể cả file "BẢNG KÊ MV-BR" cùng bố cục cổng → đổi thành 'pm_kem_tk', bỏ hóa đơn hủy / thay thế.
+  const hdC = (so, ngay, trangThai = 'Hóa đơn mới') => ({ mauSo: '1', kyHieu: 'C26TAA', so: String(so), ngay, mst: '0311111111', tienChuaThue: 1000, thue: 100, trangThai })
+  const mvbr = { mau: 'cong', chieu: 'mua_vao', sheet: 'MV', hoaDon: [hdC(1, '2026-05-10'), hdC(9, '2026-05-11', 'Hóa đơn đã bị hủy')] }
+  kiem('vai trò: bố cục cổng ở mục 7 → pm_kem_tk (tóm tắt giữ nguyên hóa đơn, bản đầy đủ bỏ HĐ hủy); ở mục 2 giữ cong; mẫu phần mềm không đổi',
+    [vaiTroBangKe(mvbr, true).mau, vaiTroBangKe(mvbr, true).hoaDon.length, vaiTroBangKe(mvbr, true, { dayDu: true }).hoaDon.map(h => h.so), vaiTroBangKe(mvbr, false).mau, vaiTroBangKe({ mau: 'pm_quantri' }, true).mau],
+    ['pm_kem_tk', 2, ['1'], 'cong', 'pm_quantri'])
+  const tkQ2 = tk(2026, 'Q', 2, { c23: 2000, c24: 200, c32: 2000, c33: 200 })
+  const muc2 = { mau: 'cong', chieu: 'mua_vao', kyThuMuc: null, hoaDon: [hdC(1, '2026-05-10'), hdC(2, '2026-06-02')] }
+  const muc2Ban = { mau: 'cong', chieu: 'ban_ra', kyThuMuc: null, hoaDon: [hdC(5, '2026-05-10'), hdC(6, '2026-06-02')] }
+  const muc7 = chieu => vaiTroBangKe({ mau: 'cong', chieu, hoaDon: [hdC(chieu === 'mua_vao' ? 1 : 5, '2026-05-10')] }, true, { dayDu: true })
+  const rC = soatKy({ nam: 2026, ma: 'Q2', toKhai: [tkQ2], bangKe: [muc2, muc2Ban, { ...muc7('mua_vao'), kyThuMuc: { loai: 'Q', so: 2, nam: 2026 } }, { ...muc7('ban_ra'), kyThuMuc: { loai: 'Q', so: 2, nam: 2026 } }], cty: { kyKhai: 'quy' } })
+  const dHd = rC.dong.find(d => d.ten.startsWith('Hóa đơn mua vào: bảng kê cổng (2. HÓA ĐƠN) ↔ bảng kê kèm tờ khai'))
+  kiem('mục 2 có 2 HĐ, MV-BR mục 7 có 1 → đối chiếu từng hóa đơn, báo 1 HĐ chưa có trong bảng kê kèm tờ khai', [dHd.kq, dHd.so1, dHd.so2, rC.chiTiet.filter(x => x.loai === 'chi_cong' && x.chieu === 'mua_vao').map(x => x.hd.so)], ['chenh', 2, 1, ['2']])
+  kiem('[23] tờ khai ↔ bảng kê kèm tờ khai: so được (không còn "Để biết" / "Thiếu")', rC.dong.find(d => d.ten === '[23] tờ khai ↔ giá trị chưa thuế trên bảng kê kèm tờ khai mua vào').kq, 'chenh')
+  const rC2 = soatKy({ nam: 2026, ma: 'Q2', toKhai: [tkQ2], bangKe: [{ ...muc7('mua_vao'), kyThuMuc: { loai: 'Q', so: 2, nam: 2026 } }], cty: { kyKhai: 'quy' } })
+  kiem('chỉ có MV-BR ở mục 7, mục 2 trống → dòng bảng kê cổng "Thiếu hồ sơ" chỉ đúng chỗ 2. HÓA ĐƠN',
+    rC2.dong.filter(d => d.ten.startsWith('[23] tờ khai ↔') && d.ten.includes('bảng kê cổng')).map(d => [d.kq, d.thieuFile.includes('2. HÓA ĐƠN MUA VÀO_BÁN RA')]), [['thieu', true]])
 
   const hd = (kh, so, ngay, mst, tien = 100) => ({ mauSo: '1', kyHieu: kh, so: String(so), ngay, mst, tienChuaThue: tien, thue: tien / 10, trangThai: 'Hóa đơn mới' })
   const Q2 = { loai: 'Q', so: 2 }

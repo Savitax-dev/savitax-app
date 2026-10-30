@@ -288,7 +288,12 @@ SQL `sql/40_phantich_xem_phi.sql` (đã chạy). **KHÔNG đưa vào bản clone
 - **Cây "7. BỘ BÁO CÁO" có hai kiểu, đều có thật**: nhân viên tự xếp qua nhóm `BỘ BÁO CÁO THUẾ QUÝ_THÁNG\BAOCAOTHUE_…`, và phân
   hệ Tờ khai tải về đặt `BAOCAOTHUE_<kỳ>_<năm>_<mã KH>[_BSLn]` + `BAOCAOTHUE_PS<mmdd>_…` THẲNG trong bộ báo cáo. Thư mục nhóm
   tên giống kỳ ("QUÝ 1-2-3-4") có kỳ con thì vẫn là nhóm; thư mục phát sinh xét trước kỳ.
-- **Đối chiếu bảng kê cổng HĐĐT ↔ phần mềm ↔ tờ khai** (`lib/phanTich/soatKy.js`): khoá MST đối tác + ký hiệu + số. Bảng kê cổng
+- **Vai trò bảng kê theo THƯ MỤC, không theo bố cục file** (anh chốt 30/10/2026, `vaiTroBangKe` ở `docHoSo.js`): Excel ở
+  `2. HÓA ĐƠN MUA VÀO_BÁN RA` = **bảng kê cổng** (bảng kê chi tiết tải từ hoadondientu theo kỳ); Excel ở `7. BỘ BÁO CÁO` = **bảng kê
+  kèm tờ khai** — xuất từ phần mềm, hoặc "BẢNG KÊ MV-BR" cùng bố cục cổng (đổi `mau` thành `pm_kem_tk`, bỏ HĐ hủy / thay thế).
+  Soát kỳ đối chiếu từng hóa đơn mục 2 ↔ mục 7. Trước đó MV-BR bị tính là bảng kê cổng → ô "Bảng kê cổng HĐĐT" HONGDUC Q1, Q2
+  xanh dù mục 2 không có file. Trên màn hình gọi là "bảng kê kèm tờ khai" (trước đây "bảng kê phần mềm").
+- **Đối chiếu bảng kê cổng HĐĐT ↔ kèm tờ khai ↔ tờ khai** (`lib/phanTich/soatKy.js`): khoá MST đối tác + ký hiệu + số. Bảng kê cổng
   MUA VÀO có thể không có cột MST người bán → khi MỘT bên thiếu MST ghép theo ký hiệu + số (bán ra) / + ngày (mua vào), khoá
   trùng thì không đoán. Bỏ trùng giữa sheet bằng MST + số + ngày CHỈ khi một bên thiếu ký hiệu (từng nuốt hóa đơn thật).
   Sheet "BẢNG KÊ HÓA ĐƠN GIẢM THUẾ GTGT THEO NGHỊ QUYẾT…" trong file HTKK là PHỤ LỤC (liệt kê lại hóa đơn bán ra) → bỏ. Sheet
