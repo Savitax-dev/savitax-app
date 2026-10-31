@@ -240,9 +240,12 @@ hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công 
 - **Cây thư mục** (`lib/tokhaiThuMuc.js`): mỗi kỳ là MỘT thư mục NGANG HÀNG trong
   `<cty>\2. HỒ SƠ KẾ TOÁN\Năm <năm>\7. BỘ BÁO CÁO\`, bên trong luôn `TỜ KHAI THUẾ` /
   `THÔNG BÁO CHẤP NHẬN` / `BẢNG KÊ`. Bổ sung lần n = thư mục kỳ riêng đuôi `_BSLn`, **cùng cấp**
-  với kỳ chính thức. Tên file `TK_` / `TBTN_` (tiếp nhận) / `TBCN_` (chấp nhận) + sắc thuế + kỳ +
+  với kỳ chính thức. Tên file `TK_` / `TBCN_` (chấp nhận; thông báo TIẾP NHẬN không tải từ 31/10/2026 — Savitax không lưu,
+  `canTaiThongBao` ở route tai-file; ngày tiếp nhận vẫn lấy từ trang chi tiết) + sắc thuế + kỳ +
   mã KH + `_BSLn`. Nhân viên **tự trỏ thư mục từng công ty** (File System Access API, tay lưu trong
-  IndexedDB) — không dò tự động; app cảnh báo khi hai công ty trỏ trùng nhưng **không chặn**.
+  IndexedDB) — không dò tự động; app cảnh báo khi hai công ty trỏ trùng nhưng **không chặn**. Thư mục năm nhận
+  mọi kiểu `namCuaTen` (`lib/tokhaiLuuDia.js`): `Năm 2026`, `NĂM 2026`, `2026` (144 thư mục trên ổ G:), `1. NĂM 2026`,
+  `NĂM_2026`; chưa có mới tạo `Năm <năm>`. Quy ước lưu file thư mục 1–12 cho nhân viên: `docs/quy-uoc-luu-ho-so.md`.
 - **Cổng trả TỜ KHAI dạng .zip** chứa XML tên máy (mở nén bằng `pizzip` rồi đổi tên), **thông báo
   dạng .xml**. ⛔ **Phần dựng PDF ĐANG TẮT** (cờ `DUNG_PDF` ở `lib/tokhaiTaiFileClient.js`): bản in
   còn sai, và chưa từng có bản gốc cơ quan thuế phát để đối chiếu. Đừng bật lại khi chưa có bản gốc.

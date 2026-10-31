@@ -195,7 +195,7 @@ Mỗi kỳ là **một thư mục ngang hàng**, mở thư mục nào cũng cùn
 
 Quy tắc tên file:
 
-- `TK_` = tờ khai · `TBTN_` = thông báo **tiếp nhận** · `TBCN_` = thông báo **chấp nhận**
+- `TK_` = tờ khai · `TBCN_` = thông báo **chấp nhận** (thông báo tiếp nhận không tải về — từ 31/10/2026 Savitax không lưu)
 - Rồi tới sắc thuế (`GTGT`, `TNCN`, `TNDN`, `BCTC`), kỳ, năm, mã khách hàng
 - `_BSL1`, `_BSL2` = bổ sung lần 1, lần 2 — **tên file cũng mang dấu này**, không chỉ tên thư mục,
   để chép file ra chỗ khác vẫn biết là bản nào
