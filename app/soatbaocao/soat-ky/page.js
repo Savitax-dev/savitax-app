@@ -27,7 +27,7 @@ const KY_TT = {
   chua_den: { chu: 'Chưa đến kỳ', lop: 'border-gray-200 bg-gray-50', cham: 'text-gray-400' },
 }
 const LOAI_CT = {
-  chi_cong: ['Có trên cổng · chưa vào phần mềm', 'hoPhach'], chi_pm: ['Trong phần mềm · không có trên cổng', 'tim'],
+  chi_cong: ['Có trên cổng · chưa có trong bảng kê kèm tờ khai', 'hoPhach'], chi_pm: ['Trong bảng kê kèm tờ khai · không có trên cổng', 'tim'],
   lech: ['Lệch tiền / thuế', 'do'], het_hieu_luc: ['Bị thay thế / hủy mà vẫn kê', 'do'], ngoai_ky: ['Ngày ngoài kỳ', 'xanhDuong'],
   nh_chi_sao_ke: ['Có trên sổ phụ · chưa thấy trên sổ 112', 'hoPhach'], nh_chi_so: ['Có trên sổ 112 · chưa thấy trên sổ phụ', 'tim'],
   tien_mat_nguong: ['Chi tiền mặt từ ngưỡng', 'do'],
