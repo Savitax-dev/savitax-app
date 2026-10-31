@@ -11,7 +11,7 @@
 //      tìm không ra file.
 
 import {
-  ghiVaoDia, base64ThanhByte, byteThanhChu, moBoBaoCao, soatThuMucCongTy,
+  ghiVaoDia, base64ThanhByte, byteThanhChu, moBoBaoCao, soatThuMucCongTy, namCuaTen, tangCuaThuMuc,
 } from '../lib/tokhaiLuuDia.js'
 import { duongDanToKhai, duongDanThongBao, boSoThuTu } from '../lib/tokhaiThuMuc.js'
 
@@ -274,6 +274,37 @@ const namTrong = thuMucGia('Năm 2027')
 kiem('"Năm 2027" trống → tạo đúng một tầng BỘ BÁO CÁO',
   (await moBoBaoCao(namTrong, '2027')).name, '7. BỘ BÁO CÁO')
 kiem('đúng một tầng, không hơn', liet(namTrong), ['7. BỘ BÁO CÁO/'])
+
+// ── Thư mục năm đặt nhiều kiểu (dò ổ G: 31/10/2026: '2026' có 144 thư mục) ──────────────────
+console.log('')
+console.log('Thư mục năm đặt kiểu khác "Năm 2026":')
+for (const [ten, mong] of [['Năm 2026', '2026'], ['NĂM 2026', '2026'], ['2026', '2026'], ['1. NĂM 2026', '2026'],
+  ['NĂM_2026', '2026'], ['Nam 2026', '2026'], ['2026 - Test BCT', null], ['2025-2026', null], ['7. BỘ BÁO CÁO', null],
+  ['3.THỊNH PHÁT', null], ['20260101', null]]) {
+  kiem(`namCuaTen("${ten}")`, namCuaTen(ten), mong)
+}
+for (const tenNamCo of ['2026', 'NĂM 2026', '1. NĂM 2026']) {
+  const cty = thuMucGia('5. MINH ĐỨC DŨNG')
+  const hs = await cty.getDirectoryHandle('2. HỒ SƠ KẾ TOÁN', { create: true })
+  const n = await hs.getDirectoryHandle(tenNamCo, { create: true })
+  await n.getDirectoryHandle('7. BỘ BÁO CÁO', { create: true })
+  kiem(`"${tenNamCo}" có sẵn → đi vào đúng nó`, (await moBoBaoCao(cty, '2026')).name, '7. BỘ BÁO CÁO')
+  kiem(`"${tenNamCo}" → KHÔNG tạo thêm "Năm 2026"`, liet(cty).filter(x => !x.includes('/7.')),
+    ['2. HỒ SƠ KẾ TOÁN/', `2. HỒ SƠ KẾ TOÁN/${tenNamCo}/`])
+  kiem(`"${tenNamCo}" → soát liệt kê đúng năm`, (await soatThuMucCongTy(cty)).cacNam, ['2026'])
+}
+{
+  const cty = thuMucGia('6. HAI NĂM')
+  const hs = await cty.getDirectoryHandle('2. HỒ SƠ KẾ TOÁN', { create: true })
+  await hs.getDirectoryHandle('2026', { create: true })
+  const coNam = await hs.getDirectoryHandle('Năm 2026', { create: true })
+  await moBoBaoCao(cty, '2026')
+  kiem('có cả "2026" lẫn "Năm 2026" → ưu tiên "Năm 2026"', liet(coNam), ['7. BỘ BÁO CÁO/'])
+}
+kiem('trỏ thẳng vào "2026" → hiểu là thư mục năm', tangCuaThuMuc('2026'), 'nam:2026')
+kiem('trỏ thẳng vào "NĂM_2026" → hiểu là thư mục năm', tangCuaThuMuc('NĂM_2026'), 'nam:2026')
+kiem('"HỒ SƠ NĂM 2026" (kiểu cũ) vẫn nhận', tangCuaThuMuc('HỒ SƠ NĂM 2026'), 'nam:2026')
+kiem('thư mục công ty KHÔNG bị nhầm là năm', tangCuaThuMuc('3.THỊNH PHÁT'), null)
 
 kq = await soatThuMucCongTy(boTay)
 kiem('soát: nhận ra đang ở BỘ BÁO CÁO', kq.kieu, 'bo_bao_cao')

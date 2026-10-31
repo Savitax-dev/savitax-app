@@ -418,18 +418,21 @@ function hoSoKeTiep(p, ghiFile) {
 }
 
 // Còn thông báo thì tải tiếp, hết thì sang hồ sơ sau.
+// Thông báo TIẾP NHẬN không tải về (anh chốt 31/10/2026: Savitax không lưu, chỉ lưu thông báo CHẤP NHẬN). Ngày tiếp nhận
+// để xét đúng/trễ hạn vẫn lấy từ trang chi tiết của cổng (docChiTiet), không cần file. Bớt được một lượt gọi cổng mỗi hồ sơ.
+const canTaiThongBao = tb => tb.portalId && tb.loai !== 'tiep_nhan'
+
 function tiepThongBao(p, ghiFile) {
   const ds = p.chiTietHienTai?.thongBao || []
   if (p.viThongBao < ds.length) {
     const tb = ds[p.viThongBao]
     p.viThongBao++
-    // Thông báo TIẾP NHẬN (TBTN) không tải nữa — anh bỏ 31/10/2026, chỉ giữ thông báo CHẤP NHẬN. Bớt
-    // luôn một lượt gọi cổng mỗi hồ sơ. Ngày tiếp nhận vẫn có từ trang chi tiết lúc đồng bộ.
-    if (!tb.portalId || tb.loai === 'tiep_nhan') return tiepThongBao(p, ghiFile)
+    if (!canTaiThongBao(tb)) return tiepThongBao(p, ghiFile)
+    const tai = ds.filter(canTaiThongBao)
     p.buoc = 'tai_thong_bao'
     return traYeuCau(p, {
       viec: 'goi', buoc: p.buoc, yeuCau: yc.taiThongBao(p.tokenTai, tb.portalId, hoSoHienTai(p)?.nguon),
-      ghiFile, tienDo: `Tải thông báo ${p.viThongBao}/${ds.length}`,
+      ghiFile, tienDo: `Tải thông báo ${tai.indexOf(tb) + 1}/${tai.length}`,
     })
   }
   p.viHangDoi++

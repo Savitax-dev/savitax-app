@@ -14,8 +14,11 @@ cần có — các kiểm tra khác vẫn chạy.
 
 Tờ khai đã có phân hệ Tờ khai tự tải về. Mỗi kỳ nhân viên chỉ thêm:
 
+> Chỗ lưu và cách đặt tên file của từng thư mục 1–12: xem **`docs/quy-uoc-luu-ho-so.md`** (bản Word cùng tên).
+
 1. **Tải bảng kê chi tiết hóa đơn trên cổng hóa đơn điện tử** — cả **mua vào** và **bán ra**, dạng Excel.
-   Bỏ vào `BAOCAOTHUE_<kỳ>\BẢNG KÊ` hoặc thư mục `2. HÓA ĐƠN MUA VÀO_BÁN RA` đều được. App tự nhận file nào
+   Bỏ vào `2. HÓA ĐƠN MUA VÀO_BÁN RA\<kỳ>\Mua vào` / `Bán ra` — **chỉ ở mục 2** (Excel trong `7. BỘ BÁO CÁO` app hiểu là
+   bảng kê kèm tờ khai). App tự nhận file nào
    mua vào, file nào bán ra (theo MST công ty trong file), và tự tính file phủ những tháng nào (theo ngày lập
    từng hóa đơn).
 2. **Hóa đơn mua vào: tải thêm file XML** về `2. HÓA ĐƠN MUA VÀO_BÁN RA\<tháng>\…\Mua vào`. Thư mục tháng
