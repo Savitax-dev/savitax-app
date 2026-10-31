@@ -113,14 +113,20 @@ export default function CuaToi({ thangDuocKhai }) {
       {d && tuMay && (
         <div className={'rounded-2xl border px-4 py-3 text-sm ' + (daBaoSai ? 'border-rose-200 bg-rose-50 text-rose-900' : 'border-cyan-200 bg-cyan-50 text-cyan-900')}>
           <div className="font-semibold">🕘 Số công lấy từ máy chấm công{may?.file ? ' · ' + may.file : ''}</div>
-          {may && <div className="mt-1 leading-relaxed">
+          {may?.mau === 'xuly' && <div className="mt-1 leading-relaxed">
+            Tổng công hưởng lương <b>{Number(may.tong).toLocaleString('vi-VN')}</b> (HC {Number(may.hc).toLocaleString('vi-VN')}{may.onl ? <> + online {may.onl}</> : null})
+            {' − '}nghỉ phép <b>{may.phep}</b>{may.dot_xuat ? <> (gồm {may.dot_xuat} đột xuất BGĐ duyệt)</> : null} = đi làm <b>{Number(d.data.ngay_di_lam).toLocaleString('vi-VN')}</b>
+            {' · '}Không lương <b>{Number(may.khong_luong).toLocaleString('vi-VN')}</b>{may.thai_san ? <> + thai sản <b>{may.thai_san}</b></> : null}
+            {' · '}Đi muộn, về sớm <b>{may.muon_som_lan || 0}</b> lần + không chấm công <b>{may.khong_cham_lan || 0}</b> lần → vi phạm tác phong
+          </div>}
+          {may && may.mau !== 'xuly' && <div className="mt-1 leading-relaxed">
             Đi làm = HC <b>{Number(may.hc).toLocaleString('vi-VN')}</b>{may.cong_tac ? <> + công tác <b>{may.cong_tac}</b></> : null} + <b>{may.thu_bay}</b> thứ Bảy (làm online, máy không chấm)
             {' · '}Nghỉ phép <b>{may.phep}</b>{may.dot_xuat ? <> + đột xuất BGĐ duyệt <b>{may.dot_xuat}</b></> : null}
             {' · '}Không lương <b>{Number(may.khong_luong).toLocaleString('vi-VN')}</b>{may.thai_san ? <> + thai sản <b>{may.thai_san}</b></> : null}
             {' · '}Đi muộn <b>{may.muon_lan || 0}</b> lần{may.muon_phut ? ' (' + may.muon_phut + ' phút)' : ''}, về sớm <b>{may.som_lan || 0}</b> lần{may.som_phut ? ' (' + may.som_phut + ' phút)' : ''} → vi phạm tác phong
           </div>}
           {daBaoSai && <div className="mt-1">⚠ Bạn đã báo sai: “{d.data.bao_sai}”. Trưởng phòng / kế toán nội bộ sẽ sửa.</div>}
-          {!daBaoSai && d.data.trang_thai !== 'da_xac_nhan' && <div className="mt-1 text-xs opacity-80">Kiểm lại rồi bấm Xác nhận đúng. Nghỉ thứ Bảy, công tác chưa ghi nhận… thì bấm Báo sai và ghi rõ.</div>}
+          {!daBaoSai && d.data.trang_thai !== 'da_xac_nhan' && <div className="mt-1 text-xs opacity-80">Kiểm lại rồi bấm Xác nhận đúng. {may?.mau === 'xuly' ? 'Số nào chưa đúng (ngày công, phép, vi phạm…)' : 'Nghỉ thứ Bảy, công tác chưa ghi nhận…'} thì bấm Báo sai và ghi rõ.</div>}
         </div>
       )}
       {d && (

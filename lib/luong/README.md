@@ -17,9 +17,15 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
 ## Quy tắc đã chốt (đổi gì thì sửa đúng file của bước đó)
 - **Phòng remote** (`rooms.type = 'remote'`: Danxia, Dakshin, CTV Savitax) KHÔNG tính lương trên app: không chấm công,
   không bảng lương, không KPI phòng (anh chốt 23/10/2026).
-- **Nhập file máy chấm công** (`mayChamCong.js`, sql/38): đi làm = HC + công tác + số thứ Bảy làm việc (máy không chấm
-  thứ Bảy online); phép = phép + đột xuất BGĐ duyệt; không lương = KL + thai sản; vi phạm tác phong = lần đi muộn + về
-  sớm; nghỉ lễ bỏ qua. Ghép theo `staff.ma_nhan_vien`, chưa có mã thì theo họ tên (mã trên file SẼ ĐỔI — đừng tin mã cũ).
+- **Nhập file máy chấm công** (`mayChamCong.js`, sql/38). Từ T10/2026 (anh gửi 31/10) đọc sheet **"Bảng chấm công chi
+  tiết_XuLy"** do HCNS xử lý (`mau = 'xuly'`, nhận ra nhờ cột "Tổng"): đi làm = **Tổng − Nghỉ phép** (Tổng = HC + Onl, đã gồm
+  thứ Bảy VÀ ngày phép — T10: Tổng + không lương = 27 = công chuẩn, 35/36 người); phép = cột Nghỉ phép (ĐÃ gồm phép đột xuất
+  BGĐ duyệt, không cộng lại); không lương = KL + thai sản; vi phạm = **Tổng vi phạm** (đi muộn, về sớm + không chấm công);
+  KHÔNG cộng thứ Bảy. Tiền gây quỹ 20.000 đ/lần và sheet Phép KHÔNG đưa vào app (HCNS tự theo dõi / app chấm công lo).
+  ⚠ File có sheet ẨN "_30.10" đứng đầu — trước 31/10 app lấy sheet đầu nên đọc nhầm; nay `docFileMayChamCong` ưu tiên sheet
+  tên "XuLy"/"Xử lý", không bao giờ lấy sheet ẩn. File thô cũ (`mau = 'tho'`): đi làm = HC + công tác + số thứ Bảy làm việc
+  (máy không chấm thứ Bảy online); phép = phép + đột xuất BGĐ duyệt; không lương = KL + thai sản; vi phạm tác phong = lần
+  đi muộn + về sớm; nghỉ lễ bỏ qua. Ghép theo `staff.ma_nhan_vien`, chưa có mã thì theo họ tên (mã trên file SẼ ĐỔI — đừng tin mã cũ).
   Ghi vào bảng công ở trạng thái nháp, `nguon = may_cham_cong`: nhân viên KHÔNG sửa số, chỉ Xác nhận / Báo sai; TP sửa
   có lý do. Người `cham_cong_may = false` (online, ban giám đốc) tự khai như cũ, nhập file bỏ qua. Số máy có lẻ
   (15,38) — giữ nguyên tới 2 chữ số thập phân. File phải xuất SAU ngày cuối tháng (tiêu đề luôn ghi cả tháng).

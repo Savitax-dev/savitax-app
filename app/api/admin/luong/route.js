@@ -20,7 +20,7 @@ import { requireLogin } from '@/lib/serverAuth'
 import { roomsWithRole } from '@/lib/roleUnion'
 import { getAdmin, loi, pad, quyenCua, ngayLeCuaThang, namThang, soTien, tienHopLe } from '@/lib/luong/api'
 import { ngayCongChuan, kiemChamCong, thangDuocKhai, soNgayHopLe, soNgayMayHopLe, luongCuaThang } from '@/lib/luong/ngayCong'
-import { quyDoiMay, soThuBayLamViec, khoaTen } from '@/lib/luong/mayChamCong'
+import { quyDoiMay, soThuBayLamViec, khoaTen, KHOA_SO } from '@/lib/luong/mayChamCong'
 import { nhapHoSo } from '@/lib/luong/nhapHoSo'
 
 // Phòng remote KHÔNG tính lương trên app (anh chốt 23/10/2026): không chấm công, không bảng lương.
@@ -552,10 +552,12 @@ export async function POST(request) {
       for (const s of dang) { const k = khoaTen(s.full_name); theoTen.set(k, theoTen.has(k) ? null : s) }   // null = trùng tên
       const le = await ngayLeCuaThang(supabase, nt.nam, nt.thang)
       const chuan = ngayCongChuan(nt.nam, nt.thang, le.map(x => x.ngay)).chuan
-      const thuBay = soThuBayLamViec(nt.nam, nt.thang, le.map(x => x.ngay))
+      // Mẫu 'xuly' (sheet HCNS đã xử lý): cột Tổng đã gồm thứ Bảy → không cộng thứ Bảy nữa.
+      const mau = body.mau === 'xuly' ? 'xuly' : 'tho'
+      const thuBay = mau === 'xuly' ? 0 : soThuBayLamViec(nt.nam, nt.thang, le.map(x => x.ngay))
       const { data: congCu } = await supabase.from('luong_cham_cong').select('*').eq('nam', nt.nam).eq('thang', nt.thang)
       const cuMap = new Map((congCu || []).map(c => [c.staff_id, c]))
-      const SO = ['hc', 'phep', 'le', 'congTac', 'khongLuong', 'thaiSan', 'dotXuat', 'muonLan', 'somLan', 'muonPhut', 'somPhut']
+      const SO = KHOA_SO
       const ketQua = [], daDung = new Set()
       for (const x of dsFile) {
         const r = { hang: Number(x.hang) || null, ma: String(x.ma || '').trim().slice(0, 20), ten: String(x.ten || '').trim().slice(0, 100) }
@@ -580,7 +582,7 @@ export async function POST(request) {
         Object.assign(r, { staff_id: s.id, tenApp: s.full_name, cach, maApp: s.ma_nhan_vien || null })
         if (laRemote(s)) { ketQua.push({ ...r, tt: 'remote' }); continue }
         if (s.cham_cong_may === false) { ketQua.push({ ...r, tt: 'tu_khai' }); continue }
-        const moi = quyDoiMay(sach, thuBay)
+        const moi = quyDoiMay(sach, thuBay, mau)
         const c = cuMap.get(s.id)
         r.moi = moi
         r.cu = c ? { ngay_di_lam: Number(c.ngay_di_lam), nghi_phep: Number(c.nghi_phep), nghi_khong_luong: Number(c.nghi_khong_luong), so_lan_vi_pham: Number(c.so_lan_vi_pham) || 0, trang_thai: c.trang_thai, nguon: c.nguon || 'tu_khai' } : null
@@ -591,7 +593,7 @@ export async function POST(request) {
         ketQua.push(r)
       }
       const khongCoTrongFile = dang.filter(s => !laRemote(s) && s.cham_cong_may !== false && !daDung.has(s.id)).map(s => s.full_name).sort((a, b) => a.localeCompare(b, 'vi'))
-      if (!body.ghi) return Response.json({ preview: true, chuan, thuBay, dong: ketQua, khongCoTrongFile })
+      if (!body.ghi) return Response.json({ preview: true, chuan, thuBay, mau, dong: ketQua, khongCoTrongFile })
 
       const ghiDe = !!body.ghiDeXacNhan
       const lyDo = String(body.ly_do || '').trim()

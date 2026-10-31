@@ -4,7 +4,7 @@
 // Số ghi vào bảng công ở trạng thái nháp, nguồn "máy chấm công": từng nhân viên Xác nhận đúng hoặc Báo sai.
 import { useState } from 'react'
 import { goi } from './chung'
-import { docBangMayChamCong } from '@/lib/luong/mayChamCong'
+import { docFileMayChamCong, KHOA_SO } from '@/lib/luong/mayChamCong'
 
 const NHAN = {
   moi: ['Mới', 'bg-emerald-100 text-emerald-800 border-emerald-200'],
@@ -16,9 +16,6 @@ const NHAN = {
   tu_khai: ['Tự khai — bỏ qua', 'bg-sky-50 text-sky-700 border-sky-200'],
 }
 const fmt = n => n == null ? '—' : Number(n).toLocaleString('vi-VN')
-const txt = v => v == null ? '' : typeof v === 'object'
-  ? (v.richText ? v.richText.map(t => t.text).join('') : String(v.result ?? v.text ?? ''))
-  : String(v)
 
 export default function NhapChamCong({ ky, onDong, onXong }) {
   const [file, setFile] = useState(null)        // { ten, doc }
@@ -32,9 +29,8 @@ export default function NhapChamCong({ ky, onDong, onXong }) {
 
   const gui = (doc, ten, ghi) => goi('/api/admin/luong', {
     viec: 'nhap_may', nam: ky.nam, thang: ky.thang, tuNgay: doc.tuNgay, denNgay: doc.denNgay, tenFile: ten, ghi,
-    luuMa, ghiDeXacNhan: ghiDe, ly_do: lyDo,
-    dong: doc.dong.map(({ hang, ma, ten, hc, phep, le, congTac, khongLuong, thaiSan, dotXuat, muonLan, somLan, muonPhut, somPhut }) =>
-      ({ hang, ma, ten, hc, phep, le, congTac, khongLuong, thaiSan, dotXuat, muonLan, somLan, muonPhut, somPhut })),
+    luuMa, ghiDeXacNhan: ghiDe, ly_do: lyDo, mau: doc.mau,
+    dong: doc.dong.map(x => Object.fromEntries(['hang', 'ma', 'ten', ...KHOA_SO].map(k => [k, x[k]]))),
   })
 
   const chonFile = async (e) => {
@@ -47,8 +43,7 @@ export default function NhapChamCong({ ky, onDong, onXong }) {
       const ExcelJS = mod.default || mod
       const wb = new ExcelJS.Workbook()
       await wb.xlsx.load(await f.arrayBuffer())
-      const ws = wb.worksheets[0]
-      const doc = docBangMayChamCong((r, c) => txt(ws.getRow(r).getCell(c).value), ws.rowCount, ws.columnCount)
+      const doc = docFileMayChamCong(wb)
       if (doc.loi) { setMsg({ loai: 'loi', text: doc.loi }); return }
       if (!doc.dong.length) { setMsg({ loai: 'loi', text: 'Không đọc được dòng nhân viên nào trong file.' }); return }
       const j = await gui(doc, f.name, false)
@@ -87,7 +82,7 @@ export default function NhapChamCong({ ky, onDong, onXong }) {
         <div className="shrink-0 px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-cyan-700 to-teal-600 text-white rounded-t-2xl">
           <div>
             <div className="text-lg font-bold">📥 Nhập file máy chấm công — tháng {ky.thang}/{ky.nam}</div>
-            <div className="text-xs opacity-85" title="Quy đổi: Đi làm = HC + công tác + số thứ Bảy (máy không chấm thứ Bảy online) · Nghỉ phép = phép + đột xuất BGĐ duyệt · Không lương = không lương + thai sản · Vi phạm tác phong = số lần đi muộn + về sớm · nghỉ lễ bỏ qua. Ghép theo mã, chưa có mã thì theo họ tên.">File "Bảng chấm công chi tiết" xuất từ phần mềm chấm công, xuất SAU ngày cuối tháng · <span className="underline decoration-dotted cursor-help">cách quy đổi ⓘ</span></div>
+            <div className="text-xs opacity-85" title="Đọc sheet &quot;Bảng chấm công chi tiết_XuLy&quot; (HCNS đã xử lý), không lấy sheet ẩn. Quy đổi: Đi làm = Tổng công hưởng lương − Nghỉ phép · Nghỉ phép = cột Nghỉ phép (đã gồm phép đột xuất BGĐ duyệt) · Không lương = không lương + thai sản · Vi phạm = Tổng vi phạm (đi muộn, về sớm + không chấm công) · nghỉ lễ bỏ qua; tiền gây quỹ không đưa vào app. File thô (không có cột Tổng): Đi làm = HC + công tác + số thứ Bảy. Ghép theo mã, chưa có mã thì theo họ tên.">File "Bảng chấm công chi tiết" xuất từ phần mềm chấm công, xuất SAU ngày cuối tháng · <span className="underline decoration-dotted cursor-help">cách quy đổi ⓘ</span></div>
           </div>
           <button onClick={onDong} className="text-2xl leading-none opacity-80 hover:opacity-100">×</button>
         </div>
@@ -98,7 +93,7 @@ export default function NhapChamCong({ ky, onDong, onXong }) {
               {ban ? 'Đang đọc…' : file ? '↺ Chọn file khác' : 'Chọn file .xlsx'}
               <input type="file" accept=".xlsx" className="hidden" onChange={chonFile} disabled={ban} />
             </label>
-            {file && <span className="text-sm text-gray-600">{file.ten} · kỳ trong file {file.doc.tuNgay?.split('-').reverse().join('/')} → {file.doc.denNgay?.split('-').reverse().join('/')}</span>}
+            {file && <span className="text-sm text-gray-600">{file.ten}{file.doc.sheet ? <> · sheet <b>{file.doc.sheet}</b>{file.doc.mau === 'tho' ? ' (file thô — cộng thêm ' + (xem?.thuBay ?? '') + ' thứ Bảy)' : ''}</> : null} · kỳ trong file {file.doc.tuNgay?.split('-').reverse().join('/')} → {file.doc.denNgay?.split('-').reverse().join('/')}</span>}
           </div>
 
           {msg && <div className={'rounded-xl border px-4 py-2.5 text-sm ' + (msg.loai === 'loi' ? 'border-rose-200 bg-rose-50 text-rose-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800')}>{msg.text}</div>}

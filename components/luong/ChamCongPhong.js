@@ -129,7 +129,8 @@ export default function CongPhong({ quyen }) {
                       <td className="px-4 py-2.5 text-right text-amber-800">{c ? c.nghi_phep : '—'}</td>
                       <td className="px-4 py-2.5 text-right text-rose-800">{c ? c.nghi_khong_luong : '—'}</td>
                       <td className="px-4 py-2.5 text-right text-violet-800">{c ? (Number(c.so_lan_vi_pham) ? <span title={'Tác phong ' + Math.max(0, 100 - 20 * Number(c.so_lan_vi_pham)) + '%'}>{c.so_lan_vi_pham} lần</span> : '0') : '—'}
-                        {c?.may && (c.may.muon_lan || c.may.som_lan) ? <div className="text-[11px] text-gray-500 whitespace-nowrap">muộn {c.may.muon_lan || 0} ({c.may.muon_phut || 0}′) · sớm {c.may.som_lan || 0} ({c.may.som_phut || 0}′)</div> : null}</td>
+                        {c?.may?.mau === 'xuly' && (c.may.muon_som_lan || c.may.khong_cham_lan) ? <div className="text-[11px] text-gray-500 whitespace-nowrap">muộn/sớm {c.may.muon_som_lan || 0} · không chấm {c.may.khong_cham_lan || 0}</div> : null}
+                        {c?.may && c.may.mau !== 'xuly' && (c.may.muon_lan || c.may.som_lan) ? <div className="text-[11px] text-gray-500 whitespace-nowrap">muộn {c.may.muon_lan || 0} ({c.may.muon_phut || 0}′) · sớm {c.may.som_lan || 0} ({c.may.som_phut || 0}′)</div> : null}</td>
                     </>}
                     <td className="px-4 py-2.5 text-right"><b className="text-blue-800">{c ? Math.round((Number(c.ngay_di_lam) + Number(c.nghi_phep)) * 100) / 100 : '—'}</b></td>
                     <td className="px-4 py-2.5 text-gray-500 text-xs max-w-[260px]">
