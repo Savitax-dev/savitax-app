@@ -8,6 +8,7 @@ import { loadPermissionData, can, clearPermissionCache } from '@/lib/permissions
 import { xoaBoNhoNhacHan } from './NhacHanNop'
 import { xoaDauNhacNho } from './NotificationBell'
 import { layMe } from '@/lib/khoiDong'
+import { LOC_PHONG_NGOAI } from '@/lib/loaiPhong'
 
 /* ─── Brand colors ───────────────────────────────────────────────
    Đỏ chủ đạo : #8B1A1A   Gold chủ đạo : #C9A84C
@@ -166,7 +167,7 @@ export default function Sidebar({ onClose }) {
         supabase.from('staff').select('*, rooms(name)').eq('id', session.user.id).single(),
         // Danh sách con của "Phòng nghiệp vụ" — phòng HCNS KHÔNG nằm ở đây vì nó có phân khu
         // riêng bên dưới và không dùng giao diện /room/[roomId].
-        supabase.from('rooms').select('*').not('type', 'in', '(hcns,kinhdoanh)').order('type').order('name'),
+        supabase.from('rooms').select('*').not('type', 'in', LOC_PHONG_NGOAI).order('type').order('name'),
         huaMe,
       ])
       let staffData = resMe.data

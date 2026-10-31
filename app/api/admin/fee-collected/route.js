@@ -4,6 +4,7 @@ import { isSharedRoom } from '@/lib/specialRooms'
 import { roomsWithRole } from '@/lib/roleUnion'
 import { tinhDongTienPhong, gopDongTien } from '@/lib/dongTienPhong'
 import { loadHcnsFees } from '@/lib/hcnsPhiCongTy'
+import { laPhongNgoaiNghiepVu } from '@/lib/loaiPhong'
 
 // BÁO CÁO PHÍ ĐÃ THU (trang Báo cáo KPI) — tiền đã ghi nhận trong một khoảng ngày, theo phòng /
 // nhân viên phụ trách.
@@ -69,7 +70,7 @@ export async function GET(request) {
     supabase.from('staff').select('id, full_name, room_id, role').order('full_name'),
   ])
   // Phòng Kinh doanh / HCNS không thu phí kế toán -> không đưa vào bộ lọc.
-  const phongNghiepVu = (rooms || []).filter(r => r.type !== 'kinhdoanh' && r.type !== 'hcns')
+  const phongNghiepVu = (rooms || []).filter(r => !laPhongNgoaiNghiepVu(r.type))
   // Xem được cả phòng chỉ ở phòng mình LÀM trưởng phòng / quản lý (kiêm nhiệm: đúng phòng kiêm nhiệm).
   const phongTruong = roomsWithRole(caller, ['leader', 'manager'])
   const duocXemPhong = (id) => laAdmin || phongTruong.includes(id) || (roomsWithRole(caller, ['leader']).length > 0 && isSharedRoom(id))

@@ -11,6 +11,7 @@ import { requireLogin } from '@/lib/serverAuth'
 import { cacKyTrongNam, kyQuyetToanNam, nhanKy } from '@/lib/taxDeadline'
 import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
 import { dungCacO, congO } from '@/lib/tokhaiThongKe'
+import { laPhongNgoaiNghiepVu } from '@/lib/loaiPhong'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -100,7 +101,7 @@ export async function GET(request) {
     }
     // Phòng HCNS và Kinh doanh không làm tờ khai → loại khỏi báo cáo cho khỏi nhiễu,
     // giống cách KPI và công nợ đang loại.
-    const phongBoQua = new Set(dsRooms.filter(r => ['hcns', 'kinhdoanh'].includes(r.type)).map(r => r.id))
+    const phongBoQua = new Set(dsRooms.filter(r => laPhongNgoaiNghiepVu(r.type)).map(r => r.id))
     clients = clients.filter(c => !phongBoQua.has(phongCuaCty.get(c.id)))
     if (roomId) clients = clients.filter(c => phongCuaCty.get(c.id) === roomId)
     if (staffId) clients = clients.filter(c => c.assigned_to === staffId)

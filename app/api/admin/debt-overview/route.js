@@ -6,6 +6,7 @@ import { dueFeeMonthsCount, resolveFeeForMonth } from '@/lib/feeDue'
 import { callerHasPermission } from '@/lib/serverAuth'
 import { tinhDongTienPhong, gopDongTien } from '@/lib/dongTienPhong'
 import { loadHcnsFees } from '@/lib/hcnsPhiCongTy'
+import { LOC_PHONG_NGOAI } from '@/lib/loaiPhong'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -60,7 +61,7 @@ export async function GET(request) {
     const thangCuoi = dsThang[dsThang.length - 1]
     try {
       const [{ data: rl }, { data: sl }] = await Promise.all([
-        supabase.from('rooms').select('id, name, type').not('type', 'in', '(hcns,kinhdoanh)').order('name'),
+        supabase.from('rooms').select('id, name, type').not('type', 'in', LOC_PHONG_NGOAI).order('name'),
         supabase.from('staff').select('id, full_name, room_id'),
       ])
       const COLS = 'id, name, tax_code, assigned_to, monthly_fee, other_debt, report_type, fee_period, status, client_code, contract_start, created_at'
@@ -102,7 +103,7 @@ export async function GET(request) {
   const [{ data: roomList }, { data: staffList }, { data: clientList }, feesKetoan, feesKhach, { data: secondaryRows }, feePlanRows, changeLogRows, rolloverRows] = await Promise.all([
     // Công nợ HCNS theo dõi riêng ở trang /hcns, không trộn vào công nợ phòng kế toán. Phòng Kinh
     // doanh không phụ trách công ty nào nên cũng loại ra.
-    supabase.from('rooms').select('id, name, type').not('type', 'in', '(hcns,kinhdoanh)').order('name'),
+    supabase.from('rooms').select('id, name, type').not('type', 'in', LOC_PHONG_NGOAI).order('name'),
     supabase.from('staff').select('id, full_name, room_id').order('full_name'),
     supabase.from('clients').select('id, name, tax_code, monthly_fee, other_debt, report_type, fee_period, assigned_to, status, contract_start, created_at').eq('status', 'active'),
     fetchAllRows(() => supabase.from('service_fees').select('client_id, amount').eq('year', year).in('month', months).eq('type', 'ketoan')),

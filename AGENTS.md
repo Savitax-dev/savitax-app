@@ -202,7 +202,8 @@ Khách tiềm năng + báo giá SVT.MB03 + báo cáo, dựng 2026-09-11 (commit 
   "Tình trạng" của danh sách báo giá (action `stage`) → trạng thái HĐ của báo giá đi theo (`contractForStage`).
   Tự đẩy chỉ đi TIẾN. Báo cáo: phễu 6 bước lũy kế + bảng tình trạng hiện tại (`lib/salesReport.js`).
 - **Dò trùng**: `phone_norm` / `tax_norm` (MST bỏ số 0 đầu), so cả với `clients` đang phục vụ.
-- Phòng `rooms.type='kinhdoanh'` bị loại khỏi KPI/công nợ phòng nghiệp vụ như `hcns`; người chỉ thuộc phòng
+- Phòng `rooms.type='kinhdoanh'` (và `phaply` — Phòng Pháp lý, sql/43, 31/10/2026, tạm để gán nhân viên) bị loại khỏi KPI/công
+  nợ phòng nghiệp vụ như `hcns` — danh sách DUY NHẤT ở `lib/loaiPhong.js` (`PHONG_NGOAI_NGHIEP_VU`); người chỉ thuộc phòng
   KD/HCNS ẩn phân khu Kế toán (`/api/admin/me` → `noAccounting`).
 - Giao diện riêng (phương án B "Xanh báo giá"): `app/sales/sales.css` (mọi selector dưới `.sales-ui`),
   `app/sales/layout.js` chỉ khai biến font Be Vietnam Pro / IBM Plex Mono — menu trái dùng chung không đổi.
