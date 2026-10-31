@@ -102,9 +102,9 @@ export default function CuaToi({ thangDuocKhai }) {
             )
           })}
         </div>
-        {d && <span className={'text-sm rounded-full border px-3 py-1 font-medium ' + tt.lop}>
+        {d && !d.khongChamCong && <span className={'text-sm rounded-full border px-3 py-1 font-medium ' + tt.lop}>
           <span className={'inline-block w-2 h-2 rounded-full mr-1.5 align-middle ' + tt.cham} />
-          {tt.nhan}{khoa && d.data.xac_nhan_luc ? ' · ' + new Date(d.data.xac_nhan_luc).toLocaleDateString('vi-VN') : ''}
+          {tt.nhan}{khoa && d.data?.xac_nhan_luc ? ' · ' + new Date(d.data.xac_nhan_luc).toLocaleDateString('vi-VN') : ''}
         </span>}
       </div>
 
