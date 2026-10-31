@@ -17,6 +17,10 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
 ## Quy tắc đã chốt (đổi gì thì sửa đúng file của bước đó)
 - **Phòng remote** (`rooms.type = 'remote'`: Danxia, Dakshin, CTV Savitax) KHÔNG tính lương trên app: không chấm công,
   không bảng lương, không KPI phòng (anh chốt 23/10/2026).
+- **Quản trị (role `admin`) KHÔNG chấm công** (anh chốt 31/10/2026: Nguyễn Hồng Ân, Đinh Thị Huyền, Đặng Thị Huyền Trang) —
+  không chấm máy, không tự khai, không hiện ở danh sách chấm công phòng / "không có trong file", TRỪ khi đã đặt lương trên
+  app (cùng luật vào bảng lương). `boChamCongQuanTri` ở `api/admin/luong/route.js`. Phòng Pháp lý (NV06, NV10, NV11, NV42
+  trong file máy) chưa có trên app — giai đoạn 2 mới thêm, nhập file sẽ báo "Không có trên app" là đúng.
 - **Nhập file máy chấm công** (`mayChamCong.js`, sql/38). Từ T10/2026 (anh gửi 31/10) đọc sheet **"Bảng chấm công chi
   tiết_XuLy"** do HCNS xử lý (`mau = 'xuly'`, nhận ra nhờ cột "Tổng"): đi làm = **Tổng − Nghỉ phép** (Tổng = HC + Onl, đã gồm
   thứ Bảy VÀ ngày phép — T10: Tổng + không lương = 27 = công chuẩn, 35/36 người); phép = cột Nghỉ phép (ĐÃ gồm phép đột xuất

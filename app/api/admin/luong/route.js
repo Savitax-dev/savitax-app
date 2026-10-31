@@ -25,6 +25,12 @@ import { nhapHoSo } from '@/lib/luong/nhapHoSo'
 
 // Phòng remote KHÔNG tính lương trên app (anh chốt 23/10/2026): không chấm công, không bảng lương.
 const laRemote = s => s?.rooms?.type === 'remote'
+// Quản trị (role admin) KHÔNG chấm công (anh chốt 31/10/2026 — ban giám đốc / quản trị: không chấm máy, không tự khai),
+// TRỪ khi đã đặt lương trên app — cùng luật vào bảng lương ở lib/luong/bangLuong.js. Trả hàm s → true nếu bỏ chấm công.
+async function boChamCongQuanTri(supabase) {
+  const coLuong = new Set((await docHetLuong(supabase)).map(l => l.staff_id))
+  return s => s?.role === 'admin' && !coLuong.has(s.id)
+}
 const MA_NV_HOP_LE = /^[\p{L}\p{N}._\-/]{1,20}$/u
 // Lịch sử lương — lật trang có .order('id') (PostgREST cắt im lặng ở 1000 dòng).
 async function docHetLuong(supabase) {
@@ -201,8 +207,9 @@ export async function GET(request) {
       const { data } = await supabase.from('luong_cham_cong').select('*')
         .eq('staff_id', caller.staffId).eq('nam', nt.nam).eq('thang', nt.thang).maybeSingle()
       const duocKhai = thangDuocKhai().some(t => t.nam === nt.nam && t.thang === nt.thang)
-      const { data: toi } = await supabase.from('staff').select('rooms(type)').eq('id', caller.staffId).maybeSingle()
-      return Response.json({ data: data || null, ngayCong: cc, ngayLe: le, duocKhai, khongTinhLuong: laRemote(toi) })
+      const { data: toi } = await supabase.from('staff').select('id, role, rooms(type)').eq('id', caller.staffId).maybeSingle()
+      const quanTri = toi?.role === 'admin' && (await boChamCongQuanTri(supabase))(toi)
+      return Response.json({ data: data || null, ngayCong: cc, ngayLe: le, duocKhai, khongTinhLuong: laRemote(toi), khongChamCong: quanTri })
     }
 
     if (viec === 'phong') {
@@ -213,7 +220,8 @@ export async function GET(request) {
       if (!quyen.view) qs = qs.in('room_id', phongTruong)
       const { data: tatCa, error } = await qs
       if (error) return loi(error.message, 500)
-      const ds = (tatCa || []).filter(s => !laRemote(s))
+      const boQuanTri = await boChamCongQuanTri(supabase)
+      const ds = (tatCa || []).filter(s => !laRemote(s) && !boQuanTri(s))
       const ids = ds.map(s => s.id)
       const hs = await supabase.from('staff').select('id, ma_nhan_vien, cham_cong_may').in('id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000'])
       const hoSo = new Map((hs.error ? [] : hs.data || []).map(x => [x.id, x]))
@@ -544,7 +552,8 @@ export async function POST(request) {
       }
       const dsFile = Array.isArray(body.dong) ? body.dong.slice(0, 500) : []
       if (!dsFile.length) return loi('File không có dòng nhân viên nào')
-      const { data: st, error: eSt } = await supabase.from('staff').select('id, full_name, is_active, ma_nhan_vien, cham_cong_may, rooms(type)')
+      const boQuanTri = await boChamCongQuanTri(supabase)
+      const { data: st, error: eSt } = await supabase.from('staff').select('id, full_name, role, is_active, ma_nhan_vien, cham_cong_may, rooms(type)')
       if (eSt) return loi(/ma_nhan_vien|cham_cong_may/.test(eSt.message) ? 'Chưa chạy sql/38_luong_ma_nv_may_cham_cong.sql' : eSt.message, 500)
       const dang = (st || []).filter(s => s.is_active)
       const theoMa = new Map(dang.filter(s => s.ma_nhan_vien).map(s => [s.ma_nhan_vien.toUpperCase(), s]))
@@ -581,6 +590,7 @@ export async function POST(request) {
         daDung.add(s.id)
         Object.assign(r, { staff_id: s.id, tenApp: s.full_name, cach, maApp: s.ma_nhan_vien || null })
         if (laRemote(s)) { ketQua.push({ ...r, tt: 'remote' }); continue }
+        if (boQuanTri(s)) { ketQua.push({ ...r, tt: 'quan_tri' }); continue }
         if (s.cham_cong_may === false) { ketQua.push({ ...r, tt: 'tu_khai' }); continue }
         const moi = quyDoiMay(sach, thuBay, mau)
         const c = cuMap.get(s.id)
@@ -592,7 +602,7 @@ export async function POST(request) {
         r.tt = !c ? 'moi' : c.trang_thai === 'da_xac_nhan' ? 'da_xac_nhan' : 'cap_nhat'
         ketQua.push(r)
       }
-      const khongCoTrongFile = dang.filter(s => !laRemote(s) && s.cham_cong_may !== false && !daDung.has(s.id)).map(s => s.full_name).sort((a, b) => a.localeCompare(b, 'vi'))
+      const khongCoTrongFile = dang.filter(s => !laRemote(s) && !boQuanTri(s) && s.cham_cong_may !== false && !daDung.has(s.id)).map(s => s.full_name).sort((a, b) => a.localeCompare(b, 'vi'))
       if (!body.ghi) return Response.json({ preview: true, chuan, thuBay, mau, dong: ketQua, khongCoTrongFile })
 
       const ghiDe = !!body.ghiDeXacNhan

@@ -37,7 +37,7 @@ export default function CuaToi({ thangDuocKhai }) {
   const tuMay = d?.data?.nguon === 'may_cham_cong'
   const may = d?.data?.may || null
   const daBaoSai = d?.data?.trang_thai === 'bao_sai'
-  const khoa = d?.data?.trang_thai === 'da_xac_nhan' || tuMay || !!d?.khongTinhLuong
+  const khoa = d?.data?.trang_thai === 'da_xac_nhan' || tuMay || !!d?.khongTinhLuong || !!d?.khongChamCong
   const ttGoc = TRANG_THAI[d ? trangThaiCua(d.data) : 'chua']
   const tt = daBaoSai ? { ...ttGoc, nhan: 'Đã báo sai', lop: 'bg-rose-100 text-rose-800 border-rose-200', cham: 'bg-rose-500' }
     : tuMay && d?.data?.trang_thai === 'nhap' ? { ...ttGoc, nhan: 'Chờ bạn xác nhận', lop: 'bg-cyan-100 text-cyan-800 border-cyan-200', cham: 'bg-cyan-500' } : ttGoc
@@ -109,6 +109,7 @@ export default function CuaToi({ thangDuocKhai }) {
       </div>
 
       {!d && !msg && <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-400">Đang tải…</div>}
+      {d?.khongChamCong && <div className="rounded-2xl border border-sky-200 bg-sky-50 text-sky-900 px-4 py-3 text-sm">Tài khoản <b>Quản trị</b> không cần chấm công.</div>}
       {d?.khongTinhLuong && <div className="rounded-2xl border border-sky-200 bg-sky-50 text-sky-900 px-4 py-3 text-sm">Phòng của bạn là phòng <b>remote</b> — không chấm công và không tính lương trên app.</div>}
       {d && tuMay && (
         <div className={'rounded-2xl border px-4 py-3 text-sm ' + (daBaoSai ? 'border-rose-200 bg-rose-50 text-rose-900' : 'border-cyan-200 bg-cyan-50 text-cyan-900')}>

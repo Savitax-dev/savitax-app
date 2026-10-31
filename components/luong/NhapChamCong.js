@@ -14,6 +14,7 @@ const NHAN = {
   khong_thay: ['Không có trên app', 'bg-gray-100 text-gray-600 border-gray-200'],
   remote: ['Phòng remote — bỏ qua', 'bg-sky-50 text-sky-700 border-sky-200'],
   tu_khai: ['Tự khai — bỏ qua', 'bg-sky-50 text-sky-700 border-sky-200'],
+  quan_tri: ['Quản trị — không chấm công', 'bg-sky-50 text-sky-700 border-sky-200'],
 }
 const fmt = n => n == null ? '—' : Number(n).toLocaleString('vi-VN')
 
