@@ -235,7 +235,7 @@ export async function GET(request) {
         data: ds.map(s => ({
           staff_id: s.id, full_name: s.full_name, room_id: s.room_id, phong: s.rooms?.name || '',
           maNv: hoSo.get(s.id)?.ma_nhan_vien || null, chamCongMay: hoSo.get(s.id)?.cham_cong_may !== false,
-          truongPhong: ['leader', 'hcns_leader', 'sales_leader'].includes(s.role),
+          truongPhong: ['leader', 'hcns_leader', 'sales_leader', 'phaply_leader'].includes(s.role),
           duocSua: quyen.admin || quyen.suaCong || phongTruong.includes(s.room_id),
           cong: map.get(s.id) || null,
         })),
