@@ -345,8 +345,8 @@ export default function TrangTaiFile() {
           chung.
         </p>
         <p className="text-xs text-gray-400 mb-4">
-          Đang lưu <b>file XML gốc</b> của cơ quan thuế. Phần app tự dựng PDF <b>tạm tắt</b> để soát
-          lại cho đúng mẫu — kế toán vẫn in tay từ HTKK như trước.
+          Lưu <b>file XML gốc</b> của cơ quan thuế, kèm <b>bản PDF đúng mẫu cổng</b> cho tờ khai{' '}
+          <b>01/GTGT</b> (không có phụ lục) và <b>05/KK-TNCN</b>. Mẫu khác và thông báo hiện chỉ lưu XML.
         </p>
 
         {!tienIch?.co && (

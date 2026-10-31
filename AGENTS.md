@@ -244,8 +244,12 @@ hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công 
   mã KH + `_BSLn`. Nhân viên **tự trỏ thư mục từng công ty** (File System Access API, tay lưu trong
   IndexedDB) — không dò tự động; app cảnh báo khi hai công ty trỏ trùng nhưng **không chặn**.
 - **Cổng trả TỜ KHAI dạng .zip** chứa XML tên máy (mở nén bằng `pizzip` rồi đổi tên), **thông báo
-  dạng .xml**. ⛔ **Phần dựng PDF ĐANG TẮT** (cờ `DUNG_PDF` ở `lib/tokhaiTaiFileClient.js`): bản in
-  còn sai, và chưa từng có bản gốc cơ quan thuế phát để đối chiếu. Đừng bật lại khi chưa có bản gốc.
+  dạng .xml**. ✅ **PDF tờ khai ĐÚNG MẪU cổng** (31/10/2026, cờ `DUNG_PDF_MAU`, `lib/tokhaiPdfMau.js`): chép
+  theo bản PDF cổng in từ XML (PD4ML) anh gửi — **chỉ 01/GTGT không phụ lục + 05/KK-TNCN (TT80)**, đã so từng cụm
+  chữ với bản gốc (`node scripts/test-tokhai-pdf-mau.mjs <xml> <pdf gốc>`, file thật để ngoài repo). Mẫu mới / phụ lục
+  (vd giảm thuế NQ 142) phải có bản PDF cổng in để đo, chưa có thì CHỈ lưu XML. ⚠ Nhúng NGUYÊN phông (~0,9 MB/file):
+  bản cắt gọn (`subset: true`) của pdf-lib 1.17 + fontkit 1.1.1 làm HỎNG phông Tinos (mất nét chữ, đọc lại báo lỗi) —
+  bộ dựng cũ `lib/tokhaiPdf.js` dính lỗi này. ⛔ PDF **thông báo** + trang bìa cũ vẫn TẮT (cờ `DUNG_PDF`): chưa có bản gốc.
 - **Hộ kinh doanh**: `clients.is_hkd` (ô tick ở hồ sơ công ty). Từ 28/10/2026 (anh chốt, `sql/41`):
   nộp **01/CNKD** (TT40/2021, gộp GTGT + TNCN chủ hộ, kỳ/hạn như 01/GTGT); **05/KK-TNCN và 01/GTGT CHỈ
   sinh lịch khi hộ đã TỪNG nộp loại đó** trên cổng (có người lao động…), không quyết toán năm; doanh
