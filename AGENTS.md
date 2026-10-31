@@ -248,9 +248,16 @@ hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công 
   `NĂM_2026`; chưa có mới tạo `Năm <năm>`. Quy ước lưu file thư mục 1–12 cho nhân viên: `docs/quy-uoc-luu-ho-so.md`.
 - **Cổng trả TỜ KHAI dạng .zip** chứa XML tên máy (mở nén bằng `pizzip` rồi đổi tên), **thông báo
   dạng .xml**. ✅ **PDF tờ khai ĐÚNG MẪU cổng** (31/10/2026, cờ `DUNG_PDF_MAU`, `lib/tokhaiPdfMau.js`): chép
-  theo bản PDF cổng in từ XML (PD4ML) anh gửi — **chỉ 01/GTGT không phụ lục + 05/KK-TNCN (TT80)**, đã so từng cụm
+  theo bản PDF cổng in từ XML (PD4ML) anh gửi — **01/GTGT + 05/KK-TNCN (TT80)**, đã so từng cụm
   chữ với bản gốc (`node scripts/test-tokhai-pdf-mau.mjs <xml> <pdf gốc>`, file thật để ngoài repo). Mẫu mới / phụ lục
-  (vd giảm thuế NQ 142) phải có bản PDF cổng in để đo, chưa có thì CHỈ lưu XML. Thêm **thông báo CHẤP NHẬN 01-2/TB-TĐT**
+  (vd giảm thuế NQ 142) phải có bản PDF cổng in để đo, chưa có thì CHỈ lưu XML.
+  **HAI MẪU, chọn theo phiên bản XML** (anh chốt 31/10: "QUANG là mới nhất, PLATINUM cũ rồi"): XML 01/GTGT ≤ 2.7.4 /
+  05/KK ≤ 2.5.1 in mẫu cũ (PLATINUM); bản sau in mẫu mới (QUANG 2.8.3 / 2.9.3): ô Mẫu số dời phải, [11a]/[07]
+  "Xã/phường/đặc khu", cột khác, hàng 3 dòng 42,25, 05/KK thêm hàng 4.1 [25.1], khối chữ ký mới + dòng xanh "Ký điện tử
+  bởi" (phông Arimo, SIL OFL, ở public/fonts) khi XML có chữ ký số. Mẫu mới dựng được **phụ lục giảm thuế GTGT NQ
+  204/2025** (PL_NQ142_GTGT đủ mua vào + bán ra, kỳ từ 07/2025) — trang riêng, đánh số riêng. Phụ lục NQ 142/174 (kỳ trước
+  07/2025) và mẫu cũ có phụ lục: chưa có bản gốc → chỉ XML. Khác bản cổng duy nhất: cổng cắt đôi một hàng bảng qua 2 trang,
+  app chuyển nguyên hàng sang trang sau. Thêm **thông báo CHẤP NHẬN 01-2/TB-TĐT**
   (maTBao 844, trạng thái Y) chép theo trang cổng anh in. **Thông báo TIẾP NHẬN (843) KHÔNG tải nữa** (route tai-file bỏ
   qua, anh chốt 31/10). ⚠ Phông: `subset: true` của pdf-lib 1.17 + fontkit 1.1.1 làm HỎNG Tinos (mất chữ có dấu, đọc lại
   báo lỗi — bộ dựng cũ `lib/tokhaiPdf.js` dính lỗi này) → tự cắt bằng `lib/catPhong.js` (giữ nguyên số hiệu nét chữ,
