@@ -346,7 +346,8 @@ export default function TrangTaiFile() {
         </p>
         <p className="text-xs text-gray-400 mb-4">
           Lưu <b>file XML gốc</b> của cơ quan thuế, kèm <b>bản PDF đúng mẫu cổng</b> cho tờ khai{' '}
-          <b>01/GTGT</b> (không có phụ lục) và <b>05/KK-TNCN</b>. Mẫu khác và thông báo hiện chỉ lưu XML.
+          <b>01/GTGT</b> (không có phụ lục), <b>05/KK-TNCN</b> và <b>thông báo chấp nhận</b>. Mẫu khác chỉ lưu XML.
+          Thông báo tiếp nhận không tải nữa.
         </p>
 
         {!tienIch?.co && (

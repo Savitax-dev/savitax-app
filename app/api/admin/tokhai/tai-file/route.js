@@ -423,7 +423,9 @@ function tiepThongBao(p, ghiFile) {
   if (p.viThongBao < ds.length) {
     const tb = ds[p.viThongBao]
     p.viThongBao++
-    if (!tb.portalId) return tiepThongBao(p, ghiFile)
+    // Thông báo TIẾP NHẬN (TBTN) không tải nữa — anh bỏ 31/10/2026, chỉ giữ thông báo CHẤP NHẬN. Bớt
+    // luôn một lượt gọi cổng mỗi hồ sơ. Ngày tiếp nhận vẫn có từ trang chi tiết lúc đồng bộ.
+    if (!tb.portalId || tb.loai === 'tiep_nhan') return tiepThongBao(p, ghiFile)
     p.buoc = 'tai_thong_bao'
     return traYeuCau(p, {
       viec: 'goi', buoc: p.buoc, yeuCau: yc.taiThongBao(p.tokenTai, tb.portalId, hoSoHienTai(p)?.nguon),

@@ -247,9 +247,11 @@ hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công 
   dạng .xml**. ✅ **PDF tờ khai ĐÚNG MẪU cổng** (31/10/2026, cờ `DUNG_PDF_MAU`, `lib/tokhaiPdfMau.js`): chép
   theo bản PDF cổng in từ XML (PD4ML) anh gửi — **chỉ 01/GTGT không phụ lục + 05/KK-TNCN (TT80)**, đã so từng cụm
   chữ với bản gốc (`node scripts/test-tokhai-pdf-mau.mjs <xml> <pdf gốc>`, file thật để ngoài repo). Mẫu mới / phụ lục
-  (vd giảm thuế NQ 142) phải có bản PDF cổng in để đo, chưa có thì CHỈ lưu XML. ⚠ Nhúng NGUYÊN phông (~0,9 MB/file):
-  bản cắt gọn (`subset: true`) của pdf-lib 1.17 + fontkit 1.1.1 làm HỎNG phông Tinos (mất nét chữ, đọc lại báo lỗi) —
-  bộ dựng cũ `lib/tokhaiPdf.js` dính lỗi này. ⛔ PDF **thông báo** + trang bìa cũ vẫn TẮT (cờ `DUNG_PDF`): chưa có bản gốc.
+  (vd giảm thuế NQ 142) phải có bản PDF cổng in để đo, chưa có thì CHỈ lưu XML. Thêm **thông báo CHẤP NHẬN 01-2/TB-TĐT**
+  (maTBao 844, trạng thái Y) chép theo trang cổng anh in. **Thông báo TIẾP NHẬN (843) KHÔNG tải nữa** (route tai-file bỏ
+  qua, anh chốt 31/10). ⚠ Phông: `subset: true` của pdf-lib 1.17 + fontkit 1.1.1 làm HỎNG Tinos (mất chữ có dấu, đọc lại
+  báo lỗi — bộ dựng cũ `lib/tokhaiPdf.js` dính lỗi này) → tự cắt bằng `lib/catPhong.js` (giữ nguyên số hiệu nét chữ,
+  dựng 2 lượt), nhúng `subset: false`: ~60–80 KB/file, ảnh in giống hệt bản nhúng nguyên. ⛔ Bộ dựng cũ (cờ `DUNG_PDF`) vẫn TẮT.
 - **Hộ kinh doanh**: `clients.is_hkd` (ô tick ở hồ sơ công ty). Từ 28/10/2026 (anh chốt, `sql/41`):
   nộp **01/CNKD** (TT40/2021, gộp GTGT + TNCN chủ hộ, kỳ/hạn như 01/GTGT); **05/KK-TNCN và 01/GTGT CHỈ
   sinh lịch khi hộ đã TỪNG nộp loại đó** trên cổng (có người lao động…), không quyết toán năm; doanh
