@@ -238,7 +238,7 @@ export default function Sidebar({ onClose }) {
   // khu Kế toán để tích thêm cho kế toán / trưởng phòng kế toán.
   const canBankReconcile   = can(role, 'bank_reconcile', permData)
   // Chấm công & Lương (sql/31) — `cham_cong` gán sẵn cho mọi vai trò; chưa chạy SQL thì quyền không tồn tại, mục tự ẩn.
-  const canChamCong        = can(role, 'cham_cong', permData) || can(role, 'view_payroll', permData)
+  const canChamCong        = can(role, 'cham_cong', permData) || can(role, 'view_payroll', permData) || can(role, 'cham_cong_toan_cty', permData)
   const showAdminSection = canManageRooms || canManageStaff || canManageClients || canManageChecklist || canViewAllDebt || canManageDatabase || canManageRoles
   // Khu HCNS tự ẩn với người không có quyền — bản clone không cài module thì quyền này không tồn
   // tại nên can() trả false, khu biến mất mà không phải sửa code.

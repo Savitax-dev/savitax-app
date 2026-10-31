@@ -215,9 +215,9 @@ export async function GET(request) {
     if (viec === 'phong') {
       // Phạm vi: quản trị / view_payroll → mọi nhân viên; trưởng phòng → nhân viên phòng mình LÀM TRƯỞNG.
       const phongTruong = roomsWithRole(caller, ['leader'])
-      if (!quyen.view && !phongTruong.length) return loi('Không đủ quyền xem chấm công của phòng', 403)
+      if (!quyen.congToanCty && !phongTruong.length) return loi('Không đủ quyền xem chấm công của phòng', 403)
       let qs = supabase.from('staff').select('id, full_name, room_id, role, rooms(name, type)').eq('is_active', true).order('full_name')
-      if (!quyen.view) qs = qs.in('room_id', phongTruong)
+      if (!quyen.congToanCty) qs = qs.in('room_id', phongTruong)
       const { data: tatCa, error } = await qs
       if (error) return loi(error.message, 500)
       const boQuanTri = await boChamCongQuanTri(supabase)
@@ -231,12 +231,12 @@ export async function GET(request) {
       const map = new Map((cong || []).map(c => [c.staff_id, c]))
       return Response.json({
         ngayCong: cc, ngayLe: le,
-        nhapDuoc: quyen.manage,
+        nhapDuoc: quyen.nhapCong,
         data: ds.map(s => ({
           staff_id: s.id, full_name: s.full_name, room_id: s.room_id, phong: s.rooms?.name || '',
           maNv: hoSo.get(s.id)?.ma_nhan_vien || null, chamCongMay: hoSo.get(s.id)?.cham_cong_may !== false,
           truongPhong: ['leader', 'hcns_leader', 'sales_leader'].includes(s.role),
-          duocSua: quyen.admin || phongTruong.includes(s.room_id),
+          duocSua: quyen.admin || quyen.suaCong || phongTruong.includes(s.room_id),
           cong: map.get(s.id) || null,
         })),
       })
@@ -419,8 +419,8 @@ export async function POST(request) {
       const { data: cu } = await supabase.from('luong_cham_cong').select('*').eq('id', body.id).maybeSingle()
       if (!cu) return loi('Không tìm thấy bảng công')
       const { data: nv } = await supabase.from('staff').select('room_id').eq('id', cu.staff_id).maybeSingle()
-      const duoc = quyen.admin || roomsWithRole(caller, ['leader']).includes(nv?.room_id)
-      if (!duoc) return loi('Chỉ trưởng phòng của nhân viên này hoặc quản trị được sửa', 403)
+      const duoc = quyen.admin || quyen.suaCong || roomsWithRole(caller, ['leader']).includes(nv?.room_id)
+      if (!duoc) return loi('Chỉ trưởng phòng của nhân viên này, người có quyền Chấm công toàn công ty hoặc quản trị được sửa', 403)
       if (cu.staff_id === caller.staffId && !quyen.admin) return loi('Không tự sửa bảng công của chính mình — nhờ quản trị', 403)
       const lyDo = String(body.ly_do || '').trim()
       if (lyDo.length < 5) return loi('Ghi lý do sửa (ít nhất 5 ký tự)')
@@ -543,7 +543,7 @@ export async function POST(request) {
     // Trình duyệt đọc file (lib/luong/mayChamCong.js) rồi gửi các dòng lên. ghi=false → chỉ xem trước.
     // Ghi: số vào bảng công ở trạng thái NHÁP, nguồn "máy chấm công" → nhân viên Xác nhận / Báo sai.
     if (viec === 'nhap_may') {
-      if (!quyen.manage) return loi('Chỉ người quản lý lương được nhập file chấm công', 403)
+      if (!quyen.nhapCong) return loi('Chỉ người có quyền Chấm công toàn công ty / quản lý lương được nhập file chấm công', 403)
       const nt = namThang(body.nam, body.thang)
       if (!nt) return loi('Tháng không hợp lệ')
       const kyFile = String(body.tuNgay || '').slice(0, 7)

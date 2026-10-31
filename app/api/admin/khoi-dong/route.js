@@ -7,6 +7,7 @@ import { requireLogin } from '@/lib/serverAuth'
 import { roomsWithRole } from '@/lib/roleUnion'
 import { thongTinToi } from '@/lib/thongTinToi'
 import { thangDuocKhai } from '@/lib/luong/ngayCong'
+import { QUYEN_LUONG_DAY_DU, quyenTuKhoa } from '@/lib/luong/api'
 
 export async function GET() {
   const auth = await requireLogin()
@@ -25,12 +26,9 @@ export async function GET() {
   // Quyền phân hệ Tiền lương — ĐÚNG luật quyenCua (lib/luong/api.js) nhưng tính từ dữ liệu vừa đọc.
   const cua = c.roles?.length ? c.roles : [c.role].filter(Boolean)
   let ql
-  if (cua.includes('admin')) ql = { admin: true, cham_cong: true, view: true, manage: true }
-  else if (roles.some(r => cua.includes(r.id) && r.is_system)) ql = { admin: false, cham_cong: true, view: true, manage: true }
-  else {
-    const k = new Set(rolePermissions.filter(x => cua.includes(x.role_id)).map(x => x.permission_key))
-    ql = { admin: false, cham_cong: k.has('cham_cong'), view: k.has('view_payroll') || k.has('manage_payroll'), manage: k.has('manage_payroll') }
-  }
+  if (cua.includes('admin')) ql = { ...QUYEN_LUONG_DAY_DU, admin: true }
+  else if (roles.some(r => cua.includes(r.id) && r.is_system)) ql = { ...QUYEN_LUONG_DAY_DU }
+  else ql = quyenTuKhoa(new Set(rolePermissions.filter(x => cua.includes(x.role_id)).map(x => x.permission_key)))
   const quyenLuong = { ...ql, phongTruong: roomsWithRole(c, ['leader']), thangDuocKhai: thangDuocKhai() }
 
   return Response.json({ me, roles, rolePermissions, quyenLuong })

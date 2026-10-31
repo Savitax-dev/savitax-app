@@ -362,7 +362,9 @@ bộ quy tắc). Anh yêu cầu tách cho dễ sửa: đổi quy tắc bước n
 - Bước 4 `api/admin/luong/phieu` + `PhieuLuongCuaToi`: chốt → "Gửi nhân viên xác nhận"; mỗi người CHỈ thấy
   phiếu mình (máy chủ lọc theo người đăng nhập), Xác nhận / Báo sai kèm ghi chú. Mở chốt = thu hồi phiếu.
 - Quyền: `cham_cong` (mọi vai trò), `view_payroll` / `manage_payroll` (chỉ Nhân viên NB, anh tự cấp
-  thêm). Trưởng phòng thấy CÔNG của phòng mình nhưng KHÔNG thấy lương.
+  thêm). Trưởng phòng thấy CÔNG của phòng mình nhưng KHÔNG thấy lương. **`cham_cong_toan_cty`** (sql/42, 31/10/2026,
+  không gán sẵn): xem + nhập file máy + sửa công MỌI nhân viên, KHÔNG thấy lương — cho HCNS phụ trách chấm công. Luật quyền
+  một chỗ: `quyenTuKhoa` (`lib/luong/api.js`), `/api/admin/khoi-dong` dùng chung. Quản trị không chấm công trừ khi đã đặt lương.
 - Bộ kiểm: `node scripts/test-luong-ngay-cong.mjs`, `node --env-file=.env.local
   scripts/test-luong-thuong.mjs --that`. Dọn dữ liệu thử 1 tài khoản: `scripts/don-luong-tai-khoan-test.mjs`.
 - ⏳ Chưa làm (chờ anh thử): nạp cấp bậc + lương cho toàn bộ nhân viên (anh gửi file Excel nhân sự

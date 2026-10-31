@@ -14,7 +14,8 @@ import { layQuyenLuong } from '@/lib/khoiDong'
 // Chấm công & Lương (/luong) — bước 1 của phân hệ Tiền lương.
 //   Tab "Chấm công của tôi": mọi nhân viên tự khai ngày công, bấm xác nhận là khoá.
 //   Tab "Chấm công phòng": trưởng phòng xem + sửa (bắt buộc lý do) công của phòng mình làm trưởng;
-//                          ban lãnh đạo / kế toán nội bộ (view_payroll) xem cả công ty.
+//                          ban lãnh đạo / kế toán nội bộ (view_payroll) xem cả công ty; người có cham_cong_toan_cty
+//                          (sql/42, HCNS phụ trách chấm công) xem + nhập file máy + sửa công cả công ty, KHÔNG thấy lương.
 //   Tab "Cấp bậc & ngày lễ": người có manage_payroll thiết lập bảng cấp bậc và ngày nghỉ lễ.
 // Lương từng nhân viên đặt ở trang Quản lý nhân viên (cột "Cấp bậc · Lương").
 
@@ -37,7 +38,7 @@ export default function LuongPage() {
 
   const tabs = [
     quyen.cham_cong && ['cua_toi', 'Chấm công của tôi', '🗓️'],
-    (quyen.view || quyen.phongTruong?.length > 0) && ['phong', quyen.view ? 'Chấm công toàn công ty' : 'Chấm công phòng', '👥'],
+    (quyen.congToanCty || quyen.phongTruong?.length > 0) && ['phong', quyen.congToanCty ? 'Chấm công toàn công ty' : 'Chấm công phòng', '👥'],
     quyen.cham_cong && ['dvk', 'Thưởng dịch vụ khác', '🧾'],
     quyen.cham_cong && ['phieu', 'Phiếu lương của tôi', '📄'],
     quyen.view && ['bang_luong', 'Bảng lương', '💰'],
