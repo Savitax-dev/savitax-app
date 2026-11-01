@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
-import { resolveFeeForMonthWithSource } from '@/lib/feeDue'
+import { resolveFeeForMonthWithSource, feePeriodAt } from '@/lib/feeDue'
 import { checkPrevMonthUnpaid, prevMonthOf } from '@/lib/prevMonthDebt'
 import { evaluateCap, CAP_OK, CAP_UNVERIFIABLE } from '@/lib/feeCap'
 import { canWriteAccountingDebt } from '@/lib/debtScope'
@@ -35,6 +35,30 @@ export async function POST(request) {
     const canWrite = await canWriteAccountingDebt(supabase, auth.caller, clientId)
     if (!canWrite) {
       return Response.json({ error: 'Không đủ quyền cập nhật công nợ dịch vụ kế toán của công ty này' }, { status: 403 })
+    }
+
+    // ── Công ty thu phí THEO QUÝ: không ghi phí kế toán vào THÁNG GIỮA QUÝ (anh duyệt 01/11/2026) ──
+    // Kỳ thu của công ty quý là tháng cuối quý (3, 6, 9, 12) — tiền ghi vào tháng giữa quý không được tính cho quý
+    // nào (%-công nợ, chuyển nợ tồn chỉ nhìn tháng cuối quý), quý vẫn bị coi là chưa thu rồi chuyển thành NỢ TỒN OAN.
+    // Ca thật: PHƯƠNG NAM DD ghi 28/07 vào kỳ T7 và 31/10 vào kỳ T10 → nợ tồn oan 6.480.000. Kỳ thu xét theo LÚC ĐÓ
+    // (feePeriodAt — công ty mới đổi Tháng → Quý thì tháng cũ vẫn là kỳ tháng). Số 0 vẫn cho ghi (để xoá dòng ghi nhầm).
+    if (type === 'ketoan') {
+      const kyCanKiem = (Array.isArray(periods) && periods.length ? periods : [{ year, month, amount }])
+        .filter(p => Number(p.amount) > 0 && Number(p.month) % 3 !== 0)
+      if (kyCanKiem.length) {
+        const [{ data: cq }, { data: doiKy }] = await Promise.all([
+          supabase.from('clients').select('fee_period').eq('id', clientId).maybeSingle(),
+          supabase.from('client_change_log').select('old_value, changed_at').eq('client_id', clientId).eq('field', 'fee_period'),
+        ])
+        const sai = kyCanKiem.find(p => feePeriodAt(cq?.fee_period, doiKy || [], Number(p.year), Number(p.month)) === 'quarterly')
+        if (sai) {
+          const cuoiQuy = Math.ceil(Number(sai.month) / 3) * 3
+          return Response.json({
+            error: 'Công ty thu phí theo QUÝ — không ghi phí vào T' + sai.month + '/' + sai.year + ' (tháng giữa quý). '
+              + 'Tiền của quý này ghi vào T' + cuoiQuy + '/' + sai.year + ' (tháng cuối quý); tiền trả nợ các quý trước ghi ở mục "Nợ tồn cũ".',
+          }, { status: 400 })
+        }
+      }
     }
 
     // ── Ghi NHIỀU kỳ cùng lúc (khách trả gộp) ────────────────────────────────────
