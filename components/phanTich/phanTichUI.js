@@ -21,6 +21,7 @@ const MUC_SOAT = [
   { href: '/soatbaocao/soat-ky', nhan: 'Soát kỳ', mo: 'Soát từng tháng / quý: tờ khai ↔ bảng kê ↔ hóa đơn' },
   { href: '/soatbaocao/tang-truong', nhan: 'Tăng trưởng & phí', mo: '6 chỉ tiêu theo quý, căn cứ điều chỉnh phí' },
   { href: '/soatbaocao/nam', nhan: 'Soát xét năm', mo: 'BCTC ↔ CĐPS ↔ sổ sách ↔ tờ khai ↔ quyết toán cả năm, chỉ số tài chính' },
+  { href: '/soatbaocao/quy-uoc', nhan: '📘 Quy ước lưu hồ sơ', mo: 'Thư mục 1–12: lưu gì, ở đâu, đặt tên file thế nào', khongGiuCty: true },
 ]
 export function TabSoat({ giuCty }) {
   const pathname = usePathname()
@@ -28,7 +29,7 @@ export function TabSoat({ giuCty }) {
     <div className="flex flex-wrap gap-1 mb-4 border-b border-gray-200">
       {MUC_SOAT.map(m => {
         const dangMo = pathname === m.href
-        const href = giuCty && m.href !== '/soatbaocao' ? `${m.href}?cty=${giuCty}` : m.href
+        const href = giuCty && m.href !== '/soatbaocao' && !m.khongGiuCty ? `${m.href}?cty=${giuCty}` : m.href
         return (
           <Link key={m.href} href={href} title={m.mo}
             className={'px-3 py-2 text-sm rounded-t-lg border-b-2 -mb-px transition-colors ' + (dangMo
