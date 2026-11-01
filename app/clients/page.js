@@ -562,6 +562,7 @@ export default function ClientsPage() {
   const router = useRouter()
   const [myStaff, setMyStaff] = useState(null)
   const [canManageAll, setCanManageAll] = useState(false)
+  const [canDacThu, setCanDacThu] = useState(false)   // quyền cong_no_dac_thu (sql/45)
   const [clients, setClients] = useState([])
   const [allStaff, setAllStaff] = useState([])
   const [rooms, setRooms] = useState([])
@@ -709,6 +710,8 @@ export default function ClientsPage() {
       // canManageAll dùng để gate từng nút sửa cụ thể bên dưới.
       const allowed = await hasPermission(me.role, 'manage_clients')
       setCanManageAll(allowed)
+      // Khung "Công nợ đặc thù" (không VAT, gia hạn thu) — quyền riêng cong_no_dac_thu (sql/45), Quản trị luôn có
+      setCanDacThu(me.role === 'admin' || await hasPermission(me.role, 'cong_no_dac_thu'))
 
       const staffRes = await fetch('/api/admin/staff', { cache: 'no-store' })
       const staffJson = await staffRes.json()
@@ -1552,7 +1555,7 @@ export default function ClientsPage() {
                       </div>
                     )}
 
-                    {isAdmin && <CongNoDacThu key={client.id + '|' + (client.khong_vat ? 1 : 0) + '|' + (client.gia_han_thu_thang || 0)} client={client} onSaved={loadClients} />}
+                    {canDacThu && <CongNoDacThu key={client.id + '|' + (client.khong_vat ? 1 : 0) + '|' + (client.gia_han_thu_thang || 0)} client={client} onSaved={loadClients} />}
 
                     {/* Tax info */}
                     {(client.address || client.tax_status) && (

@@ -3,14 +3,15 @@
 //   - khong_vat: thu phí KHÔNG VAT → lương / hoa hồng / thưởng DVK không chia 1,08; phiếu ĐNTT không có dòng VAT
 //   - gia_han_thu_thang: admin cho khách trả chậm N tháng (phí kế toán) → lùi hạn sửa công nợ + hạn chuyển nợ tồn,
 //     kỳ đang gia hạn mà chưa thu đủ tạm không tính %-công nợ. Bật (N > 0) bắt buộc lý do.
-// CHỈ quản trị viên thật — đây là chỗ đổi thẳng số lương và %-KPI. Mọi lần đổi ghi client_change_log.
+// Quyền `cong_no_dac_thu` (sql/45 — gán sẵn Nhân viên NB, anh chốt 01/11/2026; Quản trị luôn có) — đây là chỗ đổi
+// thẳng số lương và %-KPI nên KHÔNG gán cho nhân viên / trưởng phòng. Mọi lần đổi ghi client_change_log.
 import { createClient } from '@supabase/supabase-js'
-import { requireAdmin } from '@/lib/serverAuth'
+import { callerHasPermission } from '@/lib/serverAuth'
 
 const loi = (error, status = 400) => Response.json({ error }, { status })
 
 export async function POST(request) {
-  const auth = await requireAdmin()
+  const auth = await callerHasPermission('cong_no_dac_thu')
   if (!auth.ok) return loi(auth.error, auth.status)
   let body
   try { body = await request.json() } catch { return loi('Thân yêu cầu không hợp lệ') }

@@ -1,5 +1,6 @@
 'use client'
-// Khung "Công nợ đặc thù" trong thẻ công ty (Danh sách công ty) — CHỈ quản trị viên thấy (anh chốt 01/11/2026).
+// Khung "Công nợ đặc thù" trong thẻ công ty (Danh sách công ty) — người có quyền `cong_no_dac_thu` (sql/45, gán sẵn
+// Nhân viên NB; Quản trị luôn có) mới thấy (anh chốt 01/11/2026).
 // Lưu qua /api/admin/clients/dac-thu. Quy tắc tính: lib/ctyDacThu.js.
 import { useState } from 'react'
 
@@ -32,7 +33,7 @@ export default function CongNoDacThu({ client, onSaved }) {
   )
   return (
     <div className="rounded-xl border border-violet-200 bg-violet-50/60 px-3 py-3 space-y-2.5 text-sm">
-      <div className="font-semibold text-violet-900">⚙️ Công nợ đặc thù <span className="font-normal text-xs text-violet-700">— chỉ quản trị viên</span></div>
+      <div className="font-semibold text-violet-900">⚙️ Công nợ đặc thù <span className="font-normal text-xs text-violet-700">— người có quyền &ldquo;Công nợ đặc thù&rdquo;</span></div>
       <label className="flex items-start gap-2 cursor-pointer">
         <input type="checkbox" className="mt-0.5" checked={f.khong_vat} onChange={e => setF(v => ({ ...v, khong_vat: e.target.checked }))} />
         <span><b>Thu phí không VAT</b> (không xuất hóa đơn)<span className="block text-xs text-gray-500">Doanh thu tính lương, hoa hồng giới thiệu, thưởng dịch vụ khác KHÔNG chia 1,08; phiếu ĐNTT không có dòng VAT 8%.</span></span>
