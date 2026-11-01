@@ -104,8 +104,9 @@ export async function GET(request) {
   const { data: txs0, error } = await q
   if (error) return Response.json({ error: error.message }, { status: 500 })
   // "Loại bỏ" (anh yêu cầu 01/11/2026): giao dịch không phải tiền khách (chuyển nội bộ, nộp tiền…) — đóng như "Bỏ qua"
-  // nhưng ghi chú bắt đầu bằng "Loại bỏ" thì ẨN hẳn khỏi trang. Dữ liệu vẫn giữ trong bảng để tra cứu.
-  const txs = (txs0 || []).filter(t => !(t.state === 'ignored' && /^Loại bỏ/.test(String(t.note || ''))))
+  // nhưng ghi chú bắt đầu bằng "Loại bỏ" thì ẨN với nhân viên / trưởng phòng; QUẢN TRỊ vẫn thấy (nhãn "Đã loại bỏ").
+  const laQuanTri = (auth.caller?.roles?.length ? auth.caller.roles : [auth.caller?.role]).includes('admin')
+  const txs = laQuanTri ? (txs0 || []) : (txs0 || []).filter(t => !(t.state === 'ignored' && /^Loại bỏ/.test(String(t.note || ''))))
 
   // Chỉ phân loại giao dịch còn mở; đã ghi / bỏ qua thì hiện đúng những gì đã làm.
   const open = (txs || []).filter(t => t.state === 'open')

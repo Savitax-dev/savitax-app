@@ -40,7 +40,7 @@ const ST = {
 // "ignored" gồm 2 việc khác hẳn nhau: xác nhận nhân viên đã ghi tay, và bỏ qua vì không phải phí
 // dịch vụ. Phân biệt bằng ghi chú lưu lúc đóng để người xem sau còn hiểu chuyện gì đã xảy ra.
 const pillLabel = (r) => r.status === 'posted' ? 'Đã ghi qua đối soát'
-  : r.status === 'ignored' ? (/ghi tay|khớp sổ/i.test(r.note || '') ? 'Đã khớp sổ' : 'Đã bỏ qua')
+  : r.status === 'ignored' ? (/^Loại bỏ/.test(r.note || '') ? 'Đã loại bỏ (chỉ quản trị thấy)' : /ghi tay|khớp sổ/i.test(r.note || '') ? 'Đã khớp sổ' : 'Đã bỏ qua')
   : 'Đã khớp sổ'
 const VIA = { code: ['qua Mã KH', 'bg-blue-50 text-blue-700'], mst: ['qua MST', 'bg-violet-50 text-violet-700'],
   name: ['qua Tên', 'bg-amber-50 text-amber-700'], manual: ['chọn tay', 'bg-gray-100 text-gray-600'] }
@@ -530,9 +530,9 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
                     className="px-3 py-1 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-40">Bỏ qua</button>
                 )}
                 {g !== 'done' && (
-                  <button disabled={busy} title="Không phải tiền khách (chuyển nội bộ, nộp tiền…) — ẩn hẳn khỏi trang Đối soát, dữ liệu vẫn lưu"
+                  <button disabled={busy} title="Không phải tiền khách (chuyển nội bộ, nộp tiền…) — ẩn với nhân viên, trưởng phòng; quản trị vẫn thấy"
                     onClick={async () => {
-                      if (!confirm('Loại bỏ giao dịch ' + Number(r.amount).toLocaleString('vi-VN') + 'đ khỏi trang Đối soát?\n\nDùng cho tiền KHÔNG phải phí khách (chuyển nội bộ, nộp tiền…). Giao dịch sẽ ẩn hẳn, dữ liệu vẫn lưu trong hệ thống.')) return
+                      if (!confirm('Loại bỏ giao dịch ' + Number(r.amount).toLocaleString('vi-VN') + 'đ khỏi trang Đối soát?\n\nDùng cho tiền KHÔNG phải phí khách (chuyển nội bộ, nộp tiền…). Nhân viên, trưởng phòng sẽ không thấy giao dịch này nữa; quản trị vẫn thấy.')) return
                       if (await act({ action: 'ignore', id: r.id, note: 'Loại bỏ — không phải tiền phí khách', userNote: note.trim() || undefined }, 'Đã loại bỏ')) setNote('')
                     }}
                     className="px-3 py-1 rounded-md border border-rose-200 bg-white text-rose-600 hover:bg-rose-50 disabled:opacity-40">🗑 Loại bỏ</button>
