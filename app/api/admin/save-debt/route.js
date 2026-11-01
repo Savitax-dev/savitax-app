@@ -54,8 +54,9 @@ export async function POST(request) {
         if (sai) {
           const cuoiQuy = Math.ceil(Number(sai.month) / 3) * 3
           return Response.json({
-            error: 'Công ty thu phí theo QUÝ — không ghi phí vào T' + sai.month + '/' + sai.year + ' (tháng giữa quý). '
-              + 'Tiền của quý này ghi vào T' + cuoiQuy + '/' + sai.year + ' (tháng cuối quý); tiền trả nợ các quý trước ghi ở mục "Nợ tồn cũ".',
+            error: 'Công ty thu phí theo QUÝ — kỳ thu là tháng cuối quý, không ghi phí vào T' + sai.month + '/' + sai.year + ' (tháng giữa quý). '
+              + 'Tiền của quý này — kể cả khách TRẢ TRƯỚC (vd tháng 9 trả luôn phần tháng 10) — ghi vào T' + cuoiQuy + '/' + sai.year
+              + ', app tính đúng cho quý đó. Tiền trả nợ các quý trước ghi ở mục "Nợ tồn cũ".',
           }, { status: 400 })
         }
       }

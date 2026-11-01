@@ -134,7 +134,12 @@ HCNS/Kinh doanh — bỏ `sql/21`, `app/bank`, `app/api/bank`, `app/api/admin/ba
 `lib/bank*.js`, `vps/`, mục menu trong `components/Sidebar.js` và `'bank_transactions'` trong danh sách
 backup. Quyền không tồn tại thì mục menu tự ẩn, backup tự bỏ qua bảng thiếu.
 
-- **Không có gì tự ghi công nợ.** VPS chỉ đẩy giao dịch vào bảng `bank_transactions` qua
+- **TỰ GHI có điều kiện** (anh duyệt 01/11/2026, `lib/bankAuto.js`, công tắc `TU_GHI_CONG_NO`): chạy khi VPS đẩy giao
+  dịch mới và khi mở trang /bank. CHỈ tự ghi lệnh "Sẵn sàng" nhận bằng MÃ KH / MST của công ty NỢ TỒN = 0đ, đề xuất không có
+  dòng nợ tồn (dùng đúng `executePlan`, `posted_by` trống, `post_detail.tuDong`). Khoản "Đã khớp sổ" (nhân viên đã ghi tay —
+  kể cả ghi tay vào Nợ tồn cũ đúng số tiền, −1..+7 ngày quanh lúc tiền về) thì TỰ KHOÁ (state `ignored`, ghi chú "Tự khớp
+  sổ"). Còn lại (nợ tồn > 0, nhận theo tên, thiếu / thừa…) vẫn chờ người bấm.
+- Trước 01/11/2026: không có gì tự ghi công nợ. VPS chỉ đẩy giao dịch vào bảng `bank_transactions` qua
   `/api/bank/incoming` (header `Authorization: Bearer $BANK_WEBHOOK_SECRET`, chống trùng bằng `ext_id`).
   Phân loại tính LẠI mỗi lần mở trang (không lưu) nên luôn khớp công nợ hiện tại; server tính lại đề
   xuất + so `planSignature` ngay trước khi ghi, lệch là từ chối, và `update ... eq('state','open')` làm

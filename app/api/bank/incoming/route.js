@@ -1,10 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { timingSafeEqual } from 'node:crypto'
+import { tuXuLyGiaoDich } from '@/lib/bankAuto'
 
 // POST /api/bank/incoming — VPS (/root/acb_zalo/app_sync.py) đẩy giao dịch TIỀN VÀO lên đây.
 //
 // Không dùng phiên đăng nhập: xác thực bằng header `Authorization: Bearer <BANK_WEBHOOK_SECRET>`.
-// Chỉ LƯU giao dịch, KHÔNG ghi gì vào công nợ — người có quyền bấm "Ghi" ở /bank mới ghi.
+// Lưu giao dịch rồi TỰ XỬ LÝ ngay (lib/bankAuto.js, anh duyệt 01/11/2026): lệnh "Sẵn sàng" của công ty nợ tồn 0đ thì
+// tự ghi công nợ, khoản nhân viên đã ghi tay thì tự khoá; còn lại chờ người xem ở /bank như cũ.
 //
 // Body: { transactions: [{ source: 'acb'|'tcb', ext_id, tx_time, amount, memo, account? }] }
 //   (gửi 1 giao dịch trần không bọc mảng cũng được)
@@ -70,6 +72,10 @@ export async function POST(request) {
       return Response.json({ error: error.message }, { status: 500 })
     }
     inserted = data?.length || 0
+    // Tự xử lý các giao dịch vừa nhận — lỗi ở đây KHÔNG làm hỏng việc nhận (VPS không gửi lại)
+    if (inserted) {
+      try { await tuXuLyGiaoDich(supabase, data.map(r => r.id)) } catch (e) { console.error('bank/incoming tuXuLy:', e?.message || e) }
+    }
   }
   // Giao dịch bị từ chối vì dữ liệu hỏng vẫn trả 200 — VPS không nên gửi lại mãi một dòng hỏng.
   return Response.json({ ok: true, received: list.length, inserted, duplicates: rows.length - inserted, rejected })

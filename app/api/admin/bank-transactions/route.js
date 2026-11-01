@@ -3,6 +3,7 @@ import { callerHasPermission } from '@/lib/serverAuth'
 import { classifyTransactions } from '@/lib/bankData'
 import { planSignature, ST_READY, ST_REVIEW } from '@/lib/bankMatch'
 import { executePlan } from '@/lib/bankPost'
+import { tuXuLyGiaoDich } from '@/lib/bankAuto'
 
 // Trang Đối soát ngân hàng (/bank) — quyền riêng `bank_reconcile` (sql/21_bank_transactions.sql).
 //
@@ -91,6 +92,10 @@ export async function GET(request) {
     return Response.json({ data: all })
   }
 
+  // Tự xử lý giao dịch còn mở trước khi hiện (lib/bankAuto.js): tự ghi lệnh "Sẵn sàng" của công ty nợ tồn 0đ, tự khoá
+  // khoản nhân viên đã ghi tay. Lỗi ở đây không được làm hỏng trang.
+  try { await tuXuLyGiaoDich(supabase) } catch (e) { console.error('tuXuLyGiaoDich:', e?.message || e) }
+
   const from = url.searchParams.get('from')
   const to = url.searchParams.get('to')
   let q = supabase.from('bank_transactions').select('*').order('tx_time', { ascending: false }).limit(1000)
@@ -141,10 +146,10 @@ export async function GET(request) {
     const base = {
       id: t.id, source: t.source, tx_time: t.tx_time, amount: Number(t.amount) || 0, memo: t.memo || '',
       account: t.account, state: t.state, note: t.note,
-      posted_at: t.posted_at, posted_by_name: staffNames.get(t.posted_by) || null, post_detail: t.post_detail,
+      posted_at: t.posted_at, posted_by_name: staffNames.get(t.posted_by) || (t.state !== 'open' && !t.posted_by && /^Tự /.test(t.note || '') ? 'Tự động' : null), post_detail: t.post_detail,
       logs: (logsByTx.get(t.id) || []).map(l => ({
         id: l.id, action: l.action, detail: l.detail, note: l.note,
-        at: l.created_at, by: staffNames.get(l.staff_id) || '—',
+        at: l.created_at, by: staffNames.get(l.staff_id) || (l.note === 'Tự động' ? 'Tự động' : '—'),
       })),
     }
     if (t.state !== 'open') {

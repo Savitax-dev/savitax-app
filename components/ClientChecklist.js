@@ -483,13 +483,19 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   // Phí ĐÚNG của tháng đang chọn trên thẻ công ty, theo từng mục công nợ. Mọi chỗ cần "phí của
   // kỳ này" phải đi qua đây — dùng thẳng client.monthly_fee sẽ ra phí SỐNG hiện tại và hiển thị
   // sai khi xem lại tháng cũ của công ty đã đổi phí.
+  // Tháng GHI phí kế toán: công ty thu theo QUÝ thì mọi tháng trong quý đều ghi / đọc ở THÁNG CUỐI QUÝ (kỳ thu) — tiền
+  // ghi vào tháng giữa quý không được tính cho quý nào và máy chủ đã chặn (save-debt, anh duyệt 01/11/2026). Xem T10
+  // thì đã thu = số ghi ở T12 (vd khách trả trước phần T10), lưu cũng vào T12.
+  const thangGhi = (type) => (type === 'ketoan' && client.fee_period === 'quarterly' ? Math.ceil(clientMonth / 3) * 3 : clientMonth)
+
   const feeForSelected = (type) => type === 'hcns'
     ? (hcnsFeeByPeriod[selYear + '-' + clientMonth] ?? (Number(hcnsClient?.hcns_fee) || 0))
-    : (feeByPeriod[selYear + '-' + clientMonth] ?? (Number(client.monthly_fee) || 0))
+    : (feeByPeriod[selYear + '-' + thangGhi(type)] ?? feeByPeriod[selYear + '-' + clientMonth] ?? (Number(client.monthly_fee) || 0))
 
   const recordedAmount = (type) => {
     if (!debtHistory) return 0
-    const rec = debtHistory.find(h => h.year === selYear && h.month === clientMonth && (h.type || 'ketoan') === type)
+    const m = thangGhi(type)
+    const rec = debtHistory.find(h => h.year === selYear && h.month === m && (h.type || 'ketoan') === type)
     return rec ? Number(rec.amount) || 0 : 0
   }
 
@@ -499,7 +505,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     // tiền hai lần (một ở kỳ gốc, một ở nợ tồn). Áp cho CẢ phí HCNS: từ khi phí HCNS cũng chuyển
     // nợ tồn (lib/hcnsRollover.js) thì mục này có đúng rủi ro như phí kế toán.
     // Gia hạn thu (lib/ctyDacThu.js) chỉ áp phí kế toán: hạn sửa lùi thêm N tháng
-    if ((debtType === 'ketoan' || debtType === 'hcns') && !isTrueAdmin && isPastEditDeadline(selYear, clientMonth, new Date(), 10, debtType === 'ketoan' ? (client?.gia_han_thu_thang || 0) : 0)) {
+    if ((debtType === 'ketoan' || debtType === 'hcns') && !isTrueAdmin && isPastEditDeadline(selYear, thangGhi(debtType), new Date(), 10, debtType === 'ketoan' ? (client?.gia_han_thu_thang || 0) : 0)) {
       alert([
         'Đã quá hạn cập nhật công nợ ' + (debtType === 'hcns' ? 'DV HCNS ' : '') +
           'của Tháng ' + clientMonth + '/' + selYear + '.',
@@ -554,7 +560,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
       const basePayload = {
         clientId:  client.id,
         year:      selYear,
-        month:     clientMonth,
+        month:     thangGhi(debtType),   // công ty quý: lưu vào tháng cuối quý (kỳ thu)
         amount:    paid,
         note:      debtNote || null,
         createdBy: userId,
@@ -1425,7 +1431,11 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
               // Kỳ ĐÃ chuyển nợ tồn: phần thiếu đã dời sang "Nợ tồn cũ" nên "còn phải thu" phải
               // lấy theo remaining_amount, KHÔNG lấy "phí trừ đã thu" — nếu không sẽ báo nợ oan
               // đúng khoản khách đã trả qua nợ tồn và nhân viên ghi thu lần hai (AGENTS.md).
-              const roll = isFeeType ? rolloverByPeriod[debtType + ':' + selYear + '-' + clientMonth] : null
+              const roll = isFeeType ? rolloverByPeriod[debtType + ':' + selYear + '-' + thangGhi(debtType)] : null
+              // Công ty quý, đang xem tháng GIỮA quý: phần phải thu TỚI HẾT tháng đang xem = phí quý ÷ 3 × số tháng đã qua
+              // của quý — trả đủ phần đó thì báo "đã thu đủ" 100% (anh yêu cầu 01/11/2026, ca PHƯƠNG NAM DD T10).
+              const giuaQuy = debtType === 'ketoan' && thangGhi('ketoan') !== clientMonth
+              const phanToiThang = giuaQuy ? Math.round(feeForSelected('ketoan') / 3 * (clientMonth - (thangGhi('ketoan') - 3))) : 0
               const remain = !isFeeType ? 0
                 : roll ? Math.max(0, roll.remaining)
                 : Math.max(0, fee - already)
@@ -1433,9 +1443,15 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
               const feePeriodQuarterly = debtType === 'hcns'
                 ? hcnsClient?.fee_period === 'quarterly'
                 : client.fee_period === 'quarterly'
+              // Tháng giữa quý: tiến độ tính theo phần TỚI HẾT tháng đang xem (đủ phần đó = 100%)
+              const xetThang = giuaQuy && !roll && phanToiThang > 0
+              const duThang = xetThang && already >= phanToiThang - 1
+              const pctVong = xetThang ? Math.min(100, Math.round(already / phanToiThang * 100))
+                : fee > 0 ? Math.min(100, Math.round((fee - remain) / fee * 100)) : 0
+              const xanh = remain === 0 || duThang
               return (
                 <div className={'flex items-center gap-3 px-3 py-2 rounded-lg text-xs ' +
-                  (already === 0 ? 'bg-gray-50' : remain === 0 ? 'bg-green-50' : 'bg-orange-50')}>
+                  (already === 0 ? 'bg-gray-50' : xanh ? 'bg-green-50' : 'bg-orange-50')}>
                   {isFeeType ? (
                     <>
                       <div className="flex-1 space-y-0.5">
@@ -1448,7 +1464,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                           <span className="font-semibold text-gray-700">{fmt(fee)}đ</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Đã thu:</span>
+                          <span className="text-gray-500">{giuaQuy ? 'Đã thu (quý ' + Math.ceil(clientMonth / 3) + ', ghi ở T' + thangGhi('ketoan') + '):' : 'Đã thu:'}</span>
                           <span className={'font-semibold ' + (already > 0 ? 'text-green-600' : 'text-gray-400')}>{fmt(already)}đ</span>
                         </div>
                         {roll && (
@@ -1469,20 +1485,27 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                             {remain === 0 ? '0đ' : fmt(remain) + 'đ'}
                           </span>
                         </div>
+                        {xetThang && remain > 0 && (
+                          <div className={'flex justify-between font-bold ' + (duThang ? 'text-green-700' : 'text-orange-600')}>
+                            <span>{duThang ? '✓ Đã thu đủ tới hết T' + clientMonth + ' — phần còn lại đến hạn T' + thangGhi('ketoan')
+                              : '⚠ Phần tới hết T' + clientMonth + ' còn thiếu:'}</span>
+                            <span>{duThang ? '' : fmt(phanToiThang - already) + 'đ'}</span>
+                          </div>
+                        )}
                       </div>
                       {fee > 0 && (
                         <div className="flex-shrink-0 w-10 h-10 relative">
                           <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90">
                             <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e5e7eb" strokeWidth="3" />
                             <circle cx="18" cy="18" r="15.9" fill="none"
-                              stroke={remain === 0 ? '#16a34a' : already > 0 ? '#f97316' : '#d1d5db'}
+                              stroke={xanh ? '#16a34a' : already > 0 ? '#f97316' : '#d1d5db'}
                               strokeWidth="3"
-                              strokeDasharray={`${Math.min(100, Math.round((fee - remain) / fee * 100))} 100`}
+                              strokeDasharray={`${pctVong} 100`}
                               strokeLinecap="round" />
                           </svg>
                           <span className={'absolute inset-0 flex items-center justify-center text-xs font-bold ' +
-                            (remain === 0 ? 'text-green-600' : already > 0 ? 'text-orange-500' : 'text-gray-400')}>
-                            {Math.min(100, Math.round((fee - remain) / fee * 100))}%
+                            (xanh ? 'text-green-600' : already > 0 ? 'text-orange-500' : 'text-gray-400')}>
+                            {pctVong}%
                           </span>
                         </div>
                       )}
