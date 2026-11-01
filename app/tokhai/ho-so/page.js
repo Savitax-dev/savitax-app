@@ -56,7 +56,7 @@ export default function TrangHoSo() {
 
   return (
     <AppShell>
-      <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
+      <div className="p-4 md:p-6 w-full">
         <TabToKhai />
 
         <div className="flex flex-wrap items-center gap-2 mb-4">

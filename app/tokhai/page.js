@@ -79,7 +79,7 @@ export default function TrangToKhai() {
 
   return (
     <AppShell>
-      <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
+      <div className="p-4 md:p-6 w-full">
         <TabToKhai />
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <h1 className="text-lg font-bold text-gray-800">Tờ khai &amp; Hạn nộp</h1>

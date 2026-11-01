@@ -19,6 +19,10 @@ const nextConfig = {
   // được path động join(process.cwd(), 'templates', ...).
   outputFileTracingIncludes: {
     '/api/admin/contract': ['./templates/**'],
+    // Trang tài liệu (components/TrangTaiLieu.js) đọc docs lúc chạy — cần đăng nhập nên không dựng tĩnh được
+    '/soatbaocao/quy-uoc': ['./docs/quy-uoc-luu-ho-so.md'],
+    '/tokhai/huong-dan': ['./docs/huong-dan-phan-he-to-khai.md'],
+    '/api/admin/tai-lieu/anh/[ten]': ['./docs/img/**'],
   },
 };
 

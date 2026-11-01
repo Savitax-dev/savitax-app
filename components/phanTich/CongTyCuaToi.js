@@ -83,7 +83,7 @@ export default function CongTyCuaToi({ tieuDe, bieuTuong, tab, nutMo }) {
   return (
     <AppShell>
       <KieuBang />
-      <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
+      <div className="p-4 md:p-6 w-full">
         <div className="flex items-center gap-3 mb-3">
           <span className="text-2xl">{bieuTuong}</span>
           <h1 className="text-xl font-bold text-gray-800">{tieuDe}</h1>

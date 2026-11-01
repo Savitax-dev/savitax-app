@@ -64,7 +64,7 @@ export default function MailLogPage() {
 
   return (
     <AppShell>
-      <div className="p-4 md:p-6 max-w-5xl mx-auto">
+      <div className="p-4 md:p-6 w-full">
         <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Nhật ký mail báo cáo</h1>

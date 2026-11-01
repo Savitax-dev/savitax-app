@@ -58,7 +58,7 @@ function PhanTich() {
   return (
     <AppShell>
       <KieuBang />
-      <div className="p-4 md:p-6 max-w-[1500px] mx-auto">
+      <div className="p-4 md:p-6 w-full">
         <div className="flex items-center gap-3 mb-3">
           <span className="text-2xl">⚖️</span>
           <h1 className="text-xl font-bold text-gray-800">Rủi ro thuế</h1>

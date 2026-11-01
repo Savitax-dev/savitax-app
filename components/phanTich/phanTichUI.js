@@ -7,67 +7,46 @@
 //
 // ⚠ CHỮ ĐẬM TỐI ĐA font-bold (700). App dùng Arial; trên Windows độ đậm 800/900 (font-extrabold / font-black) bị đổi
 // sang ARIAL BLACK — kiểu chữ khác hẳn, bè ra, dấu tiếng Việt méo (anh chỉ 27/10/2026; đo: 700 → 420px, 800 → 470px).
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { MAU } from '@/components/tokhaiUI'
+import ThanhTab from '@/components/ThanhTab'
 
 export { MAU }
 const HEX = { xanhDuong: '#2563EB', xanhLa: '#059669', hoPhach: '#D97706', xam: '#64748B', do: '#DC2626', tim: '#7C3AED' }
 
 // Thanh chuyển màn hình của Soát xét báo cáo. Màn nào chưa làm thì chưa hiện — không để nút chết.
 const MUC_SOAT = [
-  { href: '/soatbaocao', nhan: 'Công ty của tôi', mo: 'Công ty mình phụ trách và thư mục đã trỏ' },
-  { href: '/soatbaocao/ho-so', nhan: 'Hồ sơ dữ liệu', mo: 'App thấy gì trong thư mục công ty' },
-  { href: '/soatbaocao/soat-ky', nhan: 'Soát kỳ', mo: 'Soát từng tháng / quý: tờ khai ↔ bảng kê ↔ hóa đơn' },
-  { href: '/soatbaocao/tang-truong', nhan: 'Tăng trưởng & phí', mo: '6 chỉ tiêu theo quý, căn cứ điều chỉnh phí' },
-  { href: '/soatbaocao/nam', nhan: 'Soát xét năm', mo: 'BCTC ↔ CĐPS ↔ sổ sách ↔ tờ khai ↔ quyết toán cả năm, chỉ số tài chính' },
+  { href: '/soatbaocao', icon: '🏢', nhan: 'Công ty của tôi', mo: 'Công ty mình phụ trách và thư mục đã trỏ' },
+  { href: '/soatbaocao/ho-so', icon: '🗂️', nhan: 'Hồ sơ dữ liệu', mo: 'App thấy gì trong thư mục công ty' },
+  { href: '/soatbaocao/soat-ky', icon: '🧾', nhan: 'Soát kỳ', mo: 'Soát từng tháng / quý: tờ khai ↔ bảng kê ↔ hóa đơn' },
+  { href: '/soatbaocao/tang-truong', icon: '📈', nhan: 'Tăng trưởng & phí', mo: '6 chỉ tiêu theo quý, căn cứ điều chỉnh phí' },
+  { href: '/soatbaocao/nam', icon: '📊', nhan: 'Soát xét năm', mo: 'BCTC ↔ CĐPS ↔ sổ sách ↔ tờ khai ↔ quyết toán cả năm, chỉ số tài chính' },
+  { href: '/soatbaocao/quy-uoc', icon: '📘', nhan: 'Quy ước lưu hồ sơ', mo: 'Thư mục 1–12: lưu gì, ở đâu, đặt tên file thế nào', khongGiuCty: true },
 ]
+
+// Thanh tab chia đều một khung, có biểu tượng — components/ThanhTab.js (dùng chung với Tờ khai)
 export function TabSoat({ giuCty }) {
   const pathname = usePathname()
-  return (
-    <div className="flex flex-wrap gap-1 mb-4 border-b border-gray-200">
-      {MUC_SOAT.map(m => {
-        const dangMo = pathname === m.href
-        const href = giuCty && m.href !== '/soatbaocao' ? `${m.href}?cty=${giuCty}` : m.href
-        return (
-          <Link key={m.href} href={href} title={m.mo}
-            className={'px-3 py-2 text-sm rounded-t-lg border-b-2 -mb-px transition-colors ' + (dangMo
-              ? 'border-[#8B1A1A] text-[#8B1A1A] font-semibold bg-red-50/50'
-              : 'border-transparent text-gray-500 hover:text-[#8B1A1A] hover:bg-red-50/30')}>
-            {m.nhan}
-          </Link>
-        )
-      })}
-    </div>
-  )
+  return <ThanhTab muc={MUC_SOAT.map(m => ({
+    ...m, key: m.href, dangMo: pathname === m.href,
+    href: giuCty && m.href !== '/soatbaocao' && !m.khongGiuCty ? `${m.href}?cty=${giuCty}` : m.href,
+  }))} />
 }
 
 // Thanh chuyển màn của Rủi ro thuế. Các màn sau "Công ty của tôi" là CÙNG một trang (/ruirothue/phan-tich?xem=…)
 // nên chuyển tab không đọc lại thư mục.
 const MUC_RUI_RO = [
-  { xem: '', nhan: 'Công ty của tôi', mo: 'Công ty mình phụ trách và thư mục đã trỏ' },
-  { xem: 'ho-so', nhan: 'Hồ sơ đã đọc', mo: 'Tờ khai, quyết toán, BCTC app tìm thấy trong thư mục + số tự tìm' },
-  { xem: 'bang', nhan: 'Bảng 39 tiêu chí', mo: 'Số liệu, chênh lệch, tỷ lệ của từng tiêu chí' },
-  { xem: 'chi-tiet', nhan: 'Chi tiết tiêu chí', mo: 'Nguồn số, nguyên nhân thường gặp, hồ sơ nên chuẩn bị, căn cứ' },
-  { xem: 'nhieu-nam', nhan: 'Nhiều năm', mo: 'Số liệu và chênh lệch qua các năm' },
+  { xem: '', icon: '🏢', nhan: 'Công ty của tôi', mo: 'Công ty mình phụ trách và thư mục đã trỏ' },
+  { xem: 'ho-so', icon: '🗂️', nhan: 'Hồ sơ đã đọc', mo: 'Tờ khai, quyết toán, BCTC app tìm thấy trong thư mục + số tự tìm' },
+  { xem: 'bang', icon: '📋', nhan: 'Bảng 39 tiêu chí', mo: 'Số liệu, chênh lệch, tỷ lệ của từng tiêu chí' },
+  { xem: 'chi-tiet', icon: '🔍', nhan: 'Chi tiết tiêu chí', mo: 'Nguồn số, nguyên nhân thường gặp, hồ sơ nên chuẩn bị, căn cứ' },
+  { xem: 'nhieu-nam', icon: '📈', nhan: 'Nhiều năm', mo: 'Số liệu và chênh lệch qua các năm' },
 ]
 export function TabRuiRo({ giuCty, xem = '' }) {
-  return (
-    <div className="flex flex-wrap gap-1 mb-4 border-b border-gray-200">
-      {MUC_RUI_RO.map(m => {
-        const dangMo = xem === m.xem
-        const href = !m.xem ? '/ruirothue' : `/ruirothue/phan-tich?${giuCty ? `cty=${giuCty}&` : ''}xem=${m.xem}`
-        return (
-          <Link key={m.xem || 'ds'} href={href} title={m.mo}
-            className={'px-3 py-2 text-sm rounded-t-lg border-b-2 -mb-px transition-colors ' + (dangMo
-              ? 'border-[#8B1A1A] text-[#8B1A1A] font-semibold bg-red-50/50'
-              : 'border-transparent text-gray-500 hover:text-[#8B1A1A] hover:bg-red-50/30')}>
-            {m.nhan}
-          </Link>
-        )
-      })}
-    </div>
-  )
+  return <ThanhTab muc={MUC_RUI_RO.map(m => ({
+    ...m, key: m.xem || 'ds', dangMo: xem === m.xem,
+    href: !m.xem ? '/ruirothue' : `/ruirothue/phan-tich?${giuCty ? `cty=${giuCty}&` : ''}xem=${m.xem}`,
+  }))} />
 }
 
 export function OTongSinhDong({ so, nhan, mau = 'xam', phu }) {
