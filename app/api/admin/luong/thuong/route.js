@@ -14,6 +14,7 @@ import { tienThuongDvk } from '@/lib/luong/thuong'
 import { tinhBangLuong } from '@/lib/luong/bangLuong'
 import { docBanChot } from '@/lib/luong/chot'
 import { mapPhongCuaCongTy } from '@/lib/clientRoom'
+import { docCtyDacThu } from '@/lib/ctyDacThu'
 
 // Bảng lương tính KPI hai tháng + doanh thu từ dữ liệu thật — mất vài giây.
 export const maxDuration = 60
@@ -51,8 +52,9 @@ async function hoSoDvkChonDuoc(supabase, caller, quyen) {
   const { data: khai } = await supabase.from('luong_dvk_khai').select('service_id, so_tien, trang_thai').neq('trang_thai', 'tra_lai')
   const daKhai = new Map()
   for (const k of khai || []) daKhai.set(k.service_id, (daKhai.get(k.service_id) || 0) + (Number(k.so_tien) || 0))
+  const dacThu = await docCtyDacThu(supabase)   // công ty thu phí không VAT → thưởng không chia 1,08
   return dv.filter(d => duoc(ctyMap.get(d.client_id))).map(d => ({
-    id: d.id, ten: d.name, client_id: d.client_id, cty: ctyMap.get(d.client_id)?.name || '', ma: ctyMap.get(d.client_id)?.client_code || '',
+    id: d.id, ten: d.name, client_id: d.client_id, khong_vat: dacThu.khongVat.has(d.client_id), cty: ctyMap.get(d.client_id)?.name || '', ma: ctyMap.get(d.client_id)?.client_code || '',
     ky: d.month + '/' + d.year, phaiThu: Number(d.amount) || 0, daThu: daThu.get(d.id) || 0, daKhai: daKhai.get(d.id) || 0,
   })).sort((a, b) => a.cty.localeCompare(b.cty, 'vi'))
 }
@@ -90,7 +92,8 @@ export async function GET(request) {
       const { data, error } = await supabase.from('luong_dvk_khai').select('*')
         .eq('staff_id', caller.staffId).eq('nam', nt.nam).eq('thang', nt.thang).order('tao_luc')
       if (error) return loi('Chưa chạy sql/32_luong_thuong_dvk.sql (' + error.message + ')', 500)
-      return Response.json({ data, hoSo: await hoSoDvkChonDuoc(supabase, caller, quyen) })
+      const kv = (await docCtyDacThu(supabase)).khongVat
+      return Response.json({ data: (data || []).map(d => ({ ...d, khong_vat: !!d.client_id && kv.has(d.client_id) })), hoSo: await hoSoDvkChonDuoc(supabase, caller, quyen) })
     }
 
     if (viec === 'dvk_duyet') {
@@ -106,6 +109,7 @@ export async function GET(request) {
           ...d, ten_nv: d.staff?.full_name || '', phong: d.staff?.rooms?.name || '',
           duocDuyet: (quyen.admin || phongTruong.includes(d.staff?.room_id)) && d.staff_id !== caller.staffId,
           daThuHoSo: hoSo.get(d.service_id)?.daThu ?? null, daKhaiHoSo: hoSo.get(d.service_id)?.daKhai ?? null,
+          khong_vat: hoSo.get(d.service_id)?.khong_vat === true,
         })),
       })
     }
@@ -155,7 +159,7 @@ export async function POST(request) {
       if (!hoSo) return loi('Hồ sơ Dịch vụ khác này không nằm trong danh sách anh/chị được khai (chưa có thu, hoặc không thuộc công ty / phòng mình)', 403)
       const { data, error } = await supabase.from('luong_dvk_khai').insert({
         staff_id: caller.staffId, nam: nt.nam, thang: nt.thang, service_id: hoSo.id, client_id: hoSo.client_id,
-        ten_dv: (hoSo.ten + ' · ' + hoSo.cty).slice(0, 300), so_tien: soTien, ty_le: tyLe, tien_thuong: tienThuongDvk(soTien, tyLe),
+        ten_dv: (hoSo.ten + ' · ' + hoSo.cty).slice(0, 300), so_tien: soTien, ty_le: tyLe, tien_thuong: tienThuongDvk(soTien, tyLe, hoSo.khong_vat),
         ghi_chu: String(body.ghi_chu || '').trim().slice(0, 300) || null,
       }).select('*').maybeSingle()
       if (error) return loi(error.message, 500)

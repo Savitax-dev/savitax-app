@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import ClientChecklist from '@/components/ClientChecklist'
 import { hasPermission } from '@/lib/permissions'
+import { NhanDacThu } from '@/components/CongNoDacThu'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
 const pctClr = (v) => v >= 90 ? 'text-green-600' : v >= 70 ? 'text-yellow-500' : 'text-red-500'
@@ -218,6 +219,7 @@ export default function ChecklistPage() {
                                 : 'bg-blue-100 text-blue-700 border-blue-300')}>
                               {client.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
                             </span>
+                            <NhanDacThu c={client} />
                             {client.isSecondary && (
                               <span className="text-xs bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Phụ trách phụ</span>
                             )}

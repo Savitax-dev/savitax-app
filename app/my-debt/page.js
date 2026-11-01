@@ -6,6 +6,7 @@ import AppShell from '@/components/AppShell'
 import ClientChecklist from '@/components/ClientChecklist'
 import KhoiDongTien from '@/components/KhoiDongTien'
 import { hasPermission } from '@/lib/permissions'
+import { NhanDacThu } from '@/components/CongNoDacThu'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
 const pctClr = (v) => v >= 90 ? 'text-green-600' : v >= 70 ? 'text-yellow-500' : 'text-red-500'
@@ -243,7 +244,7 @@ export default function MyDebtPage() {
                 <p className="text-xl font-bold text-green-600">{fmt(totalKetoan)}đ</p>
                 {collectedNotDue > 0 && (
                   <p className="text-[11px] text-gray-400 mt-0.5">
-                    + {fmt(collectedNotDue)}đ của công ty quý chưa tới kỳ tính
+                    + {fmt(collectedNotDue)}đ của công ty quý chưa tới kỳ tính{ownedClients.some(c => c.tamBoQuaNo) ? ' / đang gia hạn thu' : ''}
                   </p>
                 )}
               </div>
@@ -368,6 +369,7 @@ export default function MyDebtPage() {
                                 : 'bg-blue-100 text-blue-700 border-blue-300')}>
                               {client.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
                             </span>
+                            <NhanDacThu c={client} />
                             <span className={'text-xs px-2 py-0.5 rounded-full flex-shrink-0 font-medium ' +
                               (client.notDueYet ? (client.collected > 0 ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500')
                                 : client.isPaid ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600')}>

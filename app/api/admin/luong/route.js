@@ -137,6 +137,8 @@ export async function GET(request) {
         return x.congTy.get(clientId)
       }
       for (const c of cty || []) layCty(lay(c.gioi_thieu_boi), c.id)
+      const { docCtyDacThu } = await import('@/lib/ctyDacThu')
+      const khongVat = (await docCtyDacThu(supabase)).khongVat   // công ty thu phí không VAT → không chia 1,08
       for (const r of so) {
         const k = kyCua(r), hh = Number(r.hoa_hong) || 0, chi = daChi.has(k)
         if (k > den || !r.staff_id) continue
@@ -144,7 +146,7 @@ export async function GET(request) {
         if (k < tu) { const t = hh - (chi ? hh : 0); x.tonDau += t; c.tonDau += t; continue }
         x.phatSinh += hh; c.phatSinh += hh
         if (chi) { x.daChi += hh; c.daChi += hh }
-        const thu = Math.round((Number(r.so_tien) || 0) / 1.08); x.daThu += thu; c.daThu += thu
+        const thu = Math.round((Number(r.so_tien) || 0) / (khongVat.has(r.client_id) ? 1 : 1.08)); x.daThu += thu; c.daThu += thu
       }
       for (const [staffId, h] of song) {
         const x = lay(staffId); x.choTinh += h.hoaHong; x.tyLeHienTai = h.tyLe; x.soCty = h.soCty

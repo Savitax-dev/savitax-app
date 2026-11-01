@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import { hasPermission } from '@/lib/permissions'
 import DichVuKhac from '@/components/DichVuKhac'
+import CongNoDacThu from '@/components/CongNoDacThu'
 
 const STATUS_LABEL = { pending: 'Trình ký', active: 'Đang sử dụng', inactive: 'Ngưng dịch vụ', transferred: 'Đã chuyển đi' }
 const STATUS_COLOR = {
@@ -1526,6 +1527,19 @@ export default function ClientsPage() {
                               Hộ kinh doanh
                             </span>
                           )}
+                          {/* Công nợ đặc thù (lib/ctyDacThu.js, sql/45) — admin đặt ở khung ⚙️ bên dưới */}
+                          {client.khong_vat && (
+                            <span className="text-xs bg-violet-50 text-violet-800 border border-violet-200 px-2 py-1 rounded-lg font-semibold"
+                              title="Thu phí không VAT — lương, hoa hồng, thưởng không chia 1,08; ĐNTT không có dòng VAT">
+                              Không VAT
+                            </span>
+                          )}
+                          {Number(client.gia_han_thu_thang) > 0 && (
+                            <span className="text-xs bg-violet-50 text-violet-800 border border-violet-200 px-2 py-1 rounded-lg font-semibold"
+                              title={'Admin cho thu chậm: ' + (client.gia_han_thu_ly_do || '')}>
+                              Gia hạn thu {client.gia_han_thu_thang} tháng
+                            </span>
+                          )}
                           <span className="text-xs text-gray-500">{client.name}</span>
                         </div>
                         {canEditThis && (
@@ -1537,6 +1551,8 @@ export default function ClientsPage() {
                         )}
                       </div>
                     )}
+
+                    {isAdmin && <CongNoDacThu key={client.id + '|' + (client.khong_vat ? 1 : 0) + '|' + (client.gia_han_thu_thang || 0)} client={client} onSaved={loadClients} />}
 
                     {/* Tax info */}
                     {(client.address || client.tax_status) && (

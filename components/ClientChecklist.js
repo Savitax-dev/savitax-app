@@ -53,6 +53,10 @@ const CRED_CATS = [
 // component này được, lúc đó dấu truyền xuống không còn đúng kỳ nữa.
 export default function ClientChecklist({ client, clientMonth, onMonthChange, onDebtSaved, defaultPanel = 'work', isAdmin = false, isTrueAdmin = false, canUncheck = false, canReview = false, onReviewed = null, reviewInit = undefined, reviewMonth = null, reviewYear = null, hcnsClient: hcnsClientProp = null, context = 'ketoan', toolbarExtra = null }) {
   const hcnsOnly = context === 'hcns'
+  // Công ty thu phí KHÔNG VAT (lib/ctyDacThu.js, sql/45): phiếu ĐNTT không tách VAT 1,08
+  const khongVat = client?.khong_vat === true
+  const heSoVat = khongVat ? 1 : 1.08
+  const hauToVat = khongVat ? ' (không VAT)' : ' (chưa VAT)'
   // Tab "Công việc HCNS" chỉ dành cho người làm HCNS. Kế toán mở hồ sơ công ty có tick DV HCNS
   // mà thấy tab này thì rất dễ tick nhầm việc của phòng khác.
   // MẶC ĐỊNH ẨN cho tới khi biết chắc có quyền — hiện ra rồi mới ẩn thì cái nhấp nháy đó cũng đủ
@@ -265,9 +269,9 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     const periodLabel = hc.fee_period === 'quarterly'
       ? 'Q' + Math.ceil(clientMonth / 3) + '/' + selYear
       : 'T' + clientMonth + '/' + selYear
-    setHcnsLabel('Phí dịch vụ HCNS ' + periodLabel + ' (chưa VAT)')
+    setHcnsLabel('Phí dịch vụ HCNS ' + periodLabel + hauToVat)
     // hcns_fee đã gồm VAT (cùng quy ước clients.monthly_fee) — tách ra để B2 là số chưa VAT.
-    setHcnsAmount(hc.hcns_fee ? String(Math.round(Number(hc.hcns_fee) / 1.08)) : '')
+    setHcnsAmount(hc.hcns_fee ? String(Math.round(Number(hc.hcns_fee) / heSoVat)) : '')
   }
 
   const ensureHcnsClient = async () => {
@@ -418,8 +422,8 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
           const con = (j.data || []).filter(s => s.status !== 'done' && s.remain > 0)
           if (con.length) {
             setExtraRows(con.map(s => ({
-              desc: s.name + ' (chưa VAT)',
-              amount: String(Math.round(s.remain / 1.08)),
+              desc: s.name + hauToVat,
+              amount: String(Math.round(s.remain / heSoVat)),
             })))
           }
         })
@@ -427,10 +431,10 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
       const periodLabel = client.fee_period === 'quarterly'
         ? 'Q' + Math.ceil(clientMonth / 3) + '/' + selYear
         : 'T' + clientMonth + '/' + selYear
-      setB1Label('Phí dịch vụ kế toán ' + periodLabel + ' (chưa VAT)')
+      setB1Label('Phí dịch vụ kế toán ' + periodLabel + hauToVat)
       // client.monthly_fee đã bao gồm VAT (nhập ở "Thêm công ty") — tách VAT ngay khi mở panel để
       // B1 hiển thị/tính toán đúng số "chưa VAT" xuyên suốt (khớp label + khớp file ĐNTT in ra)
-      setB1Amount(client.monthly_fee ? String(Math.round(Number(client.monthly_fee) / 1.08)) : '')
+      setB1Amount(client.monthly_fee ? String(Math.round(Number(client.monthly_fee) / heSoVat)) : '')
       // B2 — phí HCNS. Nếu chưa có dữ liệu HCNS (mở thẳng ĐNTT mà chưa mở tab Công nợ) thì lấy
       // về đã, effect bên dưới sẽ tự điền vào B2 khi có.
       setHcnsLabel(''); setHcnsAmount('')
@@ -494,7 +498,8 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     // Quá hạn thì kỳ đó ĐÃ chuyển thành nợ tồn — ghi tiếp vào ô của kỳ đó là ghi trùng một khoản
     // tiền hai lần (một ở kỳ gốc, một ở nợ tồn). Áp cho CẢ phí HCNS: từ khi phí HCNS cũng chuyển
     // nợ tồn (lib/hcnsRollover.js) thì mục này có đúng rủi ro như phí kế toán.
-    if ((debtType === 'ketoan' || debtType === 'hcns') && !isTrueAdmin && isPastEditDeadline(selYear, clientMonth)) {
+    // Gia hạn thu (lib/ctyDacThu.js) chỉ áp phí kế toán: hạn sửa lùi thêm N tháng
+    if ((debtType === 'ketoan' || debtType === 'hcns') && !isTrueAdmin && isPastEditDeadline(selYear, clientMonth, new Date(), 10, debtType === 'ketoan' ? (client?.gia_han_thu_thang || 0) : 0)) {
       alert([
         'Đã quá hạn cập nhật công nợ ' + (debtType === 'hcns' ? 'DV HCNS ' : '') +
           'của Tháng ' + clientMonth + '/' + selYear + '.',

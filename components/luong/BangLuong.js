@@ -156,7 +156,7 @@ export default function BangLuong({ quyen }) {
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">
                         <button onClick={() => setMo(mo === x.staff_id ? null : x.staff_id)} className="hover:underline">{fmt(x.doanhThu)}</button>
                         <span className="text-gray-400"> / {x.laTruongPhong ? 'TP 20%' : fmt(x.toiThieu)}</span> → <b className="text-violet-800">{fmt(x.thuongDoanhSo)}</b>
-                        {mo === x.staff_id && <div className="text-left text-xs text-gray-600 mt-1 space-y-0.5 max-h-48 overflow-y-auto">{x.congTyDoanhThu.map(c => <div key={c.id}>{c.ma || c.ten}: {fmt(c.doanhThu)}{c.quy ? ' (quý ÷3)' : ''}</div>)}</div>}
+                        {mo === x.staff_id && <div className="text-left text-xs text-gray-600 mt-1 space-y-0.5 max-h-48 overflow-y-auto">{x.congTyDoanhThu.map(c => <div key={c.id}>{c.ma || c.ten}: {fmt(c.doanhThu)}{c.quy ? ' (quý ÷3)' : ''}{c.khongVat ? ' (không VAT)' : ''}</div>)}</div>}
                       </td>
                       <td className="px-3 py-2.5 text-right text-orange-700">{fmt(x.thuongDvk)}</td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">{x.hoaHongGt ? <>

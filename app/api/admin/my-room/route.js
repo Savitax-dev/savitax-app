@@ -9,6 +9,7 @@ import { requireLogin } from '@/lib/serverAuth'
 import { tinhDongTienPhong } from '@/lib/dongTienPhong'
 import { loadHcnsFees } from '@/lib/hcnsPhiCongTy'
 import { docViPham, truViPham } from '@/lib/viPham'
+import { docCtyDacThu, tamBoQuaCongNo } from '@/lib/ctyDacThu'
 
 function getAdmin() {
   return createClient(
@@ -176,6 +177,8 @@ export async function GET(request) {
   const clientIds = clients.map(c => c.id)
   // Công ty CHỈ dùng Dịch vụ khác: không checklist, và phải loại khỏi mẫu số %-công việc (sql/29).
   const dvkOnly = await docDvkOnly(supabase, clientIds)
+  // Công ty đặc thù (lib/ctyDacThu.js): không VAT / gia hạn thu
+  const dacThu = await docCtyDacThu(supabase)
 
   if (clientIds.length === 0) {
     return Response.json({
@@ -283,7 +286,11 @@ export async function GET(request) {
       // mẫu số bỏ công ty quý chưa tới hạn nhưng tử số vẫn cộng tiền họ đã trả nên %-công nợ vọt
       // lên trên 100% (ca thật 01/10/2026: Nguyễn Thị Trung Anh T9/2026 ra 104%). Trang Phòng
       // (app/api/admin/room) chặn cả hai từ đầu — giữ hai nơi cùng một luật.
-      feeCounted:     dueFeeMonthsCount(c, year, months) > 0,
+      // Gia hạn thu (lib/ctyDacThu.js): kỳ còn gia hạn mà chưa thu đủ → tạm không tính, chặn cả tử lẫn mẫu bằng cờ này
+      feeCounted:     dueFeeMonthsCount(c, year, months) > 0 && !tamBoQuaCongNo(dacThu.giaHan.get(c.id) || 0, year, months[months.length - 1], feeAtPeriod * dueFeeMonthsCount(c, year, months), feeMap[c.id] || 0),
+      tamBoQuaNo:     dueFeeMonthsCount(c, year, months) > 0 && tamBoQuaCongNo(dacThu.giaHan.get(c.id) || 0, year, months[months.length - 1], feeAtPeriod * dueFeeMonthsCount(c, year, months), feeMap[c.id] || 0),
+      khong_vat:      dacThu.khongVat.has(c.id),
+      gia_han_thu_thang: dacThu.giaHan.get(c.id) || 0,
       collected:      feeMap[c.id] || 0,
       collectedKhach: feeKhachMap[c.id] || 0,
     }

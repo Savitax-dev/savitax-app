@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import { hasPermission } from '@/lib/permissions'
 import KhoiDongTien from '@/components/KhoiDongTien'
+import { NhanDacThu } from '@/components/CongNoDacThu'
 
 const fmt   = (n) => Number(n || 0).toLocaleString('vi-VN')
 const pctClr = (v) => v >= 90 ? 'text-green-600' : v >= 70 ? 'text-yellow-500' : 'text-red-500'
@@ -535,6 +536,7 @@ export default function DebtPage() {
                                             : 'bg-blue-100 text-blue-700 border-blue-300')}>
                                           {c.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
                                         </span>
+                                        <NhanDacThu c={c} />
                                       </div>
                                       <p className="text-xs text-gray-400">{c.tax_code}</p>
                                     </div>
@@ -576,6 +578,7 @@ export default function DebtPage() {
                                             : 'bg-blue-100 text-blue-700 border-blue-300')}>
                                           {c.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
                                         </span>
+                                        <NhanDacThu c={c} />
                                         <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full flex-shrink-0">Phụ trách phụ</span>
                                       </div>
                                       <p className="text-xs text-gray-400">{c.tax_code}</p>

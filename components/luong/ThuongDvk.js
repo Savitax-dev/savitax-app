@@ -58,7 +58,9 @@ export default function ThuongDvk({ quyen }) {
     return (d?.hoSo || []).filter(h => !k || searchKey(h.ten + ' ' + h.cty + ' ' + h.ma).includes(k))
   }, [d, tim])
   const chon = (d?.hoSo || []).find(h => h.id === f.service_id)
-  const thuong = f.so_tien && f.ty_le ? tienThuongDvk(f.so_tien, f.ty_le) : 0   // trên doanh thu trước thuế (÷ 1,08)
+  // trên doanh thu trước thuế (÷ 1,08); hồ sơ của công ty thu phí KHÔNG VAT thì không chia (lib/ctyDacThu.js)
+  const khongVatChon = chon?.khong_vat === true
+  const thuong = f.so_tien && f.ty_le ? tienThuongDvk(f.so_tien, f.ty_le, khongVatChon) : 0
   const vuot = chon && f.so_tien ? chon.daKhai + Number(f.so_tien) > chon.daThu : false
 
   const them = async () => {
@@ -153,7 +155,7 @@ export default function ThuongDvk({ quyen }) {
               <label className="text-xs text-gray-500">Số tiền thực nhận (gồm VAT)
                 <input value={f.so_tien === '' ? '' : Number(f.so_tien).toLocaleString('vi-VN')} onChange={e => setF(v => ({ ...v, so_tien: soNhap(e.target.value) }))}
                   className="block w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-base text-right font-semibold text-gray-900" placeholder="0" />
-                {f.so_tien !== '' && Number(f.so_tien) > 0 && <span className="block mt-1 text-right text-gray-500">Trước thuế (÷ 1,08): <b className="text-gray-800">{fmt(chuaVatDvk(f.so_tien))}</b></span>}
+                {f.so_tien !== '' && Number(f.so_tien) > 0 && <span className="block mt-1 text-right text-gray-500">{khongVatChon ? 'Công ty thu phí không VAT — không chia 1,08' : 'Trước thuế (÷ 1,08)'}: <b className="text-gray-800">{fmt(chuaVatDvk(f.so_tien, khongVatChon))}</b></span>}
               </label>
               <label className="text-xs text-gray-500">Tỉ lệ được hưởng (%)
                 <input type="number" min="0" max="100" step="0.5" value={f.ty_le} onChange={e => setF(v => ({ ...v, ty_le: e.target.value }))}
@@ -182,7 +184,7 @@ export default function ThuongDvk({ quyen }) {
               {d && !d.data.length && <tr><td className="px-4 py-6 text-center text-gray-400">Chưa khai dòng nào cho kỳ này.</td></tr>}
               {(d?.data || []).map(x => (
                 <tr key={x.id} className="border-t border-gray-100">
-                  <td className="px-4 py-2.5"><div className="text-gray-900">{x.ten_dv}</div><div className="text-xs text-gray-500">{fmt(x.so_tien)} ÷ 1,08 × {Number(x.ty_le).toLocaleString('vi-VN')}%{x.ghi_chu ? ' · ' + x.ghi_chu : ''}{x.ly_do_tra ? ' · Lý do trả: ' + x.ly_do_tra : ''}</div></td>
+                  <td className="px-4 py-2.5"><div className="text-gray-900">{x.ten_dv}</div><div className="text-xs text-gray-500">{fmt(x.so_tien)}{x.khong_vat ? ' (không VAT)' : ' ÷ 1,08'} × {Number(x.ty_le).toLocaleString('vi-VN')}%{x.ghi_chu ? ' · ' + x.ghi_chu : ''}{x.ly_do_tra ? ' · Lý do trả: ' + x.ly_do_tra : ''}</div></td>
                   <td className="px-4 py-2.5 text-right font-semibold text-orange-700 whitespace-nowrap">{fmt(x.tien_thuong)}</td>
                   <td className="px-4 py-2.5 whitespace-nowrap"><span className={'text-xs rounded-full border px-2.5 py-0.5 ' + TT[x.trang_thai][1]}>{TT[x.trang_thai][0]}</span></td>
                   <td className="px-4 py-2.5 text-right">{x.trang_thai !== 'da_duyet' && <button onClick={() => xoa(x.id)} className="text-xs text-rose-500 hover:underline">Xoá</button>}</td>
@@ -214,7 +216,7 @@ export default function ThuongDvk({ quyen }) {
                     <tr key={x.id} className="border-t border-gray-100 align-top">
                       <td className="px-4 py-2.5"><div className="font-medium text-gray-900">{x.ten_nv}</div><div className="text-xs text-gray-500">{x.phong}</div></td>
                       <td className="px-4 py-2.5 text-gray-700 max-w-[320px]">{x.ten_dv}{x.ghi_chu && <div className="text-xs text-gray-500">{x.ghi_chu}</div>}</td>
-                      <td className="px-4 py-2.5 text-right whitespace-nowrap">{fmt(x.so_tien)} ÷ 1,08 × {Number(x.ty_le).toLocaleString('vi-VN')}%</td>
+                      <td className="px-4 py-2.5 text-right whitespace-nowrap">{fmt(x.so_tien)}{x.khong_vat ? ' (không VAT)' : ' ÷ 1,08'} × {Number(x.ty_le).toLocaleString('vi-VN')}%</td>
                       <td className="px-4 py-2.5 text-right font-semibold text-orange-700 whitespace-nowrap">{fmt(x.tien_thuong)}</td>
                       <td className={'px-4 py-2.5 text-right text-xs whitespace-nowrap ' + (vuotHs ? 'text-rose-600 font-semibold' : 'text-gray-500')}>
                         {x.service_id

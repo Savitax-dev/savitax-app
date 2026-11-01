@@ -4,6 +4,7 @@ import { resolveFeeForMonthWithSource } from '@/lib/feeDue'
 import { checkPrevMonthUnpaid, prevMonthOf } from '@/lib/prevMonthDebt'
 import { evaluateCap, CAP_OK, CAP_UNVERIFIABLE } from '@/lib/feeCap'
 import { canWriteAccountingDebt } from '@/lib/debtScope'
+import { docCtyDacThu } from '@/lib/ctyDacThu'
 
 function getAdmin() {
   return createClient(
@@ -97,6 +98,8 @@ export async function POST(request) {
           prevFee: resolveFeeForMonthWithSource(plans || [], clientId, prev.year, prev.month, cli?.monthly_fee, chg || []).fee,
           prevPaid,
           clientName: cli?.name,
+          // công ty được gia hạn thu: tháng trước còn ghi được lâu hơn (lib/ctyDacThu.js)
+          giaHanThang: (await docCtyDacThu(supabase)).giaHan.get(clientId) || 0,
         })
         if (warn) return Response.json({ error: warn.message, prevUnpaid: warn }, { status: 409 })
       }

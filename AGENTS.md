@@ -59,6 +59,15 @@ công việc hàng tháng/quý, công nợ dịch vụ, KPI nhân viên/phòng b
   nợ tồn thì ghi đúng phí kỳ, phần dư tự trừ vào nợ tồn qua `save-old-debt` (dư hơn nợ tồn thì
   báo cho nhân viên tự quyết, không tự ghi). Khi gộp, `suggestPeriods` ưu tiên các THÁNG SAU
   (gộp ở T9 → T9+T10). Áp cho cả phí kế toán lẫn phí HCNS. Xem `lib/feeCap.js`.
+- **Công ty đặc thù về công nợ** (anh chốt 01/11/2026, `sql/45`, MỘT chỗ luật `lib/ctyDacThu.js`, admin đặt ở khung
+  "⚙️ Công nợ đặc thù" trong thẻ công ty — route `/api/admin/clients/dac-thu`, ghi `client_change_log`):
+  - `clients.khong_vat`: thu phí KHÔNG VAT → doanh thu tính lương, hoa hồng giới thiệu, thưởng DVK KHÔNG chia 1,08; ĐNTT
+    không có dòng VAT. %-thu hồi công nợ không đổi (tử và mẫu cùng gốc).
+  - `clients.gia_han_thu_thang` (N, + lý do): hạn sửa công nợ + hạn chuyển nợ tồn của kỳ M lùi sang ngày 10 tháng M+1+N
+    (`isPastEditDeadline` / `isPastRolloverDeadline` nhận thêm N); kỳ còn gia hạn mà CHƯA THU ĐỦ thì tạm KHÔNG tính
+    %-công nợ (bỏ cả tử lẫn mẫu) ở CẢ 4 nơi: `kpiTongQuan`, `room`, `my-room` (cờ `feeCounted`/`tamBoQuaNo`), `debt-overview`.
+    Chỉ phí kế toán (HCNS chưa áp). Khối dòng tiền 5 thẻ KHÔNG đổi. Đọc cột bằng truy vấn RIÊNG (`docCtyDacThu`) — thiếu
+    cột thì coi như không công ty nào. Bộ kiểm: `node scripts/test-cty-dac-thu.mjs`.
 - Nhân viên chính/phụ: `clients.assigned_to` = nhân viên chính (toàn quyền, doanh thu tính cho
   họ + phòng họ). `client_secondary_staff` = nhân viên phụ (chỉ theo dõi, KHÔNG cộng doanh thu).
 - Checklist mẫu (`task_definitions`) theo `report_type` (`monthly`/`quarterly`) + `month` cố

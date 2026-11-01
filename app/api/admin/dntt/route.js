@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
+import { docCtyDacThu } from '@/lib/ctyDacThu'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -54,6 +55,8 @@ export async function GET(request) {
       .eq('id', clientId).single()
     if (!c) return new Response('Client not found', { status: 404 })
     client = c
+    // Công ty thu phí KHÔNG VAT (lib/ctyDacThu.js, sql/45): phiếu không tách / không cộng VAT 8%
+    client.khong_vat = (await docCtyDacThu(supabase)).khongVat.has(c.id)
     const { data: st } = await supabase.from('staff').select('full_name').eq('id', c.assigned_to).single()
     staff = st || null
   }
@@ -68,11 +71,13 @@ export async function GET(request) {
   const baseFee = b1Deleted ? 0
     : b1AmountParam !== null && b1AmountParam !== ''
     ? Number(b1AmountParam) || 0
-    : Math.round((Number(client.monthly_fee) || 0) / 1.08)
+    : Math.round((Number(client.monthly_fee) || 0) / (client.khong_vat ? 1 : 1.08))
   const periodLabel = client.fee_period === 'quarterly'
     ? 'Q' + Math.ceil(month / 3) + '/' + year
     : 'Tháng ' + month + '/' + year
-  const b1Label    = b1LabelParam || ('Phí dịch vụ kế toán ' + periodLabel + ' (chưa VAT)')
+  const khongVat   = client.khong_vat === true
+  const hauToVat   = khongVat ? ' (không VAT)' : ' (chưa VAT)'
+  const b1Label    = b1LabelParam || ('Phí dịch vụ kế toán ' + periodLabel + hauToVat)
 
   // B2 cố định = phí dịch vụ HCNS, chỉ có khi công ty đã tick "Có sử dụng DV HCNS". Cùng quy ước
   // "đã gồm VAT" như B1 nên panel gửi lên số ĐÃ tách VAT. Có dòng này thì các dòng nhập tay dịch
@@ -82,7 +87,7 @@ export async function GET(request) {
   const hcnsFee   = hcnsAmountParam !== null && hcnsAmountParam !== '' ? Number(hcnsAmountParam) || 0 : 0
   // Với hồ sơ HCNS, mọi dòng B đều là dịch vụ (gửi qua b1/extra) nên KHÔNG có dòng B2 cố định.
   const hasHcns   = !hcnsClientId && hcnsFee > 0
-  const hcnsLabel = hcnsLabelParam || ('Phí dịch vụ HCNS ' + periodLabel + ' (chưa VAT)')
+  const hcnsLabel = hcnsLabelParam || ('Phí dịch vụ HCNS ' + periodLabel + hauToVat)
 
   // Nhân viên XOÁ hẳn dòng phí dịch vụ trên panel (bấm ✕) -> phiếu không in dòng đó nữa. Dùng khi
   // tách hai phiếu riêng: một phiếu phí dịch vụ hàng kỳ, một phiếu dịch vụ khác (chốt 05/10/2026).
@@ -96,7 +101,7 @@ export async function GET(request) {
   const prevBal    = Number(client.other_debt) || 0
   // "Tồn" (A) đã là số gồm VAT sẵn (cộng dồn từ phí dịch vụ chưa thu, vốn đã gồm VAT) — lấy thẳng, không nhân 1.08 nữa
   const prevBalVat = prevBal
-  const vatAmt     = Math.round(subTotal * 0.08)
+  const vatAmt     = khongVat ? 0 : Math.round(subTotal * 0.08)
   const totalB     = subTotal + vatAmt
   const totalC     = prevBalVat + totalB
 
@@ -217,7 +222,7 @@ export async function GET(request) {
     <tbody>
       <tr class="rowA">
         <td class="ca lbl">A</td>
-        <td class="lbl">Số tiền còn lại kỳ trước chuyển sang (đã gồm VAT 8%)</td>
+        <td class="lbl">Số tiền còn lại kỳ trước chuyển sang${khongVat ? '' : ' (đã gồm VAT 8%)'}</td>
         <td class="ra">${prevBal > 0 ? fmt(prevBalVat) + ' đ' : '–'}</td>
         <td></td><td></td>
       </tr>
@@ -257,7 +262,7 @@ export async function GET(request) {
         <td contenteditable="true"></td>
         <td class="ca noprint"><button onclick="this.closest('tr').style.display='none';recalc()" style="color:#c00;border:none;background:none;cursor:pointer">✕</button></td>
       </tr>`).join('')}
-      <tr>
+      <tr${khongVat ? ' style="display:none"' : ''}>
         <td class="ca" style="color:#666;font-size:8.5pt">VAT 8%</td>
         <td style="font-style:italic;color:#666;font-size:8.5pt">Thuế VAT 8% (trên tổng phí chưa VAT)</td>
         <td class="ra" style="color:#666" id="vatAmt">${fmt(vatAmt)} đ</td>
@@ -322,6 +327,8 @@ var allRows = [2,3,4,5,6,7,8].filter(function(n){ return n >= startIdx })
 var rows = allRows.map(function(n){ return 'xrow'+n })
 // baseFeeVal = tổng các dòng B CỐ ĐỊNH (B1 phí kế toán + B2 phí HCNS nếu có), đều là số chưa VAT.
 var baseFeeVal = ${baseFee + hcnsFee}
+// Công ty thu phí không VAT → 0 (lib/ctyDacThu.js)
+var TY_LE_VAT = ${khongVat ? 0 : 0.08}
 var prevBalVal = ${prevBalVat}
 
 function addRow() {
@@ -357,7 +364,7 @@ function recalc() {
   }
   // VAT chỉ tính trên B (B1 + B2...B7) — A (nợ tồn) đã hiển thị gồm VAT riêng (A×1.08) ở trên
   var subTotal = baseFeeVal + extra
-  var vatAmt   = Math.round(subTotal * 0.08)
+  var vatAmt   = Math.round(subTotal * TY_LE_VAT)
   var totalB   = subTotal + vatAmt
   var totalC   = prevBalVal + totalB
   var f = function(n){ return n.toLocaleString('vi-VN') }

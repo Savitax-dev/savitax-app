@@ -7,6 +7,7 @@ import { callerHasPermission } from '@/lib/serverAuth'
 import { tinhDongTienPhong, gopDongTien } from '@/lib/dongTienPhong'
 import { loadHcnsFees } from '@/lib/hcnsPhiCongTy'
 import { LOC_PHONG_NGOAI } from '@/lib/loaiPhong'
+import { docCtyDacThu, tamBoQuaCongNo } from '@/lib/ctyDacThu'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -183,6 +184,11 @@ export async function GET(request) {
   // khoan, không nhân theo số tháng thô (tránh nhân sai x3/x12 theo quý/năm).
   const feeForPeriod = (c) => feeAtPeriod(c) * dueFeeMonthsCount(c, year, months)
 
+  // Công ty đặc thù (lib/ctyDacThu.js): không VAT / gia hạn thu (kỳ còn gia hạn mà chưa thu đủ → tạm không tính %)
+  const dacThu = await docCtyDacThu(supabase)
+  const gan = c => ({ ...c, khong_vat: dacThu.khongVat.has(c.id), gia_han_thu_thang: dacThu.giaHan.get(c.id) || 0,
+    tamBoQuaNo: (c.periodFee || 0) > 0 && tamBoQuaCongNo(dacThu.giaHan.get(c.id) || 0, year, months[months.length - 1], c.periodFee, c.collected) })
+
   const built = (roomList || []).map(room => {
     const roomStaff = (staffList || []).filter(s => s.room_id === room.id)
     const staffWithClients = roomStaff.map(s => {
@@ -193,16 +199,17 @@ export async function GET(request) {
         collected:      feeMap[c.id] || 0,
         collectedKhach: feeKhachMap[c.id] || 0,
         khachDetails:   feeKhachDetailMap[c.id] || [],
-      })).map(c => ({ ...c, remainDue: remainOf(c) }))
+      })).map(c => gan({ ...c, remainDue: remainOf(c) }))
       // Công ty mình là nhân viên phụ — chỉ để theo dõi, không cộng vào totalFee/totalCollected
       const secondaryClients = (secondaryRows || [])
         .filter(r => r.staff_id === s.id)
         .map(r => clientMap[r.client_id])
         .filter(c => c && monthsActive(c) > 0)
-        .map(c => ({ ...c, monthly_fee: feeAtPeriod(c), periodFee: feeForPeriod(c), collected: feeMap[c.id] || 0, collectedKhach: feeKhachMap[c.id] || 0 }))
+        .map(c => gan({ ...c, monthly_fee: feeAtPeriod(c), periodFee: feeForPeriod(c), collected: feeMap[c.id] || 0, collectedKhach: feeKhachMap[c.id] || 0 }))
 
-      const fee = clients.reduce((a, c) => a + c.periodFee, 0)
-      const col = clients.reduce((a, c) => a + c.collected, 0)
+      const tinhNo = clients.filter(c => !c.tamBoQuaNo)
+      const fee = tinhNo.reduce((a, c) => a + c.periodFee, 0)
+      const col = tinhNo.reduce((a, c) => a + c.collected, 0)
       return { ...s, clients, secondaryClients, totalFee: fee, totalCollected: col, debtPct: fee === 0 ? (clients.length > 0 ? 100 : 0) : Math.round(col / fee * 100) }
     })
     const rFee = staffWithClients.reduce((a, s) => a + s.totalFee, 0)

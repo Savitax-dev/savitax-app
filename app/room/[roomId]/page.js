@@ -10,6 +10,7 @@ import KhoiDongTien from '@/components/KhoiDongTien'
 import { feeCountsForMonth } from '@/lib/feeDue'
 import { isSharedRoom } from '@/lib/specialRooms'
 import { layMe } from '@/lib/khoiDong'
+import { NhanDacThu } from '@/components/CongNoDacThu'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
 const fmtNgay = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : ''
@@ -488,6 +489,7 @@ export default function RoomPage({ params }) {
                                     {c.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
                                   </span>
                                   )}
+                                  <NhanDacThu c={c} />
                                 </div>
                                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                   <span className="text-xs text-gray-400">{c.tax_code}</span>
@@ -783,6 +785,7 @@ export default function RoomPage({ params }) {
                                           : 'bg-blue-100 text-blue-700 border-blue-300')}>
                                         {c.report_type === 'quarterly' ? 'Quý' : 'Tháng'}
                                       </span>
+                                      <NhanDacThu c={c} />
                                       {c.isSecondary && (
                                         <span className="text-xs bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Phụ trách phụ</span>
                                       )}

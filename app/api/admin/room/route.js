@@ -8,6 +8,7 @@ import { requireRoomAccess } from '@/lib/serverAuth'
 import { tinhDongTienPhong } from '@/lib/dongTienPhong'
 import { loadHcnsFees } from '@/lib/hcnsPhiCongTy'
 import { docViPham, truViPham } from '@/lib/viPham'
+import { docCtyDacThu, tamBoQuaCongNo } from '@/lib/ctyDacThu'
 
 function getAdmin() {
   return createClient(
@@ -140,6 +141,9 @@ export async function GET(request) {
 
   // Công ty CHỈ dùng Dịch vụ khác — đọc riêng, thiếu cột thì coi như không có ai (lib/dvkOnly.js).
   const dvkOnly = await docDvkOnly(supabase, clientIds)
+  // Công ty đặc thù (lib/ctyDacThu.js): gia hạn thu → kỳ còn gia hạn mà chưa thu đủ tạm không tính %-công nợ
+  const dacThu = await docCtyDacThu(supabase)
+  const boQuaNo = (c, phi) => tamBoQuaCongNo(dacThu.giaHan.get(c.id) || 0, year, month, phi, feeMap[c.id] || 0)
 
   // Dấu "TP đã kiểm tra" của đúng tháng đang xem (sql/27). Bản clone chưa chạy file SQL đó thì
   // chưa có bảng — nuốt lỗi, coi như chưa công ty nào được đóng dấu, cả trang vẫn chạy nguyên vẹn.
@@ -237,7 +241,8 @@ export async function GET(request) {
     return 'done_late3'
   }
 
-  const buildClientWithTasks = (c, isSecondary) => {
+  const buildClientWithTasks = (c0, isSecondary) => {
+    const c = { ...c0, khong_vat: dacThu.khongVat.has(c0.id), gia_han_thu_thang: dacThu.giaHan.get(c0.id) || 0 }
     const appTasks = getApplicableTasks(c)
     const tasksWithStatus = appTasks.map(t => {
       const rec = taskRecMap[c.id + '_' + t.id] || null
@@ -295,7 +300,8 @@ export async function GET(request) {
       doneTasks  += doneCountable.length + built.tasks.filter(t => t.status === 'done_late3').length
       // Doanh thu chỉ tính công ty mình là nhân viên chính — công ty quý chưa tới hạn thu (hoặc
       // còn trong hạn khoan) không tính vào công nợ tháng này.
-      if (feeCountsForMonth(c.fee_period, year, month)) {
+      built.tamBoQuaNo = feeCountsForMonth(c.fee_period, year, month) && boQuaNo(c, Number(built.monthly_fee) || 0)
+      if (feeCountsForMonth(c.fee_period, year, month) && !built.tamBoQuaNo) {
         totalFee     += Number(built.monthly_fee) || 0
         collectedFee += feeMap[c.id] || 0
       }
@@ -322,7 +328,7 @@ export async function GET(request) {
     // thi no roi vao nhanh `tasks.length === 0 ? 100` cua clientTaskPct, thanh 100% cho khong.
     const ctyChamViec = ownedWithTasks.filter(c => !dvkOnly.has(c.id))
     const taskPcts = ctyChamViec.map(clientTaskPct)
-    const debtCountedClients = ownedWithTasks.filter(c => feeCountsForMonth(c.fee_period, year, month))
+    const debtCountedClients = ownedWithTasks.filter(c => feeCountsForMonth(c.fee_period, year, month) && !c.tamBoQuaNo)
     // %-công việc GỐC rồi mới trừ vi phạm (lib/viPham.js) — trả cả hai để trang ghi rõ đã trừ bao nhiêu.
     const taskPctGoc = ctyChamViec.length === 0 ? 0 : mean(taskPcts)
     const taskPct = truViPham(taskPctGoc, viPham.get(s.id))
