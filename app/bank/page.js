@@ -529,6 +529,14 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
                   }}
                     className="px-3 py-1 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-40">Bỏ qua</button>
                 )}
+                {g !== 'done' && (
+                  <button disabled={busy} title="Không phải tiền khách (chuyển nội bộ, nộp tiền…) — ẩn hẳn khỏi trang Đối soát, dữ liệu vẫn lưu"
+                    onClick={async () => {
+                      if (!confirm('Loại bỏ giao dịch ' + Number(r.amount).toLocaleString('vi-VN') + 'đ khỏi trang Đối soát?\n\nDùng cho tiền KHÔNG phải phí khách (chuyển nội bộ, nộp tiền…). Giao dịch sẽ ẩn hẳn, dữ liệu vẫn lưu trong hệ thống.')) return
+                      if (await act({ action: 'ignore', id: r.id, note: 'Loại bỏ — không phải tiền phí khách', userNote: note.trim() || undefined }, 'Đã loại bỏ')) setNote('')
+                    }}
+                    className="px-3 py-1 rounded-md border border-rose-200 bg-white text-rose-600 hover:bg-rose-50 disabled:opacity-40">🗑 Loại bỏ</button>
+                )}
               </>)}
               {r.state === 'ignored' && (
                 <button disabled={busy} onClick={() => act({ action: 'reopen', id: r.id, userNote: note.trim() || undefined }, 'Đã mở lại')}

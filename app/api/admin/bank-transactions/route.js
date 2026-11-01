@@ -101,8 +101,11 @@ export async function GET(request) {
   let q = supabase.from('bank_transactions').select('*').order('tx_time', { ascending: false }).limit(1000)
   if (from && /^\d{4}-\d{2}-\d{2}$/.test(from)) q = q.gte('tx_time', vnDayStart(from))
   if (to && /^\d{4}-\d{2}-\d{2}$/.test(to)) q = q.lte('tx_time', vnDayEnd(to))
-  const { data: txs, error } = await q
+  const { data: txs0, error } = await q
   if (error) return Response.json({ error: error.message }, { status: 500 })
+  // "Loại bỏ" (anh yêu cầu 01/11/2026): giao dịch không phải tiền khách (chuyển nội bộ, nộp tiền…) — đóng như "Bỏ qua"
+  // nhưng ghi chú bắt đầu bằng "Loại bỏ" thì ẨN hẳn khỏi trang. Dữ liệu vẫn giữ trong bảng để tra cứu.
+  const txs = (txs0 || []).filter(t => !(t.state === 'ignored' && /^Loại bỏ/.test(String(t.note || ''))))
 
   // Chỉ phân loại giao dịch còn mở; đã ghi / bỏ qua thì hiện đúng những gì đã làm.
   const open = (txs || []).filter(t => t.state === 'open')
