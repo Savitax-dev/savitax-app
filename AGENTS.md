@@ -446,3 +446,7 @@ toàn dữ liệu giả. Code **cố định một bản**: đẩy `main` không
   → `lib/demo/cauHinh.js` — CHỈ bảng cấu hình, không khách / nhân viên / tiền.
 - Tắt nối ra ngoài khi `DEMO_MODE`: cổng thuế (`lib/portalBridge.js`), webhook ngân hàng + mail, backup, Google Drive (không đặt
   biến môi trường), đổi mật khẩu / email tài khoản demo. Sửa sinh dữ liệu xong PHẢI chạy lại 4 bộ kiểm dòng tiền trên DB demo.
+- **Bộ hồ sơ mẫu** Soát xét / Rủi ro thuế: `scripts/demo/sinh-ho-so-mau.mjs` → `public/demo/ho-so-mau.zip` (nút tải ở
+  `ThanhCongTy` khi DEMO_MODE). Công ty CÁT TƯỜNG VIỆT (khai THÁNG — ép trong sinhDuLieu `stt === 2`): 2025 chép bộ mẫu ruiro-mau
+  đổi MST, 2026 T01–T09 sinh mới, cài sẵn lỗi T03 / T04 / T06 / T08. Đổi MST / tên công ty demo thì sinh lại file nén.
+  Kiểm: `--thu-muc <nơi giải nén>` rồi chạy `soat-thu-muc-that`, `soat-ruiro-thu-muc-that`, `soat-soatbaocao-thu-muc-that`.

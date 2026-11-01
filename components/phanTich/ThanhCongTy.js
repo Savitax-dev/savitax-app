@@ -47,6 +47,13 @@ export default function ThanhCongTy({ hs, duongDan, themTruoc, onDoiNam, chuChon
   const moCty = id => { setMo(false); chonCty(id) }
   return (
     <>
+      {/* Bản demo (demo.savitax.vn): bộ hồ sơ mẫu của công ty giả để khách tự trỏ thư mục xem — scripts/demo/sinh-ho-so-mau.mjs */}
+      {process.env.NEXT_PUBLIC_DEMO_MODE === '1' && (
+        <div className="mb-3 px-3 py-2.5 rounded-xl border border-amber-300 bg-amber-50 text-sm text-amber-900 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span><b>Bản demo:</b> tải bộ hồ sơ mẫu → giải nén → chọn công ty <b>CÁT TƯỜNG VIỆT</b> → <b>Trỏ thư mục</b> vào thư mục vừa giải nén (Chrome / Edge trên máy tính). Năm 2025: bấm <b>＋ Năm cũ</b> → chọn thư mục 2025 bên trong.</span>
+          <a href="/demo/ho-so-mau.zip" download className="ml-auto px-3 py-1.5 rounded-lg bg-amber-600 text-white font-semibold whitespace-nowrap hover:bg-amber-700">⬇ Tải bộ hồ sơ mẫu (.zip)</a>
+        </div>
+      )}
       {/* Dòng lọc RIÊNG, y hệt màn "Công ty của tôi" (anh chỉ 28/10/2026): phòng → nhân viên → ô tìm dài hết dòng */}
       <div className="flex flex-wrap items-center gap-2 mb-2">
         {dsPhong.length > 1 && (
