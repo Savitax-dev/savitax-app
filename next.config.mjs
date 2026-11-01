@@ -19,6 +19,8 @@ const nextConfig = {
   // được path động join(process.cwd(), 'templates', ...).
   outputFileTracingIncludes: {
     '/api/admin/contract': ['./templates/**'],
+    // Tab Quy ước lưu hồ sơ đọc tài liệu lúc chạy (trang cần đăng nhập nên không dựng tĩnh được)
+    '/soatbaocao/quy-uoc': ['./docs/quy-uoc-luu-ho-so.md'],
   },
 };
 

@@ -1,16 +1,20 @@
 // Soát xét báo cáo — tab "Quy ước lưu hồ sơ" (anh yêu cầu 01/11/2026): nhân viên tự xem và làm theo.
-// Nội dung đọc thẳng từ docs/quy-uoc-luu-ho-so.md lúc build — sửa tài liệu là trang tự đổi theo ở lần đẩy sau,
-// không phải chép tay hai nơi. Trang tĩnh, không đọc thư mục khách, không gọi máy chủ.
+// Nội dung đọc thẳng từ docs/quy-uoc-luu-ho-so.md mỗi lần mở trang — sửa tài liệu là trang tự đổi theo ở lần đẩy sau,
+// không phải chép tay hai nơi. CẦN ĐĂNG NHẬP (kiểm ở máy chủ — tài liệu lấy mã khách thật làm ví dụ, không để lộ
+// ra ngoài; chặn ở trình duyệt thì nội dung vẫn nằm sẵn trong HTML). Không đọc thư mục khách.
 import fs from 'fs'
 import path from 'path'
 import AppShell from '@/components/AppShell'
 import { TabSoat } from '@/components/phanTich/phanTichUI'
 import MarkdownDon, { tachKhoi, slug } from '@/components/MarkdownDon'
+import { redirect } from 'next/navigation'
+import { requireLogin } from '@/lib/serverAuth'
 
-export const dynamic = 'force-static'
+export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Quy ước lưu hồ sơ — App Savitax' }
 
-export default function TrangQuyUoc() {
+export default async function TrangQuyUoc() {
+  if (!(await requireLogin()).ok) redirect('/login')
   const md = fs.readFileSync(path.join(process.cwd(), 'docs', 'quy-uoc-luu-ho-so.md'), 'utf8')
   const khoi = tachKhoi(md)
   const tieuDe = khoi.find(k => k.loai === 'tieuDe' && k.cap === 1)?.chu || 'Quy ước lưu hồ sơ'
