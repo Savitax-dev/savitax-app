@@ -13,6 +13,7 @@ const MUC = [
   { href: '/tokhai/dong-bo-lo', icon: '🔄', nhan: 'Đồng bộ theo lô', mo: 'Gõ captcha liên tục cho nhiều công ty' },
   { href: '/tokhai/tai-file',   icon: '⬇️', nhan: 'Tải file',        mo: 'Tải tờ khai + thông báo về thư mục trên máy' },
   { href: '/tokhai/ket-noi',    icon: '🔌', nhan: 'Kết nối cổng',    mo: 'Tài khoản cổng thuế của từng công ty' },
+  { href: '/tokhai/huong-dan',  icon: '📖', nhan: 'Hướng dẫn dùng',  mo: 'Cài tiện ích Chrome, các bước dùng, lưu ý quan trọng (docs/huong-dan-phan-he-to-khai.md)' },
 ]
 
 export default function TabToKhai() {

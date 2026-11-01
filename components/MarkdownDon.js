@@ -1,6 +1,7 @@
 // Hiển thị một tài liệu Markdown ĐƠN GIẢN (tài liệu nội bộ trong docs/) thành giao diện app — không cần thư viện ngoài.
 // Hỗ trợ đúng những gì tài liệu Savitax dùng: tiêu đề #/##/###, đoạn văn, danh sách "- " và "1. ", bảng "| … |",
-// khối mã ``` (cây thư mục), trích dẫn "> ", đường kẻ "---", chữ đậm **…**, mã `…`, liên kết [chữ](địa chỉ).
+// khối mã ``` (cây thư mục), trích dẫn "> ", đường kẻ "---", chữ đậm **…**, mã `…`, liên kết [chữ](địa chỉ) — cả liên
+// kết nội bộ "#mục" —, ảnh riêng một dòng ![chú thích](img/x.png) (đường ảnh = anhGoc + tên file).
 // Chạy được cả ở máy chủ (trang tĩnh) lẫn trình duyệt.
 
 export const slug = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd')
@@ -14,7 +15,9 @@ function NoiDong({ chu }) {
     if (p.startsWith('`') && p.endsWith('`')) return <code key={i} className="px-1.5 py-0.5 rounded-md bg-red-50 text-[#8B1A1A] text-[0.92em] font-mono break-words">{p.slice(1, -1)}</code>
     if (p.startsWith('**') && p.endsWith('**')) return <b key={i} className="font-bold text-gray-900"><NoiDong chu={p.slice(2, -2)} /></b>
     const lk = p.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
-    if (lk) return /^https?:/.test(lk[2]) ? <a key={i} href={lk[2]} target="_blank" rel="noreferrer" className="text-blue-700 underline">{lk[1]}</a> : <span key={i}>{lk[1]}</span>
+    if (lk && /^https?:/.test(lk[2])) return <a key={i} href={lk[2]} target="_blank" rel="noreferrer" className="text-blue-700 underline">{lk[1]}</a>
+    if (lk && lk[2].startsWith('#')) return <a key={i} href={'#' + slug(decodeURIComponent(lk[2].slice(1)))} className="text-blue-700 underline">{lk[1]}</a>
+    if (lk) return <span key={i}>{lk[1]}</span>
     return <span key={i}>{p}</span>
   })
 }
@@ -31,6 +34,8 @@ export function tachKhoi(md) {
       while (i < dong.length && !dong[i].startsWith('```')) ma.push(dong[i++])
       i++; khoi.push({ loai: 'ma', noiDung: ma.join('\n') }); continue
     }
+    const anh = d.trim().match(/^!\[([^\]]*)\]\(([^)]+)\)$/)
+    if (anh) { khoi.push({ loai: 'anh', chu: anh[1], src: anh[2] }); i++; continue }
     const td = d.match(/^(#{1,4})\s+(.*)$/)
     if (td) { khoi.push({ loai: 'tieuDe', cap: td[1].length, chu: td[2].trim() }); i++; continue }
     if (/^-{3,}\s*$/.test(d)) { khoi.push({ loai: 'ke' }); i++; continue }
@@ -58,14 +63,15 @@ export function tachKhoi(md) {
       khoi.push({ loai: 'ds', coSo, muc }); continue
     }
     const doan = []
-    while (i < dong.length && dong[i].trim() && !/^(#{1,4}\s|```|>|\||-{3,}\s*$|\s*(-|\d+\.)\s)/.test(dong[i])) doan.push(dong[i++].trim())
+    while (i < dong.length && dong[i].trim() && !/^(#{1,4}\s|```|>|\||!\[|-{3,}\s*$|\s*(-|\d+\.)\s)/.test(dong[i])) doan.push(dong[i++].trim())
     if (!doan.length) { i++; continue }
     khoi.push({ loai: 'doan', chu: doan.join(' ') })
   }
   return khoi
 }
 
-export default function MarkdownDon({ md, boTieuDeChinh = false }) {
+// anhGoc: đường dẫn phục vụ ảnh tài liệu (vd '/api/admin/tai-lieu/anh/'), ghép với TÊN FILE của ảnh
+export default function MarkdownDon({ md, boTieuDeChinh = false, anhGoc = '' }) {
   const khoi = tachKhoi(md)
   return (
     <div className="text-[15px] leading-relaxed text-gray-700">
@@ -76,6 +82,13 @@ export default function MarkdownDon({ md, boTieuDeChinh = false }) {
           return <h3 key={i} id={slug(k.chu)} className="scroll-mt-24 mt-6 mb-2 pl-3 border-l-4 border-amber-500 text-base font-bold text-gray-900"><NoiDong chu={k.chu} /></h3>
         }
         if (k.loai === 'ma') return <pre key={i} className="my-3 p-4 rounded-xl bg-slate-900 text-emerald-100 text-[13px] leading-snug font-mono overflow-x-auto whitespace-pre">{k.noiDung}</pre>
+        if (k.loai === 'anh') return (
+          <figure key={i} className="my-4">
+            {/* eslint-disable-next-line @next/next/no-img-element -- ảnh tài liệu nội bộ, đi qua route cần đăng nhập */}
+            <img src={anhGoc + k.src.split('/').pop()} alt={k.chu} loading="lazy" className="w-full max-w-5xl rounded-xl border border-gray-200 shadow-sm" />
+            {k.chu && <figcaption className="mt-1.5 text-xs text-gray-500 italic">▲ {k.chu}</figcaption>}
+          </figure>
+        )
         if (k.loai === 'ke') return <hr key={i} className="my-6 border-gray-200" />
         if (k.loai === 'trich') return <div key={i} className="my-3 px-4 py-3 rounded-xl border border-amber-300 bg-amber-50 text-amber-900">💡 <NoiDong chu={k.chu} /></div>
         if (k.loai === 'bang') return (
