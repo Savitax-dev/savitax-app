@@ -88,8 +88,10 @@ export async function GET(request) {
     // Bậc hoa hồng giới thiệu (sql/39) — chưa chạy SQL thì trả rỗng + cờ thiếu.
     if (viec === 'hoa_hong_bac') {
       if (!quyen.view && !quyen.manage) return loi('Không đủ quyền', 403)
-      const { data, error } = await supabase.from('luong_hoa_hong_bac').select('tu_so_cty, ty_le').order('tu_so_cty')
-      return Response.json({ data: error ? [] : data || [], chuaChaySql: !!error })
+      let { data, error } = await supabase.from('luong_hoa_hong_bac').select('tu_so_cty, ty_le, tu_doanh_so').order('tu_so_cty')
+      const coDoanhSo = !error
+      if (error) ({ data, error } = await supabase.from('luong_hoa_hong_bac').select('tu_so_cty, ty_le').order('tu_so_cty'))
+      return Response.json({ data: error ? [] : data || [], chuaChaySql: !!error, coDoanhSo })
     }
 
     // Báo cáo HOA HỒNG GIỚI THIỆU (tab ở Báo cáo KPI, sql/39). Kỳ = các tháng LƯƠNG từ `tu` tới `den` ('YYYY-MM').
@@ -458,10 +460,12 @@ export async function POST(request) {
       const rows = []
       for (const r of ds) {
         const tu = Number(r.tu_so_cty), tl = Number(String(r.ty_le).replace(',', '.'))
+        const tuDs = r.tu_doanh_so === '' || r.tu_doanh_so == null ? null : Number(String(r.tu_doanh_so).replace(/[^0-9]/g, ''))
+        if (tuDs !== null && !(tuDs >= 0)) return loi('"Từ doanh số" phải là số tiền ≥ 0')
         if (!Number.isInteger(tu) || tu < 1 || tu > 1000) return loi('"Từ số công ty" phải là số nguyên từ 1')
         if (!(tl > 0 && tl <= 100)) return loi('Tỉ lệ hoa hồng phải trong khoảng 0–100%')
         if (rows.some(x => x.tu_so_cty === tu)) return loi('Hai bậc trùng mốc ' + tu + ' công ty')
-        rows.push({ tu_so_cty: tu, ty_le: tl, sua_boi: caller.staffId, sua_luc: new Date().toISOString() })
+        rows.push({ tu_so_cty: tu, ty_le: tl, ...(body.coDoanhSo ? { tu_doanh_so: tuDs } : {}), sua_boi: caller.staffId, sua_luc: new Date().toISOString() })
       }
       const x = await supabase.from('luong_hoa_hong_bac').delete().gte('tu_so_cty', 0)
       if (x.error) return loi(/luong_hoa_hong_bac/.test(x.error.message) ? 'Chưa chạy sql/39_hoa_hong_gioi_thieu.sql' : x.error.message, 500)

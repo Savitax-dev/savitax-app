@@ -41,5 +41,19 @@ const ct3 = [{ id: 'b', ten: 'B', gioiThieuBoi: 'y', gioiThieuTu: '2026-01-01', 
 const kq3 = tinhHoaHong({ congTy: ct3, thu: [{ client_id: 'b', nguon: 'no_ton', ky: '2026-11', kyThang: '2026-11', so_tien: 2160000 }], daTinh: new Map(), bac: BAC, nam: 2026, thang: 11 }).get('y')
 kiem('công ty đã ngưng, thu nợ cũ 2.160.000 → bậc thấp nhất 10% = 200.000', [kq3.soCty, kq3.tyLe, kq3.hoaHong], [0, 10, 200000])
 
+console.log('\nChính sách Lợi ích hợp tác (sql/46) — số khách HOẶC doanh số, lấy % cao hơn:')
+const CS = [{ tu_so_cty: 1, ty_le: 10, tu_doanh_so: 1000000 }, { tu_so_cty: 21, ty_le: 15, tu_doanh_so: 31000000 }, { tu_so_cty: 31, ty_le: 20, tu_doanh_so: 51000000 }]
+kiem('5 khách, doanh số 10tr → 10%', tyLeTheoBac(CS, 5, 10000000), 10)
+kiem('5 khách, doanh số 31tr → 15% (doanh số đến trước)', tyLeTheoBac(CS, 5, 31000000), 15)
+kiem('25 khách, doanh số 20tr → 15% (số khách đến trước)', tyLeTheoBac(CS, 25, 20000000), 15)
+kiem('25 khách, doanh số 60tr → 20%', tyLeTheoBac(CS, 25, 60000000), 20)
+kiem('trên 50 khách / 80tr → giữ 20%', tyLeTheoBac(CS, 70, 120000000), 20)
+kiem('bậc không có mốc doanh số → chỉ xét số khách', tyLeTheoBac(BAC, 3, 999000000), 10)
+const ct4 = [{ id: 'd1', ten: 'D1', gioiThieuBoi: 'z', gioiThieuTu: '2026-01-01', dangDung: true, phiThang: 20000000 },
+  { id: 'd2', ten: 'D2', gioiThieuBoi: 'z', gioiThieuTu: '2026-01-01', dangDung: true, phiThang: 12000000 },
+  { id: 'd3', ten: 'D3', gioiThieuBoi: 'z', gioiThieuTu: '2026-01-01', dangDung: false, phiThang: 50000000 }]
+const kq4 = tinhHoaHong({ congTy: ct4, thu: [{ client_id: 'd1', nguon: 'ketoan', ky: '2026-11', kyThang: '2026-11', so_tien: 10800000 }], daTinh: new Map(), bac: CS, nam: 2026, thang: 11 }).get('z')
+kiem('2 công ty đang dùng, DS 32tr (bỏ công ty ngưng) → 15% × 10tr = 1,5tr', [kq4.soCty, kq4.doanhSo, kq4.tyLe, kq4.hoaHong], [2, 32000000, 15, 1500000])
+
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : '\nCÓ ' + hong + ' MỤC HỎNG.')
 process.exit(hong === 0 ? 0 : 1)

@@ -162,7 +162,7 @@ export default function BangLuong({ quyen }) {
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">{x.hoaHongGt ? <>
                         <div className="font-semibold text-emerald-700">{fmt(x.thuongHoaHong)}</div>
                         <div className="text-[11px] text-gray-500" title={(x.hoaHongGt.chiTiet || []).map(c => (c.ma || c.ten) + ' · ' + c.nguon + ' ' + c.kyThang + ': ' + Number(c.so_tien).toLocaleString('vi-VN')).join('\n')}>
-                          {x.hoaHongGt.soCty}/{x.hoaHongGt.soCtyTong} cty × {x.hoaHongGt.tyLe}%</div>
+                          {x.hoaHongGt.soCty}/{x.hoaHongGt.soCtyTong} cty{x.hoaHongGt.doanhSo ? ' · DS ' + Number(x.hoaHongGt.doanhSo).toLocaleString('vi-VN') + 'đ' : ''} × {x.hoaHongGt.tyLe}%</div>
                       </> : <span className="text-gray-300">—</span>}</td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">
                         <span className={'font-semibold ' + pctMau(x.pctTacPhong)} title={(x.soLanViPham || 0) + ' lần vi phạm'}>{x.pctTacPhong ?? 100}%</span>
