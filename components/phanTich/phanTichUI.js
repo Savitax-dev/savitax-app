@@ -7,9 +7,9 @@
 //
 // ⚠ CHỮ ĐẬM TỐI ĐA font-bold (700). App dùng Arial; trên Windows độ đậm 800/900 (font-extrabold / font-black) bị đổi
 // sang ARIAL BLACK — kiểu chữ khác hẳn, bè ra, dấu tiếng Việt méo (anh chỉ 27/10/2026; đo: 700 → 420px, 800 → 470px).
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { MAU } from '@/components/tokhaiUI'
+import ThanhTab from '@/components/ThanhTab'
 
 export { MAU }
 const HEX = { xanhDuong: '#2563EB', xanhLa: '#059669', hoPhach: '#D97706', xam: '#64748B', do: '#DC2626', tim: '#7C3AED' }
@@ -24,25 +24,7 @@ const MUC_SOAT = [
   { href: '/soatbaocao/quy-uoc', icon: '📘', nhan: 'Quy ước lưu hồ sơ', mo: 'Thư mục 1–12: lưu gì, ở đâu, đặt tên file thế nào', khongGiuCty: true },
 ]
 
-// Thanh tab chung: các tab CHIA ĐỀU trong một khung, cùng cỡ chữ / cao / đệm, mỗi tab một biểu tượng
-// (anh chỉ 01/11/2026: tab to nhỏ không đều nhìn giãn nở; xem feedback giao diện bảng — "tab chia đều 1 khung").
-const COT = { 4: 'lg:grid-cols-4', 5: 'lg:grid-cols-5', 6: 'lg:grid-cols-6' }
-function ThanhTab({ muc }) {
-  return (
-    <div className={'grid grid-cols-2 sm:grid-cols-3 gap-1 p-1 mb-4 rounded-2xl border border-gray-200 bg-white shadow-sm ' + (COT[muc.length] || 'lg:grid-cols-6')}>
-      {muc.map(m => (
-        <Link key={m.key} href={m.href} title={m.mo}
-          className={'flex items-center justify-center gap-1.5 h-10 px-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors ' + (m.dangMo
-            ? 'bg-[#8B1A1A] text-white shadow-sm'
-            : 'text-gray-600 hover:bg-red-50 hover:text-[#8B1A1A]')}>
-          <span className="text-base leading-none">{m.icon}</span>
-          <span className="truncate">{m.nhan}</span>
-        </Link>
-      ))}
-    </div>
-  )
-}
-
+// Thanh tab chia đều một khung, có biểu tượng — components/ThanhTab.js (dùng chung với Tờ khai)
 export function TabSoat({ giuCty }) {
   const pathname = usePathname()
   return <ThanhTab muc={MUC_SOAT.map(m => ({

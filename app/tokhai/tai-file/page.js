@@ -336,7 +336,7 @@ export default function TrangTaiFile() {
 
   return (
     <AppShell>
-      <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
+      <div className="p-4 md:p-6 w-full">
         <TabToKhai />
 
         <h1 className="text-xl font-bold text-gray-900 mb-1">Tải file về thư mục</h1>
