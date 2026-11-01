@@ -10,6 +10,7 @@ import ThuongDvk from '@/components/luong/ThuongDvk'
 import BangLuong from '@/components/luong/BangLuong'
 import PhieuLuongCuaToi from '@/components/luong/PhieuLuongCuaToi'
 import { layQuyenLuong } from '@/lib/khoiDong'
+import ThanhTabLuong, { dsTabLuong } from '@/components/luong/ThanhTabLuong'
 
 // Chấm công & Lương (/luong) — bước 1 của phân hệ Tiền lương.
 //   Tab "Chấm công của tôi": mọi nhân viên tự khai ngày công, bấm xác nhận là khoá.
@@ -29,6 +30,9 @@ export default function LuongPage() {
     (async () => {
       const q = await layQuyenLuong()   // gộp trong /api/admin/khoi-dong, nhớ 5 phút trong phiên
       if (q.error) { if (/đăng nhập/i.test(q.error)) router.push('/login'); else setLoiChung(q.error); return }
+      // Mở đúng tab khi quay về từ trang Hướng dẫn dùng (/luong?tab=…); tab không được phép thì giữ mặc định
+      const t = new URLSearchParams(window.location.search).get('tab')
+      if (t && dsTabLuong(q).some(([k]) => k === t)) setTab(t)
       setQuyen(q)
     })()
   }, [router])
@@ -36,14 +40,7 @@ export default function LuongPage() {
   if (loiChung) return <AppShell><div className="px-4 md:px-8 py-6"><HopThongBao msg={{ loai: 'loi', text: loiChung }} /></div></AppShell>
   if (!quyen) return <AppShell><div className="flex items-center justify-center min-h-64"><p className="text-gray-400 text-sm">Đang tải...</p></div></AppShell>
 
-  const tabs = [
-    quyen.cham_cong && ['cua_toi', 'Chấm công của tôi', '🗓️'],
-    (quyen.congToanCty || quyen.phongTruong?.length > 0) && ['phong', quyen.congToanCty ? 'Chấm công toàn công ty' : 'Chấm công phòng', '👥'],
-    quyen.cham_cong && ['dvk', 'Thưởng dịch vụ khác', '🧾'],
-    quyen.cham_cong && ['phieu', 'Phiếu lương của tôi', '📄'],
-    quyen.view && ['bang_luong', 'Bảng lương', '💰'],
-    quyen.manage && ['thiet_lap', 'Cấp bậc & ngày lễ', '⚙️'],
-  ].filter(Boolean)
+  const tabs = dsTabLuong(quyen)
 
   return (
     <AppShell>
@@ -54,20 +51,9 @@ export default function LuongPage() {
           <h1 className="text-xl font-bold text-gray-900">Chấm công & Lương</h1>
         </div>
 
-        {/* Các tab là những KHỐI tách rời, chia đều hết bề ngang: quản trị 5 khối, nhân viên 2 khối thì
-            mỗi khối tự giãn ra cho đều (flex-1), màn hẹp thì tự xuống dòng. */}
-        {/* Một khung chung bao các khối — vẫn tách từng khối nhưng nhìn thành một thanh. */}
-        <div className="flex flex-wrap gap-1.5 mb-3 w-full p-1.5 rounded-2xl bg-white border border-gray-200 shadow-sm">
-          {tabs.map(([k, l, ic]) => (
-            <button key={k} onClick={() => setTab(k)}
-              // whitespace-nowrap: chữ đậm của tab đang chọn dài hơn → từng xuống 2 dòng, cả thanh cao lệch (anh báo 23/10).
-              className={'flex-1 min-w-[170px] flex items-center justify-center gap-2 px-3 py-2 text-sm whitespace-nowrap rounded-xl border transition-all ' + (tab === k
-                ? 'bg-[#8B1A1A] border-[#8B1A1A] text-white font-semibold shadow-md'
-                : 'bg-gray-50 border-gray-100 text-gray-700 hover:border-[#8B1A1A]/30 hover:bg-rose-50 hover:text-[#8B1A1A]')}>
-              <span className="text-lg leading-none">{ic}</span><span className="truncate">{l}</span>
-            </button>
-          ))}
-        </div>
+        {/* Các tab là những KHỐI tách rời, chia đều hết bề ngang, một khung chung — components/luong/ThanhTabLuong.js
+            (dùng chung với trang Hướng dẫn dùng). Chữ không xuống dòng (anh báo 23/10). */}
+        <ThanhTabLuong quyen={quyen} tab={tab} onChon={setTab} />
 
         {tab === 'cua_toi' && quyen.cham_cong && <ChamCongCuaToi thangDuocKhai={quyen.thangDuocKhai} />}
         {tab === 'phong' && <ChamCongPhong quyen={quyen} />}
