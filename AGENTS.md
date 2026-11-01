@@ -428,3 +428,21 @@ chống tự động của cơ quan thuế → **không làm**. Mã thử nằm 
   nợ...), luôn dùng tài khoản/bản ghi tạm rồi xóa sạch ngay sau khi xác nhận, không để lại dữ
   liệu rác, không sửa trực tiếp tài khoản/dữ liệu thật của nhân viên đang dùng.
 - Toàn bộ giao diện/giao tiếp bằng tiếng Việt.
+
+## Bản demo (`demo.savitax.vn`) — nhánh `demo`, KHÔNG gộp vào `main`
+
+Bản trải nghiệm gửi khách xem trước khi triển khai (anh duyệt 01/11/2026, kế hoạch `docs/demo-app-ke-hoach.md`). Cùng repo,
+nhánh `demo` (Vercel project riêng, production branch = `demo`, vùng `hnd1` vì Supabase demo ở Tokyo), Supabase project RIÊNG
+toàn dữ liệu giả. Code **cố định một bản**: đẩy `main` không đổi demo; muốn cập nhật thì gộp `main` → `demo` khi anh bảo.
+
+- ⚠ **Chốt an toàn 3 lớp** trước mọi lệnh xoá / nạp: `NEXT_PUBLIC_DEMO_MODE=1`, URL Supabase KHÔNG phải `ykorxlkgsmzskdybebzg`
+  (`lib/demo/canh.js`), và hàm SQL `demo_xoa_sach()` tự kiểm bảng đánh dấu `demo_la_ban_demo` chỉ DB demo có (`sql/demo/`).
+- **Làm mới mỗi đêm** 2h VN: `/api/cron/demo-reset` → `lib/demo/datLai.js`: tài khoản demo (6 vai trò, `@demo.savitax.vn`,
+  mật khẩu `DEMO_PASSWORD`, chỉ đặt lại khi bị đổi) → xoá sạch → nạp `lib/demo/sinhDuLieu.js` (sinh theo NGÀY HÔM NAY, hạt giống
+  cố định) → phần suy ra đi qua đúng hàm app: `ensureRollovers`, `applyOldDebtPayment`, `nghiaVuDinhKy`, `tinhBangLuong`.
+  Tay: `node --env-file=.env.local scripts/demo/lam-moi.mjs` (trong thư mục `D:\savitax-demo`).
+- Cấu trúc DB: `scripts/demo/dung-csdl.mjs` chạy các file `sql/` (+ ràng buộc production tạo tay không có file), `--so <defs>`
+  so cột với production. Danh mục cấu hình (vai trò, quyền, checklist mẫu…) chụp từ production: `scripts/demo/chup-cau-hinh.mjs`
+  → `lib/demo/cauHinh.js` — CHỈ bảng cấu hình, không khách / nhân viên / tiền.
+- Tắt nối ra ngoài khi `DEMO_MODE`: cổng thuế (`lib/portalBridge.js`), webhook ngân hàng + mail, backup, Google Drive (không đặt
+  biến môi trường), đổi mật khẩu / email tài khoản demo. Sửa sinh dữ liệu xong PHẢI chạy lại 4 bộ kiểm dòng tiền trên DB demo.

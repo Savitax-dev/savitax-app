@@ -35,6 +35,7 @@ function parseAmount(v) {
 }
 
 export async function POST(request) {
+  if (process.env.NEXT_PUBLIC_DEMO_MODE === '1') return Response.json({ error: 'demo' }, { status: 403 })   // bản demo không nhận giao dịch thật
   if (!secretOk(request)) return Response.json({ error: 'unauthorized' }, { status: 401 })
 
   let body

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { toE164VN } from '@/lib/phone'
 import { callerHasPermission } from '@/lib/serverAuth'
 import { kiemNhanVienTrongPhamVi } from '@/lib/staffScope'
+import { laTaiKhoanDemoId } from '@/lib/demo/canh'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -22,6 +23,7 @@ export async function POST(request) {
   // Không phải quản trị: chỉ nhân viên phòng mình quản lý (lib/staffScope.js), không đụng quản trị.
   const pv = await kiemNhanVienTrongPhamVi(supabase, auth.caller, staffId)
   if (!pv.ok) return Response.json({ error: pv.error }, { status: pv.status })
+  if (await laTaiKhoanDemoId(supabase, staffId)) return Response.json({ error: 'Bản demo: không sửa email / đăng nhập của tài khoản demo dùng chung' }, { status: 403 })
 
   const authUpdate = {}
   if (email !== undefined) { authUpdate.email = email; authUpdate.email_confirm = true }

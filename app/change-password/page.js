@@ -33,6 +33,9 @@ export default function ChangePasswordPage() {
     if (newPass.length < 6) { setError('Mật khẩu mới phải có ít nhất 6 ký tự'); return }
     if (newPass !== confirmPass) { setError('Mật khẩu xác nhận không khớp'); return }
 
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === '1' && String(email || '').toLowerCase().endsWith('@demo.savitax.vn')) {
+      setError('Bản demo: tài khoản demo dùng chung nên không đổi mật khẩu được.'); return
+    }
     setSaving(true)
     const supabase = createClient()
 

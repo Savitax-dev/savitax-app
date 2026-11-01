@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { callerHasPermission } from '@/lib/serverAuth'
 import { kiemNhanVienTrongPhamVi } from '@/lib/staffScope'
+import { laTaiKhoanDemoId } from '@/lib/demo/canh'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -23,6 +24,7 @@ export async function POST(request) {
   const supabase = getAdmin()
   const pv = await kiemNhanVienTrongPhamVi(supabase, auth.caller, staffId)
   if (!pv.ok) return Response.json({ error: pv.error }, { status: pv.status })
+  if (await laTaiKhoanDemoId(supabase, staffId)) return Response.json({ error: 'Bản demo: không đổi mật khẩu tài khoản demo dùng chung' }, { status: 403 })
   const { error } = await supabase.auth.admin.updateUserById(staffId, { password: newPassword })
   if (error) return Response.json({ error: error.message }, { status: 400 })
   return Response.json({ ok: true })

@@ -119,6 +119,7 @@ async function fetchAllRows(supabase, table) {
 // 1 file JSON, lưu vào Supabase Storage (bucket "db-backups"), xoá bản backup quá 8 tuần, và
 // gửi email tóm tắt qua Resend — để phục hồi thủ công nếu có sự cố (chưa có restore tự động).
 export async function GET(request) {
+  if (process.env.NEXT_PUBLIC_DEMO_MODE === '1') return Response.json({ skipped: 'demo' })   // bản demo: dữ liệu giả, không backup
   const auth = request.headers.get('authorization')
   if (auth !== 'Bearer ' + process.env.CRON_SECRET) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
