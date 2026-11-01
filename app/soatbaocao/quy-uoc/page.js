@@ -21,7 +21,7 @@ export default async function TrangQuyUoc() {
   const mucLuc = khoi.filter(k => k.loai === 'tieuDe' && (k.cap === 2 || k.cap === 3))
   return (
     <AppShell>
-      <div className="p-4 md:p-6 max-w-[1500px] mx-auto">
+      <div className="p-4 md:p-6 w-full">
         <div className="flex items-center gap-3 mb-3">
           <span className="text-2xl">🔎</span>
           <h1 className="text-xl font-bold text-gray-800">Soát xét báo cáo</h1>
