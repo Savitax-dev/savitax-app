@@ -70,7 +70,7 @@ export function tachKhoi(md) {
   return khoi
 }
 
-// anhGoc: đường dẫn phục vụ ảnh tài liệu (vd '/api/admin/tai-lieu/anh/'), ghép với TÊN FILE của ảnh
+// anhGoc = null: không hiện ảnh (bản demo — ảnh chụp dữ liệu thật). anhGoc: đường dẫn phục vụ ảnh tài liệu (vd '/api/admin/tai-lieu/anh/'), ghép với TÊN FILE của ảnh
 export default function MarkdownDon({ md, boTieuDeChinh = false, anhGoc = '' }) {
   const khoi = tachKhoi(md)
   return (
@@ -82,6 +82,9 @@ export default function MarkdownDon({ md, boTieuDeChinh = false, anhGoc = '' }) 
           return <h3 key={i} id={slug(k.chu)} className="scroll-mt-24 mt-6 mb-2 pl-3 border-l-4 border-amber-500 text-base font-bold text-gray-900"><NoiDong chu={k.chu} /></h3>
         }
         if (k.loai === 'ma') return <pre key={i} className="my-3 p-4 rounded-xl bg-slate-900 text-emerald-100 text-[13px] leading-snug font-mono overflow-x-auto whitespace-pre">{k.noiDung}</pre>
+        if (k.loai === 'anh' && anhGoc === null) return (   // bản demo: ảnh chụp dữ liệu thật không hiện
+          <div key={i} className="my-3 px-4 py-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500">🖼 {k.chu || 'Ảnh minh hoạ màn hình'} — ảnh chụp có ở bản chính thức</div>
+        )
         if (k.loai === 'anh') return (
           <figure key={i} className="my-4">
             {/* eslint-disable-next-line @next/next/no-img-element -- ảnh tài liệu nội bộ, đi qua route cần đăng nhập */}

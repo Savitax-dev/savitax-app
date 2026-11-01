@@ -11,10 +11,13 @@ import { redirect } from 'next/navigation'
 import AppShell from '@/components/AppShell'
 import MarkdownDon, { tachKhoi, slug } from '@/components/MarkdownDon'
 import { requireLogin } from '@/lib/serverAuth'
+import { LA_DEMO, lamSachTaiLieu } from '@/lib/demo/canh'
 
 export default async function TrangTaiLieu({ file, dau, bieuTuong = '📘', nhan = 'Áp dụng cho mọi nhân viên' }) {
   if (!(await requireLogin()).ok) redirect('/login')
-  const md = fs.readFileSync(path.join(process.cwd(), 'docs', file), 'utf8')
+  // Bản demo: thay ví dụ thật (mã KH, MST, tên nhân viên) bằng công ty giả, ẩn ảnh chụp màn hình thật
+  const goc = fs.readFileSync(path.join(process.cwd(), 'docs', file), 'utf8')
+  const md = LA_DEMO ? lamSachTaiLieu(goc) : goc
   const khoi = tachKhoi(md)
   const tieuDe = khoi.find(k => k.loai === 'tieuDe' && k.cap === 1)?.chu || file
   const mucLuc = khoi.filter(k => k.loai === 'tieuDe' && (k.cap === 2 || k.cap === 3))
@@ -38,7 +41,7 @@ export default async function TrangTaiLieu({ file, dau, bieuTuong = '📘', nhan
               <h2 className="text-2xl font-bold text-[#8B1A1A] flex-1 min-w-[260px]">{tieuDe}</h2>
               {nhan && <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">{nhan}</span>}
             </div>
-            <MarkdownDon md={md} boTieuDeChinh anhGoc="/api/admin/tai-lieu/anh/" />
+            <MarkdownDon md={md} boTieuDeChinh anhGoc={LA_DEMO ? null : '/api/admin/tai-lieu/anh/'} />
           </article>
         </div>
       </div>

@@ -450,3 +450,6 @@ toàn dữ liệu giả. Code **cố định một bản**: đẩy `main` không
   `ThanhCongTy` khi DEMO_MODE). Công ty CÁT TƯỜNG VIỆT (khai THÁNG — ép trong sinhDuLieu `stt === 2`): 2025 chép bộ mẫu ruiro-mau
   đổi MST, 2026 T01–T09 sinh mới, cài sẵn lỗi T03 / T04 / T06 / T08. Đổi MST / tên công ty demo thì sinh lại file nén.
   Kiểm: `--thu-muc <nơi giải nén>` rồi chạy `soat-thu-muc-that`, `soat-ruiro-thu-muc-that`, `soat-soatbaocao-thu-muc-that`.
+- **Trang tài liệu** (Quy ước lưu hồ sơ, Hướng dẫn dùng Tờ khai — `components/TrangTaiLieu.js`): docs lấy mã KH / MST / tên NV THẬT
+  làm ví dụ → bản demo thay qua `lamSachTaiLieu` (`lib/demo/canh.js`) và ẩn ảnh chụp màn hình (route ảnh trả 404). Gộp main → demo
+  mà tài liệu có ví dụ thật mới thì bổ sung bảng thay trước khi đẩy.

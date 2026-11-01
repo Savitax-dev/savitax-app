@@ -8,6 +8,8 @@ import { requireLogin } from '@/lib/serverAuth'
 const LOAI = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' }
 
 export async function GET(request, { params }) {
+  // Bản demo: ảnh chụp màn hình có dữ liệu khách thật — không phục vụ
+  if (process.env.NEXT_PUBLIC_DEMO_MODE === '1') return Response.json({ error: 'Không có ở bản demo' }, { status: 404 })
   const auth = await requireLogin()
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
   const { ten } = await params
