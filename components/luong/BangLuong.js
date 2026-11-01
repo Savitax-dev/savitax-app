@@ -173,12 +173,24 @@ export default function BangLuong({ quyen }) {
                           <div className="space-y-1 text-left min-w-[200px]">
                             <input value={sua.phu_cap} onChange={e => setSua(v => ({ ...v, phu_cap: e.target.value.replace(/[^\d]/g, '') }))} placeholder="Phụ cấp" className="w-full border border-amber-300 rounded px-2 py-1 text-right" />
                             <input value={sua.dieu_chinh} onChange={e => setSua(v => ({ ...v, dieu_chinh: e.target.value.replace(/[^\d-]/g, '') }))} placeholder="Điều chỉnh (+/−)" className="w-full border border-amber-300 rounded px-2 py-1 text-right" />
-                            <input value={sua.ly_do} onChange={e => setSua(v => ({ ...v, ly_do: e.target.value }))} placeholder="Lý do điều chỉnh" className="w-full border border-amber-300 rounded px-2 py-1" />
-                            <div className="flex gap-2 justify-end"><button onClick={luuDieuChinh} className="text-xs px-2 py-1 rounded bg-[#8B1A1A] text-white">Lưu</button><button onClick={() => setSua(null)} className="text-xs text-gray-500">Hủy</button></div>
+                            {/* Lý do BẮT BUỘC khi có phụ cấp hoặc điều chỉnh (anh chốt 01/11/2026) — máy chủ chặn lại lần nữa */}
+                            {(() => {
+                              const coTien = (Number(sua.phu_cap) || 0) !== 0 || (Number(sua.dieu_chinh) || 0) !== 0
+                              const thieuLyDo = coTien && String(sua.ly_do || '').trim().length < 5
+                              return <>
+                                <input value={sua.ly_do} onChange={e => setSua(v => ({ ...v, ly_do: e.target.value }))} placeholder="Lý do (bắt buộc) — vd: phụ cấp xăng xe, GĐ duyệt…"
+                                  className={'w-full border rounded px-2 py-1 ' + (thieuLyDo ? 'border-rose-400 bg-rose-50' : 'border-amber-300')} />
+                                {thieuLyDo && <p className="text-[11px] text-rose-600 whitespace-normal">Ghi lý do (ít nhất 5 ký tự) rồi mới lưu được</p>}
+                                <div className="flex gap-2 justify-end"><button onClick={luuDieuChinh} disabled={thieuLyDo} className="text-xs px-2 py-1 rounded bg-[#8B1A1A] text-white disabled:opacity-40">Lưu</button><button onClick={() => setSua(null)} className="text-xs text-gray-500">Hủy</button></div>
+                              </>
+                            })()}
                           </div>
                         ) : (
                           <>
-                            {x.phuCap ? <div>+{fmt(x.phuCap)}</div> : null}
+                            {x.phuCap ? <div title={x.lyDoDieuChinh}>+{fmt(x.phuCap)}</div> : null}
+                            {(x.phuCap || x.dieuChinh) && !x.lyDoDieuChinh ? <div className="text-[11px] text-amber-600" title="Khoản nhập trước khi bắt buộc lý do — bấm Nhập để ghi bổ sung">⚠ chưa có lý do</div> : null}
+                            {(x.phuCap || x.dieuChinh) && x.lyDoDieuChinh ? <div className="text-[11px] text-gray-500 max-w-[180px] truncate whitespace-nowrap" title={x.lyDoDieuChinh}>{x.lyDoDieuChinh}</div> : null}
+                            {(x.phuCap || x.dieuChinh) && x.nguoiNhapDieuChinh ? <div className="text-[11px] text-gray-400 whitespace-nowrap" title={x.lucNhapDieuChinh ? 'Nhập lúc ' + new Date(x.lucNhapDieuChinh).toLocaleString('vi-VN') : ''}>Nhập: {x.nguoiNhapDieuChinh}</div> : null}
                             {x.dieuChinh ? <div className={x.dieuChinh < 0 ? 'text-rose-600' : 'text-emerald-700'} title={x.lyDoDieuChinh}>{x.dieuChinh > 0 ? '+' : ''}{fmt(x.dieuChinh)}</div> : null}
                             {!x.phuCap && !x.dieuChinh && <span className="text-gray-300">—</span>}
                             {d.duocChot && !d.daChot && <div><button onClick={() => setSua({ staff_id: x.staff_id, phu_cap: x.phuCap ? String(x.phuCap) : '', dieu_chinh: x.dieuChinh ? String(x.dieuChinh) : '', ly_do: x.lyDoDieuChinh || '' })} className="text-xs text-[#8B1A1A] underline">Nhập</button></div>}

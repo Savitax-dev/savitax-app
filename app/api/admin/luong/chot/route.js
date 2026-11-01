@@ -84,7 +84,9 @@ export async function POST(request) {
       const phuCap = Math.round(Number(body.phu_cap) || 0), dieuChinh = Math.round(Number(body.dieu_chinh) || 0)
       if (phuCap < 0 || Math.abs(phuCap) > 1e9 || Math.abs(dieuChinh) > 1e9) return loi('Số tiền không hợp lệ')
       const lyDo = String(body.ly_do || '').trim()
-      if (dieuChinh !== 0 && lyDo.length < 3) return loi('Có điều chỉnh thì phải ghi lý do (vd: giám đốc duyệt ngoại lệ …)')
+      // Bắt buộc lý do cho CẢ phụ cấp lẫn điều chỉnh (anh chốt 01/11/2026 — T10 có 3 khoản phụ cấp nhập không lý do,
+      // trong đó một khoản người nhập tự nhập cho chính mình). Về 0 cả hai (xoá khoản) thì không cần.
+      if ((phuCap !== 0 || dieuChinh !== 0) && lyDo.length < 5) return loi('Phải ghi lý do phụ cấp / điều chỉnh (vd: phụ cấp xăng xe đi khách, giám đốc duyệt ngày …)')
       const { data: st } = await supabase.from('staff').select('id').eq('id', body.staffId).maybeSingle()
       if (!st) return loi('Không tìm thấy nhân viên')
       const { error } = await supabase.from('luong_dieu_chinh').upsert({
