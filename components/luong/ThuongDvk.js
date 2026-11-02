@@ -74,6 +74,16 @@ export default function ThuongDvk({ quyen }) {
     setMsg({ loai: j.canhBao?.length ? 'canh_bao' : 'ok', text: 'Đã gửi khai, chờ trưởng phòng duyệt.' + (j.canhBao?.length ? ' ⚠ ' + j.canhBao.join(' ') : '') })
     tai()
   }
+  // Sửa tại chỗ dòng khai chưa duyệt (anh yêu cầu 02/11/2026): số tiền, tỉ lệ, ghi chú (+ tên nếu ngoài app)
+  const [sua, setSua] = useState(null)   // { id, so_tien, ty_le, ghi_chu, ten_ngoai|null, khong_vat }
+  const moSua = x => setSua({ id: x.id, so_tien: String(Number(x.so_tien)), ty_le: String(Number(x.ty_le)), ghi_chu: x.ghi_chu || '',
+    ten_ngoai: x.service_id ? null : String(x.ten_dv || '').replace(/^\[Ngoài app\]\s*/, ''), khong_vat: !!x.khong_vat })
+  const luuSua = async () => {
+    setMsg(null)
+    const j = await goi('/api/admin/luong/thuong', { viec: 'dvk_sua', id: sua.id, so_tien: Number(sua.so_tien) || 0, ty_le: sua.ty_le, ghi_chu: sua.ghi_chu, ...(sua.ten_ngoai !== null ? { ten_ngoai: sua.ten_ngoai } : {}) })
+    if (j.error) { setMsg({ loai: 'loi', text: j.error }); return }
+    setSua(null); setMsg({ loai: 'ok', text: 'Đã lưu, dòng khai chờ trưởng phòng duyệt.' }); tai()
+  }
   const xoa = async (id) => {
     if (!confirm('Xoá dòng khai này?')) return
     const j = await goi('/api/admin/luong/thuong', { viec: 'dvk_xoa', id })
@@ -182,12 +192,40 @@ export default function ThuongDvk({ quyen }) {
             <tbody>
               {!d && <tr><td className="px-4 py-6 text-center text-gray-400">Đang tải…</td></tr>}
               {d && !d.data.length && <tr><td className="px-4 py-6 text-center text-gray-400">Chưa khai dòng nào cho kỳ này.</td></tr>}
-              {(d?.data || []).map(x => (
+              {(d?.data || []).map(x => sua?.id === x.id ? (
+                <tr key={x.id} className="border-t border-gray-100 bg-amber-50/60">
+                  <td colSpan={4} className="px-4 py-3">
+                    <div className="text-gray-900 mb-2">{x.service_id ? x.ten_dv : '[Ngoài app]'}</div>
+                    <div className="grid grid-cols-1 md:grid-cols-[1fr_140px_110px] gap-2">
+                      {sua.ten_ngoai !== null && <input value={sua.ten_ngoai} onChange={e => setSua(v => ({ ...v, ten_ngoai: e.target.value }))} placeholder="Tên dịch vụ + công ty" className="md:col-span-3 border border-amber-300 rounded-lg px-2 py-1.5" />}
+                      <input value={sua.ghi_chu} onChange={e => setSua(v => ({ ...v, ghi_chu: e.target.value }))} placeholder={sua.ten_ngoai !== null ? 'Ghi chú (bắt buộc)' : 'Ghi chú'} className="border border-amber-300 rounded-lg px-2 py-1.5" />
+                      <input value={sua.so_tien ? Number(sua.so_tien).toLocaleString('vi-VN') : ''} onChange={e => setSua(v => ({ ...v, so_tien: String(soNhap(e.target.value)) }))} placeholder="Số tiền (gồm VAT)" title="Số tiền thực nhận (gồm VAT)" className="border border-amber-300 rounded-lg px-2 py-1.5 text-right" />
+                      <input value={sua.ty_le} onChange={e => setSua(v => ({ ...v, ty_le: e.target.value.replace(/[^\d.,]/g, '') }))} placeholder="Tỉ lệ %" title="Tỉ lệ được hưởng (%)" className="border border-amber-300 rounded-lg px-2 py-1.5 text-right" />
+                    </div>
+                    <div className="mt-2 flex items-center gap-3 text-sm">
+                      <span className="text-gray-600">Thưởng: <b className="text-orange-700">{fmt(sua.so_tien && sua.ty_le ? tienThuongDvk(sua.so_tien, String(sua.ty_le).replace(',', '.'), sua.khong_vat) : 0)}</b></span>
+                      {x.trang_thai === 'tra_lai' && <span className="text-xs text-rose-600">Lưu xong dòng quay về Chờ duyệt</span>}
+                      <span className="ml-auto flex gap-2">
+                        <button onClick={luuSua} className="px-3 py-1.5 rounded-lg bg-[#8B1A1A] text-white font-semibold">💾 Lưu</button>
+                        <button onClick={() => setSua(null)} className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600">Huỷ</button>
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
                 <tr key={x.id} className="border-t border-gray-100">
                   <td className="px-4 py-2.5"><div className="text-gray-900">{x.ten_dv}</div><div className="text-xs text-gray-500">{fmt(x.so_tien)}{x.khong_vat ? ' (không VAT)' : ' ÷ 1,08'} × {Number(x.ty_le).toLocaleString('vi-VN')}%{x.ghi_chu ? ' · ' + x.ghi_chu : ''}{x.ly_do_tra ? ' · Lý do trả: ' + x.ly_do_tra : ''}</div></td>
                   <td className="px-4 py-2.5 text-right font-semibold text-orange-700 whitespace-nowrap">{fmt(x.tien_thuong)}</td>
                   <td className="px-4 py-2.5 whitespace-nowrap"><span className={'text-xs rounded-full border px-2.5 py-0.5 ' + TT[x.trang_thai][1]}>{TT[x.trang_thai][0]}</span></td>
-                  <td className="px-4 py-2.5 text-right">{x.trang_thai !== 'da_duyet' && <button onClick={() => xoa(x.id)} className="text-xs text-rose-500 hover:underline">Xoá</button>}</td>
+                  {/* Sửa / Xoá bằng icon cho gọn (anh yêu cầu 02/11/2026) — dòng đã duyệt thì khoá */}
+                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                    {x.trang_thai !== 'da_duyet' && <>
+                      <button onClick={() => moSua(x)} disabled={!!sua} title="Sửa dòng khai" aria-label="Sửa dòng khai"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:bg-amber-100 hover:text-amber-800 disabled:opacity-30">✏️</button>
+                      <button onClick={() => xoa(x.id)} disabled={!!sua} title="Xoá dòng khai" aria-label="Xoá dòng khai"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:bg-rose-100 hover:text-rose-700 disabled:opacity-30">🗑️</button>
+                    </>}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -5,7 +5,7 @@
 //   GET  ?viec=dvk_cua_toi&nam=&thang=  → dòng khai thưởng DVK của chính mình + hồ sơ được khai
 //   GET  ?viec=dvk_duyet&nam=&thang=    → dòng khai trong phạm vi duyệt (TP: phòng mình làm trưởng)
 //   POST {viec:'dvk_them', nam, thang, service_id | ngoai_app+ten_ngoai, so_tien, ty_le, ghi_chu}
-//   POST {viec:'dvk_xoa', id}  ·  POST {viec:'dvk_duyet', id, dong_y, ly_do}
+//   POST {viec:'dvk_sua', id, so_tien, ty_le, ghi_chu, ten_ngoai?}  ·  POST {viec:'dvk_xoa', id}  ·  POST {viec:'dvk_duyet', id, dong_y, ly_do}
 import { requireLogin } from '@/lib/serverAuth'
 import { roomsWithRole } from '@/lib/roleUnion'
 import { getAdmin, loi, pad, quyenCua, ngayLeCuaThang, namThang, soTien, tienHopLe } from '@/lib/luong/api'
@@ -166,6 +166,34 @@ export async function POST(request) {
       const canhBao = []
       if (hoSo.daKhai + soTien > hoSo.daThu) canhBao.push('Tổng số tiền mọi người khai cho hồ sơ này (' + (hoSo.daKhai + soTien).toLocaleString('vi-VN') + 'đ) đang VƯỢT số đã thu trên app (' + hoSo.daThu.toLocaleString('vi-VN') + 'đ) — trưởng phòng sẽ thấy cảnh báo này khi duyệt.')
       return Response.json({ ok: true, data, canhBao })
+    }
+
+    // Sửa dòng khai của CHÍNH MÌNH, chưa duyệt (anh yêu cầu 02/11/2026): số tiền, tỉ lệ, ghi chú (+ tên nếu dịch vụ ngoài app).
+    // Không đổi hồ sơ — chọn nhầm hồ sơ thì xoá dòng khai lại. Dòng bị TRẢ LẠI sửa xong thì về "Chờ duyệt" lần nữa.
+    if (viec === 'dvk_sua') {
+      const { data: d } = await supabase.from('luong_dvk_khai').select('id, staff_id, trang_thai, service_id, client_id, ten_dv').eq('id', body.id).maybeSingle()
+      if (!d || d.staff_id !== caller.staffId) return loi('Không tìm thấy dòng khai của anh/chị', 404)
+      if (d.trang_thai === 'da_duyet') return loi('Dòng đã duyệt không sửa được — nhờ trưởng phòng trả lại trước', 409)
+      const soTien = Number(body.so_tien), tyLe = Number(String(body.ty_le).replace(',', '.'))
+      if (!(soTien > 0 && soTien < 1e10)) return loi('Số tiền thực nhận phải lớn hơn 0')
+      if (!(tyLe > 0 && tyLe <= 100)) return loi('Tỉ lệ % phải trong khoảng 0–100')
+      const ghiChu = String(body.ghi_chu || '').trim()
+      const ngoaiApp = !d.service_id
+      let tenDv = d.ten_dv
+      if (ngoaiApp) {
+        const ten = String(body.ten_ngoai ?? d.ten_dv.replace(/^\[Ngoài app\]\s*/, '')).trim()
+        if (ten.length < 3) return loi('Ghi tên dịch vụ (và công ty) chưa có trên app')
+        if (ghiChu.length < 5) return loi('Dịch vụ chưa có trên app thì bắt buộc ghi chú')
+        tenDv = ('[Ngoài app] ' + ten).slice(0, 300)
+      }
+      const khongVat = d.client_id ? (await docCtyDacThu(supabase)).khongVat.has(d.client_id) : false
+      const { data, error } = await supabase.from('luong_dvk_khai').update({
+        ten_dv: tenDv, so_tien: soTien, ty_le: tyLe, tien_thuong: tienThuongDvk(soTien, tyLe, khongVat), ghi_chu: ghiChu.slice(0, 300) || null,
+        ...(d.trang_thai === 'tra_lai' ? { trang_thai: 'cho_duyet', ly_do_tra: null, duyet_boi: null, duyet_luc: null } : {}),
+      }).eq('id', d.id).eq('staff_id', caller.staffId).neq('trang_thai', 'da_duyet').select('*').maybeSingle()
+      if (error) return loi(error.message, 500)
+      if (!data) return loi('Dòng vừa được duyệt — không sửa được nữa', 409)
+      return Response.json({ ok: true, data })
     }
 
     if (viec === 'dvk_xoa') {
