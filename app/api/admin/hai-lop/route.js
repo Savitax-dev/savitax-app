@@ -11,12 +11,14 @@ export async function GET() {
   const auth = await callerHasPermission('manage_staff')
   if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status })
   const admin = getAdmin()
+  // ⚠ listUsers KHÔNG kèm yếu tố 2 lớp (trường factors vắng mặt — đo 02/11/2026) → hỏi từng tài khoản, lô 10 song song
+  const { data: st, error } = await admin.from('staff').select('id').order('id')
+  if (error) return Response.json({ error: error.message }, { status: 500 })
   const daBat = []
-  for (let page = 1; ; page++) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 })
-    if (error) return Response.json({ error: error.message }, { status: 500 })
-    for (const u of data.users) if ((u.factors || []).some(f => f.status === 'verified')) daBat.push(u.id)
-    if (data.users.length < 1000) break
+  for (let i = 0; i < (st || []).length; i += 10) {
+    const lo = st.slice(i, i + 10)
+    const kq = await Promise.all(lo.map(s => admin.auth.admin.mfa.listFactors({ userId: s.id }).then(r => r.data?.factors || []).catch(() => [])))
+    lo.forEach((s, j) => { if (kq[j].some(f => f.status === 'verified')) daBat.push(s.id) })
   }
   return Response.json({ daBat })
 }
