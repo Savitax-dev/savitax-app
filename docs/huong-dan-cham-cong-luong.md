@@ -169,6 +169,11 @@ của phòng cho kỳ đang chọn.
   **Ngoài app** = dịch vụ chưa nhập app, kiểm theo ghi chú.
 - **Duyệt** → dòng vào bảng lương. **Trả lại** → bắt buộc ghi lý do.
 - Không tự duyệt dòng khai của chính mình.
+- **Ai duyệt được**: trưởng phòng (nhân viên phòng mình), **kế toán nội bộ** và quản trị (mọi phòng).
+- Nút chọn kỳ có số **"n chờ duyệt"** — đầu tháng app mở sẵn kỳ mới, nhân viên thường đang khai cho **kỳ trước**,
+  nhìn số trên nút để chuyển kỳ.
+- Nhân viên **sửa / xoá** được dòng khai của mình bằng icon ✏️ 🗑️ khi chưa duyệt; dòng bị trả lại sửa xong tự về
+  Chờ duyệt.
 
 ---
 

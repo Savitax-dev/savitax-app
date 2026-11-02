@@ -97,7 +97,8 @@ export async function GET(request) {
     }
 
     if (viec === 'dvk_duyet') {
-      // Trưởng phòng: dòng khai của nhân viên phòng mình LÀM TRƯỞNG. Quản trị: tất cả.
+      // Trưởng phòng: dòng khai của nhân viên phòng mình LÀM TRƯỞNG. Quản trị + kế toán nội bộ (manage_payroll, anh mở
+      // 02/11/2026): tất cả — trừ dòng của chính mình.
       const phongTruong = roomsWithRole(caller, ['leader'])
       if (!quyen.admin && !phongTruong.length && !quyen.view) return loi('Không đủ quyền', 403)
       const { data: ds, error } = await supabase.from('luong_dvk_khai').select('*, staff:staff_id(full_name, room_id, rooms(name))')
@@ -107,7 +108,7 @@ export async function GET(request) {
       return Response.json({
         data: (ds || []).filter(d => quyen.admin || quyen.view || phongTruong.includes(d.staff?.room_id)).map(d => ({
           ...d, ten_nv: d.staff?.full_name || '', phong: d.staff?.rooms?.name || '',
-          duocDuyet: (quyen.admin || phongTruong.includes(d.staff?.room_id)) && d.staff_id !== caller.staffId,
+          duocDuyet: (quyen.admin || quyen.manage || phongTruong.includes(d.staff?.room_id)) && d.staff_id !== caller.staffId,
           daThuHoSo: hoSo.get(d.service_id)?.daThu ?? null, daKhaiHoSo: hoSo.get(d.service_id)?.daKhai ?? null,
           khong_vat: hoSo.get(d.service_id)?.khong_vat === true,
         })),
@@ -207,8 +208,9 @@ export async function POST(request) {
     if (viec === 'dvk_duyet') {
       const { data: d } = await supabase.from('luong_dvk_khai').select('id, staff_id, trang_thai, staff:staff_id(room_id)').eq('id', body.id).maybeSingle()
       if (!d) return loi('Không tìm thấy dòng khai', 404)
-      const duoc = quyen.admin || roomsWithRole(caller, ['leader']).includes(d.staff?.room_id)
-      if (!duoc) return loi('Chỉ trưởng phòng của nhân viên này hoặc quản trị được duyệt', 403)
+      // Kế toán nội bộ (manage_payroll) duyệt được mọi phòng — anh mở 02/11/2026. Không ai trừ quản trị tự duyệt dòng của mình.
+      const duoc = quyen.admin || quyen.manage || roomsWithRole(caller, ['leader']).includes(d.staff?.room_id)
+      if (!duoc) return loi('Chỉ trưởng phòng của nhân viên này, kế toán nội bộ hoặc quản trị được duyệt', 403)
       if (d.staff_id === caller.staffId && !quyen.admin) return loi('Không tự duyệt dòng khai của chính mình', 403)
       const dongY = body.dong_y === true
       const lyDo = String(body.ly_do || '').trim()
