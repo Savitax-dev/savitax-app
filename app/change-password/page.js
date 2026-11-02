@@ -154,7 +154,11 @@ export default function ChangePasswordPage() {
             {moCai ? (
               <CaiDatHaiLop onXong={() => { setMoCai(false); setTbHaiLop('Đã bật xác thực 2 lớp. Lần đăng nhập sau app sẽ hỏi mã 6 số.'); docHaiLop() }} onBo={() => setMoCai(false)} />
             ) : haiLop.daBat ? (
-              !BAT_BUOC_HAI_LOP && <button onClick={tatHaiLop} className="text-sm text-gray-500 underline">Tắt 2 lớp (đổi điện thoại: tắt rồi bật lại)</button>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {/* Bỏ giấy "không hỏi lại trên máy này" (lib/haiLopThietBi.js) — tắt-bật lại 2 lớp thì MỌI máy đều bị quên */}
+                <button onClick={async () => { await fetch('/api/hai-lop/thiet-bi', { method: 'DELETE' }); setTbHaiLop('Đã quên máy này — lần đăng nhập sau sẽ hỏi mã 6 số.') }} className="text-sm text-gray-500 underline">Quên máy này</button>
+                {!BAT_BUOC_HAI_LOP && <button onClick={tatHaiLop} className="text-sm text-gray-500 underline">Tắt 2 lớp (đổi điện thoại: tắt rồi bật lại)</button>}
+              </div>
             ) : (
               <button onClick={() => { setTbHaiLop(''); setMoCai(true) }} className="w-full text-white py-2.5 rounded-xl text-sm font-semibold" style={{ backgroundColor: '#8B1A1A' }}>🛡️ Bật xác thực 2 lớp</button>
             )}

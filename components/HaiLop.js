@@ -32,8 +32,11 @@ export function NhapMaHaiLop({ onXong, onDoiTaiKhoan }) {
     if (e1 || !yeuTo) { setLoi(e1 ? loiDe(e1) : 'Không tìm thấy thiết bị 2 lớp — nhờ quản trị đặt lại.'); setDang(false); return }
     const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: yeuTo.id, code: ma })
     if (error) { setLoi(loiDe(error)); setMa(''); setDang(false); o.current?.focus(); return }
+    // Tick "Không hỏi lại trên máy này" → máy chủ cấp giấy tin cậy 30 ngày (lib/haiLopThietBi.js). Lỗi thì thôi, vẫn vào app.
+    if (nhoMay) await fetch('/api/hai-lop/thiet-bi', { method: 'POST' }).catch(() => {})
     onXong?.()
   }
+  const [nhoMay, setNhoMay] = useState(true)
   return (
     <form onSubmit={gui} className="space-y-4">
       <div className="text-center">
@@ -42,6 +45,10 @@ export function NhapMaHaiLop({ onXong, onDoiTaiKhoan }) {
         <p className="text-sm text-gray-500 mt-1">Mở ứng dụng <b>Google Authenticator</b> (hoặc Microsoft Authenticator) trên điện thoại, nhập mã 6 số của <b>Savitax</b>.</p>
       </div>
       <input ref={o} inputMode="numeric" autoComplete="one-time-code" value={ma} onChange={e => setMa(chiSo(e.target.value))} placeholder="••••••" className={O_MA} />
+      <label className="flex items-start gap-2 text-sm text-gray-700 cursor-pointer select-none">
+        <input type="checkbox" checked={nhoMay} onChange={e => setNhoMay(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#8B1A1A]" />
+        <span>Không hỏi lại trên máy này trong 30 ngày<span className="block text-xs text-gray-400">Bỏ tick nếu là máy dùng chung / máy lạ.</span></span>
+      </label>
       {loi && <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg">{loi}</div>}
       <button type="submit" disabled={dang || ma.length !== 6} className={NUT}>{dang ? 'Đang kiểm…' : 'Xác nhận'}</button>
       <p className="text-xs text-gray-400 text-center">Mất hoặc đổi điện thoại? Nhờ quản trị bấm &ldquo;Đặt lại 2 lớp&rdquo; cho tài khoản của mình.</p>
