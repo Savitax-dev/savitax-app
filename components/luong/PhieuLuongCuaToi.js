@@ -95,8 +95,13 @@ export default function PhieuLuongCuaToi() {
             </div>
             <div>
               <div className="text-xs font-bold text-amber-700 uppercase tracking-wide mt-2 mb-1">Khoản khác</div>
-              <Dong nhan="Phụ cấp" giaTri={x.phuCap} />
-              <Dong nhan="Điều chỉnh" phu={x.lyDoDieuChinh || null} giaTri={x.dieuChinh} mau={x.dieuChinh < 0 ? 'text-rose-600' : 'text-gray-900'} />
+              {/* Nhiều khoản (sql/47, 02/11/2026): mỗi khoản một dòng kèm nội dung; phiếu chốt cũ hiện như trước */}
+              {x.dongDieuChinh?.length ? x.dongDieuChinh.map((z, i) => (
+                <Dong key={i} nhan={z.loai === 'phu_cap' ? 'Phụ cấp' : 'Điều chỉnh'} phu={z.noi_dung || null} giaTri={z.so_tien} mau={z.so_tien < 0 ? 'text-rose-600' : 'text-gray-900'} />
+              )) : <>
+                <Dong nhan="Phụ cấp" giaTri={x.phuCap} />
+                <Dong nhan="Điều chỉnh" phu={x.lyDoDieuChinh || null} giaTri={x.dieuChinh} mau={x.dieuChinh < 0 ? 'text-rose-600' : 'text-gray-900'} />
+              </>}
               <Dong nhan="Tổng thu nhập" giaTri={x.thuNhap} dam />
               <div className="text-xs font-bold text-rose-700 uppercase tracking-wide mt-3 mb-1">Khoản trừ</div>
               {x.thamGiaBhxh ? <>

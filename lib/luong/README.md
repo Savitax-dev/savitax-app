@@ -60,6 +60,10 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
   (sàn 0); % tác phong phòng = trung bình cả phòng. **Điểm KPI phòng** = TB(%-việc, %-nợ, %-tác phong) →
   thưởng phòng 0 / 300k / 500k, MỖI người trong phòng nhận đủ. App tự tính, Excel cũng tự tính lại.
 - **Phụ cấp / điều chỉnh ngoại lệ**: kế toán nội bộ nhập trên tab Bảng lương (`luong_dieu_chinh`) TRƯỚC khi chốt.
+  **Nhiều khoản** (sql/47, 02/11/2026, `dieuChinh.js`): cột `chi_tiet` jsonb = danh sách {loại, số tiền, nội dung, người
+  nhập}; mỗi khoản BẮT BUỘC nội dung; phụ cấp không âm, điều chỉnh ±. Máy chủ tự cộng ra `phu_cap` / `dieu_chinh` / `ly_do`
+  (số TỔNG — thuế, Excel, chốt đọc như cũ). Bảng lương hiện tổng, rê chuột hiện từng khoản; phiếu lương liệt kê từng khoản.
+  Bản ghi trước sql/47 dựng lại thành khoản từ hai cột tổng (`dongCuaBanGhi`). Bộ kiểm `scripts/test-luong-dieu-chinh.mjs`.
 - **Phiếu lương**: chốt → "Gửi nhân viên xác nhận" → mỗi người chỉ thấy phiếu mình (tab Phiếu lương của tôi),
   Xác nhận / Báo sai (ghi chú). Mở chốt = thu hồi phiếu. Gửi lại: ai đã xác nhận mà thực lĩnh không đổi thì giữ.
 

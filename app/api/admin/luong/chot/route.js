@@ -1,13 +1,14 @@
 // Phân hệ TIỀN LƯƠNG — BƯỚC 3: chốt / mở chốt bảng lương tháng (sql/33). Tổng quan: lib/luong/README.md.
 //   POST {viec:'chot_bang', nam, thang}       → chụp nguyên bảng lương vào luong_bang_chot   (manage_payroll)
 //   POST {viec:'mo_chot', nam, thang, ly_do}  → bỏ bản chụp, quay về tính từ dữ liệu sống   (manage_payroll)
-//   POST {viec:'dieu_chinh', nam, thang, staffId, phu_cap, dieu_chinh, ly_do} → phụ cấp / điều chỉnh   (manage_payroll)
+//   POST {viec:'dieu_chinh', nam, thang, staffId, dong:[{id?, loai, so_tien, noi_dung}]} → phụ cấp / điều chỉnh nhiều dòng (manage_payroll)
 //   POST {viec:'gui_xac_nhan', nam, thang}    → gửi phiếu lương tháng ĐÃ CHỐT cho từng nhân viên      (manage_payroll)
 // Khoản trừ và file Excel tính ở lib/luong/khauTru.js, lib/luong/excel.js.
 import { requireLogin } from '@/lib/serverAuth'
 import { getAdmin, loi, quyenCua, namThang } from '@/lib/luong/api'
 import { tinhBangLuong } from '@/lib/luong/bangLuong'
 import { docBanChot } from '@/lib/luong/chot'
+import { chuanHoaDong } from '@/lib/luong/dieuChinh'
 
 export const maxDuration = 60
 
@@ -81,20 +82,21 @@ export async function POST(request) {
       if (!nt) return loi('Tháng không hợp lệ')
       const chot = await docBanChot(supabase, nt.nam, nt.thang)
       if (chot && !chot.da_mo) return loi('Bảng lương tháng này đã chốt — mở chốt rồi mới sửa phụ cấp / điều chỉnh', 409)
-      const phuCap = Math.round(Number(body.phu_cap) || 0), dieuChinh = Math.round(Number(body.dieu_chinh) || 0)
-      if (phuCap < 0 || Math.abs(phuCap) > 1e9 || Math.abs(dieuChinh) > 1e9) return loi('Số tiền không hợp lệ')
-      const lyDo = String(body.ly_do || '').trim()
-      // Bắt buộc lý do cho CẢ phụ cấp lẫn điều chỉnh (anh chốt 01/11/2026 — T10 có 3 khoản phụ cấp nhập không lý do,
-      // trong đó một khoản người nhập tự nhập cho chính mình). Về 0 cả hai (xoá khoản) thì không cần.
-      if ((phuCap !== 0 || dieuChinh !== 0) && lyDo.length < 5) return loi('Phải ghi lý do phụ cấp / điều chỉnh (vd: phụ cấp xăng xe đi khách, giám đốc duyệt ngày …)')
       const { data: st } = await supabase.from('staff').select('id').eq('id', body.staffId).maybeSingle()
       if (!st) return loi('Không tìm thấy nhân viên')
+      // NHIỀU DÒNG (sql/47, anh yêu cầu 02/11/2026): body.dong = [{ id?, loai, so_tien, noi_dung }]. Mỗi khoản BẮT
+      // BUỘC nội dung (anh chốt 01/11/2026). Hai cột phu_cap / dieu_chinh / ly_do lưu số TỔNG như cũ.
+      const { data: cu, error: eCu } = await supabase.from('luong_dieu_chinh').select('chi_tiet')
+        .eq('nam', nt.nam).eq('thang', nt.thang).eq('staff_id', body.staffId).maybeSingle()
+      if (eCu) return loi(/chi_tiet/.test(eCu.message) ? 'Chưa chạy sql/47_luong_dieu_chinh_nhieu_dong.sql — nhờ quản trị chạy trong Supabase rồi thử lại' : eCu.message, 500)
+      const kq = chuanHoaDong(body.dong, cu?.chi_tiet, caller.staffId, new Date().toISOString())
+      if (kq.loi) return loi(kq.loi)
       const { error } = await supabase.from('luong_dieu_chinh').upsert({
-        nam: nt.nam, thang: nt.thang, staff_id: body.staffId, phu_cap: phuCap, dieu_chinh: dieuChinh,
-        ly_do: lyDo.slice(0, 300) || null, sua_boi: caller.staffId, sua_luc: new Date().toISOString(),
+        nam: nt.nam, thang: nt.thang, staff_id: body.staffId, phu_cap: kq.phuCap, dieu_chinh: kq.dieuChinh,
+        ly_do: kq.lyDo, chi_tiet: kq.dong, sua_boi: caller.staffId, sua_luc: new Date().toISOString(),
       }, { onConflict: 'nam,thang,staff_id' })
-      if (error) return loi(/luong_dieu_chinh/.test(error.message) ? 'Chưa chạy sql/34_luong_tac_phong_phieu.sql (' + error.message + ')' : error.message, 500)
-      return Response.json({ ok: true })
+      if (error) return loi(error.message, 500)
+      return Response.json({ ok: true, phuCap: kq.phuCap, dieuChinh: kq.dieuChinh, soDong: kq.dong.length })
     }
 
     // ── Gửi phiếu lương cho nhân viên xác nhận ────────────────────────────

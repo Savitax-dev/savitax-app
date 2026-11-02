@@ -17,13 +17,21 @@ export default function BangLuong({ quyen }) {
   const [phong, setPhong] = useState('')
   const [tim, setTim] = useState('')
   const [mo, setMo] = useState(null)
-  const [sua, setSua] = useState(null)     // { staff_id, phu_cap, dieu_chinh, ly_do } — phụ cấp / điều chỉnh đang nhập
+  const [sua, setSua] = useState(null)     // { staff_id, ten, phong, thucLinh, dong:[{khoa, id?, loai, so_tien, noi_dung}] } — đang nhập
   const [loiSua, setLoiSua] = useState(null)
+  const [xemDc, setXemDc] = useState(null) // hộp nổi từng khoản phụ cấp · điều chỉnh khi rê chuột
+  const moSua = x => {
+    setLoiSua(null)
+    const dong = (x.dongDieuChinh || []).map(d => ({ ...d, khoa: d.id || Math.random(), id: String(d.id || '').startsWith('cu-') ? undefined : d.id }))
+    setSua({ staff_id: x.staff_id, ten: x.ten || '', phong: x.phong || '', thucLinh: x.thucLinh,
+      dong: dong.length ? dong : [{ khoa: Math.random(), loai: 'phu_cap', so_tien: 0, noi_dung: '' }] })
+  }
   const luuDieuChinh = async () => {
     setLoiSua(null)
     try {
+      const dong = sua.dong.filter(x => Number(x.so_tien) || String(x.noi_dung || '').trim()).map(x => ({ id: x.id, loai: x.loai, so_tien: Number(x.so_tien) || 0, noi_dung: x.noi_dung }))
       const res = await fetch('/api/admin/luong/chot', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ viec: 'dieu_chinh', nam: ky.nam, thang: ky.thang, staffId: sua.staff_id, phu_cap: Number(sua.phu_cap) || 0, dieu_chinh: Number(sua.dieu_chinh) || 0, ly_do: sua.ly_do }) })
+        body: JSON.stringify({ viec: 'dieu_chinh', nam: ky.nam, thang: ky.thang, staffId: sua.staff_id, dong }) })
       const j = await res.json()
       if (j.error) { setLoiSua(j.error); return }
       setSua(null); await tai()
@@ -77,49 +85,93 @@ export default function BangLuong({ quyen }) {
       {/* Bước 3: trạng thái chốt + nút Xuất Excel / Chốt / Mở chốt — components/luong/ThanhChotLuong.js */}
       {d && <ThanhChotLuong d={d} ky={ky} onXong={tai} />}
       {loi && <div className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-4 py-2.5 text-sm">{loi}</div>}
-      {/* Hộp nhập PHỤ CẤP · ĐIỀU CHỈNH riêng giữa màn hình, kiểu hộp Lương ở trang Quản lý nhân viên (anh chỉ 02/11/2026).
-          Lý do BẮT BUỘC khi có số tiền (anh chốt 01/11/2026) — máy chủ chặn lại lần nữa. */}
+      {/* Hộp nhập PHỤ CẤP · ĐIỀU CHỈNH riêng giữa màn hình (anh chỉ 02/11/2026). NHIỀU DÒNG, mỗi khoản một nội dung
+          (anh yêu cầu 02/11/2026, sql/47) — nội dung BẮT BUỘC từng dòng, máy chủ chặn lại lần nữa (lib/luong/dieuChinh.js). */}
       {sua && (() => {
-        const so = v => { const n = String(v ?? '').replace(/[^\d]/g, ''); return n ? Number(n).toLocaleString('vi-VN') : '' }
-        const dcSo = Number(sua.dieu_chinh) || 0
-        const coTien = (Number(sua.phu_cap) || 0) !== 0 || dcSo !== 0
-        const thieuLyDo = coTien && String(sua.ly_do || '').trim().length < 5
-        const O = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#8B1A1A]'
+        const so = v => v ? Math.abs(Number(v)).toLocaleString('vi-VN') : ''
+        const doiDong = (i, patch) => setSua(v => ({ ...v, dong: v.dong.map((x, j) => j === i ? { ...x, ...patch } : x) }))
+        const dongCo = sua.dong.filter(x => Number(x.so_tien) || String(x.noi_dung || '').trim())
+        const loiDong = x => !Number(x.so_tien) ? 'Chưa nhập số tiền' : String(x.noi_dung || '').trim().length < 3 ? 'Ghi nội dung khoản' : null
+        const coLoi = dongCo.some(loiDong)
+        const tongPc = dongCo.filter(x => x.loai === 'phu_cap').reduce((a, x) => a + (Number(x.so_tien) || 0), 0)
+        const tongDc = dongCo.filter(x => x.loai === 'dieu_chinh').reduce((a, x) => a + (Number(x.so_tien) || 0), 0)
+        const O = 'border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:border-[#8B1A1A]'
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onMouseDown={e => { if (e.target === e.currentTarget) setSua(null) }}>
-            <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl p-5" onKeyDown={e => { if (e.key === 'Escape') setSua(null) }}>
-              <div className="mb-4">
+            <div className="w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-2xl p-5" onKeyDown={e => { if (e.key === 'Escape') setSua(null) }}>
+              <div className="mb-3">
                 <div className="font-bold text-gray-900">Phụ cấp · điều chỉnh — lương tháng {ky.thang}/{ky.nam}</div>
                 <div className="text-sm text-gray-500">{sua.ten}{sua.phong ? ' · Phòng ' + sua.phong : ''}{sua.thucLinh != null ? ' · thực lĩnh hiện tại ' + fmt(sua.thucLinh) : ''}</div>
               </div>
-              <div className="grid grid-cols-[110px_1fr] items-center gap-x-3 gap-y-3">
-                <label className="text-sm text-gray-600">Phụ cấp</label>
-                <input autoFocus value={so(sua.phu_cap)} onChange={e => setSua(v => ({ ...v, phu_cap: e.target.value.replace(/[^\d]/g, '') }))} placeholder="0" className={O + ' text-right'} />
-                <label className="text-sm text-gray-600">Điều chỉnh</label>
-                <div className="flex gap-2">
-                  {/* dấu +/− tách riêng cho khỏi gõ nhầm số âm */}
-                  <button type="button" onClick={() => setSua(v => ({ ...v, dieu_chinh: String(-(Number(v.dieu_chinh) || 0)) }))} title="Đổi cộng / trừ"
-                    className={'w-12 rounded-lg border text-sm font-bold ' + (dcSo < 0 ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-emerald-300 bg-emerald-50 text-emerald-700')}>{dcSo < 0 ? '−' : '+'}</button>
-                  <input value={so(Math.abs(dcSo) || '')} onChange={e => { const n = Number(e.target.value.replace(/[^\d]/g, '')) || 0; setSua(v => ({ ...v, dieu_chinh: String((Number(v.dieu_chinh) || 0) < 0 ? -n : n) })) }}
-                    placeholder="0" className={O + ' text-right flex-1'} />
+              <div className="overflow-y-auto -mx-1 px-1">
+                <div className="grid grid-cols-[130px_150px_1fr_32px] gap-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1 px-0.5">
+                  <span>Loại</span><span className="text-right">Số tiền</span><span>Nội dung <span className="text-rose-600">*</span></span><span />
                 </div>
-                <label className="text-sm text-gray-600 self-start pt-2">Lý do <span className="text-rose-600">*</span></label>
-                <div>
-                  <textarea rows={2} value={sua.ly_do} onChange={e => setSua(v => ({ ...v, ly_do: e.target.value }))} placeholder="vd: Phụ cấp xăng xe đi khách, giám đốc duyệt ngày 01/11"
-                    className={O + ' resize-none ' + (thieuLyDo ? 'border-rose-400 bg-rose-50' : '')} />
-                  {thieuLyDo && <p className="text-xs text-rose-600 mt-1">Ghi lý do (ít nhất 5 ký tự) rồi mới lưu được</p>}
-                </div>
+                {sua.dong.map((x, i) => {
+                  const am = Number(x.so_tien) < 0
+                  const l = (Number(x.so_tien) || String(x.noi_dung || '').trim()) ? loiDong(x) : null
+                  return (
+                    <div key={x.khoa} className="mb-2">
+                      <div className="grid grid-cols-[130px_150px_1fr_32px] gap-2 items-center">
+                        <select value={x.loai} onChange={e => doiDong(i, { loai: e.target.value, so_tien: e.target.value === 'phu_cap' ? Math.abs(Number(x.so_tien) || 0) : x.so_tien })} className={O}>
+                          <option value="phu_cap">Phụ cấp</option>
+                          <option value="dieu_chinh">Điều chỉnh</option>
+                        </select>
+                        <div className="flex gap-1">
+                          {/* dấu +/− tách riêng cho khỏi gõ nhầm số âm; phụ cấp luôn cộng */}
+                          {x.loai === 'dieu_chinh'
+                            ? <button type="button" onClick={() => doiDong(i, { so_tien: -(Number(x.so_tien) || 0) })} title="Đổi cộng / trừ"
+                                className={'w-9 shrink-0 rounded-lg border text-sm font-bold ' + (am ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-emerald-300 bg-emerald-50 text-emerald-700')}>{am ? '−' : '+'}</button>
+                            : <span className="w-9 shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-bold flex items-center justify-center">+</span>}
+                          <input autoFocus={i === sua.dong.length - 1 && !x.so_tien} value={so(x.so_tien)} placeholder="0" inputMode="numeric"
+                            onChange={e => { const n = Number(e.target.value.replace(/[^\d]/g, '')) || 0; doiDong(i, { so_tien: am ? -n : n }) }} className={O + ' w-full text-right'} />
+                        </div>
+                        <input value={x.noi_dung} onChange={e => doiDong(i, { noi_dung: e.target.value })} maxLength={200}
+                          placeholder={x.loai === 'phu_cap' ? 'vd: Phụ cấp xăng xe tháng 10' : 'vd: Truy thu BHXH T9, giám đốc duyệt 01/11'}
+                          className={O + ' w-full ' + (l === 'Ghi nội dung khoản' ? 'border-rose-400 bg-rose-50' : '')} />
+                        <button type="button" onClick={() => setSua(v => ({ ...v, dong: v.dong.filter((_, j) => j !== i) }))} title="Xoá khoản này"
+                          className="h-8 w-8 rounded-lg text-gray-400 hover:bg-rose-50 hover:text-rose-600">🗑️</button>
+                      </div>
+                      {(l || x.tenNguoi) && <div className="text-[11px] mt-0.5 pl-0.5">
+                        {l ? <span className="text-rose-600">{l}</span> : <span className="text-gray-400">Nhập: {x.tenNguoi}{x.luc ? ' · ' + new Date(x.luc).toLocaleString('vi-VN') : ''}</span>}
+                      </div>}
+                    </div>
+                  )
+                })}
+                <button type="button" onClick={() => setSua(v => ({ ...v, dong: [...v.dong, { khoa: Math.random(), loai: 'phu_cap', so_tien: 0, noi_dung: '' }] }))}
+                  className="mt-1 text-sm font-semibold text-[#8B1A1A] hover:underline">＋ Thêm khoản</button>
               </div>
-              <p className="mt-3 text-xs text-gray-500">Để trống cả hai ô số tiền rồi Lưu = xoá khoản phụ cấp / điều chỉnh của tháng này.</p>
-              {loiSua && <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 text-rose-800 px-3 py-2 text-sm">{loiSua}</div>}
-              <div className="mt-4 flex justify-end gap-2">
+              <div className="mt-3 rounded-xl bg-gray-50 border border-gray-200 px-3 py-2 text-sm flex flex-wrap gap-x-5 gap-y-1">
+                <span>Phụ cấp <b className="text-emerald-700">+{fmt(tongPc)}</b></span>
+                <span>Điều chỉnh <b className={tongDc < 0 ? 'text-rose-700' : 'text-emerald-700'}>{tongDc > 0 ? '+' : ''}{fmt(tongDc)}</b></span>
+                <span className="ml-auto">Cộng vào thu nhập <b className="text-gray-900">{tongPc + tongDc > 0 ? '+' : ''}{fmt(tongPc + tongDc)}</b></span>
+              </div>
+              <p className="mt-2 text-xs text-gray-500">Xoá hết các khoản rồi Lưu = bỏ phụ cấp / điều chỉnh của tháng này. Trên bảng lương hiện số tổng, rê chuột vào để xem từng khoản.</p>
+              {loiSua && <div className="mt-2 rounded-lg border border-rose-200 bg-rose-50 text-rose-800 px-3 py-2 text-sm">{loiSua}</div>}
+              <div className="mt-3 flex justify-end gap-2">
                 <button onClick={() => setSua(null)} className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-600">Hủy</button>
-                <button onClick={luuDieuChinh} disabled={thieuLyDo} className="px-5 py-2 rounded-lg bg-[#8B1A1A] text-white text-sm font-semibold disabled:opacity-40">Lưu</button>
+                <button onClick={luuDieuChinh} disabled={coLoi} className="px-5 py-2 rounded-lg bg-[#8B1A1A] text-white text-sm font-semibold disabled:opacity-40">Lưu</button>
               </div>
             </div>
           </div>
         )
       })()}
+      {/* Rê chuột vào ô phụ cấp · điều chỉnh → hiện từng khoản. Hộp nổi FIXED để không bị khung cuộn của bảng cắt mất. */}
+      {xemDc && (
+        <div className="fixed z-50 w-80 rounded-xl border border-amber-200 bg-white shadow-xl p-3 text-xs pointer-events-none"
+          style={{ top: Math.min(xemDc.y, (typeof window !== 'undefined' ? window.innerHeight : 800) - 40 - xemDc.dong.length * 44), left: Math.max(8, xemDc.x - 320) }}>
+          <div className="font-semibold text-gray-900 mb-1.5">{xemDc.ten} · {xemDc.dong.length} khoản</div>
+          {xemDc.dong.map((x, i) => (
+            <div key={i} className="flex gap-2 py-1 border-t border-gray-100 first:border-t-0">
+              <div className="flex-1 min-w-0">
+                <div className="text-gray-800">{x.noi_dung || <i className="text-amber-600">chưa có nội dung</i>}</div>
+                <div className="text-[11px] text-gray-400">{x.loai === 'phu_cap' ? 'Phụ cấp' : 'Điều chỉnh'}{x.tenNguoi ? ' · Nhập: ' + x.tenNguoi : ''}</div>
+              </div>
+              <div className={'font-semibold whitespace-nowrap ' + (x.so_tien < 0 ? 'text-rose-600' : 'text-emerald-700')}>{x.so_tien > 0 ? '+' : ''}{fmt(x.so_tien)}</div>
+            </div>
+          ))}
+        </div>
+      )}
       {d?.hoaHongNgoai?.length > 0 && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-900 px-4 py-2.5 text-sm">
           ⚠ <b>Hoa hồng giới thiệu KHÔNG nằm trong bảng lương</b> (người giới thiệu không có dòng lương — phòng remote / chưa đặt lương / đã nghỉ), cần chi tay:
@@ -219,13 +271,24 @@ export default function BangLuong({ quyen }) {
                       </td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">
                         {/* Chỉ HIỆN trong bảng — nhập ở hộp riêng giữa màn hình (anh chỉ 02/11/2026: nhập chen trong bảng bị chồng chéo) */}
-                        {x.phuCap ? <div title={x.lyDoDieuChinh}>+{fmt(x.phuCap)}</div> : null}
-                        {x.dieuChinh ? <div className={x.dieuChinh < 0 ? 'text-rose-600' : 'text-emerald-700'} title={x.lyDoDieuChinh}>{x.dieuChinh > 0 ? '+' : ''}{fmt(x.dieuChinh)}</div> : null}
-                        {(x.phuCap || x.dieuChinh) && !x.lyDoDieuChinh ? <div className="text-[11px] text-amber-600" title="Khoản nhập trước khi bắt buộc lý do — bấm Nhập để ghi bổ sung">⚠ chưa có lý do</div> : null}
-                        {(x.phuCap || x.dieuChinh) && x.lyDoDieuChinh ? <div className="text-[11px] text-gray-500 max-w-[180px] ml-auto truncate whitespace-nowrap" title={x.lyDoDieuChinh}>{x.lyDoDieuChinh}</div> : null}
-                        {(x.phuCap || x.dieuChinh) && x.nguoiNhapDieuChinh ? <div className="text-[11px] text-gray-400 whitespace-nowrap" title={x.lucNhapDieuChinh ? 'Nhập lúc ' + new Date(x.lucNhapDieuChinh).toLocaleString('vi-VN') : ''}>Nhập: {x.nguoiNhapDieuChinh}</div> : null}
-                        {!x.phuCap && !x.dieuChinh && <span className="text-gray-300">—</span>}
-                        {d.duocChot && !d.daChot && <div><button onClick={() => { setLoiSua(null); setSua({ staff_id: x.staff_id, ten: x.ten || x.full_name || '', phong: x.phong || x.ten_phong || '', thucLinh: x.thucLinh, phu_cap: x.phuCap ? String(x.phuCap) : '', dieu_chinh: x.dieuChinh ? String(x.dieuChinh) : '', ly_do: x.lyDoDieuChinh || '' }) }} className="text-xs text-[#8B1A1A] underline">{x.phuCap || x.dieuChinh ? 'Sửa' : 'Nhập'}</button></div>}
+                        {(() => {
+                          // Bảng lương chỉ hiện TỔNG; rê chuột hiện từng khoản (anh yêu cầu 02/11/2026). Bản chốt cũ chưa có
+                          // dongDieuChinh thì dựng lại từ hai cột tổng.
+                          const dong = x.dongDieuChinh || [
+                            ...(x.phuCap ? [{ loai: 'phu_cap', so_tien: x.phuCap, noi_dung: x.lyDoDieuChinh, tenNguoi: x.nguoiNhapDieuChinh }] : []),
+                            ...(x.dieuChinh ? [{ loai: 'dieu_chinh', so_tien: x.dieuChinh, noi_dung: x.lyDoDieuChinh, tenNguoi: x.nguoiNhapDieuChinh }] : [])]
+                          const tongDc = (x.phuCap || 0) + (x.dieuChinh || 0)
+                          if (!dong.length) return <span className="text-gray-300">—</span>
+                          const thieu = dong.some(z => !String(z.noi_dung || '').trim())
+                          return (
+                            <div className="inline-block cursor-help" onMouseLeave={() => setXemDc(null)}
+                              onMouseEnter={e => { const r = e.currentTarget.getBoundingClientRect(); setXemDc({ x: r.right, y: r.bottom + 4, ten: x.ten, dong }) }}>
+                              <div className={'font-semibold border-b border-dotted ' + (tongDc < 0 ? 'text-rose-600 border-rose-300' : 'text-emerald-700 border-emerald-300')}>{tongDc > 0 ? '+' : ''}{fmt(tongDc)}</div>
+                              <div className="text-[11px] text-gray-500">{dong.length} khoản{thieu ? <span className="text-amber-600"> · ⚠ thiếu nội dung</span> : null}</div>
+                            </div>
+                          )
+                        })()}
+                        {d.duocChot && !d.daChot && <div><button onClick={() => moSua(x)} className="text-xs text-[#8B1A1A] underline">{x.phuCap || x.dieuChinh ? 'Sửa' : 'Nhập'}</button></div>}
                       </td>
                       <td className="px-3 py-2.5 text-right font-bold text-gray-900">{fmt(x.tongThuong)}</td>
                       <td className="px-3 py-2.5 text-right text-rose-700 whitespace-nowrap">{x.khauTru?.tong ? <span title={'BHXH ' + fmt(x.khauTru.bhxh) + ' · KPCĐ ' + fmt(x.khauTru.kpcd) + ' · Đoàn phí ' + fmt(x.khauTru.doanPhi)}>−{fmt(x.khauTru.tong)}</span> : <span className="text-xs text-gray-400">không BHXH</span>}</td>
