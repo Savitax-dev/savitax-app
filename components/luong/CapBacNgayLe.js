@@ -32,6 +32,25 @@ export default function ThietLap() {
     if (!j.error) taiCap()
   }
   const doiO = (i, kk, v) => setDs(a => a.map((r, j) => j === i ? { ...r, [kk]: v } : r))
+  // Thêm cấp mới (anh yêu cầu 02/11/2026): dòng chưa có mã, máy chủ tự sinh mã khi Lưu. Gợi ý tên "Cấp <số kế>".
+  const themCap = () => setDs(a => {
+    const so = Math.max(0, ...(a || []).filter(r => r.nhom !== 'truong_phong').map(r => Number(String(r.ten).match(/(\d+)\s*$/)?.[1]) || 0)) + 1
+    const cuoi = [...(a || [])].reverse().find(r => r.nhom !== 'truong_phong' && r.ma)
+    const moiCap = { khoa: 'moi-' + Date.now(), ma: null, ten: 'Cấp ' + so, nhom: 'nhan_vien', mo_ta: '',
+      luong_co_ban: null, doanh_thu_toi_thieu: cuoi?.doanh_thu_toi_thieu ?? null, luong_bhxh: null }
+    const viTri = (a || []).findIndex(r => r.nhom === 'truong_phong')
+    return viTri < 0 ? [...(a || []), moiCap] : [...a.slice(0, viTri), moiCap, ...a.slice(viTri)]
+  })
+  const xoaCap = async (i) => {
+    const r = ds[i]
+    if (!r.ma) { setDs(a => a.filter((_, j) => j !== i)); return }
+    if (!confirm('Xoá ' + r.ten + ' khỏi bảng cấp bậc?')) return
+    const j = await goi('/api/admin/luong', { viec: 'xoa_cap_bac', ma: r.ma })
+    if (j.error) { setMsg({ loai: 'loi', text: j.error }); return }
+    setMsg({ loai: 'ok', text: 'Đã xoá ' + r.ten + '.' })
+    setDs(a => a.filter(x => x.ma !== r.ma))
+  }
+  const coDongMoi = (ds || []).some(r => !r.ma)
   const themLe = async () => {
     const j = await goi('/api/admin/luong', { viec: 'them_ngay_le', ...moi })
     if (j.error) { setMsg({ loai: 'loi', text: j.error }); return }
@@ -63,7 +82,10 @@ export default function ThietLap() {
         <div className="2xl:col-span-3 rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-50 to-white">
             <span className="font-semibold text-blue-900">🏅 Bảng cấp bậc</span>
-            <button onClick={luuCap} disabled={!ds} className="text-sm px-4 py-2 rounded-xl bg-[#8B1A1A] text-white font-semibold shadow-sm disabled:opacity-50">Lưu bảng cấp bậc</button>
+            <div className="flex items-center gap-2">
+              <button onClick={themCap} disabled={!ds} className="text-sm px-4 py-2 rounded-xl border border-blue-200 bg-white text-blue-800 font-semibold hover:bg-blue-50 disabled:opacity-50">+ Thêm cấp bậc</button>
+              <button onClick={luuCap} disabled={!ds} className={'text-sm px-4 py-2 rounded-xl bg-[#8B1A1A] text-white font-semibold shadow-sm disabled:opacity-50 ' + (coDongMoi ? 'ring-2 ring-amber-300' : '')}>Lưu bảng cấp bậc</button>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -71,12 +93,24 @@ export default function ThietLap() {
                 <th className="px-4 py-2.5 font-semibold">Cấp</th><th className="px-4 py-2.5 font-semibold">Mô tả</th>
                 <th className="px-4 py-2.5 font-semibold text-right text-emerald-700">Lương cơ bản</th><th className="px-4 py-2.5 font-semibold text-right text-blue-700">Doanh thu tối thiểu</th>
                 <th className="px-4 py-2.5 font-semibold text-right text-violet-700">Lương đóng BHXH</th>
+                <th className="px-2 py-2.5 w-8"></th>
               </tr></thead>
               <tbody>
                 {(ds || []).map((r, i) => (
-                  <tr key={r.ma} className={'border-t border-gray-100 ' + (r.nhom === 'truong_phong' ? 'bg-violet-50/40' : '')}>
+                  <tr key={r.ma || r.khoa} className={'border-t border-gray-100 ' + (!r.ma ? 'bg-amber-50/70' : r.nhom === 'truong_phong' ? 'bg-violet-50/40' : '')}>
                     <td className="px-4 py-2 whitespace-nowrap">
-                      <span className={'text-xs font-bold rounded-lg px-2.5 py-1 ' + (r.nhom === 'truong_phong' ? 'bg-violet-100 text-violet-800' : 'bg-blue-100 text-blue-800')}>{r.ten}</span>
+                      {r.ma
+                        ? <span className={'text-xs font-bold rounded-lg px-2.5 py-1 ' + (r.nhom === 'truong_phong' ? 'bg-violet-100 text-violet-800' : 'bg-blue-100 text-blue-800')}>{r.ten}</span>
+                        : <div className="flex flex-col gap-1">
+                            <input value={r.ten} onChange={e => doiO(i, 'ten', e.target.value)} maxLength={30} placeholder="Tên cấp"
+                              className="w-28 border border-amber-300 rounded-lg px-2 py-1 text-xs font-bold text-blue-900" />
+                            <select value={r.nhom} onChange={e => { const n = e.target.value; setDs(a => a.map((x, j) => j !== i ? x : { ...x, nhom: n,
+                              // Trưởng phòng không xét doanh thu tối thiểu — bỏ số gợi ý của cấp nhân viên
+                              doanh_thu_toi_thieu: n === 'truong_phong' ? null : x.doanh_thu_toi_thieu ?? [...a].reverse().find(y => y.ma && y.nhom !== 'truong_phong')?.doanh_thu_toi_thieu ?? null })) }} className="w-28 border border-gray-200 rounded-lg px-1 py-0.5 text-[11px] bg-white">
+                              <option value="nhan_vien">Nhân viên</option>
+                              <option value="truong_phong">Trưởng phòng</option>
+                            </select>
+                          </div>}
                     </td>
                     <td className="px-4 py-2"><input value={r.mo_ta || ''} onChange={e => doiO(i, 'mo_ta', e.target.value)} className="w-full min-w-[160px] border border-gray-200 rounded-lg px-2 py-1 text-xs" /></td>
                     {['luong_co_ban', 'doanh_thu_toi_thieu', 'luong_bhxh'].map(kk => (
@@ -85,12 +119,17 @@ export default function ThietLap() {
                           placeholder="—" className="w-36 border border-gray-200 rounded-lg px-2 py-1 text-right font-medium" />
                       </td>
                     ))}
+                    <td className="px-2 py-2 text-center">
+                      <button onClick={() => xoaCap(i)} title={r.ma ? 'Xoá cấp (chỉ khi chưa gán cho nhân viên nào)' : 'Bỏ dòng chưa lưu'}
+                        className="text-gray-300 hover:text-rose-600 text-sm">✕</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="px-4 py-2.5 text-xs text-gray-500 bg-gray-50 border-t border-gray-100">Để trống "Doanh thu tối thiểu" = không xét thưởng vượt doanh số (trưởng phòng). Để trống "Lương đóng BHXH" = cấp này chưa đóng BHXH.</p>
+          {coDongMoi && <p className="px-4 py-2 text-xs text-amber-800 bg-amber-50 border-t border-amber-100">Có cấp mới chưa lưu — nhập lương cơ bản rồi bấm <b>Lưu bảng cấp bậc</b>. Tên cấp phải khác các cấp đã có (file hồ sơ lương nhận cấp theo tên).</p>}
+          <p className="px-4 py-2.5 text-xs text-gray-500 bg-gray-50 border-t border-gray-100">Để trống "Doanh thu tối thiểu" = không xét thưởng vượt doanh số (trưởng phòng). Để trống "Lương đóng BHXH" = cấp này chưa đóng BHXH. Cấp nhân viên: ghi mô tả dạng "Trên 6 tháng – dưới 1 năm" để báo cáo thâm niên tự xét lên cấp. Chỉ xoá được cấp chưa gán cho ai.</p>
         </div>
 
         <div className="2xl:col-span-2 rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">

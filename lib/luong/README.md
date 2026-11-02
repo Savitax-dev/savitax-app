@@ -35,6 +35,11 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
   (15,38) — giữ nguyên tới 2 chữ số thập phân. File phải xuất SAU ngày cuối tháng (tiêu đề luôn ghi cả tháng).
 - **File hồ sơ lương** (`fileHoSoLuong.js`): tải mẫu điền sẵn danh sách (trừ remote), nhận người theo EMAIL; ô lương
   trống mà có cấp bậc thì lấy lương theo cấp; ô ngày gõ thành ngày Excel đọc ra số sê-ri — máy chủ tự đổi.
+- **Bảng cấp bậc** (`capBac.js`, 02/11/2026): nhân viên NB tự "+ Thêm cấp bậc" (nhóm Nhân viên / Trưởng phòng) — dòng
+  mới không có mã, máy chủ sinh `CAP_<tên>` + thứ tự nối sau cấp cuối cùng nhóm. Tên KHÔNG được trùng (file hồ sơ lương
+  nhận cấp theo tên). Chỉ xoá được cấp chưa từng gán trong `luong_nhan_vien` (FK `on delete set null` sẽ lặng lẽ xoá cấp
+  khỏi lịch sử lương). Cấp nhân viên ghi mô tả "… dưới X tháng/năm" để báo cáo thâm niên xét lên cấp.
+  Kiểm: `node scripts/test-luong-cap-bac.mjs`.
 - **Ngày công chuẩn** = số ngày của tháng − chủ nhật − ngày lễ; thứ Bảy đủ công (`ngayCong.js`).
 - **Bảng lương tháng N** lấy %-công việc **N**, %-công nợ **N−1** (đúng hàm Báo cáo KPI: `lib/kpiTongQuan.js`),
   doanh thu **N** = phí kế toán phải thu của công ty phụ trách chính, chia 1,08 (tách VAT), quý chia 3.

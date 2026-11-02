@@ -7,7 +7,7 @@
 //   GET  ?viec=ngay_le&nam=                  → ngày lễ của năm                   (mọi người đăng nhập)
 //   GET  ?viec=cua_toi&nam=&thang=           → bảng công của chính mình + ngày công chuẩn
 //   GET  ?viec=phong&nam=&thang=             → bảng công các nhân viên trong phạm vi (TP: phòng mình làm trưởng)
-//   POST {viec:'luu_cap_bac', ds:[…]}                           (manage_payroll)
+//   POST {viec:'luu_cap_bac', ds:[…]} | {viec:'xoa_cap_bac', ma}  (manage_payroll — dòng mới không có ma, máy chủ tự sinh)
 //   POST {viec:'luu_luong_nv', staffId, thang:'YYYY-MM', …, so_nguoi_phu_thuoc}   (manage_payroll)
 //   POST {viec:'luu_ngan_hang', staffId, ngan_hang, so_tai_khoan, chu_tai_khoan}  (manage_payroll)
 //   POST {viec:'them_ngay_le', ngay, den?, ten} | {viec:'xoa_ngay_le', ngays}   (manage_payroll)
@@ -22,6 +22,7 @@ import { getAdmin, loi, pad, quyenCua, ngayLeCuaThang, namThang, soTien, tienHop
 import { ngayCongChuan, kiemChamCong, thangDuocKhai, soNgayHopLe, soNgayMayHopLe, luongCuaThang } from '@/lib/luong/ngayCong'
 import { quyDoiMay, soThuBayLamViec, khoaTen, KHOA_SO } from '@/lib/luong/mayChamCong'
 import { nhapHoSo } from '@/lib/luong/nhapHoSo'
+import { chuanHoaCapBac } from '@/lib/luong/capBac'
 
 // Phòng remote KHÔNG tính lương trên app (anh chốt 23/10/2026): không chấm công, không bảng lương.
 const laRemote = s => s?.rooms?.type === 'remote'
@@ -267,21 +268,33 @@ export async function POST(request) {
     // ── Thiết lập (manage_payroll) ────────────────────────────────────────
     if (viec === 'luu_cap_bac') {
       if (!quyen.manage) return loi('Không đủ quyền thiết lập cấp bậc', 403)
-      const ds = Array.isArray(body.ds) ? body.ds : []
-      if (!ds.length || ds.length > 50) return loi('Danh sách cấp bậc không hợp lệ')
-      const rows = []
-      for (const r of ds) {
-        const v = { lcb: soTien(r.luong_co_ban), dt: soTien(r.doanh_thu_toi_thieu), bh: soTien(r.luong_bhxh) }
-        if (!/^CAP_[A-Z0-9]{1,3}$/.test(String(r.ma)) || !String(r.ten || '').trim() || v.lcb === null || !tienHopLe(v.lcb) || !tienHopLe(v.dt) || !tienHopLe(v.bh)) {
-          return loi('Dòng cấp bậc không hợp lệ: ' + (r.ten || r.ma))
-        }
-        rows.push({
-          ma: r.ma, ten: String(r.ten).trim(), nhom: r.nhom === 'truong_phong' ? 'truong_phong' : 'nhan_vien',
-          thu_tu: Number(r.thu_tu) || 0, luong_co_ban: v.lcb, doanh_thu_toi_thieu: v.dt, luong_bhxh: v.bh,
-          mo_ta: r.mo_ta ? String(r.mo_ta).slice(0, 200) : null, updated_at: new Date().toISOString(),
-        })
-      }
-      const { error } = await supabase.from('luong_cap_bac').upsert(rows, { onConflict: 'ma' })
+      // Dòng mới (không có mã) → tự sinh mã + thứ tự; tên không được trùng (lib/luong/capBac.js).
+      // Dòng có mã thì phải là cấp ĐANG có — không cho trình duyệt tự đặt mã lạ.
+      const kq = chuanHoaCapBac(body.ds)
+      if (kq.loi) return loi(kq.loi)
+      const { data: hienCo, error: eCo } = await supabase.from('luong_cap_bac').select('ma, ten')
+      if (eCo) return loi(eCo.message, 500)
+      const maCo = new Set((hienCo || []).map(c => c.ma))
+      const guiMa = new Set((Array.isArray(body.ds) ? body.ds : []).map(r => r?.ma).filter(Boolean))
+      if ([...guiMa].some(m => !maCo.has(m))) return loi('Bảng cấp bậc đã đổi ở nơi khác — tải lại trang rồi sửa lại')
+      // Cấp đang có mà không gửi lên (trang cũ chưa tải lại) vẫn giữ — kiểm trùng tên với cả những cấp đó
+      const tenMoi = new Set(kq.rows.map(r => r.ten.toLowerCase()))
+      const trung = (hienCo || []).find(c => !guiMa.has(c.ma) && tenMoi.has(String(c.ten).trim().toLowerCase()))
+      if (trung) return loi('Trùng tên cấp "' + trung.ten + '" đã có — tải lại trang')
+      const { error } = await supabase.from('luong_cap_bac').upsert(kq.rows, { onConflict: 'ma' })
+      if (error) return loi(error.message, 500)
+      return Response.json({ ok: true })
+    }
+
+    // Xoá một cấp — CHỈ khi chưa nhân viên nào từng được gán (kể cả lịch sử lương cũ): khoá ngoại để
+    // "on delete set null" nên xoá cấp đang dùng là lặng lẽ xoá cấp khỏi lịch sử lương.
+    if (viec === 'xoa_cap_bac') {
+      if (!quyen.manage) return loi('Không đủ quyền thiết lập cấp bậc', 403)
+      const ma = String(body.ma || '')
+      const { data: dung, error: eD } = await supabase.from('luong_nhan_vien').select('id').eq('cap_bac', ma).limit(1)
+      if (eD) return loi(eD.message, 500)
+      if (dung?.length) return loi('Cấp này đã gán cho nhân viên (kể cả lịch sử lương) — không xoá được. Đổi tên / số tiền thay vì xoá.')
+      const { error } = await supabase.from('luong_cap_bac').delete().eq('ma', ma)
       if (error) return loi(error.message, 500)
       return Response.json({ ok: true })
     }
