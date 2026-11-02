@@ -403,6 +403,19 @@ chống tự động của cơ quan thuế → **không làm**. Mã thử nằm 
 (worktree D:\savitax-bank). Hướng còn lại nếu anh mở lại: app chỉ XẾP FILE nhân viên đã tải về
 (đọc XML, kiểm MST người mua, đổi tên, xếp thư mục tháng), hoặc hỏi kênh kết nối chính thức.
 
+## Xác thực 2 lớp (đăng nhập nhân viên)
+
+Mã 6 số trên Google / Microsoft Authenticator (TOTP — Supabase Auth MFA), anh duyệt 02/11/2026. Mail `@savitax.vn` ở PA Vietnam
+(chạy song song Google) nên KHÔNG dùng đăng nhập Google; SMS về số điện thoại làm sau khi có nhà mạng gửi tin + tên thương hiệu.
+
+- **Chốt ở máy chủ** (`lib/serverAuth.js` qua `lib/haiLop.js`): tài khoản đã bật mà phiên chỉ qua mật khẩu (`aal1` trong access
+  token) → mọi `/api/admin` coi như chưa đăng nhập. Trang đăng nhập hỏi mã / hiện QR (`components/HaiLop.js`), AppShell đưa
+  phiên thiếu bước về `/login`. Tự bật / tắt ở trang 🔐 Bảo mật (`/change-password`) — đổi mật khẩu phải nhập lại mã (đăng nhập
+  lại làm phiên tụt `aal1`).
+- `BAT_BUOC_HAI_LOP` (lib/haiLop.js) đang **TẮT** = tự nguyện; bật khi anh bảo. Bản demo tắt hẳn (`TAT_HAI_LOP`, tài khoản dùng chung).
+- Quản trị **đặt lại 2 lớp** (mất điện thoại) ở Quản lý nhân viên → `/api/admin/hai-lop`. ⚠ `auth.admin.listUsers` KHÔNG kèm
+  yếu tố 2 lớp — phải `auth.admin.mfa.listFactors` từng tài khoản.
+
 ## Mật khẩu khách & khóa mã hóa
 
 - Mật khẩu khách (thuế, hóa đơn, CKS, ngân hàng, BHXH) nằm ở `client_credentials.password_enc` và
