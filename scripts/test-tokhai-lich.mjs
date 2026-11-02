@@ -5,7 +5,7 @@
 // Vì sao phải có bộ kiểm riêng: lịch hạn nộp là thứ nhân viên dựa vào để khỏi trễ hạn. Sinh thừa
 // một kỳ là báo "Quá hạn" oan; sinh thiếu một kỳ là để trễ hạn mà app im lặng — cái sau nguy hiểm
 // hơn nhiều vì không ai thấy để mà sửa.
-import { kyKhaiTai, nghiaVuDinhKy, ngayDauQuy, timKyKhaiTheoCong, kieuCuaKy, quyCuaKy, ngaySauKy, loaiApDung } from '../lib/tokhaiLich.js'
+import { kyKhaiTai, nghiaVuDinhKy, ngayDauQuy, timKyKhaiTheoCong, kieuCuaKy, quyCuaKy, ngaySauKy, loaiApDung, kyNopTrongThang, nhanKyNgan } from '../lib/tokhaiLich.js'
 
 let dat = 0, hong = 0
 const kiem = (ten, thucTe, mongDoi) => {
@@ -149,6 +149,15 @@ kiem('01/CNKD hộ khai quý → hạn Q3 là 02/11 (31/10 thứ Bảy)',
   nghiaVuDinhKy({ client: hkd, loai: L('01/CNKD'), nam: 2026 }).find(o => o.period_code === 'Q3.2026')?.due_date, '2026-11-02')
 kiem('01/CNKD hộ khai tháng → hạn T10 là 20/11',
   nghiaVuDinhKy({ client: { ...hkd, report_type: 'monthly' }, loai: L('01/CNKD'), nam: 2026 }).find(o => o.period_code === 'T10.2026')?.due_date, '2026-11-20')
+
+console.log('\n[11] Chọn tháng = việc phải nộp TRONG tháng đó (anh chốt 02/11/2026):')
+kiem('Tháng 10 -> tờ khai tháng T09 + quý Q3', kyNopTrongThang('T10.2026'), ['T09.2026', 'Q3.2026'])
+kiem('Tháng 11 -> chỉ T10 (không có quý nào hạn trong tháng 11)', kyNopTrongThang('T11.2026'), ['T10.2026'])
+kiem('Tháng 1 -> T12 + Q4 NĂM TRƯỚC', kyNopTrongThang('T01.2027'), ['T12.2026', 'Q4.2026'])
+kiem('Tháng 3 -> T02 + quyết toán năm trước', kyNopTrongThang('T03.2027'), ['T02.2027', 'NAM.2026'])
+kiem('Tháng 4 -> T03 + Q1', kyNopTrongThang('T04.2026'), ['T03.2026', 'Q1.2026'])
+kiem('chọn quý / năm -> null (xem đúng kỳ đó)', [kyNopTrongThang('Q3.2026'), kyNopTrongThang('NAM.2025')], [null, null])
+kiem('nhãn ô', [nhanKyNgan('T09.2026'), nhanKyNgan('Q3.2026'), nhanKyNgan('NAM.2025')], ['kỳ T09', 'kỳ Q3', 'năm 2025'])
 
 console.log(hong === 0 ? `\nTẤT CẢ ${dat} MỤC ĐỀU ĐẠT.` : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)

@@ -93,6 +93,11 @@ export default function TrangToKhai() {
             className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm flex-1 min-w-[200px]" />
         </div>
 
+        {/* Chọn tháng = việc phải nộp TRONG tháng đó (anh chốt 02/11/2026) — nói rõ gồm những kỳ nào. */}
+        {dl?.moTaKy && !dangTai && (
+          <p className="-mt-2 mb-3 text-xs text-gray-500">{dl.moTaKy}</p>
+        )}
+
         {loi && (
           <div className="mb-4 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{loi}</div>
         )}
@@ -164,12 +169,11 @@ export default function TrangToKhai() {
                           <Chip trangThai={o.trangThai}
                             title={o.trangThaiCong ? 'Cổng thuế: ' + o.trangThaiCong : ''} />
                           <span className="block text-[11px] text-gray-400 mt-0.5">
-                            {/* Ô của kỳ QUÝ hiện kèm khi xem theo tháng — công ty kê lẫn tháng và quý.
-                                Ghi rõ "Q3" để khỏi tưởng tháng này phải nộp thêm một tờ khai nữa. */}
-                            {o.baoTrum && (
-                              <span className="text-indigo-600 font-semibold"
-                                title="Công ty kê tờ khai này theo quý — hiện kèm vì quý bao trùm tháng đang xem">
-                                kỳ {String(o.ky).split('.')[0]} ·{' '}
+                            {/* Xem theo tháng (= việc phải nộp trong tháng) thì một tháng gồm nhiều kỳ:
+                                tờ khai tháng kỳ trước, quý vừa xong, quyết toán năm — ghi rõ kỳ của ô. */}
+                            {o.nhanKy && (
+                              <span className={(o.ky || '').startsWith('T') ? 'text-gray-600 font-semibold' : 'text-indigo-600 font-semibold'}>
+                                {o.nhanKy} ·{' '}
                               </span>
                             )}
                             {/* Ô sinh từ hồ sơ thật (kỳ chưa có trong lịch hạn nộp) thì không có hạn để so. */}

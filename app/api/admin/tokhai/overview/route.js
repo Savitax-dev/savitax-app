@@ -11,7 +11,7 @@ import { roomsWithRole } from '@/lib/roleUnion'
 import { requireLogin } from '@/lib/serverAuth'
 import { mapPhongTuDanhSachNV } from '@/lib/clientRoom'
 import { cacKyTrongNam, kyQuyetToanNam, nhanKy } from '@/lib/taxDeadline'
-import { kyKhaiTai, quyBaoTrum } from '@/lib/tokhaiLich'
+import { kyKhaiTai, kyNopTrongThang, nhanKyNgan } from '@/lib/tokhaiLich'
 import { hoSoTotHon } from '@/lib/tokhaiTrangThai'
 
 function getAdmin() {
@@ -133,16 +133,20 @@ export async function GET(request) {
     // 3. Kỳ cần xem: người dùng chọn, hoặc kỳ SẮP TỚI HẠN GẦN NHẤT.
     //    Chốt ngay ở server để mở màn hình chỉ tốn MỘT lời gọi — trước đây không truyền kỳ thì
     //    route kéo nghĩa vụ của cả năm (2.175 dòng) rồi trình duyệt mới chọn kỳ và gọi lần hai.
-    const ky = kyChon || kySapToi?.data?.[0]?.period_code || null
+    // Mặc định: THÁNG HIỆN TẠI (giờ VN) — tức việc phải nộp trong tháng này. Không còn lấy "kỳ sắp
+    // tới hạn": từ 02/11/2026 chọn tháng nghĩa là chọn tháng NỘP, không phải kỳ tính thuế.
+    const vnNay = new Date(Date.now() + 7 * 3600 * 1000)
+    const thangNay = 'T' + String(vnNay.getUTCMonth() + 1).padStart(2, '0') + '.' + vnNay.getUTCFullYear()
+    const ky = kyChon || (vnNay.getUTCFullYear() === nam ? thangNay : kySapToi?.data?.[0]?.period_code) || null
 
-    // Xem theo THÁNG thì đọc kèm QUÝ BAO TRÙM (T09 -> Q3), nhưng CHỈ giữ cho công ty kê LẪN tháng và
-    // quý — tức công ty có kỳ khai riêng. Ca HSIN 19/10/2026: kê GTGT tháng, TNCN quý; xem tháng 9 thì
-    // cột TNCN hiện "—" như thể biến mất. Công ty kê thuần quý KHÔNG kéo vào, không thì chọn tháng 9
-    // mà hiện quý 3 của 240 công ty kê quý — đổi hẳn nghĩa của màn hình.
-    const quy = quyBaoTrum(ky)
-    const cacMa = quy ? [ky, quy] : [ky]
-    const keLan = new Set(dsGhiDe.map(g => g.client_id))
-    const giuQuy = (x) => !quy || x.period_code !== quy || keLan.has(x.client_id)
+    // CHỌN THÁNG = VIỆC PHẢI NỘP TRONG THÁNG ĐÓ (anh chốt 02/11/2026): "Tháng 10" là tờ khai tháng kỳ
+    // T09 + tờ khai quý kỳ Q3 — cho MỌI công ty, kê tháng hay kê quý đều hiện. Xem kyNopTrongThang.
+    // Chọn QUÝ / NĂM thì xem đúng kỳ đó như cũ.
+    const cacMa = kyNopTrongThang(ky) || (ky ? [ky] : [])
+    const laXemThang = !!kyNopTrongThang(ky)
+    const moTaKy = laXemThang
+      ? 'Việc phải nộp trong ' + nhanKy(ky).toLowerCase() + ': ' + cacMa.map(nhanKy).join(' + ')
+      : null
 
     // 4. Nghĩa vụ của đúng kỳ đó.
     //    Quản trị viên xem tất cả → lọc theo kỳ là đủ, không cần liệt kê 293 mã công ty vào URL.
@@ -175,8 +179,8 @@ export async function GET(request) {
           .select('id, client_id, filing_type_id, period_code, state, portal_status, submitted_at, received_at, on_time, obligation_id')
           .in('period_code', cacMa)),
       ])
-      nghiaVu = nv.filter(o => trongPhamVi.has(o.client_id) && giuQuy(o))
-      hoSo = hs.filter(h => trongPhamVi.has(h.client_id) && giuQuy(h))
+      nghiaVu = nv.filter(o => trongPhamVi.has(o.client_id))
+      hoSo = hs.filter(h => trongPhamVi.has(h.client_id))
     }
 
     // 5. Công ty nào đã nối tài khoản cổng thuế (đã lấy song song ở trên, lọc tại chỗ)
@@ -240,8 +244,9 @@ export async function GET(request) {
             hanNop: o.due_date,
             trangThai,
             khongCoNghiaVu: !!o.khongCoNghiaVu,
-            // Ô của kỳ QUÝ bao trùm tháng đang xem — giao diện ghi "kỳ Q3" để khỏi tưởng lạc kỳ.
-            baoTrum: !!quy && o.period_code === quy,
+            // Xem theo tháng thì mỗi ô ghi rõ KỲ của nó ("kỳ T09", "kỳ Q3", "năm 2025") — cùng một
+            // tháng nộp có nhiều kỳ, không ghi thì khỏi biết ô nào của kỳ nào.
+            nhanKy: laXemThang ? nhanKyNgan(o.period_code) : null,
             trangThaiCong: h?.portal_status || o.portal_status || null,
             ngayNop: h?.submitted_at || null,
             ngayTiepNhan: h?.received_at || o.received_at || null,
@@ -272,7 +277,7 @@ export async function GET(request) {
       kyQuyetToanNam(nam).period_code,
     ].map(code => ({ ma: code, nhan: nhanKy(code) }))
 
-    return Response.json({ nam, ky, cacKy, loaiToKhai, congTy, oTong })
+    return Response.json({ nam, ky, moTaKy, cacKy, loaiToKhai, congTy, oTong })
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 })
   }
