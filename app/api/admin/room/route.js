@@ -330,7 +330,10 @@ export async function GET(request) {
     const taskPcts = ctyChamViec.map(clientTaskPct)
     const debtCountedClients = ownedWithTasks.filter(c => feeCountsForMonth(c.fee_period, year, month) && !c.tamBoQuaNo)
     // %-công việc GỐC rồi mới trừ vi phạm (lib/viPham.js) — trả cả hai để trang ghi rõ đã trừ bao nhiêu.
-    const taskPctGoc = ctyChamViec.length === 0 ? 0 : mean(taskPcts)
+    // Chỉ phụ trách công ty DVK → 100% mặc định, vẫn không vào TB phòng (chamViec false) — anh chốt 02/11/2026,
+    // giữ cùng luật với lib/kpiTongQuan.js
+    const chiDvk = ctyChamViec.length === 0 && ownedWithTasks.some(c => dvkOnly.has(c.id))
+    const taskPctGoc = ctyChamViec.length === 0 ? (chiDvk ? 100 : 0) : mean(taskPcts)
     const taskPct = truViPham(taskPctGoc, viPham.get(s.id))
     // %-công nợ nhân viên (2026-08-24, đổi theo yêu cầu) = TỔNG tiền đã thu / TỔNG phí phải thu
     // gộp tất cả công ty đến hạn của người đó — totalFee/collectedFee đã dồn sẵn ở vòng lặp

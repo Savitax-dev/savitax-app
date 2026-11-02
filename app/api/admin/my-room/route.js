@@ -308,7 +308,9 @@ export async function GET(request) {
   // Mau so bo cong ty Dich vu khac: nguoi chi om nhom nay khong co viec nao de cham, cho 100%
   // la cham khong (xem sql/29).
   const ctyChamViec = clientsWithTasks.filter(c => !dvkOnly.has(c.id))
-  const taskPctGoc = ctyChamViec.length === 0 ? 0 : (totalTasks === 0 ? 100 : Math.round(doneTasks / totalTasks * 100))
+  // Chỉ phụ trách công ty DVK → 100% mặc định (anh chốt 02/11/2026, cùng luật lib/kpiTongQuan.js)
+  const chiDvk = ctyChamViec.length === 0 && clientsWithTasks.some(c => dvkOnly.has(c.id))
+  const taskPctGoc = ctyChamViec.length === 0 ? (chiDvk ? 100 : 0) : (totalTasks === 0 ? 100 : Math.round(doneTasks / totalTasks * 100))
   const viPhamCuaToi = isMonthOnly ? (await docViPham(supabase, year, month, [staffRecord.id])).get(staffRecord.id) : null
 
   return Response.json({

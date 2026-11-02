@@ -35,7 +35,9 @@ function phanTramCongViec(dsCty) {
   const pctCua = (c) => c.tasks.length === 0 ? 100
     : Math.round(c.tasks.filter(t => t.xong).length / c.tasks.length * 100)
   const taskPcts = ctyChamViec.map(pctCua)
-  return ctyChamViec.length === 0 ? 0 : mean(taskPcts)
+  // Chỉ ôm công ty DVK → 100% mặc định (anh chốt 02/11/2026); vẫn không vào TB phòng — xem lib/kpiTongQuan.js chi_dvk
+  if (ctyChamViec.length === 0) return dsCty.some(c => dvkOnly.has(c.id)) ? 100 : 0
+  return mean(taskPcts)
 }
 let _id = 0
 const danhId = (ds) => ds.map(c => ({ ...c, id: 'c' + (++_id) }))
@@ -59,9 +61,9 @@ kiem('(nếu bỏ lọc thì 2 công ty sẽ ra 70% — con số sai cần nhớ
   Math.round((40 + 100) / 2) === 70)
 
 console.log('')
-console.log('[2] Nhân viên CHỈ có công ty Dịch vụ khác → 0%, không phải 100%:')
+console.log('[2] Nhân viên CHỈ có công ty Dịch vụ khác → 100% mặc định (anh chốt 02/11/2026, trước đó 0%):')
 const chiDvk = phanTramCongViec(danhId([dvk, dvk]))
-kiem('hai công ty DVK → 0%', chiDvk === 0, 'ra ' + chiDvk)
+kiem('hai công ty DVK → 100%', chiDvk === 100, 'ra ' + chiDvk)
 kiem('không công ty nào → 0%', phanTramCongViec(danhId([])) === 0)
 
 console.log('')
