@@ -66,6 +66,19 @@ export default function AdminStaffPage() {
     } catch { setLuong(null) }
   }
   useEffect(() => { taiLuong() }, [])
+
+  // Xác thực 2 lớp (lib/haiLop.js): ai đã bật + quản trị đặt lại khi nhân viên mất / đổi điện thoại
+  const [daBat2Lop, setDaBat2Lop] = useState(null)   // Set staffId | null = chưa đọc / không đủ quyền
+  const tai2Lop = async () => {
+    try { const j = await fetch('/api/admin/hai-lop', { cache: 'no-store' }).then(r => r.json()); setDaBat2Lop(j.error ? null : new Set(j.daBat || [])) } catch { setDaBat2Lop(null) }
+  }
+  useEffect(() => { tai2Lop() }, [])
+  const datLai2Lop = async (s) => {
+    if (!confirm('Đặt lại xác thực 2 lớp cho ' + s.full_name + '?\nDùng khi nhân viên mất / đổi điện thoại. Lần đăng nhập sau họ vào bằng mật khẩu rồi bật lại 2 lớp.')) return
+    const j = await fetch('/api/admin/hai-lop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ staffId: s.id }) }).then(r => r.json()).catch(e => ({ error: String(e) }))
+    alert(j.error ? 'Không đặt lại được: ' + j.error : 'Đã đặt lại 2 lớp cho ' + s.full_name + '.')
+    tai2Lop()
+  }
   const thangNayVN = (() => { const d = new Date(Date.now() + 7 * 3600e3); return { nam: d.getUTCFullYear(), thang: d.getUTCMonth() + 1 } })()
   const soCot = luong ? 8 : 6   // email / SĐT gộp vào cột Họ tên (anh yêu cầu cân đối trang 23/10)
 
@@ -573,6 +586,12 @@ export default function AdminStaffPage() {
                                 onClick={() => { setResetId(s.id); setResetPass(''); setResetMsg(m => ({ ...m, [s.id]: '' })) }}
                                 className="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:text-amber-600 hover:border-amber-300 hover:bg-amber-50 transition-colors">🔑</button>
                             )}
+                            {/* Xác thực 2 lớp: 🔐 xanh = đã bật (quản trị bấm để đặt lại), 🔓 xám = chưa bật */}
+                            {daBat2Lop && (daBat2Lop.has(s.id)
+                              ? <button title={isAdmin ? 'Đã bật xác thực 2 lớp — bấm để ĐẶT LẠI (nhân viên mất / đổi điện thoại)' : 'Đã bật xác thực 2 lớp'}
+                                  onClick={() => isAdmin && datLai2Lop(s)} disabled={!isAdmin}
+                                  className="w-8 h-8 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-amber-300 hover:bg-amber-50 disabled:hover:bg-emerald-50 transition-colors">🔐</button>
+                              : <span title="Chưa bật xác thực 2 lớp" className="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-gray-100 text-gray-300">🔓</span>)}
                             {isAdmin && (
                               <button title="Xóa nhân viên"
                                 onClick={() => deleteStaff(s)}

@@ -1,7 +1,27 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Sidebar from './Sidebar'
 import NhacHanNop from './NhacHanNop'
+import { createClient } from '@/lib/supabase'
+import { trangThaiHaiLop } from '@/lib/haiLop'
+
+// Phiên chưa đủ xác thực 2 lớp (đã bật mà chưa nhập mã / bắt buộc mà chưa cài) → về /login làm nốt bước đó.
+// Máy chủ cũng chặn (lib/serverAuth.js) — đây chỉ để người dùng không thấy trang trống báo lỗi quyền.
+function useChanHaiLop() {
+  const router = useRouter()
+  useEffect(() => {
+    let huy = false
+    ;(async () => {
+      const supabase = createClient()
+      const { data } = await supabase.auth.getSession()
+      if (!data?.session || huy) return
+      const tt = await trangThaiHaiLop(supabase)
+      if (!huy && (tt.canMa || tt.canCaiDat)) router.replace('/login')
+    })()
+    return () => { huy = true }
+  }, [router])
+}
 
 const IconMenu = () => (
   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -11,6 +31,7 @@ const IconMenu = () => (
 
 export default function AppShell({ children }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  useChanHaiLop()
 
   return (
     <div className="flex min-h-screen bg-gray-50">

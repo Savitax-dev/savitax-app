@@ -299,7 +299,7 @@ export default function Sidebar({ onClose }) {
                 <p className="text-xs text-gray-400 truncate">{ROLE_LABEL[user.role] || 'Nhân viên'}{user.rooms ? ' · ' + user.rooms.name : ''}</p>
                 <span className="text-gray-300">·</span>
                 <Link href="/change-password" onClick={onClose} className="text-xs hover:underline flex-shrink-0" style={{ color: '#8B1A1A' }}>
-                  Đổi mật khẩu
+                  🔐 Bảo mật
                 </Link>
               </div>
             </div>

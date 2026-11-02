@@ -1,10 +1,12 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import { xoaDauNhacNho } from '@/components/NotificationBell'
 import { xoaKhoiDong } from '@/lib/khoiDong'
+import { trangThaiHaiLop } from '@/lib/haiLop'
+import { NhapMaHaiLop, CaiDatHaiLop } from '@/components/HaiLop'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -30,9 +32,29 @@ export default function LoginPage() {
       // Mỗi lần đăng nhập là một lần "mới vào app": bảng nhắc nhở checklist ở Trang chủ phải tự mở
       // lại. Xoá ở đây (không chỉ lúc đăng xuất) để bắt cả ca phiên hết hạn bị đẩy về trang này.
       xoaDauNhacNho()
-      router.push('/dashboard')
+      // Xác thực 2 lớp (lib/haiLop.js): đã bật → hỏi mã 6 số; bắt buộc mà chưa bật → quét QR cài đặt
+      const tt = await trangThaiHaiLop(supabase)
+      setLoading(false)
+      if (tt.canMa) setBuoc('ma')
+      else if (tt.canCaiDat) setBuoc('cai')
+      else vaoApp()
     }
   }
+
+  // Bước 2 lớp: 'ma' = nhập mã · 'cai' = bắt buộc cài đặt · null = form mật khẩu
+  const [buoc, setBuoc] = useState(null)
+  const vaoApp = () => { xoaKhoiDong(); router.push('/dashboard') }
+  const dangXuat = async () => { await createClient().auth.signOut(); xoaKhoiDong(); setBuoc(null); setPassword('') }
+  // Bị đẩy về đây khi đang có phiên mà chưa đủ 2 lớp (AppShell / máy chủ chặn) → mở thẳng bước còn thiếu
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const { data } = await supabase.auth.getSession()
+      if (!data?.session) return
+      const tt = await trangThaiHaiLop(supabase)
+      if (tt.canMa) setBuoc('ma'); else if (tt.canCaiDat) setBuoc('cai')
+    })()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -63,7 +85,9 @@ export default function LoginPage() {
 
         {/* Form */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <form onSubmit={handleLogin} className="space-y-4">
+          {buoc === 'ma' && <NhapMaHaiLop onXong={vaoApp} onDoiTaiKhoan={dangXuat} />}
+          {buoc === 'cai' && <CaiDatHaiLop batBuoc onXong={vaoApp} onBo={dangXuat} />}
+          {!buoc && <form onSubmit={handleLogin} className="space-y-4">
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -110,7 +134,7 @@ export default function LoginPage() {
               {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </button>
 
-          </form>
+          </form>}
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">
