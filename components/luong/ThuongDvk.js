@@ -53,6 +53,19 @@ export default function ThuongDvk({ quyen }) {
   }, [ky, coDuyet])
   useEffect(() => { tai() }, [tai])
 
+  // Số dòng CHỜ DUYỆT mình duyệt được ở từng kỳ — hiện trên nút chọn kỳ. Ngày đầu tháng mặc định mở kỳ mới trong khi
+  // nhân viên đang khai cho kỳ trước, quản trị tưởng chưa ai khai (anh hỏi 02/11/2026).
+  const [demCho, setDemCho] = useState({})
+  useEffect(() => {
+    if (!coDuyet) return
+    let huy = false
+    Promise.all(quyen.thangDuocKhai.slice(0, 2).map(t =>
+      goi('/api/admin/luong/thuong?viec=dvk_duyet&nam=' + t.nam + '&thang=' + t.thang)
+        .then(j => [t.nam + '-' + t.thang, (j.data || []).filter(x => x.trang_thai === 'cho_duyet' && x.duocDuyet).length])))
+      .then(ds => { if (!huy) setDemCho(Object.fromEntries(ds)) })
+    return () => { huy = true }
+  }, [coDuyet, quyen.thangDuocKhai, duyet])
+
   const hoSo = useMemo(() => {
     const k = searchKey(tim)
     return (d?.hoSo || []).filter(h => !k || searchKey(h.ten + ' ' + h.cty + ' ' + h.ma).includes(k))
@@ -105,9 +118,17 @@ export default function ThuongDvk({ quyen }) {
         <span className="text-sm text-gray-500 mr-1">Kỳ lương</span>
         {kyChon.map(t => {
           const c = ky.nam === t.nam && ky.thang === t.thang
-          return <button key={t.nam + '-' + t.thang} onClick={() => setKy(t)}
-            className={'text-sm px-4 py-2 rounded-xl border font-medium ' + (c ? 'bg-[#8B1A1A] border-[#8B1A1A] text-white shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:border-[#8B1A1A]')}>Tháng {t.thang}/{t.nam}</button>
+          const cho = demCho[t.nam + '-' + t.thang] || 0
+          return <button key={t.nam + '-' + t.thang} onClick={() => setKy(t)} title={cho ? cho + ' dòng khai đang chờ anh/chị duyệt' : ''}
+            className={'inline-flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-medium ' + (c ? 'bg-[#8B1A1A] border-[#8B1A1A] text-white shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:border-[#8B1A1A]')}>
+            Tháng {t.thang}/{t.nam}
+            {cho > 0 && <span className={'text-[11px] font-bold px-1.5 py-0.5 rounded-full ' + (c ? 'bg-white text-[#8B1A1A]' : 'bg-amber-500 text-white')}>{cho} chờ duyệt</span>}
+          </button>
         })}
+        {/* Kỳ đang xem không có gì chờ mà kỳ khác có → nhắc thẳng */}
+        {coDuyet && !demCho[ky.nam + '-' + ky.thang] && kyChon.some(t => demCho[t.nam + '-' + t.thang] > 0) && (
+          <span className="text-sm text-amber-700">← còn dòng khai chờ duyệt ở {kyChon.filter(t => demCho[t.nam + '-' + t.thang] > 0).map(t => 'kỳ ' + t.thang + '/' + t.nam).join(', ')}</span>
+        )}
       </div>
 
       {msg && <div className={'rounded-xl border px-4 py-2.5 text-sm ' + (msg.loai === 'ok' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : msg.loai === 'canh_bao' ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-rose-50 border-rose-200 text-rose-800')}>{msg.text}</div>}
