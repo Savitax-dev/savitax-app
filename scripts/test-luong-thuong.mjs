@@ -2,7 +2,7 @@
 // file lương mẫu anh gửi 14/10/2026.
 //   node scripts/test-luong-thuong.mjs                       — chỉ kiểm quy tắc, không đụng database
 //   node --env-file=.env.local scripts/test-luong-thuong.mjs --that   — thêm đối chiếu dữ liệu thật (chỉ đọc)
-import { thuongTheoKpi, thuongDoanhSo, doanhThuThangCuaCongTy, tienThuongDvk, luongTheoCong, thangLui, tacPhongNhanVien, diemKpiPhong } from '../lib/luong/thuong.js'
+import { thuongTheoKpi, thuongDoanhSo, thuongDoanhSoPhong, doanhThuThangCuaCongTy, tienThuongDvk, luongTheoCong, thangLui, tacPhongNhanVien, diemKpiPhong } from '../lib/luong/thuong.js'
 import { khauTru } from '../lib/luong/khauTru.js'
 import { thueLuyTien, thueTncn } from '../lib/luong/thueTncn.js'
 
@@ -66,6 +66,11 @@ kiem('DVK 31.752.000 ÷ 1,08 × 10%', tienThuongDvk(31752000, 10), 2940000)
 kiem('lương 7.700.000 × 25,5/26', luongTheoCong(7700000, 25.5, 26), 7551923)
 kiem('lùi 2 tháng từ T1/2027', thangLui(2027, 1, 2), { nam: 2026, thang: 11 })
 
+console.log('\nThưởng doanh số phòng của trưởng phòng (1%, anh chốt 02/11/2026):')
+kiem('phòng 290.000.000 → 2.900.000', thuongDoanhSoPhong(290000000), 2900000)
+kiem('phòng 276.018.519 → 2.760.185', thuongDoanhSoPhong(276018519), 2760185)
+kiem('phòng chưa có doanh thu → 0', thuongDoanhSoPhong(0), 0)
+
 if (process.argv.includes('--that')) {
   const { createClient } = await import('@supabase/supabase-js')
   const { doanhThuTheoNhanVien } = await import('../lib/luong/bangLuong.js')
@@ -77,6 +82,44 @@ if (process.argv.includes('--that')) {
     const s = st.find(x => x.full_name.toUpperCase() === ten)
     kiem(ten, dt.get(s?.id)?.tong, so)
   }
+
+  // Thưởng DS phòng 1% trên bảng lương thật T10/2026: chỉ người làm trưởng phòng (chính hoặc kiêm nhiệm) mới có,
+  // đúng 1% doanh thu PHÒNG MÌNH LÀM TRƯỞNG (cộng doanh thu từng nhân viên theo phòng), và đã cộng vào tổng thưởng.
+  const { tinhBangLuong } = await import('../lib/luong/bangLuong.js')
+  const bl = await tinhBangLuong(sb, 2026, 10)
+  const { data: phongNv } = await sb.from('staff').select('id, room_id, role')
+  const { data: kn } = await sb.from('staff_extra_roles').select('staff_id, room_id, role')
+  const dt10 = await doanhThuTheoNhanVien(sb, 2026, 10)
+  const dtP = new Map()
+  for (const [id, x] of dt10) { const r = phongNv.find(s => s.id === id)?.room_id; if (r) dtP.set(r, (dtP.get(r) || 0) + x.tong) }
+  console.log('\nThưởng DS phòng trên bảng lương thật T10/2026:')
+  let soTp = 0
+  for (const x of bl.dong) {
+    const s = phongNv.find(n => n.id === x.staff_id)
+    const phongTp = [...new Set([...(s.role === 'leader' ? [s.room_id] : []), ...kn.filter(e => e.staff_id === s.id && e.role === 'leader').map(e => e.room_id)])]
+    const mong = phongTp.length ? Math.round(phongTp.reduce((a, r) => a + (dtP.get(r) || 0), 0) / 100) : 0
+    if (phongTp.length) { soTp++; kiem(x.ten + ' · ' + x.phongTp.map(r => r.ten).join('+') + ' · ' + x.thuongDsPhong.toLocaleString('vi-VN'), x.thuongDsPhong, mong) }
+    else if (x.thuongDsPhong) kiem(x.ten + ' không làm trưởng phòng → 0', x.thuongDsPhong, 0)
+    const tt = x.thuongViec + x.thuongNo + x.thuongDoanhSo + x.thuongDsPhong + x.thuongDvk + x.thuongHoaHong + x.thuongPhong
+    if (tt !== x.tongThuong) kiem(x.ten + ' tổng thưởng gồm DS phòng', x.tongThuong, tt)
+  }
+  kiem('có trưởng phòng được tính', soTp > 0, true)
+  const duc = bl.dong.find(x => x.ten === 'Lương Tấn Đức')
+  if (duc) kiem('Lương Tấn Đức (NV Grand, kiêm TP Danxia) chỉ tính Danxia', duc.phongTp.map(r => r.ten), ['Danxia'])
+
+  // File Excel: cột mới có công thức trỏ Tham so B18, và Tổng thu nhập cộng cột này
+  const { taoWorkbookBangLuong } = await import('../lib/luong/excel.js')
+  const wb = await taoWorkbookBangLuong({ ...bl, daChot: null })
+  const ws = wb.worksheets[0]
+  const hang4 = ws.getRow(4).values
+  const cDs = hang4.indexOf('Thưởng DS phòng 1%'), cTn = hang4.indexOf('Tổng thu nhập')
+  kiem('Excel có cột Thưởng DS phòng 1%', cDs > 0, true)
+  kiem('Tham so B18 = 1%', wb.getWorksheet('Tham so').getCell('B18').value, 0.01)
+  const iTp = bl.dong.findIndex(x => x.thuongDsPhong > 0)
+  let hangTp = null
+  ws.eachRow((row, r) => { if (r >= 5 && row.getCell(2).value === bl.dong[iTp]?.ten) hangTp = row })
+  kiem('Excel: công thức DS phòng trỏ B18', /B\$18/.test(hangTp?.getCell(cDs).value?.formula || ''), true)
+  kiem('Excel: Tổng thu nhập có cộng DS phòng', (hangTp?.getCell(cTn).value?.formula || '').includes(ws.getColumn(cDs).letter), true)
 }
 
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : '\nCÓ ' + hong + ' MỤC HỎNG.')

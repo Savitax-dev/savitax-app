@@ -88,6 +88,7 @@ export default function PhieuLuongCuaToi() {
               {x.kpiApDung && <Dong nhan="KPI công việc" phu={'Tháng ' + p.ky.viec.thang + ': ' + (x.pctViec ?? '—') + '%'} giaTri={x.thuongViec} mau="text-emerald-700" />}
               {x.kpiApDung && <Dong nhan="KPI công nợ" phu={'Tháng ' + p.ky.no.thang + ': ' + (x.pctNo ?? '—') + '%'} giaTri={x.thuongNo} mau="text-emerald-700" />}
               <Dong nhan={x.laTruongPhong ? 'Doanh số (20% công ty tự làm)' : 'Vượt doanh số'} phu={'Doanh thu ' + fmt(x.doanhThu) + (x.laTruongPhong ? '' : ' / tối thiểu ' + fmt(x.toiThieu))} giaTri={x.thuongDoanhSo} mau="text-violet-700" />
+              {x.phongTp?.length > 0 && <Dong nhan="Doanh số phòng (1%)" phu={'Doanh thu kế toán phòng ' + x.phongTp.map(r => r.ten).join(', ') + ' ' + fmt(x.doanhThuPhongTp)} giaTri={x.thuongDsPhong} mau="text-purple-700" />}
               <Dong nhan="Dịch vụ khác" phu={(x.dvkDong || []).length ? (x.dvkDong.length + ' khoản đã duyệt') : null} giaTri={x.thuongDvk} mau="text-orange-700" />
               {x.hoaHongGt && <Dong nhan="Hoa hồng giới thiệu" phu={x.hoaHongGt.soCty + ' công ty' + (x.hoaHongGt.doanhSo ? ' (doanh số ' + Number(x.hoaHongGt.doanhSo).toLocaleString('vi-VN') + 'đ/tháng)' : '') + ' × ' + x.hoaHongGt.tyLe + '% tiền khách trả (chưa VAT)'} giaTri={x.thuongHoaHong} mau="text-emerald-700" />}
               {x.kpiApDung && <Dong nhan="KPI phòng" phu={'Điểm phòng ' + (x.diemKpiPhong ?? '—') + '% · tác phong của bạn ' + (x.pctTacPhong ?? 100) + '%'} giaTri={x.thuongPhong} mau="text-fuchsia-700" />}

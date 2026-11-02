@@ -131,12 +131,13 @@ export default function BangLuong({ quyen }) {
 
       {d && (
         <>
-          {/* 14 thẻ chia 2 hàng × 7 (anh yêu cầu 23/10): hàng 1 các khoản thu nhập, hàng 2 tổng / khoản trừ / thực lĩnh. */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+          {/* 15 thẻ: hàng 1 (8) các khoản thu nhập, hàng 2 (7) tổng / khoản trừ / thực lĩnh — thêm thẻ DS phòng 02/11/2026 */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
             {[['Lương theo công', tong('luongTheoCong'), 'bg-blue-50 border-blue-200 text-blue-900'],
               ['Thưởng KPI công việc', tong('thuongViec'), 'bg-emerald-50 border-emerald-200 text-emerald-900'],
               ['Thưởng KPI công nợ', tong('thuongNo'), 'bg-teal-50 border-teal-200 text-teal-900'],
               ['Thưởng doanh số', tong('thuongDoanhSo'), 'bg-violet-50 border-violet-200 text-violet-900'],
+              ['Thưởng DS phòng (TP 1%)', tong('thuongDsPhong'), 'bg-purple-50 border-purple-200 text-purple-900'],
               ['Thưởng dịch vụ khác', tong('thuongDvk'), 'bg-orange-50 border-orange-200 text-orange-900'],
               ['Hoa hồng giới thiệu', tong('thuongHoaHong'), 'bg-emerald-50 border-emerald-200 text-emerald-900'],
               ['Thưởng phòng', tong('thuongPhong'), 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-900'],
@@ -168,6 +169,7 @@ export default function BangLuong({ quyen }) {
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-violet-700">Doanh thu / tối thiểu → thưởng</th>
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-orange-700">DVK</th>
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-emerald-700">Hoa hồng GT</th>
+                  <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-purple-700" title="Trưởng phòng: 1% tổng doanh thu kế toán của phòng mình làm trưởng (phí theo kỳ, chưa VAT, không xét đã thu). Kiêm nhiệm chỉ tính phòng kiêm nhiệm.">DS phòng TP 1%</th>
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-fuchsia-700">Tác phong · KPI phòng → thưởng</th>
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right text-amber-700">Phụ cấp · điều chỉnh</th>
                   <th className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-3 font-semibold text-right">Tổng thưởng</th>
@@ -182,7 +184,7 @@ export default function BangLuong({ quyen }) {
                     <Fragment key={x.staff_id}>
                     {(i === 0 || ds[i - 1].phong !== x.phong) && (
                       <tr className="bg-rose-50/70 border-t-2 border-rose-200">
-                        <td colSpan={18} className="sticky left-0 px-3 py-2 text-sm font-bold text-[#8B1A1A]">
+                        <td colSpan={19} className="sticky left-0 px-3 py-2 text-sm font-bold text-[#8B1A1A]">
                           🏢 {x.phong ? 'Phòng ' + x.phong : 'Chưa xếp phòng'} <span className="font-normal text-gray-500">· {ds.filter(y => y.phong === x.phong).length} người</span>
                         </td>
                       </tr>
@@ -205,6 +207,11 @@ export default function BangLuong({ quyen }) {
                         <div className="font-semibold text-emerald-700">{fmt(x.thuongHoaHong)}</div>
                         <div className="text-[11px] text-gray-500" title={(x.hoaHongGt.chiTiet || []).map(c => (c.ma || c.ten) + ' · ' + c.nguon + ' ' + c.kyThang + ': ' + Number(c.so_tien).toLocaleString('vi-VN')).join('\n')}>
                           {x.hoaHongGt.soCty}/{x.hoaHongGt.soCtyTong} cty{x.hoaHongGt.doanhSo ? ' · DS ' + Number(x.hoaHongGt.doanhSo).toLocaleString('vi-VN') + 'đ' : ''} × {x.hoaHongGt.tyLe}%</div>
+                      </> : <span className="text-gray-300">—</span>}</td>
+                      <td className="px-3 py-2.5 text-right whitespace-nowrap">{x.phongTp?.length ? <>
+                        <div className="font-semibold text-purple-800">{fmt(x.thuongDsPhong)}</div>
+                        <div className="text-[11px] text-gray-500" title={x.phongTp.map(r => 'Phòng ' + r.ten + ': ' + fmt(r.doanhThu)).join('\n')}>
+                          1% × {fmt(x.doanhThuPhongTp)}{x.phongTp.some(r => r.room_id !== x.room_id) ? ' · kiêm ' + x.phongTp.map(r => r.ten).join(', ') : ''}</div>
                       </> : <span className="text-gray-300">—</span>}</td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">
                         <span className={'font-semibold ' + pctMau(x.pctTacPhong)} title={(x.soLanViPham || 0) + ' lần vi phạm'}>{x.pctTacPhong ?? 100}%</span>
@@ -241,7 +248,7 @@ export default function BangLuong({ quyen }) {
                     </tr>
                     </Fragment>
                   ))}
-                  {!ds.length && <tr><td colSpan={18} className="px-4 py-8 text-center text-gray-400">Không có nhân viên nào khớp bộ lọc.</td></tr>}
+                  {!ds.length && <tr><td colSpan={19} className="px-4 py-8 text-center text-gray-400">Không có nhân viên nào khớp bộ lọc.</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -266,7 +273,7 @@ export default function BangLuong({ quyen }) {
               ))}</tbody>
             </table>
           </div>
-          <p className="text-xs text-gray-500">Thưởng KPI: dưới 80% → 0 · 80–90% → 300.000 · trên 90% → 500.000. Doanh thu = phí kế toán phải thu của công ty phụ trách chính, chưa VAT, công ty quý chia 3. Bấm số doanh thu để xem từng công ty. Khoản trừ: BHXH 10,5% + KPCĐ 0,5% × lương đóng BHXH + Đoàn phí 40.000 (chỉ người tham gia BHXH). Tác phong mỗi người = 100% − 20% × số lần vi phạm tự khai; % tác phong phòng = trung bình cả phòng. Phụ cấp / điều chỉnh ngoại lệ: kế toán nội bộ bấm "Nhập" ở từng dòng trước khi chốt.</p>
+          <p className="text-xs text-gray-500">Thưởng KPI: dưới 80% → 0 · 80–90% → 300.000 · trên 90% → 500.000. Doanh thu = phí kế toán phải thu của công ty phụ trách chính, chưa VAT, công ty quý chia 3. Trưởng phòng thêm 1% tổng doanh thu kế toán của phòng mình làm trưởng (kiêm nhiệm: chỉ phòng kiêm nhiệm), không xét đã thu. Bấm số doanh thu để xem từng công ty. Khoản trừ: BHXH 10,5% + KPCĐ 0,5% × lương đóng BHXH + Đoàn phí 40.000 (chỉ người tham gia BHXH). Tác phong mỗi người = 100% − 20% × số lần vi phạm tự khai; % tác phong phòng = trung bình cả phòng. Phụ cấp / điều chỉnh ngoại lệ: kế toán nội bộ bấm "Nhập" ở từng dòng trước khi chốt.</p>
         </>
       )}
     </div>

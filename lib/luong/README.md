@@ -41,6 +41,11 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
   (Anh đổi 19/10/2026; trước đó là việc N−1 / nợ N−2 / doanh thu N−1.)
 - **Thưởng KPI** công việc / công nợ / phòng: dưới 80% → 0; 80–90% → 300.000; trên 90% → 500.000.
 - **Thưởng vượt doanh số**: nhân viên (DT − tối thiểu theo cấp) × 20%; trưởng phòng 20% DT công ty tự làm.
+- **Thưởng doanh số phòng** (anh chốt 02/11/2026, `thuongDoanhSoPhong`): trưởng phòng thêm **1% × tổng doanh thu kế toán
+  của phòng mình làm trưởng** tháng N (phí phải thu theo kỳ, chưa VAT, quý ÷ 3 — KHÔNG xét đã thu). Phòng của công ty
+  suy từ nhân viên phụ trách chính. Phòng làm trưởng = vai trò `leader` chính + dòng kiêm nhiệm `leader`
+  (`staff_extra_roles`): **kiêm nhiệm chỉ tính phòng kiêm nhiệm** (Lương Tấn Đức: NV Grand, kiêm TP Danxia → 1% Danxia).
+  Excel: cột "DT phòng làm TP" + "Thưởng DS phòng 1%", tỉ lệ ở Tham so **B18** (thêm cuối để không xô B2…B17).
 - **Thưởng dịch vụ khác**: nhân viên tự khai (số tiền × tỉ lệ), trưởng phòng duyệt; dịch vụ ngoài app bắt buộc ghi chú.
 - **Khoản trừ** (chỉ người tham gia BHXH): BHXH 10,5% + KPCĐ 0,5% × lương đóng BHXH + Đoàn phí 40.000.
 - **Công ty đóng** (`congTyDong`, 23/10/2026, KHÔNG trừ lương): BHXH 17,5% + BHYT 3% + BHTN 1% (cùng 10,5% NLĐ = 32% nộp
