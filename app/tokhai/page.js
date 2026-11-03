@@ -39,6 +39,20 @@ export default function TrangToKhai() {
   // khi lưu — lưu xong lịch đã đổi (xoá kỳ tháng, sinh kỳ quý) nên phải đọc lại.
   const [moKyKhai, setMoKyKhai] = useState(null)
   const [taiLai, setTaiLai] = useState(0)
+  // Ô đang mở hộp "Bỏ qua" (sql/49, CHỈ quản trị — anh chốt 03/11/2026): { cty, loai, o }
+  const [boQua, setBoQua] = useState(null)
+  const [lyDo, setLyDo] = useState('')
+  const [dangLuu, setDangLuu] = useState(false)
+  const [loiBoQua, setLoiBoQua] = useState('')
+  const guiBoQua = async (co) => {
+    setDangLuu(true); setLoiBoQua('')
+    const r = await fetch('/api/admin/tokhai/bo-qua', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: boQua.o.id, boQua: co, lyDo }) })
+    const j = await r.json().catch(() => ({ error: 'Lỗi máy chủ (' + r.status + ')' }))
+    setDangLuu(false)
+    if (j.error) { setLoiBoQua(j.error); return }
+    setBoQua(null); setLyDo(''); setTaiLai(n => n + 1)
+  }
 
   useEffect(() => {
     const supabase = createClient()
@@ -109,7 +123,7 @@ export default function TrangToKhai() {
             <OTong mau="hoPhach"   so={dl.oTong.choKetQua} nhan="Chờ kết quả" />
             <OTong mau="xam"       so={dl.oTong.chuaNop}   nhan="Chưa nộp" />
             <OTong mau="do"        so={dl.oTong.quaHan}    nhan="Quá hạn" />
-            <OTong mau="tim"       so={dl.oTong.chuaNoiTaiKhoan} nhan="Chưa nối tài khoản" />
+            <OTong mau="tim"       so={dl.oTong.chuaNoiTaiKhoan} nhan="Chưa nối tài khoản" phu={dl.oTong.boQua ? 'Bỏ qua: ' + dl.oTong.boQua + ' ô' : undefined} />
           </div>
         )}
 
@@ -166,8 +180,14 @@ export default function TrangToKhai() {
                       if (!o) return <td key={t.id} className="px-2 py-2 text-xs text-gray-300">—</td>
                       return (
                         <td key={t.id} className="px-2 py-2 whitespace-nowrap">
-                          <Chip trangThai={o.trangThai}
-                            title={o.trangThaiCong ? 'Cổng thuế: ' + o.trangThaiCong : ''} />
+                          {/* Quản trị bấm ô chưa có hồ sơ (chưa nộp / quá hạn / bị từ chối / đã bỏ qua) để Bỏ qua hoặc Hủy bỏ qua */}
+                          {dl?.laAdmin && !o.khongCoNghiaVu && ['not_filed', 'overdue', 'rejected', 'skipped'].includes(o.trangThai)
+                            ? <button type="button" onClick={() => { setBoQua({ cty: c, loai: t, o }); setLyDo(''); setLoiBoQua('') }}
+                                className="hover:opacity-80" title={o.trangThai === 'skipped' ? 'Bỏ qua: ' + (o.lyDoBoQua || '') + (o.nguoiBoQua ? ' — ' + o.nguoiBoQua : '') + ' · bấm để hủy' : 'Bấm để Bỏ qua (trường hợp đặc biệt)'}>
+                                <Chip trangThai={o.trangThai} />
+                              </button>
+                            : <Chip trangThai={o.trangThai}
+                                title={o.trangThai === 'skipped' ? 'Bỏ qua: ' + (o.lyDoBoQua || '') + (o.nguoiBoQua ? ' — ' + o.nguoiBoQua : '') : o.trangThaiCong ? 'Cổng thuế: ' + o.trangThaiCong : ''} />}
                           <span className="block text-[11px] text-gray-400 mt-0.5">
                             {/* Xem theo tháng (= việc phải nộp trong tháng) thì một tháng gồm nhiều kỳ:
                                 tờ khai tháng kỳ trước, quý vừa xong, quyết toán năm — ghi rõ kỳ của ô. */}
@@ -183,6 +203,9 @@ export default function TrangToKhai() {
                             {o.dungHan === true && ' · đúng hạn'}
                             {o.dungHan === false && ' · TRỄ HẠN'}
                           </span>
+                          {o.trangThai === 'skipped' && o.lyDoBoQua && (
+                            <span className="block text-[11px] text-slate-500 max-w-[180px] truncate" title={o.lyDoBoQua}>↳ {o.lyDoBoQua}</span>
+                          )}
                         </td>
                       )
                     })}
@@ -190,6 +213,37 @@ export default function TrangToKhai() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {boQua && (
+          <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4" onClick={() => !dangLuu && setBoQua(null)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5 space-y-3" onClick={e => e.stopPropagation()}>
+              <div>
+                <p className="font-semibold text-gray-800">{boQua.o.trangThai === 'skipped' ? 'Hủy bỏ qua' : 'Bỏ qua tờ khai'} — {boQua.loai.code}</p>
+                <p className="text-xs text-gray-500">{boQua.cty.ten} · kỳ {boQua.o.ky} · hạn {ngayVN(boQua.o.hanNop)}</p>
+              </div>
+              {boQua.o.trangThai === 'skipped' ? (
+                <p className="text-sm text-slate-600 bg-slate-50 rounded-lg px-3 py-2">
+                  Đã bỏ qua{boQua.o.nguoiBoQua ? ' bởi ' + boQua.o.nguoiBoQua : ''}{boQua.o.lucBoQua ? ' lúc ' + new Date(boQua.o.lucBoQua).toLocaleString('vi-VN') : ''}: “{boQua.o.lyDoBoQua}”.
+                  Hủy thì ô trở lại Chưa nộp / Quá hạn như cũ.
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-500">Chỉ dùng cho trường hợp đặc biệt. Ô bỏ qua không tính quá hạn, không nhắc hạn. Có hồ sơ thật trên cổng về sau thì app hiện theo hồ sơ.</p>
+                  <textarea value={lyDo} onChange={e => setLyDo(e.target.value)} rows={3} maxLength={300} autoFocus
+                    placeholder="Lý do (bắt buộc) — vd: khách tự nộp, ngưng hoạt động tạm thời, không thuộc diện phải nộp kỳ này…"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm" />
+                </>
+              )}
+              {loiBoQua && <p className="text-sm text-red-600">{loiBoQua}</p>}
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={() => setBoQua(null)} disabled={dangLuu} className="px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-600">Đóng</button>
+                {boQua.o.trangThai === 'skipped'
+                  ? <button type="button" onClick={() => guiBoQua(false)} disabled={dangLuu} className="px-4 py-2 text-sm rounded-xl bg-[#8B1A1A] text-white font-semibold disabled:opacity-50">Hủy bỏ qua</button>
+                  : <button type="button" onClick={() => guiBoQua(true)} disabled={dangLuu || lyDo.trim().length < 5} className="px-4 py-2 text-sm rounded-xl bg-slate-700 text-white font-semibold disabled:opacity-40">Bỏ qua</button>}
+              </div>
+            </div>
           </div>
         )}
 

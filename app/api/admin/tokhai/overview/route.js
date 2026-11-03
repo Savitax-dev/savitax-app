@@ -150,20 +150,20 @@ export async function GET(request) {
 
     // 4. Nghĩa vụ của đúng kỳ đó.
     //    Quản trị viên xem tất cả → lọc theo kỳ là đủ, không cần liệt kê 293 mã công ty vào URL.
-    const layNghiaVu = async () => {
+    // Cột bỏ qua (sql/49) — chưa chạy SQL thì đọc như cũ.
+    const COT_NV = 'id, client_id, filing_type_id, period_code, due_date, state'
+    const docNghiaVu = async cot => {
       if (laAdmin) {
-        return docHet(() => supabase.from('tax_obligations')
-          .select('id, client_id, filing_type_id, period_code, due_date, state')
-          .in('period_code', cacMa))
+        return docHet(() => supabase.from('tax_obligations').select(cot).in('period_code', cacMa))
       }
       let ra = []
       for (let i = 0; i < idCty.length; i += 300) {
         ra = ra.concat(await docHet(() => supabase.from('tax_obligations')
-          .select('id, client_id, filing_type_id, period_code, due_date, state')
-          .in('period_code', cacMa).in('client_id', idCty.slice(i, i + 300))))
+          .select(cot).in('period_code', cacMa).in('client_id', idCty.slice(i, i + 300))))
       }
       return ra
     }
+    const layNghiaVu = () => docNghiaVu(COT_NV + ', skip_reason, skipped_by, skipped_at').catch(() => docNghiaVu(COT_NV))
 
     // 4b. HỒ SƠ THẬT của kỳ này.
     //     Ma trận phải vẽ theo CẢ HAI nguồn: lịch hạn nộp (app nghĩ phải nộp gì) và hồ sơ lấy từ
@@ -251,6 +251,8 @@ export async function GET(request) {
             ngayNop: h?.submitted_at || null,
             ngayTiepNhan: h?.received_at || o.received_at || null,
             dungHan: h ? h.on_time : (o.on_time ?? null),
+            // Bỏ qua (sql/49, chỉ quản trị): lý do + ai + lúc — hồ sơ thật về sau vẫn thắng
+            ...(o.state === 'skipped' ? { lyDoBoQua: o.skip_reason || '', nguoiBoQua: tenNV.get(o.skipped_by) || '', lucBoQua: o.skipped_at || null } : {}),
           }
         }),
       }
@@ -266,6 +268,7 @@ export async function GET(request) {
       chuaNop: dem('not_filed'),
       quaHan: dem('overdue'),
       khongPhatSinh: dem('no_activity'),
+      boQua: dem('skipped'),
       khongChapNhan: dem('rejected'),
       chuaNoiTaiKhoan: congTy.filter(c => c.trangThaiTaiKhoan === 'not_connected').length,
     }
@@ -277,7 +280,7 @@ export async function GET(request) {
       kyQuyetToanNam(nam).period_code,
     ].map(code => ({ ma: code, nhan: nhanKy(code) }))
 
-    return Response.json({ nam, ky, moTaKy, cacKy, loaiToKhai, congTy, oTong })
+    return Response.json({ nam, ky, moTaKy, cacKy, loaiToKhai, congTy, oTong, laAdmin })
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 })
   }

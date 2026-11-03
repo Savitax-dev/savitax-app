@@ -25,6 +25,7 @@ export const TRANG_THAI = {
   overdue:     { nhan: 'Quá hạn',         mau: 'do' },
   not_filed:   { nhan: 'Chưa nộp',        mau: 'xam' },
   no_activity: { nhan: 'Không phát sinh', mau: 'xam' },
+  skipped:     { nhan: 'Bỏ qua',          mau: 'xam' },   // quản trị bỏ qua — trường hợp đặc biệt (sql/49)
 }
 
 export function Chip({ trangThai, ghiChu, title }) {
