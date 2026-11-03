@@ -1,6 +1,6 @@
 // Kiểm quy tắc hoa hồng giới thiệu (lib/luong/hoaHong.js). Không đụng database.
 //   node scripts/test-luong-hoa-hong.mjs
-import { tyLeTheoBac, tinhHoaHong } from '../lib/luong/hoaHong.js'
+import { tyLeTheoBac, tinhHoaHong, thangTrongGhiChu } from '../lib/luong/hoaHong.js'
 
 let hong = 0
 const kiem = (ten, thuc, mong) => {
@@ -63,6 +63,14 @@ kiem('phí T9 ghi thu tháng 9 (trước tháng bắt đầu hưởng) → khôn
 kiem('ghi thu tháng 11 → KHÔNG vào kỳ lương T10…', t5('2026-11', 10), 0)
 kiem('…mà vào kỳ lương T11', t5('2026-11', 11), 150000)
 kiem('dòng không có ngày ghi → lùi về kỳ phí như cũ (T9 < tháng bắt đầu → không tính)', t5(null, 10), 0)
+
+console.log('\nNgày khách trả ghi trong ghi chú (ca TENNOODLES — trả 16/09, nhập app 01/10):')
+kiem('"50% phí làm lại sổ 2025, ngày 16/09/2026" → 2026-09', thangTrongGhiChu('50% phí làm lại sổ 2025, ngày 16/09/2026'), '2026-09')
+kiem('"PKT T09.2026 NGÀY 05.10.2026" → 2026-10 (sau chữ ngày, không lấy T09.2026)', thangTrongGhiChu('PKT T09.2026 NGÀY 05.10.2026'), '2026-10')
+kiem('"29-10-2026" (một ngày duy nhất) → 2026-10', thangTrongGhiChu('29-10-2026'), '2026-10')
+kiem('"Đối soát NH ACB 02/10" (không có năm) → không đoán', thangTrongGhiChu('Đối soát NH ACB 02/10'), null)
+kiem('hai ngày mà không có chữ "ngày" → không đoán', thangTrongGhiChu('01/09/2026 - 30/09/2026'), null)
+kiem('ghi chú trống → không đoán', thangTrongGhiChu(null), null)
 
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : '\nCÓ ' + hong + ' MỤC HỎNG.')
 process.exit(hong === 0 ? 0 : 1)
