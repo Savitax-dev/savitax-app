@@ -77,6 +77,8 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
   chốt: khấu trừ mọi khoản cho chắc). Lương từng người do công ty nhập tay theo năng lực, không tự gán.
   Thực lĩnh = thu nhập − BHXH − KPCĐ − Đoàn phí − thuế. Số người phụ thuộc đi theo lịch sử lương
   (`luong_nhan_vien.so_nguoi_phu_thuoc`); tài khoản nhận lương một dòng mỗi người (`luong_ngan_hang`).
+  Ô **"Không áp dụng thuế TNCN"** (`luong_nhan_vien.khong_tinh_thue`, sql/50, 03/11/2026 — anh Hiếu) cũng theo lịch sử lương →
+  thuế 0 (`cach: 'khong_ap_dung'`); nhập file hồ sơ lương giữ dấu tick của dòng lương gần nhất.
 - **Tác phong** (19/10/2026): nhân viên tự khai số lần vi phạm cùng ngày công; % của người = 100 − 20 × số lần
   (sàn 0); % tác phong phòng = trung bình cả phòng. **Điểm KPI phòng** = TB(%-việc, %-nợ, %-tác phong) →
   thưởng phòng 0 / 300k / 500k, MỖI người trong phòng nhận đủ. App tự tính, Excel cũng tự tính lại.
