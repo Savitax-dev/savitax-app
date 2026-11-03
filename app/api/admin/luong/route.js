@@ -320,12 +320,19 @@ export async function POST(request) {
         luong_co_ban: lcb, doanh_thu_toi_thieu: dt, luong_bhxh: bh, tham_gia_bhxh: thamGia,
         ghi_chu: body.ghi_chu ? String(body.ghi_chu).slice(0, 300) : null,
         tao_boi: caller.staffId, tao_luc: new Date().toISOString(), so_nguoi_phu_thuoc: npt,
+        // "Không áp dụng thuế TNCN" (sql/50) — chỉ gửi khi trình duyệt có ô này
+        ...(body.khong_tinh_thue !== undefined ? { khong_tinh_thue: !!body.khong_tinh_thue } : {}),
       }
       // Cột người phụ thuộc có từ sql/35 — chưa chạy SQL mà không có người phụ thuộc thì vẫn lưu được lương.
       let { error } = await supabase.from('luong_nhan_vien').upsert(dongLuong, { onConflict: 'staff_id,ap_dung_tu' })
       if (error && /so_nguoi_phu_thuoc/.test(error.message)) {
         if (npt > 0) return loi('Chưa chạy sql/35_luong_thue_ngan_hang.sql — chưa lưu được người phụ thuộc', 500)
         delete dongLuong.so_nguoi_phu_thuoc
+        ;({ error } = await supabase.from('luong_nhan_vien').upsert(dongLuong, { onConflict: 'staff_id,ap_dung_tu' }))
+      }
+      if (error && /khong_tinh_thue/.test(error.message)) {
+        if (dongLuong.khong_tinh_thue) return loi('Chưa chạy sql/50_luong_khong_tinh_thue.sql — chưa lưu được "Không áp dụng thuế TNCN"', 500)
+        delete dongLuong.khong_tinh_thue
         ;({ error } = await supabase.from('luong_nhan_vien').upsert(dongLuong, { onConflict: 'staff_id,ap_dung_tu' }))
       }
       if (error) return loi(error.message, 500)

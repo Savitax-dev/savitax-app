@@ -116,7 +116,7 @@ export default function PhieuLuongCuaToi() {
                 {/* Anh dặn 20/10/2026: chỉ 3 dòng, không liệt kê từng khoản giảm trừ. */}
                 <Dong nhan="Thu nhập chịu thuế" giaTri={x.thueTncn.thuNhapChiuThue} />
                 <Dong nhan="Thu nhập tính thuế" giaTri={x.thueTncn.thuNhapTinhThue} />
-                <Dong nhan="Thuế TNCN phải nộp" phu={x.thueTncn.cach === 'luy_tien' ? null : 'Thử việc / học việc: khấu trừ 10%'} giaTri={x.thueTncn.thue} mau="text-red-700" am />
+                <Dong nhan="Thuế TNCN phải nộp" phu={x.thueTncn.cach === 'luy_tien' ? null : x.thueTncn.cach === 'khong_ap_dung' ? 'Không áp dụng thuế TNCN' : 'Thử việc / học việc: khấu trừ 10%'} giaTri={x.thueTncn.thue} mau="text-red-700" am />
               </>}
               <div className="text-xs font-bold text-cyan-700 uppercase tracking-wide mt-3 mb-1">Tài khoản ngân hàng</div>
               {x.nganHang?.stk ? <>

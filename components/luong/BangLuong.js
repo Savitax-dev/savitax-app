@@ -326,7 +326,7 @@ export default function BangLuong({ quyen }) {
                         <div className="text-[11px] text-gray-500" title={x.thueTncn.cach === 'luy_tien'
                           ? 'Chịu thuế ' + fmt(x.thueTncn.thuNhapChiuThue) + ' − bản thân ' + fmt(x.thueTncn.giamTruBanThan) + ' − NPT ' + fmt(x.thueTncn.giamTruPhuThuoc) + ' − BHXH ' + fmt(x.thueTncn.giamTruBhxh) + ' = tính thuế ' + fmt(x.thueTncn.thuNhapTinhThue)
                           : '10% × tổng thu nhập ' + fmt(x.thueTncn.thuNhapChiuThue)}>
-                          {x.thueTncn.cach === 'luy_tien' ? 'lũy tiến' + (x.soNguoiPhuThuoc ? ' · ' + x.soNguoiPhuThuoc + ' NPT' : '') : 'khấu trừ 10%'}</div>
+                          {x.thueTncn.cach === 'luy_tien' ? 'lũy tiến' + (x.soNguoiPhuThuoc ? ' · ' + x.soNguoiPhuThuoc + ' NPT' : '') : x.thueTncn.cach === 'khong_ap_dung' ? 'không áp dụng thuế' : 'khấu trừ 10%'}</div>
                       </>}</td>
                       <td className="px-3 py-2.5 text-right font-bold text-gray-900 whitespace-nowrap">{x.luongCoBan === null ? '—' : fmt(x.thucLinh)}
                         {x.nganHang?.stk && <div className="text-[11px] font-normal text-gray-500" title={x.nganHang.ten + ' · ' + x.nganHang.stk + ' · ' + x.nganHang.chu}>🏦 {x.nganHang.ten || 'NH'} ·· {x.nganHang.stk.slice(-4)}</div>}

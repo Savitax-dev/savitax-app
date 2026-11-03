@@ -24,7 +24,7 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, dsN
     setF({
       thang: thangNay(), cap_bac: h.cap_bac || '', luong_co_ban: h.luong_co_ban ?? null,
       doanh_thu_toi_thieu: h.doanh_thu_toi_thieu ?? null, luong_bhxh: h.luong_bhxh ?? null,
-      tham_gia_bhxh: !!h.tham_gia_bhxh, so_nguoi_phu_thuoc: Number(h.so_nguoi_phu_thuoc) || 0, ghi_chu: '',
+      tham_gia_bhxh: !!h.tham_gia_bhxh, so_nguoi_phu_thuoc: Number(h.so_nguoi_phu_thuoc) || 0, khong_tinh_thue: h.khong_tinh_thue === true, ghi_chu: '',
       ngan_hang: nganHang?.ngan_hang || '', so_tai_khoan: nganHang?.so_tai_khoan || '', chu_tai_khoan: nganHang?.chu_tai_khoan || tenNv || '', ma_ngan_hang: nganHang?.ma_ngan_hang || '',
       ma_nhan_vien: hoSo?.ma_nhan_vien || '', ngay_vao_lam: hoSo?.ngay_vao_lam || '', cham_cong_may: hoSo?.cham_cong_may !== false,
     })
@@ -45,6 +45,7 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, dsN
     const doiLuong = !hienHanh ? f.luong_co_ban !== null : f.ghi_chu || f.thang !== String(h.ap_dung_tu || '').slice(0, 7)
       || ['cap_bac', 'luong_co_ban', 'doanh_thu_toi_thieu', 'luong_bhxh'].some(k => String(f[k] ?? '') !== String(h[k] ?? ''))
       || f.tham_gia_bhxh !== !!h.tham_gia_bhxh || f.so_nguoi_phu_thuoc !== (Number(h.so_nguoi_phu_thuoc) || 0)
+      || f.khong_tinh_thue !== (h.khong_tinh_thue === true)
     const doiNh = ['ngan_hang', 'so_tai_khoan', 'chu_tai_khoan', 'ma_ngan_hang'].some(k => (f[k] || '') !== (nganHang?.[k] || (k === 'chu_tai_khoan' && !nganHang ? tenNv || '' : '')))
       && (f.so_tai_khoan || nganHang)
     const doiHs = (f.ma_nhan_vien || '') !== (hoSo?.ma_nhan_vien || '') || (f.ngay_vao_lam || '') !== (hoSo?.ngay_vao_lam || '')
@@ -77,6 +78,7 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, dsN
     hienHanh ? (ten || 'Chưa gán cấp') + ' · lương ' + fmt(hienHanh.luong_co_ban) : 'Chưa đặt lương',
     hienHanh ? (hienHanh.tham_gia_bhxh ? 'Đóng BHXH trên ' + fmt(hienHanh.luong_bhxh) : 'Không tham gia BHXH') : null,
     hienHanh ? npt + ' người phụ thuộc' : null,
+    hienHanh?.khong_tinh_thue ? 'Không áp dụng thuế TNCN' : null,
     hienHanh ? 'Áp dụng từ ' + String(hienHanh.ap_dung_tu).slice(5, 7) + '/' + String(hienHanh.ap_dung_tu).slice(0, 4) : null,
     stk ? 'Tài khoản: ' + (nganHang.ngan_hang || '') + ' ' + stk + (nganHang.chu_tai_khoan ? ' · ' + nganHang.chu_tai_khoan : '') : 'Chưa có tài khoản nhận lương',
     hoSo?.ma_nhan_vien ? 'Mã NV ' + hoSo.ma_nhan_vien : 'Chưa có mã NV',
@@ -86,6 +88,7 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, dsN
   const phu = [
     hienHanh ? (hienHanh.tham_gia_bhxh ? 'BHXH ' + fmtGon(hienHanh.luong_bhxh) : 'Không BHXH') : null,
     npt ? npt + ' NPT' : null,
+    hienHanh?.khong_tinh_thue ? 'không thuế' : null,
     stk ? '🏦 ··' + stk.slice(-4) : null,
     hoSo?.cham_cong_may === false ? 'tự khai công' : null,
   ].filter(Boolean).join(' · ')
@@ -146,7 +149,11 @@ export default function OLuongNhanVien({ staffId, tenNv, hienHanh, nganHang, dsN
           className="w-20 border border-gray-300 rounded px-2 py-1 text-right" />
         <span className="text-xs text-gray-400">× 6.200.000 giảm trừ</span>
       </div>
-      <div className="text-xs text-gray-500">{f.tham_gia_bhxh ? 'Thuế TNCN: biểu lũy tiến (giảm trừ bản thân + người phụ thuộc + BHXH).' : 'Chưa tham gia BHXH (thử việc / học việc): khấu trừ thuế 10% tổng thu nhập.'}</div>
+      <label className="flex items-center gap-1 text-gray-700">
+        <input type="checkbox" checked={!!f.khong_tinh_thue} onChange={e => setF(v => ({ ...v, khong_tinh_thue: e.target.checked }))} />
+        Không áp dụng thuế TNCN
+      </label>
+      <div className="text-xs text-gray-500">{f.khong_tinh_thue ? 'Không trừ thuế TNCN trên bảng lương / phiếu lương.' : f.tham_gia_bhxh ? 'Thuế TNCN: biểu lũy tiến (giảm trừ bản thân + người phụ thuộc + BHXH).' : 'Chưa tham gia BHXH (thử việc / học việc): khấu trừ thuế 10% tổng thu nhập.'}</div>
       <div className="pt-2 mt-1 border-t border-gray-100 font-semibold text-gray-800">🏦 Tài khoản nhận lương</div>
       {[['ngan_hang', 'Ngân hàng', 'vd: Vietcombank'], ['ma_ngan_hang', 'Mã ngân hàng', 'mã số trong file chi lương'], ['so_tai_khoan', 'Số tài khoản', ''], ['chu_tai_khoan', 'Tên chủ TK', '']].map(([k, l, ph]) => (
         <div key={k} className="flex items-center gap-1">
