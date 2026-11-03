@@ -39,7 +39,7 @@ const ST = {
 }
 // "ignored" gồm 2 việc khác hẳn nhau: xác nhận nhân viên đã ghi tay, và bỏ qua vì không phải phí
 // dịch vụ. Phân biệt bằng ghi chú lưu lúc đóng để người xem sau còn hiểu chuyện gì đã xảy ra.
-const pillLabel = (r) => r.status === 'posted' ? 'Đã ghi qua đối soát'
+const pillLabel = (r) => r.status === 'posted' ? (r.conLai > 0 ? 'Đã ghi ' + fmt(r.daGhi) + ' · còn ' + fmt(r.conLai) : 'Đã ghi qua đối soát')
   : r.status === 'ignored' ? (/^Loại bỏ/.test(r.note || '') ? 'Đã loại bỏ (chỉ quản trị thấy)' : /ghi tay|khớp sổ/i.test(r.note || '') ? 'Đã khớp sổ' : 'Đã bỏ qua')
   : 'Đã khớp sổ'
 const VIA = { code: ['qua Mã KH', 'bg-blue-50 text-blue-700'], mst: ['qua MST', 'bg-violet-50 text-violet-700'],
@@ -294,11 +294,15 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
   const lines = r.status === 'posted'
     ? (pd?.done || (pd?.kind ? [{ kind: pd.kind === 'hcns_case' ? 'hcns_case' : 'khach', amount: pd.amount, label: pd.name }] : []))
     : (r.plan || [])
+  // Một giao dịch ghi nhiều phần (03/11/2026): các phần đã ghi + số còn lại chưa ghi.
+  const parts = r.parts || []
+  const motPhan = r.state === 'open' && (r.daGhi || 0) > 0
+  const conLaiGd = r.conLai ?? r.amount
 
   const pickedCase = hcnsCases && hcnsPick ? hcnsCases.find(c => c.name === hcnsPick) : null
   // Số tiền mặc định = phần nhỏ hơn giữa tiền vào và phần còn phải thu của hồ sơ — ghi quá phần
   // còn lại thì server chặn, nên đừng để nhân viên phải tự tính.
-  const goiY = (remain) => String(Math.min(Number(r.amount) || 0, Number(remain) || 0))
+  const goiY = (remain) => String(Math.min(Number(conLaiGd) || 0, Number(remain) || 0))
   // Lấy hồ sơ Dịch vụ khác của công ty ĐANG ghép. Phải theo dõi `r.client?.id`: nhân viên hay
   // chọn tay công ty SAU khi đã mở ô này, không lấy lại thì vẫn hiện "chưa chọn công ty".
   useEffect(() => {
@@ -348,18 +352,32 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
           </div>
           <div className="text-right flex-shrink-0">
             <p className="font-semibold text-sm text-gray-900">+{fmt(r.amount)}</p>
+            {motPhan && <p className="text-[11px] text-amber-700 whitespace-nowrap">đã ghi {fmt(r.daGhi)} · <b>còn {fmt(r.conLai)}</b></p>}
             <span className={'inline-block mt-1 text-[11px] font-medium px-2 py-0.5 rounded-full border whitespace-nowrap ' + st.pill}>{pill}</span>
           </div>
         </div>
 
         {open && (
           <div className="mt-2 pt-2 border-t border-dashed border-gray-200 grid grid-cols-[110px_1fr] gap-x-3 gap-y-1.5 text-xs" onClick={e => e.stopPropagation()}>
-            <span className="text-gray-500">{r.status === 'posted' ? 'Đã ghi' : 'Tách tiền'}</span>
-            <span className="flex flex-wrap gap-1">
-              {lines.length ? lines.map((l, i) => (
-                <Chip key={i} cls={(KIND[l.kind] || KIND.ketoan)[1]}>{(KIND[l.kind] || KIND.ketoan)[0]}{l.month ? ' T' + l.month : ''}{l.label ? ' · ' + l.label : ''} {fmt(l.amount)}</Chip>
-              )) : '—'}
-            </span>
+            {(parts.length > 1 || motPhan) && (<>
+              <span className="text-gray-500">Đã ghi</span>
+              <span className="space-y-0.5">
+                {parts.map((x, i) => (
+                  <div key={i} className="text-gray-700"><span className="text-gray-400">{i + 1}.</span> {x.moTa}{x.luc ? <span className="text-gray-400"> · {vnTime(x.luc)}</span> : null}</div>
+                ))}
+                <div className={conLaiGd > 0 ? 'text-amber-700 font-medium' : 'text-green-700'}>
+                  {conLaiGd > 0 ? 'Còn ' + fmt(conLaiGd) + ' chưa ghi — ghi tiếp vào phí kế toán, Dịch vụ khác hoặc HCNS Thời điểm bên dưới' : 'Đã ghi hết ' + fmt(r.amount)}
+                </div>
+              </span>
+            </>)}
+            {!(r.status === 'posted' && parts.length > 1) && (<>
+              <span className="text-gray-500">{r.status === 'posted' ? 'Đã ghi' : motPhan ? 'Tách phần còn lại' : 'Tách tiền'}</span>
+              <span className="flex flex-wrap gap-1">
+                {lines.length ? lines.map((l, i) => (
+                  <Chip key={i} cls={(KIND[l.kind] || KIND.ketoan)[1]}>{(KIND[l.kind] || KIND.ketoan)[0]}{l.month ? ' T' + l.month : ''}{l.label ? ' · ' + l.label : ''} {fmt(l.amount)}</Chip>
+                )) : '—'}
+              </span>
+            </>)}
 
             {r.state === 'open' && r.info && (<>
               <span className="text-gray-500">Trong app</span>
@@ -420,7 +438,7 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
                     className={'px-2.5 py-1 rounded-md border ' + (target === 'hcns' ? 'border-teal-400 bg-teal-50 text-teal-700' : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-100')}>
                     HCNS Thời điểm
                   </button>
-                  {!target && <span className="text-gray-400">Chỉ dùng khi tiền này là phí của một hồ sơ, không phải phí hàng tháng</span>}
+                  {!target && <span className="text-gray-400">Phí của một hồ sơ (không phải phí hàng tháng). Khách chuyển gộp: ghi phần hồ sơ ở đây TRƯỚC (giao dịch vẫn mở với số còn lại), phần phí kế toán ghi SAU CÙNG.</span>}
                 </span>
 
                 {target === 'dvk' && (
@@ -525,11 +543,12 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
                 </button>
                 {g !== 'done' && (
                   <button disabled={busy} onClick={async () => {
-                    if (await act({ action: 'ignore', id: r.id, note: 'Không phải phí dịch vụ', userNote: note.trim() || undefined }, 'Đã bỏ qua')) setNote('')
+                    if (motPhan && !confirm('Đóng phần còn lại ' + fmt(conLaiGd) + ' mà KHÔNG ghi tiền?\nCác phần đã ghi giữ nguyên.')) return
+                    if (await act({ action: 'ignore', id: r.id, note: motPhan ? 'Phần còn lại không phải phí dịch vụ' : 'Không phải phí dịch vụ', userNote: note.trim() || undefined }, 'Đã bỏ qua')) setNote('')
                   }}
-                    className="px-3 py-1 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-40">Bỏ qua</button>
+                    className="px-3 py-1 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-40">{motPhan ? 'Đóng phần còn lại' : 'Bỏ qua'}</button>
                 )}
-                {g !== 'done' && (
+                {g !== 'done' && !motPhan && (
                   <button disabled={busy} title="Không phải tiền khách (chuyển nội bộ, nộp tiền…) — ẩn với nhân viên, trưởng phòng; quản trị vẫn thấy"
                     onClick={async () => {
                       if (!confirm('Loại bỏ giao dịch ' + Number(r.amount).toLocaleString('vi-VN') + 'đ khỏi trang Đối soát?\n\nDùng cho tiền KHÔNG phải phí khách (chuyển nội bộ, nộp tiền…). Nhân viên, trưởng phòng sẽ không thấy giao dịch này nữa; quản trị vẫn thấy.')) return
@@ -538,6 +557,13 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
                     className="px-3 py-1 rounded-md border border-rose-200 bg-white text-rose-600 hover:bg-rose-50 disabled:opacity-40">🗑 Loại bỏ</button>
                 )}
               </>)}
+              {r.state === 'posted' && r.conLai > 0 && (
+                <button disabled={busy} onClick={async () => {
+                  if (!confirm('Giao dịch ' + fmt(r.amount) + ' mới ghi ' + fmt(r.daGhi) + '.\nMở lại phần còn lại ' + fmt(r.conLai) + ' để ghi tiếp (phí kế toán / Dịch vụ khác / HCNS)?\n\nNếu phần này đã ghi tay ở công nợ, app sẽ tự nhận "khớp sổ" — không ghi trùng.')) return
+                  act({ action: 'moConLai', id: r.id, userNote: note.trim() || undefined }, 'Đã mở phần còn lại')
+                }}
+                  className="px-3 py-1 rounded-md border border-amber-300 bg-amber-50 text-amber-800 font-medium hover:bg-amber-100 disabled:opacity-40">↻ Ghi tiếp phần còn lại {fmt(r.conLai)}</button>
+              )}
               {r.state === 'ignored' && (
                 <button disabled={busy} onClick={() => act({ action: 'reopen', id: r.id, userNote: note.trim() || undefined }, 'Đã mở lại')}
                   className="px-3 py-1 rounded-md border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40">Mở lại</button>

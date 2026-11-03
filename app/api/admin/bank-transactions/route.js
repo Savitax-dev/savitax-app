@@ -4,6 +4,7 @@ import { classifyTransactions } from '@/lib/bankData'
 import { planSignature, ST_READY, ST_REVIEW } from '@/lib/bankMatch'
 import { executePlan } from '@/lib/bankPost'
 import { tuXuLyGiaoDich } from '@/lib/bankAuto'
+import { phanDaGhi, daGhiCuaGd, conLaiCuaGd, txConLai, themPhan, moTaPhan } from '@/lib/bankPhan'
 
 // Trang Đối soát ngân hàng (/bank) — quyền riêng `bank_reconcile` (sql/21_bank_transactions.sql).
 //
@@ -15,6 +16,9 @@ import { tuXuLyGiaoDich } from '@/lib/bankAuto'
 //      { action: 'assign', id, clientId, year?, month? } -> chọn tay công ty / kỳ
 //      { action: 'postOther',    id, serviceId, amount }                     -> ghi vào hồ sơ Dịch vụ khác
 //      { action: 'postHcnsCase', id, hcnsClientId, caseServiceId?, amount }  -> ghi vào hồ sơ HCNS Thời điểm
+//      { action: 'moConLai', id }                -> mở lại phần CHƯA GHI của giao dịch đã đóng (ghi tiếp phần còn lại)
+// Một giao dịch GHI ĐƯỢC NHIỀU PHẦN (lib/bankPhan.js, 03/11/2026): ghi chưa hết tiền thì giao dịch vẫn mở, phân loại /
+// đề xuất / tự ghi chạy trên PHẦN CÒN LẠI; ghi hết mới đóng.
 // GET  ?hcnsCases=1                    -> danh sách hồ sơ HCNS Thời điểm + phần còn phải thu
 
 function getAdmin() {
@@ -111,7 +115,7 @@ export async function GET(request) {
   // Chỉ phân loại giao dịch còn mở; đã ghi / bỏ qua thì hiện đúng những gì đã làm.
   const open = (txs || []).filter(t => t.state === 'open')
   let cls = []
-  try { cls = await classifyTransactions(supabase, open) } catch (e) {
+  try { cls = await classifyTransactions(supabase, open.map(txConLai)) } catch (e) {
     return Response.json({ error: 'Lỗi phân loại: ' + e.message }, { status: 500 })
   }
   const clsById = new Map(open.map((t, i) => [t.id, cls[i]]))
@@ -151,6 +155,8 @@ export async function GET(request) {
       id: t.id, source: t.source, tx_time: t.tx_time, amount: Number(t.amount) || 0, memo: t.memo || '',
       account: t.account, state: t.state, note: t.note,
       posted_at: t.posted_at, posted_by_name: staffNames.get(t.posted_by) || (t.state !== 'open' && !t.posted_by && /^Tự /.test(t.note || '') ? 'Tự động' : null), post_detail: t.post_detail,
+      // Ghi nhiều phần: từng phần đã ghi + số còn lại (giao dịch đã đóng mà còn dư → nút "Ghi tiếp phần còn lại")
+      parts: phanDaGhi(t).map(x => ({ ...x, moTa: moTaPhan(x) })), daGhi: daGhiCuaGd(t), conLai: conLaiCuaGd(t),
       logs: (logsByTx.get(t.id) || []).map(l => ({
         id: l.id, action: l.action, detail: l.detail, note: l.note,
         at: l.created_at, by: staffNames.get(l.staff_id) || (l.note === 'Tự động' ? 'Tự động' : '—'),
@@ -183,6 +189,20 @@ export async function POST(request) {
   if (!tx) return Response.json({ error: 'Không tìm thấy giao dịch' }, { status: 404 })
 
   if (action === 'ignore') {
+    // Giao dịch ĐÃ GHI một phần: "bỏ qua" là đóng PHẦN CÒN LẠI (vd phần dư nhân viên đã ghi tay ở công nợ → khớp sổ).
+    if (daGhiCuaGd(tx) > 0) {
+      if (tx.state !== 'open') return Response.json({ error: 'Giao dịch đã được xử lý — tải lại trang' }, { status: 409 })
+      const conLai = conLaiCuaGd(tx)
+      const ghiChu = String(body.note || '').trim()
+      const moi = themPhan(tx, { kind: /khớp sổ/i.test(ghiChu) ? 'khop_so' : 'dong_con_lai', amount: conLai, note: ghiChu || null, boi: staffId })
+      const { data, error } = await supabase.from('bank_transactions')
+        .update({ state: 'posted', posted_at: new Date().toISOString(), posted_by: staffId, post_detail: moi.post_detail })
+        .eq('id', id).eq('state', 'open').select('id')
+      if (error) return Response.json({ error: error.message }, { status: 500 })
+      if (!data?.length) return Response.json({ error: 'Giao dịch đã được xử lý bởi người khác — tải lại trang' }, { status: 409 })
+      await logAction(supabase, { txId: id, clientId: tx.client_id, action: 'ignore', detail: 'Đóng phần còn lại ' + conLai.toLocaleString('vi-VN') + 'đ' + (ghiChu ? ' — ' + ghiChu : ''), note: body.userNote, staffId })
+      return Response.json({ ok: true })
+    }
     // Lưu lại công ty + kỳ đã nhận ra TRƯỚC khi đóng giao dịch. Không lưu thì sau đó dòng này chỉ
     // còn nội dung chuyển khoản, hiện "Không nhận ra công ty" — mất luôn dấu vết tiền của ai
     // (giao dịch đã đóng không được phân loại lại, xem GET).
@@ -221,6 +241,20 @@ export async function POST(request) {
     return Response.json({ ok: true })
   }
 
+  // Giao dịch ĐÃ ĐÓNG mà chưa ghi hết tiền (khách chuyển gộp, trước đây ghi một phần là đóng luôn) → mở lại PHẦN CÒN LẠI
+  // để ghi tiếp vào phí kế toán / Dịch vụ khác / HCNS Thời điểm. Các phần đã ghi giữ nguyên.
+  if (action === 'moConLai') {
+    const conLai = conLaiCuaGd(tx)
+    if (tx.state !== 'posted' || conLai <= 0) return Response.json({ error: 'Giao dịch này không còn phần nào chưa ghi' }, { status: 409 })
+    const { data, error } = await supabase.from('bank_transactions')
+      .update({ state: 'open', post_detail: { parts: phanDaGhi(tx) }, note: null })
+      .eq('id', id).eq('state', 'posted').select('id')
+    if (error) return Response.json({ error: error.message }, { status: 500 })
+    if (!data?.length) return Response.json({ error: 'Giao dịch vừa đổi — tải lại trang' }, { status: 409 })
+    await logAction(supabase, { txId: id, clientId: tx.client_id, action: 'reopen', detail: 'Mở phần còn lại ' + conLai.toLocaleString('vi-VN') + 'đ để ghi tiếp', note: body.userNote, staffId })
+    return Response.json({ ok: true })
+  }
+
   // Chỉ thêm ghi chú, không đổi trạng thái — để nhân viên giải thích một giao dịch lạ cho người
   // xem sau (hiện ngay trong thẻ giao dịch và ở Nhật ký làm việc).
   if (action === 'note') {
@@ -249,8 +283,8 @@ export async function POST(request) {
 
   if (action === 'post') {
     if (tx.state !== 'open') return Response.json({ error: 'Giao dịch đã được xử lý — tải lại trang' }, { status: 409 })
-    // Tính lại đề xuất ngay lúc ghi — không tin số trình duyệt gửi.
-    const [c] = await classifyTransactions(supabase, [tx])
+    // Tính lại đề xuất ngay lúc ghi — không tin số trình duyệt gửi. Đã ghi một phần thì đề xuất theo PHẦN CÒN LẠI.
+    const [c] = await classifyTransactions(supabase, [txConLai(tx)])
     if (!c.client || !c.plan || !c.plan.length || ![ST_READY, ST_REVIEW].includes(c.status)) {
       return Response.json({ error: 'Giao dịch này không có đề xuất ghi — ' + (c.reason || 'xử lý tay') }, { status: 400 })
     }
@@ -267,14 +301,17 @@ export async function POST(request) {
 
     const note = 'Đối soát NH ' + String(tx.source || '').toUpperCase() + ' ' + fmtDay(tx.tx_time)
     const res = await executePlan(supabase, c.client.id, c.plan, note, staffId)
-    const detail = { plan: c.plan, done: res.done, reason: c.reason, error: res.error || null }
+    const coPhanTruoc = daGhiCuaGd(tx) > 0
     if (!res.ok && !res.done.length) {
-      // Chưa ghi được gì -> trả giao dịch về trạng thái mở để thử lại.
-      await supabase.from('bank_transactions').update({ state: 'open', posted_at: null, posted_by: null, post_detail: detail }).eq('id', id)
+      // Chưa ghi được gì -> trả giao dịch về trạng thái mở để thử lại (giữ nguyên các phần đã ghi trước đó).
+      await supabase.from('bank_transactions').update({ state: 'open', posted_at: tx.posted_at, posted_by: tx.posted_by,
+        post_detail: coPhanTruoc ? tx.post_detail : { plan: c.plan, done: [], reason: c.reason, error: res.error || null } }).eq('id', id)
       return Response.json({ error: 'Chưa ghi được: ' + res.error }, { status: 500 })
     }
+    const moi = themPhan(tx, { kind: 'cong_no', plan: c.plan, done: res.done, reason: c.reason, error: res.error || null, boi: staffId,
+      amount: conLaiCuaGd(tx) })   // nhận TRỌN phần còn lại (phần không ghi = đã ghi tay sẵn), như trước
     await supabase.from('bank_transactions').update({
-      post_detail: detail, note: res.ok ? null : 'LỖI GHI MỘT PHẦN — kiểm tra tay: ' + res.error,
+      post_detail: moi.post_detail, state: moi.dong ? 'posted' : 'open', note: res.ok ? null : 'LỖI GHI MỘT PHẦN — kiểm tra tay: ' + res.error,
     }).eq('id', id)
     const KIND_LABEL = { ketoan: 'Kế toán', hcns: 'HCNS', no_ton: 'Nợ tồn' }
     await logAction(supabase, {
@@ -308,6 +345,8 @@ export async function POST(request) {
           + conLai.toLocaleString('vi-VN') + 'đ). Ghi số nhỏ hơn, hoặc sửa số phải thu của hồ sơ ở trang công ty.',
       }, { status: 400 })
     }
+    const conLaiGd = conLaiCuaGd(tx)
+    if (amount > conLaiGd) return Response.json({ error: 'Số tiền ghi lớn hơn phần CHƯA GHI của giao dịch (' + conLaiGd.toLocaleString('vi-VN') + 'đ)' }, { status: 400 })
     // Giữ chỗ trước khi ghi — 2 người bấm cùng lúc thì chỉ 1 người qua.
     const { data: claimed, error: cErr } = await supabase.from('bank_transactions')
       .update({ state: 'posted', posted_at: new Date().toISOString(), posted_by: staffId, client_id: svc.client_id })
@@ -331,15 +370,16 @@ export async function POST(request) {
       await supabase.from('other_services')
         .update({ status: 'done', closed_at: new Date().toISOString(), closed_by: staffId }).eq('id', svc.id)
     }
-    const detail = { kind: 'other_service', serviceId: svc.id, name: svc.name, amount, closed: tuDong }
-    await supabase.from('bank_transactions').update({ post_detail: detail }).eq('id', id)
+    const moi = themPhan(tx, { kind: 'other_service', serviceId: svc.id, name: svc.name, amount, closed: tuDong, boi: staffId })
+    await supabase.from('bank_transactions').update({ post_detail: moi.post_detail, state: moi.dong ? 'posted' : 'open' }).eq('id', id)
     await logAction(supabase, {
       txId: id, clientId: svc.client_id, action: 'post',
       detail: 'Dịch vụ khác "' + svc.name + '" ' + amount.toLocaleString('vi-VN') + 'đ'
-        + (tuDong ? ' · hồ sơ đã thu đủ, tự đóng' : ' · còn lại ' + (conLai - amount).toLocaleString('vi-VN') + 'đ'),
+        + (tuDong ? ' · hồ sơ đã thu đủ, tự đóng' : ' · còn lại ' + (conLai - amount).toLocaleString('vi-VN') + 'đ')
+        + (moi.dong ? '' : ' · giao dịch còn ' + moi.conLai.toLocaleString('vi-VN') + 'đ chưa ghi'),
       note: body.userNote, staffId,
     })
-    return Response.json({ ok: true, closed: tuDong })
+    return Response.json({ ok: true, closed: tuDong, conLai: moi.conLai })
   }
 
   // Ghi tiền vào HỒ SƠ HCNS "Thời điểm". Nhóm này không gắn công ty kế toán (linked_client_id
@@ -366,6 +406,8 @@ export async function POST(request) {
           + conLai.toLocaleString('vi-VN') + 'đ). Ghi số nhỏ hơn, hoặc kiểm lại phí dịch vụ trong hồ sơ.',
       }, { status: 400 })
     }
+    const conLaiGd = conLaiCuaGd(tx)
+    if (amount > conLaiGd) return Response.json({ error: 'Số tiền ghi lớn hơn phần CHƯA GHI của giao dịch (' + conLaiGd.toLocaleString('vi-VN') + 'đ)' }, { status: 400 })
     const caseServiceId = body.caseServiceId || null
     if (caseServiceId && !(svcs || []).some(x => x.id === caseServiceId)) {
       return Response.json({ error: 'Dịch vụ không thuộc hồ sơ này' }, { status: 400 })
@@ -386,15 +428,16 @@ export async function POST(request) {
       await supabase.from('bank_transactions').update({ state: 'open', posted_at: null, posted_by: null }).eq('id', id)
       return Response.json({ error: 'Chưa ghi được: ' + error.message }, { status: 500 })
     }
-    const detail = { kind: 'hcns_case', hcnsClientId: hc.id, name: hc.name, caseServiceId, amount, paid_at: d.ymd }
-    await supabase.from('bank_transactions').update({ post_detail: detail }).eq('id', id)
+    const moi = themPhan(tx, { kind: 'hcns_case', hcnsClientId: hc.id, name: hc.name, caseServiceId, amount, paid_at: d.ymd, boi: staffId })
+    await supabase.from('bank_transactions').update({ post_detail: moi.post_detail, state: moi.dong ? 'posted' : 'open' }).eq('id', id)
     await logAction(supabase, {
       txId: id, clientId: tx.client_id, action: 'post',
       detail: 'Hồ sơ HCNS Thời điểm "' + hc.name + '" ' + amount.toLocaleString('vi-VN') + 'đ'
-        + ' · ngày trả ' + d.ymd + (conLai - amount > 0 ? ' · còn lại ' + (conLai - amount).toLocaleString('vi-VN') + 'đ' : ' · đã thu đủ'),
+        + ' · ngày trả ' + d.ymd + (conLai - amount > 0 ? ' · còn lại ' + (conLai - amount).toLocaleString('vi-VN') + 'đ' : ' · đã thu đủ')
+        + (moi.dong ? '' : ' · giao dịch còn ' + moi.conLai.toLocaleString('vi-VN') + 'đ chưa ghi'),
       note: body.userNote, staffId,
     })
-    return Response.json({ ok: true })
+    return Response.json({ ok: true, conLai: moi.conLai })
   }
 
   return Response.json({ error: 'Thao tác không hợp lệ' }, { status: 400 })
