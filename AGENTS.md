@@ -380,7 +380,7 @@ bộ quy tắc). Anh yêu cầu tách cho dễ sửa: đổi quy tắc bước n
   Báo cáo thâm niên (`thamNien.js`, tab Báo cáo KPI, chỉ view_payroll): mốc lên cấp đọc từ MÔ TẢ cấp bậc.
 - **Hoa hồng giới thiệu** (sql/39, `lib/luong/hoaHong.js`): `clients.gioi_thieu_boi/_tu` (cột "Giới thiệu" trang khách
   hàng, chỉ manage_payroll); % bậc theo số công ty đang dùng DV × tiền khách trả THÊM từ lần chốt trước (÷1,08);
-  sổ `luong_hoa_hong_so` ghi khi chốt, xoá khi mở chốt; "Đã chuyển lương" = đã chi. Tab báo cáo ở Báo cáo KPI. Bậc theo chính sách "Lợi ích hợp tác" (sql/46, 01/11/2026): số khách HOẶC doanh số (tổng phí KẾ TOÁN hằng tháng chưa VAT, quý ÷ 3, chỉ công ty đang dùng DV — KHÔNG gồm HCNS, anh chốt 03/11/2026: tiền tính hoa hồng chỉ KT + DVK + thu khác + nợ tồn, không lấy phí HCNS) — điều kiện nào đến trước, lấy % cao hơn (`tyLeTheoBac`); trên bậc cao nhất giữ 20%.
+  sổ `luong_hoa_hong_so` ghi khi chốt, xoá khi mở chốt; "Đã chuyển lương" = đã chi. Tab báo cáo ở Báo cáo KPI. Bậc theo chính sách "Lợi ích hợp tác" (sql/46, 01/11/2026): số khách HOẶC doanh số (tổng phí hằng tháng chưa VAT, KT + HCNS, quý ÷ 3, chỉ công ty đang dùng DV) — điều kiện nào đến trước, lấy % cao hơn (`tyLeTheoBac`); trên bậc cao nhất giữ 20%.
 - Tác phong (sql/34): nhân viên TỰ KHAI số lần vi phạm cùng ngày công; người = 100 − 20 × số lần, phòng =
   trung bình; điểm KPI phòng = TB(việc, nợ, tác phong) → thưởng phòng app tự tính. Phụ cấp / điều chỉnh nhập
   trên tab Bảng lương (`luong_dieu_chinh`) trước khi chốt.
