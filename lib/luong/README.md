@@ -92,6 +92,10 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
   trước (KT + HCNS + DVK + nợ tồn, ÷ 1,08), sổ `luong_hoa_hong_so` ghi khi chốt (mở chốt xoá); đã chi = nút
   "Đã chuyển lương". Không còn công ty đang dùng → bậc thấp nhất. Người giới thiệu không có dòng lương (remote…)
   → `hoaHongNgoai`, chi tay, không ghi sổ. Báo cáo: tab "Hoa hồng giới thiệu" ở Báo cáo KPI (`BaoCaoHoaHong.js`).
+  **Theo THỜI ĐIỂM KHÁCH TRẢ, không theo kỳ phí** (anh chốt 03/11/2026): khoản thu tính vào kỳ lương N khi THÁNG GHI
+  NHẬN THU (created_at giờ VN — cùng quy ước "ngày thu" của báo cáo Phí đã thu) nằm trong [tháng bắt đầu hưởng, N]; ghi
+  sau tháng N → kỳ lương sau. Vd tiền vào 02/10 trả phí T9 → hoa hồng T10. Giới hạn: `service_fees` một dòng luỹ kế /
+  kỳ, `created_at` đặt lại mỗi lần ghi → sửa số tháng sau cũng kéo dòng sang tháng sửa.
 - **Báo cáo thâm niên** (`thamNien.js` + `components/BaoCaoThamNien.js`, tab ở trang Báo cáo KPI, chỉ view_payroll):
   thâm niên = số tháng tròn từ `staff.ngay_vao_lam`; cấp theo thâm niên đọc mốc "dưới X tháng/năm" trong MÔ TẢ cấp bậc
   (sửa mô tả là báo cáo đổi theo); cấp trưởng phòng không xét. Đánh dấu đến hạn lên cấp, sắp đủ mốc 1–6 tháng.

@@ -55,5 +55,14 @@ const ct4 = [{ id: 'd1', ten: 'D1', gioiThieuBoi: 'z', gioiThieuTu: '2026-01-01'
 const kq4 = tinhHoaHong({ congTy: ct4, thu: [{ client_id: 'd1', nguon: 'ketoan', ky: '2026-11', kyThang: '2026-11', so_tien: 10800000 }], daTinh: new Map(), bac: CS, nam: 2026, thang: 11 }).get('z')
 kiem('2 công ty đang dùng, DS 32tr (bỏ công ty ngưng) → 15% × 10tr = 1,5tr', [kq4.soCty, kq4.doanhSo, kq4.tyLe, kq4.hoaHong], [2, 32000000, 15, 1500000])
 
+console.log('\nTheo THỜI ĐIỂM KHÁCH TRẢ, không theo kỳ phí (anh chốt 03/11/2026 — ca KIMLE: tiền vào 02/10 trả phí T9):')
+const ct5 = [{ id: 'k', ten: 'KIMLE', gioiThieuBoi: 'h', gioiThieuTu: '2026-10-01', dangDung: true }]
+const t5 = (thangThu, thang) => tinhHoaHong({ congTy: ct5, thu: [{ client_id: 'k', nguon: 'ketoan', ky: '2026-09', kyThang: '2026-09', thangThu, so_tien: 1620000 }], daTinh: new Map(), bac: BAC, nam: 2026, thang }).get('h')?.hoaHong || 0
+kiem('phí T9 ghi thu tháng 10 → hoa hồng kỳ lương T10 (10% × 1.500.000)', t5('2026-10', 10), 150000)
+kiem('phí T9 ghi thu tháng 9 (trước tháng bắt đầu hưởng) → không tính', t5('2026-09', 10), 0)
+kiem('ghi thu tháng 11 → KHÔNG vào kỳ lương T10…', t5('2026-11', 10), 0)
+kiem('…mà vào kỳ lương T11', t5('2026-11', 11), 150000)
+kiem('dòng không có ngày ghi → lùi về kỳ phí như cũ (T9 < tháng bắt đầu → không tính)', t5(null, 10), 0)
+
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : '\nCÓ ' + hong + ' MỤC HỎNG.')
 process.exit(hong === 0 ? 0 : 1)
