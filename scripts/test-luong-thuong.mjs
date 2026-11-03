@@ -99,7 +99,8 @@ if (process.argv.includes('--that')) {
     const phongTp = [...new Set([...(s.role === 'leader' ? [s.room_id] : []), ...kn.filter(e => e.staff_id === s.id && e.role === 'leader').map(e => e.room_id)])]
     const mong = phongTp.length ? Math.round(phongTp.reduce((a, r) => a + (dtP.get(r) || 0), 0) / 100) : 0
     if (phongTp.length) { soTp++; kiem(x.ten + ' · ' + x.phongTp.map(r => r.ten).join('+') + ' · ' + x.thuongDsPhong.toLocaleString('vi-VN'), x.thuongDsPhong, mong) }
-    else if (x.thuongDsPhong) kiem(x.ten + ' không làm trưởng phòng → 0', x.thuongDsPhong, 0)
+    // TP HCNS (kể cả kiêm nhiệm) nhận 1% tổng doanh thu tối thiểu phòng HCNS — kiểm riêng ở test-luong-hcns.mjs (03/11/2026)
+    else if (x.thuongDsPhong && !x.phongTp?.every(r => r.theoToiThieu)) kiem(x.ten + ' không làm trưởng phòng → 0', x.thuongDsPhong, 0)
     const tt = x.thuongViec + x.thuongNo + x.thuongDoanhSo + x.thuongDsPhong + x.thuongDvk + x.thuongHoaHong + x.thuongPhong
     if (tt !== x.tongThuong) kiem(x.ten + ' tổng thưởng gồm DS phòng', x.tongThuong, tt)
   }

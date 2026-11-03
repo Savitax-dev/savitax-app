@@ -60,6 +60,13 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
   suy từ nhân viên phụ trách chính. Phòng làm trưởng = vai trò `leader` chính + dòng kiêm nhiệm `leader`
   (`staff_extra_roles`): **kiêm nhiệm chỉ tính phòng kiêm nhiệm** (Lương Tấn Đức: NV Grand, kiêm TP Danxia → 1% Danxia).
   Excel: cột "DT phòng làm TP" + "Thưởng DS phòng 1%", tỉ lệ ở Tham so **B18** (thêm cuối để không xô B2…B17).
+- **Phòng HCNS** (`doanhThuHcns.js`, anh chốt 03/11/2026, từ kỳ lương T10): nhân viên phòng type `hcns` có doanh thu =
+  THỜI KỲ (phí HCNS hằng tháng chưa VAT, quý ÷ 3, công ty Thời kỳ mình phụ trách `hcns_clients.assigned_to`, phí phải
+  thu) + THỜI ĐIỂM (tiền khách trả TRONG THÁNG cho hồ sơ mình phụ trách, chưa VAT — luật của `dvkHcns.js`). Thưởng: thời
+  kỳ lấp mức tối thiểu trước, thiếu lấy thời điểm bù, **phần thời điểm còn dư × 20%** — thời kỳ vượt KHÔNG thưởng. Vẫn
+  GIỮ khai thưởng DVK cho HCNS Thời điểm (anh chọn). TP HCNS (`hcns_leader` ở phòng HCNS, kể cả kiêm nhiệm như chị
+  Diệu): thưởng DS phòng = **1% × tổng mức tối thiểu** nhân viên phòng HCNS (không phải doanh thu thực). Excel ghi số
+  app tính cho ô thưởng doanh số HCNS (không công thức). Kiểm: `node --env-file=.env.local scripts/test-luong-hcns.mjs --that`.
 - **Thưởng dịch vụ khác**: nhân viên tự khai (số tiền × tỉ lệ), trưởng phòng duyệt; dịch vụ ngoài app bắt buộc ghi chú.
 - **Khoản trừ** (chỉ người tham gia BHXH): BHXH 10,5% + KPCĐ 0,5% × lương đóng BHXH + Đoàn phí 40.000.
 - **Công ty đóng** (`congTyDong`, 23/10/2026, KHÔNG trừ lương): BHXH 17,5% + BHYT 3% + BHTN 1% (cùng 10,5% NLĐ = 32% nộp
