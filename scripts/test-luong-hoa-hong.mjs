@@ -71,6 +71,8 @@ kiem('"29-10-2026" (một ngày duy nhất) → 2026-10', thangTrongGhiChu('29-1
 kiem('"Đối soát NH ACB 02/10" (không có năm) → không đoán', thangTrongGhiChu('Đối soát NH ACB 02/10'), null)
 kiem('hai ngày mà không có chữ "ngày" → không đoán', thangTrongGhiChu('01/09/2026 - 30/09/2026'), null)
 kiem('ghi chú trống → không đoán', thangTrongGhiChu(null), null)
+kiem('"Khách trả tháng 9/2026 (anh xác nhận 03/11/2026)" → 2026-09 (chỉ biết tháng)', thangTrongGhiChu('Khách trả tháng 9/2026 (anh xác nhận 03/11/2026)'), '2026-09')
+kiem('"tháng 09/2026" mà không có chữ "trả" → không coi là tháng khách trả', thangTrongGhiChu('Phí tháng 09/2026'), null)
 
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : '\nCÓ ' + hong + ' MỤC HỎNG.')
 process.exit(hong === 0 ? 0 : 1)
