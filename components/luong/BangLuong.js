@@ -17,6 +17,7 @@ export default function BangLuong({ quyen }) {
   const [phong, setPhong] = useState('')
   const [tim, setTim] = useState('')
   const [mo, setMo] = useState(null)
+  const [moHh, setMoHh] = useState(null)   // ô Hoa hồng GT đang mở danh sách công ty (như cột Doanh thu)
   const [sua, setSua] = useState(null)     // { staff_id, ten, phong, thucLinh, dong:[{khoa, id?, loai, so_tien, noi_dung}] } — đang nhập
   const [loiSua, setLoiSua] = useState(null)
   const [xemDc, setXemDc] = useState(null) // hộp nổi từng khoản phụ cấp · điều chỉnh khi rê chuột
@@ -260,9 +261,25 @@ export default function BangLuong({ quyen }) {
                       </td>
                       <td className="px-3 py-2.5 text-right text-orange-700">{fmt(x.thuongDvk)}</td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">{x.hoaHongGt ? <>
-                        <div className="font-semibold text-emerald-700">{fmt(x.thuongHoaHong)}</div>
+                        <button onClick={() => setMoHh(moHh === x.staff_id ? null : x.staff_id)} className="font-semibold text-emerald-700 hover:underline">{fmt(x.thuongHoaHong)}</button>
                         <div className="text-[11px] text-gray-500" title={(x.hoaHongGt.chiTiet || []).map(c => (c.ma || c.ten) + ' · ' + c.nguon + ' kỳ ' + c.kyThang + (c.thangThu && c.thangThu !== c.kyThang ? ' (thu ' + c.thangThu + ')' : '') + ': ' + Number(c.so_tien).toLocaleString('vi-VN')).join('\n')}>
                           {x.hoaHongGt.soCty}/{x.hoaHongGt.soCtyTong} cty{x.hoaHongGt.doanhSo ? ' · DS ' + Number(x.hoaHongGt.doanhSo).toLocaleString('vi-VN') + 'đ' : ''} × {x.hoaHongGt.tyLe}%</div>
+                        {/* Bấm số hoa hồng → từng công ty: tiền thu (kỳ phí, tháng ghi thu) → hoa hồng (anh yêu cầu 03/11/2026) */}
+                        {moHh === x.staff_id && (() => {
+                          const NG = { ketoan: 'KT', hcns: 'HCNS', dvk: 'DVK', khach: 'Thu khác', no_ton: 'Nợ tồn' }
+                          const g = new Map()
+                          for (const c of x.hoaHongGt.chiTiet || []) {
+                            const o = g.get(c.client_id) || { ten: c.ma || c.ten, thu: 0, hh: 0, khoan: [] }
+                            o.thu += Number(c.so_tien) || 0; o.hh += Number(c.hoa_hong) || 0
+                            o.khoan.push((NG[c.nguon] || c.nguon) + ' T' + Number(String(c.kyThang || '').slice(5, 7)) + (c.thangThu && c.thangThu !== c.kyThang ? ' (thu T' + Number(String(c.thangThu).slice(5, 7)) + ')' : ''))
+                            g.set(c.client_id, o)
+                          }
+                          const ds = [...g.values()].sort((a, b) => b.hh - a.hh)
+                          return <div className="text-left text-xs text-gray-600 mt-1 space-y-0.5 max-h-56 overflow-y-auto">
+                            {ds.length ? ds.map((o, i) => <div key={i} title={o.khoan.join(' + ')}>{o.ten}: {fmt(o.thu)} → <b className="text-emerald-700">{fmt(o.hh)}</b> <span className="text-gray-400">({o.khoan.join(', ')})</span></div>)
+                              : <div className="text-gray-400">Chưa có tiền thu trong kỳ</div>}
+                          </div>
+                        })()}
                       </> : <span className="text-gray-300">—</span>}</td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">{x.phongTp?.length ? <>
                         <div className="font-semibold text-purple-800">{fmt(x.thuongDsPhong)}</div>
