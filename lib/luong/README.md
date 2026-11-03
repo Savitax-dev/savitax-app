@@ -102,7 +102,7 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
   **Theo THỜI ĐIỂM KHÁCH TRẢ, không theo kỳ phí** (anh chốt 03/11/2026): khoản thu tính vào kỳ lương N khi THÁNG GHI
   NHẬN THU (created_at giờ VN — cùng quy ước "ngày thu" của báo cáo Phí đã thu) nằm trong [tháng bắt đầu hưởng, N]; ghi
   sau tháng N → kỳ lương sau. Vd tiền vào 02/10 trả phí T9 → hoa hồng T10. Giới hạn: `service_fees` một dòng luỹ kế /
-  kỳ, `created_at` đặt lại mỗi lần ghi → sửa số tháng sau cũng kéo dòng sang tháng sửa.
+  kỳ, `created_at` đặt lại mỗi lần ghi → sửa số tháng sau cũng kéo dòng sang tháng sửa. Ghi chú có ngày khách trả ("ngày dd/mm/yyyy", "khách trả tháng M/YYYY") thì lấy theo ghi chú; ghi chú có "không tính hoa hồng" thì khoản đó không bao giờ vào hoa hồng (ca Gold Tea 03/11).
 - **Báo cáo thâm niên** (`thamNien.js` + `components/BaoCaoThamNien.js`, tab ở trang Báo cáo KPI, chỉ view_payroll):
   thâm niên = số tháng tròn từ `staff.ngay_vao_lam`; cấp theo thâm niên đọc mốc "dưới X tháng/năm" trong MÔ TẢ cấp bậc
   (sửa mô tả là báo cáo đổi theo); cấp trưởng phòng không xét. Đánh dấu đến hạn lên cấp, sắp đủ mốc 1–6 tháng.

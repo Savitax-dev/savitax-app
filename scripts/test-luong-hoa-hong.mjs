@@ -73,6 +73,12 @@ kiem('hai ngày mà không có chữ "ngày" → không đoán', thangTrongGhiCh
 kiem('ghi chú trống → không đoán', thangTrongGhiChu(null), null)
 kiem('"Khách trả tháng 9/2026 (anh xác nhận 03/11/2026)" → 2026-09 (chỉ biết tháng)', thangTrongGhiChu('Khách trả tháng 9/2026 (anh xác nhận 03/11/2026)'), '2026-09')
 kiem('"tháng 09/2026" mà không có chữ "trả" → không coi là tháng khách trả', thangTrongGhiChu('Phí tháng 09/2026'), null)
+const ct6 = [{ id: 'g', ten: 'GOLDTEA', gioiThieuBoi: 'n', gioiThieuTu: '2026-10-01', dangDung: true }]
+const kq6 = tinhHoaHong({ congTy: ct6, thu: [
+  { client_id: 'g', nguon: 'ketoan', ky: '2026-09', kyThang: '2026-09', thangThu: '2026-10', so_tien: 2160000 },
+  { client_id: 'g', nguon: 'no_ton', ky: '2026-10', kyThang: '2026-10', thangThu: '2026-10', khongTinh: true, so_tien: 2160000 },
+], daTinh: new Map(), bac: BAC, nam: 2026, thang: 10 }).get('n')
+kiem('ghi chú "không tính hoa hồng" → bỏ khoản đó (ca Gold Tea), chỉ còn phí T9 thu tháng 10', [kq6.tienThem, kq6.hoaHong], [2160000, 200000])
 
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : '\nCÓ ' + hong + ' MỤC HỎNG.')
 process.exit(hong === 0 ? 0 : 1)
