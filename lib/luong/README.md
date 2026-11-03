@@ -96,7 +96,7 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
 - **Hoa hồng giới thiệu** (sql/39, `hoaHong.js`, 3 bước xong 23/10/2026): `clients.gioi_thieu_boi` + `gioi_thieu_tu`
   ghi ở cột "Giới thiệu" trang Quản lý khách hàng (chỉ manage_payroll, có nhật ký); bậc % ở `luong_hoa_hong_bac`
   (tab Cấp bậc & ngày lễ). Quy tắc tính (bước 2): % theo số công ty ĐANG dùng DV × tiền khách trả THÊM từ lần chốt
-  trước (KT + HCNS + DVK + nợ tồn, ÷ 1,08), sổ `luong_hoa_hong_so` ghi khi chốt (mở chốt xoá); đã chi = nút
+  trước (KT + DVK + thu khác + nợ tồn, ÷ 1,08 — KHÔNG tính phí HCNS hằng tháng, cả tiền thu lẫn doanh số xét bậc, anh chốt 03/11/2026), sổ `luong_hoa_hong_so` ghi khi chốt (mở chốt xoá); đã chi = nút
   "Đã chuyển lương". Không còn công ty đang dùng → bậc thấp nhất. Người giới thiệu không có dòng lương (remote…)
   → `hoaHongNgoai`, chi tay, không ghi sổ. Báo cáo: tab "Hoa hồng giới thiệu" ở Báo cáo KPI (`BaoCaoHoaHong.js`).
   **Theo THỜI ĐIỂM KHÁCH TRẢ, không theo kỳ phí** (anh chốt 03/11/2026): khoản thu tính vào kỳ lương N khi THÁNG GHI
