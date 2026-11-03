@@ -37,10 +37,13 @@ export default function CuaToi({ thangDuocKhai }) {
   const tuMay = d?.data?.nguon === 'may_cham_cong'
   const may = d?.data?.may || null
   const daBaoSai = d?.data?.trang_thai === 'bao_sai'
-  const khoa = d?.data?.trang_thai === 'da_xac_nhan' || tuMay || !!d?.khongTinhLuong || !!d?.khongChamCong
+  // Người KHÁC vừa sửa bảng công (sql/48): khoá ô như số máy, nhân viên chỉ Xác nhận đúng / Báo sai.
+  const suaKhac = d?.data?.sua_cho_xac_nhan && d.data.trang_thai !== 'da_xac_nhan' ? d.data.sua_cho_xac_nhan : null
+  const khoaSo = tuMay || !!suaKhac
+  const khoa = d?.data?.trang_thai === 'da_xac_nhan' || khoaSo || !!d?.khongTinhLuong || !!d?.khongChamCong
   const ttGoc = TRANG_THAI[d ? trangThaiCua(d.data) : 'chua']
   const tt = daBaoSai ? { ...ttGoc, nhan: 'Đã báo sai', lop: 'bg-rose-100 text-rose-800 border-rose-200', cham: 'bg-rose-500' }
-    : tuMay && d?.data?.trang_thai === 'nhap' ? { ...ttGoc, nhan: 'Chờ bạn xác nhận', lop: 'bg-cyan-100 text-cyan-800 border-cyan-200', cham: 'bg-cyan-500' } : ttGoc
+    : khoaSo && d?.data?.trang_thai === 'nhap' ? { ...ttGoc, nhan: 'Chờ bạn xác nhận', lop: 'bg-cyan-100 text-cyan-800 border-cyan-200', cham: 'bg-cyan-500' } : ttGoc
   const phan = v => chuan ? Math.min(100, (v / chuan) * 100) + '%' : '0%'
 
   const doiO = (k, giaTri) => {
@@ -130,6 +133,19 @@ export default function CuaToi({ thangDuocKhai }) {
           {!daBaoSai && d.data.trang_thai !== 'da_xac_nhan' && <div className="mt-1 text-xs opacity-80">Kiểm lại rồi bấm Xác nhận đúng. {may?.mau === 'xuly' ? 'Số nào chưa đúng (ngày công, phép, vi phạm…)' : 'Nghỉ thứ Bảy, công tác chưa ghi nhận…'} thì bấm Báo sai và ghi rõ.</div>}
         </div>
       )}
+      {d && suaKhac && (
+        <div className={'rounded-2xl border px-4 py-3 text-sm ' + (daBaoSai ? 'border-rose-200 bg-rose-50 text-rose-900' : 'border-cyan-200 bg-cyan-50 text-cyan-900')}>
+          <div className="font-semibold">✏️ Bảng công của bạn vừa được <b>{suaKhac.ten || 'trưởng phòng / HCNS'}</b> sửa{suaKhac.luc ? (() => { const t = new Date(new Date(suaKhac.luc).getTime() + 7 * 3600e3).toISOString(); return ' lúc ' + t.slice(11, 16) + ' ngày ' + t.slice(8, 10) + '/' + t.slice(5, 7) + '/' + t.slice(0, 4) })() : ''}</div>
+          <div className="mt-1">Lý do: “{suaKhac.ly_do}”</div>
+          {suaKhac.truoc && <div className="mt-1 text-xs leading-relaxed">
+            Trước khi sửa: đi làm <b>{Number(suaKhac.truoc.ngay_di_lam).toLocaleString('vi-VN')}</b> · phép <b>{Number(suaKhac.truoc.nghi_phep).toLocaleString('vi-VN')}</b> · không lương <b>{Number(suaKhac.truoc.nghi_khong_luong).toLocaleString('vi-VN')}</b> · vi phạm <b>{suaKhac.truoc.so_lan_vi_pham || 0}</b>
+            {' → '}sau khi sửa: đi làm <b>{Number(d.data.ngay_di_lam).toLocaleString('vi-VN')}</b> · phép <b>{Number(d.data.nghi_phep).toLocaleString('vi-VN')}</b> · không lương <b>{Number(d.data.nghi_khong_luong).toLocaleString('vi-VN')}</b> · vi phạm <b>{d.data.so_lan_vi_pham || 0}</b>
+          </div>}
+          {daBaoSai
+            ? <div className="mt-1">⚠ Bạn đã báo sai: “{d.data.bao_sai}”. Người sửa / trưởng phòng sẽ kiểm lại.</div>
+            : <div className="mt-1 text-xs opacity-80">Kiểm lại số bên dưới rồi bấm <b>Xác nhận đúng</b>. Chưa đúng thì bấm <b>Báo sai</b> và ghi rõ chỗ sai.</div>}
+        </div>
+      )}
       {d && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
@@ -173,13 +189,13 @@ export default function CuaToi({ thangDuocKhai }) {
             <input value={f.ghi_chu} onChange={e => setF(v => ({ ...v, ghi_chu: e.target.value }))} disabled={khoa || !d.duocKhai} maxLength={300}
               placeholder="Ghi chú (vd: vào làm từ ngày 15, nghỉ ốm ngày 08)"
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm disabled:bg-gray-50" />
-            {tuMay && d.data.trang_thai !== 'da_xac_nhan' && baoSai === null && (
+            {khoaSo && d.data.trang_thai !== 'da_xac_nhan' && baoSai === null && (
               <div className="flex flex-wrap gap-2">
                 <button onClick={() => luu(true)} disabled={ban} className="text-sm px-5 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold shadow-sm hover:bg-emerald-700 disabled:opacity-50">✓ Xác nhận đúng</button>
                 <button onClick={() => setBaoSai('')} disabled={ban} className="text-sm px-5 py-2.5 rounded-xl border border-rose-300 bg-white text-rose-700 disabled:opacity-50">⚠ Báo sai</button>
               </div>
             )}
-            {tuMay && baoSai !== null && (
+            {khoaSo && baoSai !== null && (
               <div className="space-y-2">
                 <textarea value={baoSai} onChange={e => setBaoSai(e.target.value)} rows={3} maxLength={500}
                   placeholder="Ghi rõ chỗ sai (vd: thứ Bảy 18/10 em nghỉ; ngày 08 đi công tác máy chưa ghi)…"

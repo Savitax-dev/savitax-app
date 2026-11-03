@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { callerHasPermission } from '@/lib/serverAuth'
+// Chia tiền thu chung vào từng dịch vụ (dịch vụ nhận trước trừ trước) — dùng chung với thưởng DVK của HCNS.
+import { allocatePayments } from '@/lib/hcnsPhanBoThu'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -160,27 +162,4 @@ export async function DELETE(request) {
   const { error } = await supabase.from('hcns_case_payments').delete().eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 400 })
   return Response.json({ ok: true })
-}
-
-// Chia tiền cho từng dịch vụ: tiền thu RIÊNG của dịch vụ trước, rồi tiền "thu chung cho cả hồ sơ"
-// trừ lần lượt vào các dịch vụ còn nợ — dịch vụ nhận trước trừ trước. Không có bước này thì khách
-// đã trả đủ bằng 1 khoản thu chung mà từng dòng dịch vụ vẫn báo "còn" (ca DT. GROUP).
-function allocatePayments(services, payments) {
-  const out = new Map()
-  const list = [...(services || [])].sort((a, b) =>
-    String(a.received_at || a.created_at || '').localeCompare(String(b.received_at || b.created_at || '')))
-  for (const s of list) {
-    const direct = (payments || []).filter(p => p.case_service_id === s.id)
-      .reduce((a, p) => a + (Number(p.amount) || 0), 0)
-    const cost = Number(s.cost) || 0
-    out.set(s.id, { cost, direct, shared: 0, remain: Math.max(0, cost - direct) })
-  }
-  let pool = (payments || []).filter(p => !p.case_service_id).reduce((a, p) => a + (Number(p.amount) || 0), 0)
-  for (const s of list) {
-    if (pool <= 0) break
-    const a = out.get(s.id)
-    const take = Math.min(pool, a.remain)
-    a.shared += take; a.remain -= take; pool -= take
-  }
-  return out
 }

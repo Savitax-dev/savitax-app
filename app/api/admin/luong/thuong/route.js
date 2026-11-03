@@ -15,6 +15,10 @@ import { tinhBangLuong } from '@/lib/luong/bangLuong'
 import { docBanChot } from '@/lib/luong/chot'
 import { mapPhongCuaCongTy } from '@/lib/clientRoom'
 import { docCtyDacThu } from '@/lib/ctyDacThu'
+import { hoSoHcnsChonDuoc, TIEN_TO_HCNS } from '@/lib/luong/dvkHcns'
+
+// Trưởng phòng duyệt thưởng DVK của phòng mình: TP kế toán (leader) + TP HCNS (hcns_leader — hồ sơ Thời điểm, 03/11/2026).
+const VAI_TRO_DUYET = ['leader', 'hcns_leader']
 
 // Bảng lương tính KPI hai tháng + doanh thu từ dữ liệu thật — mất vài giây.
 export const maxDuration = 60
@@ -93,24 +97,28 @@ export async function GET(request) {
         .eq('staff_id', caller.staffId).eq('nam', nt.nam).eq('thang', nt.thang).order('tao_luc')
       if (error) return loi('Chưa chạy sql/32_luong_thuong_dvk.sql (' + error.message + ')', 500)
       const kv = (await docCtyDacThu(supabase)).khongVat
-      return Response.json({ data: (data || []).map(d => ({ ...d, khong_vat: !!d.client_id && kv.has(d.client_id) })), hoSo: await hoSoDvkChonDuoc(supabase, caller, quyen) })
+      // Hồ sơ DVK kế toán + dịch vụ HCNS Thời điểm đã hoàn thành & đã thu (lib/luong/dvkHcns.js)
+      const [dvk, hcns] = await Promise.all([hoSoDvkChonDuoc(supabase, caller, quyen), hoSoHcnsChonDuoc(supabase, caller, quyen)])
+      return Response.json({ data: (data || []).map(d => ({ ...d, khong_vat: !!d.client_id && kv.has(d.client_id) })), hoSo: [...dvk, ...hcns] })
     }
 
     if (viec === 'dvk_duyet') {
       // Trưởng phòng: dòng khai của nhân viên phòng mình LÀM TRƯỞNG. Quản trị + kế toán nội bộ (manage_payroll, anh mở
       // 02/11/2026): tất cả — trừ dòng của chính mình.
-      const phongTruong = roomsWithRole(caller, ['leader'])
+      const phongTruong = roomsWithRole(caller, VAI_TRO_DUYET)
       if (!quyen.admin && !phongTruong.length && !quyen.view) return loi('Không đủ quyền', 403)
       const { data: ds, error } = await supabase.from('luong_dvk_khai').select('*, staff:staff_id(full_name, room_id, rooms(name))')
         .eq('nam', nt.nam).eq('thang', nt.thang).order('tao_luc')
       if (error) return loi('Chưa chạy sql/32_luong_thuong_dvk.sql (' + error.message + ')', 500)
-      const hoSo = new Map((await hoSoDvkChonDuoc(supabase, caller, { admin: true })).map(h => [h.id, h]))
+      const [dvkTat, hcnsTat] = await Promise.all([hoSoDvkChonDuoc(supabase, caller, { admin: true }), hoSoHcnsChonDuoc(supabase, caller, { admin: true })])
+      const hoSo = new Map([...dvkTat.map(h => [h.id, h]), ...hcnsTat.map(h => [h.hcns_case_service_id, h])])
+      const khoaHoSo = d => d.service_id || d.hcns_case_service_id
       return Response.json({
         data: (ds || []).filter(d => quyen.admin || quyen.view || phongTruong.includes(d.staff?.room_id)).map(d => ({
           ...d, ten_nv: d.staff?.full_name || '', phong: d.staff?.rooms?.name || '',
           duocDuyet: (quyen.admin || quyen.manage || phongTruong.includes(d.staff?.room_id)) && d.staff_id !== caller.staffId,
-          daThuHoSo: hoSo.get(d.service_id)?.daThu ?? null, daKhaiHoSo: hoSo.get(d.service_id)?.daKhai ?? null,
-          khong_vat: hoSo.get(d.service_id)?.khong_vat === true,
+          daThuHoSo: hoSo.get(khoaHoSo(d))?.daThu ?? null, daKhaiHoSo: hoSo.get(khoaHoSo(d))?.daKhai ?? null,
+          khong_vat: hoSo.get(khoaHoSo(d))?.khong_vat === true,
         })),
       })
     }
@@ -156,14 +164,21 @@ export async function POST(request) {
         if (error) return loi(error.message, 500)
         return Response.json({ ok: true, data, canhBao: ['Dịch vụ chưa có trên app — trưởng phòng sẽ kiểm theo ghi chú.'] })
       }
-      const hoSo = (await hoSoDvkChonDuoc(supabase, caller, quyen)).find(h => h.id === body.service_id)
-      if (!hoSo) return loi('Hồ sơ Dịch vụ khác này không nằm trong danh sách anh/chị được khai (chưa có thu, hoặc không thuộc công ty / phòng mình)', 403)
+      // Dịch vụ HCNS Thời điểm (mã 'hcns:<id>', sql/48): chỉ dịch vụ đã Hoàn thành VÀ đã thu, trong phạm vi mình.
+      const laHcns = String(body.service_id || '').startsWith(TIEN_TO_HCNS)
+      const hoSo = laHcns
+        ? (await hoSoHcnsChonDuoc(supabase, caller, quyen)).find(h => h.id === body.service_id)
+        : (await hoSoDvkChonDuoc(supabase, caller, quyen)).find(h => h.id === body.service_id)
+      if (!hoSo) return loi(laHcns
+        ? 'Dịch vụ HCNS này không khai được: chưa Hoàn thành, chưa thu tiền, hoặc không phải hồ sơ mình phụ trách / phòng HCNS'
+        : 'Hồ sơ Dịch vụ khác này không nằm trong danh sách anh/chị được khai (chưa có thu, hoặc không thuộc công ty / phòng mình)', 403)
       const { data, error } = await supabase.from('luong_dvk_khai').insert({
-        staff_id: caller.staffId, nam: nt.nam, thang: nt.thang, service_id: hoSo.id, client_id: hoSo.client_id,
-        ten_dv: (hoSo.ten + ' · ' + hoSo.cty).slice(0, 300), so_tien: soTien, ty_le: tyLe, tien_thuong: tienThuongDvk(soTien, tyLe, hoSo.khong_vat),
+        staff_id: caller.staffId, nam: nt.nam, thang: nt.thang,
+        ...(laHcns ? { service_id: null, hcns_case_service_id: hoSo.hcns_case_service_id, client_id: null } : { service_id: hoSo.id, client_id: hoSo.client_id }),
+        ten_dv: ((laHcns ? '[HCNS] ' : '') + hoSo.ten + ' · ' + hoSo.cty).slice(0, 300), so_tien: soTien, ty_le: tyLe, tien_thuong: tienThuongDvk(soTien, tyLe, hoSo.khong_vat),
         ghi_chu: String(body.ghi_chu || '').trim().slice(0, 300) || null,
       }).select('*').maybeSingle()
-      if (error) return loi(error.message, 500)
+      if (error) return loi(/hcns_case_service_id/.test(error.message) ? 'Chưa chạy sql/48_luong_dvk_hcns_cong_sua.sql — chưa khai được dịch vụ HCNS' : error.message, 500)
       const canhBao = []
       if (hoSo.daKhai + soTien > hoSo.daThu) canhBao.push('Tổng số tiền mọi người khai cho hồ sơ này (' + (hoSo.daKhai + soTien).toLocaleString('vi-VN') + 'đ) đang VƯỢT số đã thu trên app (' + hoSo.daThu.toLocaleString('vi-VN') + 'đ) — trưởng phòng sẽ thấy cảnh báo này khi duyệt.')
       return Response.json({ ok: true, data, canhBao })
@@ -172,14 +187,17 @@ export async function POST(request) {
     // Sửa dòng khai của CHÍNH MÌNH, chưa duyệt (anh yêu cầu 02/11/2026): số tiền, tỉ lệ, ghi chú (+ tên nếu dịch vụ ngoài app).
     // Không đổi hồ sơ — chọn nhầm hồ sơ thì xoá dòng khai lại. Dòng bị TRẢ LẠI sửa xong thì về "Chờ duyệt" lần nữa.
     if (viec === 'dvk_sua') {
-      const { data: d } = await supabase.from('luong_dvk_khai').select('id, staff_id, trang_thai, service_id, client_id, ten_dv').eq('id', body.id).maybeSingle()
+      // Cột hcns_case_service_id có từ sql/48 — chưa chạy thì đọc như cũ
+      let r0 = await supabase.from('luong_dvk_khai').select('id, staff_id, trang_thai, service_id, client_id, ten_dv, hcns_case_service_id').eq('id', body.id).maybeSingle()
+      if (r0.error) r0 = await supabase.from('luong_dvk_khai').select('id, staff_id, trang_thai, service_id, client_id, ten_dv').eq('id', body.id).maybeSingle()
+      const d = r0.data
       if (!d || d.staff_id !== caller.staffId) return loi('Không tìm thấy dòng khai của anh/chị', 404)
       if (d.trang_thai === 'da_duyet') return loi('Dòng đã duyệt không sửa được — nhờ trưởng phòng trả lại trước', 409)
       const soTien = Number(body.so_tien), tyLe = Number(String(body.ty_le).replace(',', '.'))
       if (!(soTien > 0 && soTien < 1e10)) return loi('Số tiền thực nhận phải lớn hơn 0')
       if (!(tyLe > 0 && tyLe <= 100)) return loi('Tỉ lệ % phải trong khoảng 0–100')
       const ghiChu = String(body.ghi_chu || '').trim()
-      const ngoaiApp = !d.service_id
+      const ngoaiApp = !d.service_id && !d.hcns_case_service_id
       let tenDv = d.ten_dv
       if (ngoaiApp) {
         const ten = String(body.ten_ngoai ?? d.ten_dv.replace(/^\[Ngoài app\]\s*/, '')).trim()
@@ -209,7 +227,7 @@ export async function POST(request) {
       const { data: d } = await supabase.from('luong_dvk_khai').select('id, staff_id, trang_thai, staff:staff_id(room_id)').eq('id', body.id).maybeSingle()
       if (!d) return loi('Không tìm thấy dòng khai', 404)
       // Kế toán nội bộ (manage_payroll) duyệt được mọi phòng — anh mở 02/11/2026. Không ai trừ quản trị tự duyệt dòng của mình.
-      const duoc = quyen.admin || quyen.manage || roomsWithRole(caller, ['leader']).includes(d.staff?.room_id)
+      const duoc = quyen.admin || quyen.manage || roomsWithRole(caller, VAI_TRO_DUYET).includes(d.staff?.room_id)
       if (!duoc) return loi('Chỉ trưởng phòng của nhân viên này, kế toán nội bộ hoặc quản trị được duyệt', 403)
       if (d.staff_id === caller.staffId && !quyen.admin) return loi('Không tự duyệt dòng khai của chính mình', 403)
       const dongY = body.dong_y === true

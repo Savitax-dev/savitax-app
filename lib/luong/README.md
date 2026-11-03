@@ -33,6 +33,14 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
   Ghi vào bảng công ở trạng thái nháp, `nguon = may_cham_cong`: nhân viên KHÔNG sửa số, chỉ Xác nhận / Báo sai; TP sửa
   có lý do. Người `cham_cong_may = false` (online, ban giám đốc) tự khai như cũ, nhập file bỏ qua. Số máy có lẻ
   (15,38) — giữ nguyên tới 2 chữ số thập phân. File phải xuất SAU ngày cuối tháng (tiêu đề luôn ghi cả tháng).
+- **Người khác sửa công → nhân viên xác nhận lại** (sql/48, anh yêu cầu 03/11/2026): `sua_cong` của TP / HCNS chấm công
+  toàn công ty / quản trị đưa bảng công về `nhap` + ghi `luong_cham_cong.sua_cho_xac_nhan` {boi, ten, ly_do, luc, truoc}.
+  "Chấm công của tôi" khoá ô như số máy, hiện ai sửa + trước/sau; nhân viên chỉ Xác nhận đúng (xoá cờ) hoặc Báo sai.
+  Quản trị sửa công của chính mình thì khoá luôn như cũ. Chưa chạy sql/48 thì `sua_cong` giữ cách cũ (khoá luôn).
+- **Thưởng DVK — dịch vụ HCNS Thời điểm** (`dvkHcns.js`, sql/48): ô chọn hồ sơ có thêm dịch vụ trong hồ sơ Thời điểm /
+  Vãng lai đã HOÀN THÀNH **và** đã thu (đủ hoặc một phần; tiền thu chung chia như trang công nợ HCNS, `lib/hcnsPhanBoThu.js`).
+  Mã chọn `hcns:<id>`, lưu `luong_dvk_khai.hcns_case_service_id`. Phạm vi: người phụ trách hồ sơ hoặc người thuộc phòng
+  HCNS; TP HCNS (`hcns_leader`) duyệt phòng mình (`phongDuyetDvk`). Kiểm: `node scripts/test-luong-dvk-hcns.mjs [--that]`.
 - **File hồ sơ lương** (`fileHoSoLuong.js`): tải mẫu điền sẵn danh sách (trừ remote), nhận người theo EMAIL; ô lương
   trống mà có cấp bậc thì lấy lương theo cấp; ô ngày gõ thành ngày Excel đọc ra số sê-ri — máy chủ tự đổi.
 - **Bảng cấp bậc** (`capBac.js`, 02/11/2026): nhân viên NB tự "+ Thêm cấp bậc" (nhóm Nhân viên / Trưởng phòng) — dòng

@@ -29,7 +29,7 @@ export async function GET() {
   if (cua.includes('admin')) ql = { ...QUYEN_LUONG_DAY_DU, admin: true }
   else if (roles.some(r => cua.includes(r.id) && r.is_system)) ql = { ...QUYEN_LUONG_DAY_DU }
   else ql = quyenTuKhoa(new Set(rolePermissions.filter(x => cua.includes(x.role_id)).map(x => x.permission_key)))
-  const quyenLuong = { ...ql, phongTruong: roomsWithRole(c, ['leader']), thangDuocKhai: thangDuocKhai() }
+  const quyenLuong = { ...ql, phongTruong: roomsWithRole(c, ['leader']), phongDuyetDvk: roomsWithRole(c, ['leader', 'hcns_leader']), thangDuocKhai: thangDuocKhai() }
 
   return Response.json({ me, roles, rolePermissions, quyenLuong })
 }

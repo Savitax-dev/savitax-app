@@ -40,7 +40,8 @@ export default function ThuongDvk({ quyen }) {
     document.addEventListener('mousedown', dong)
     return () => document.removeEventListener('mousedown', dong)
   }, [])
-  const coDuyet = quyen.admin || quyen.view || (quyen.phongTruong || []).length > 0
+  // TP kế toán + TP HCNS (phongDuyetDvk, 03/11/2026) duyệt dòng khai của phòng mình
+  const coDuyet = quyen.admin || quyen.view || (quyen.phongDuyetDvk || quyen.phongTruong || []).length > 0
 
   const tai = useCallback(async () => {
     setD(null)
@@ -152,7 +153,7 @@ export default function ThuongDvk({ quyen }) {
                 <span className="pl-3 text-gray-400">🔍</span>
                 <input value={moDs ? tim : (chon ? chon.cty + ' · ' + chon.ten : tim)}
                   onChange={e => { setTim(e.target.value); setMoDs(true) }} onFocus={() => { setTim(''); setMoDs(true) }}
-                  placeholder="Chọn hồ sơ dịch vụ khác — gõ tên dịch vụ, công ty, mã KH…"
+                  placeholder="Chọn hồ sơ dịch vụ khác / dịch vụ HCNS Thời điểm — gõ tên dịch vụ, công ty, mã…"
                   className="flex-1 min-w-0 px-2 py-2 text-sm bg-transparent outline-none" />
                 {chon && !moDs && <button onClick={() => { setF(v => ({ ...v, service_id: '' })); setTim('') }} className="px-1 text-gray-400 hover:text-rose-600" title="Bỏ chọn">✕</button>}
                 <button type="button" onClick={() => setMoDs(v => !v)} className="px-3 py-2 text-gray-500 hover:text-[#8B1A1A] border-l border-gray-100" aria-label="Mở danh sách hồ sơ">
@@ -161,13 +162,16 @@ export default function ThuongDvk({ quyen }) {
               </div>
               {moDs && (
                 <div className="absolute z-30 left-0 right-0 mt-1 max-h-80 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl">
-                  {!hoSo.length && <div className="px-3 py-4 text-sm text-gray-400 text-center">{d?.hoSo?.length ? 'Không có hồ sơ khớp từ tìm.' : 'Chưa có hồ sơ Dịch vụ khác nào đã thu tiền thuộc công ty / phòng của anh/chị.'}</div>}
+                  {!hoSo.length && <div className="px-3 py-4 text-sm text-gray-400 text-center">{d?.hoSo?.length ? 'Không có hồ sơ khớp từ tìm.' : 'Chưa có hồ sơ Dịch vụ khác nào đã thu tiền (hoặc dịch vụ HCNS Thời điểm đã hoàn thành + đã thu) thuộc công ty / phòng của anh/chị.'}</div>}
                   {hoSo.map(h => (
                     <button key={h.id} type="button" onClick={() => { setF(v => ({ ...v, service_id: h.id })); setMoDs(false); setTim('') }}
                       className={'w-full text-left px-3 py-2 border-b border-gray-50 hover:bg-orange-50 ' + (h.id === f.service_id ? 'bg-orange-50' : '')}>
-                      <div className="text-sm font-medium text-gray-900 truncate">{h.cty}</div>
+                      <div className="text-sm font-medium text-gray-900 truncate">
+                        {h.loai === 'hcns' && <span className="mr-1.5 text-[10px] font-bold rounded px-1.5 py-0.5 bg-violet-100 text-violet-800 align-middle">HCNS · Thời điểm</span>}
+                        {h.cty}{h.loai === 'hcns' && h.ma ? <span className="text-gray-400 font-normal"> · {h.ma}</span> : null}
+                      </div>
                       <div className="flex justify-between gap-2 text-xs">
-                        <span className="text-gray-600 truncate">{h.ten} · kỳ {h.ky}</span>
+                        <span className="text-gray-600 truncate">{h.ten} · {h.loai === 'hcns' ? h.ky : 'kỳ ' + h.ky}</span>
                         <span className="whitespace-nowrap text-emerald-700">đã thu {fmt(h.daThu)}</span>
                       </div>
                     </button>

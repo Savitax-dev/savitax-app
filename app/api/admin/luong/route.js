@@ -56,7 +56,7 @@ export async function GET(request) {
   try {
     const quyen = await quyenCua(supabase, caller)
     if (viec === 'quyen') {
-      return Response.json({ ...quyen, phongTruong: roomsWithRole(caller, ['leader']), thangDuocKhai: thangDuocKhai() })
+      return Response.json({ ...quyen, phongTruong: roomsWithRole(caller, ['leader']), phongDuyetDvk: roomsWithRole(caller, ['leader', 'hcns_leader']), thangDuocKhai: thangDuocKhai() })
     }
 
     if (viec === 'ngay_le') {
@@ -399,7 +399,10 @@ export async function POST(request) {
       // Số từ MÁY CHẤM CÔNG: nhân viên không sửa số — chỉ Xác nhận (dùng đúng số đã nhập) hoặc Báo sai.
       const tuMay = cu?.nguon === 'may_cham_cong'
       if (tuMay && !body.xacNhan) return loi('Số công lấy từ máy chấm công — chỉ bấm Xác nhận hoặc Báo sai, không sửa số.', 409)
-      const vao = tuMay ? {
+      // Người KHÁC vừa sửa bảng công (sql/48, anh yêu cầu 03/11/2026): nhân viên chỉ Xác nhận đúng / Báo sai, không sửa đè số.
+      const suaKhac = !!cu?.sua_cho_xac_nhan
+      if (suaKhac && !body.xacNhan) return loi('Bảng công vừa được ' + (cu.sua_cho_xac_nhan.ten || 'người khác') + ' sửa — chỉ bấm Xác nhận đúng hoặc Báo sai, không sửa số.', 409)
+      const vao = (tuMay || suaKhac) ? {
         ngay_di_lam: Number(cu.ngay_di_lam), nghi_phep: Number(cu.nghi_phep), nghi_khong_luong: Number(cu.nghi_khong_luong),
         so_lan_vi_pham: Number(cu.so_lan_vi_pham) || 0, ghi_chu: cu.ghi_chu,
       } : {
@@ -407,13 +410,15 @@ export async function POST(request) {
         so_lan_vi_pham: Math.max(0, Math.min(50, Math.round(Number(body.so_lan_vi_pham) || 0))),
         ghi_chu: String(body.ghi_chu || '').trim().slice(0, 300) || null,
       }
-      const kq = kiemChamCong(vao, chuan, { xacNhan: !!body.xacNhan, tuMay })
+      // Số người khác đã sửa thì không bắt nhân viên ghi chú phần ngày thiếu (lý do sửa đã có), số lẻ của máy vẫn nhận.
+      const kq = kiemChamCong(vao, chuan, { xacNhan: !!body.xacNhan && !suaKhac, tuMay: tuMay || suaKhac })
       if (kq.loi) return loi(kq.loi)
       const nay = new Date().toISOString()
       const dong = {
         staff_id: caller.staffId, nam: nt.nam, thang: nt.thang, ...vao, updated_at: nay,
         ...(body.xacNhan ? { trang_thai: 'da_xac_nhan', xac_nhan_luc: nay, ngay_cong_chuan: chuan } : { trang_thai: 'nhap' }),
-        ...(tuMay ? { bao_sai: null } : {}),
+        ...((tuMay || suaKhac) ? { bao_sai: null } : {}),
+        ...(suaKhac ? { sua_cho_xac_nhan: null } : {}),
       }
       // Chốt chống ghi đè khi hai tab cùng bấm: chỉ cập nhật dòng chưa xác nhận (nháp / đã báo sai).
       let ghi
@@ -423,7 +428,7 @@ export async function POST(request) {
       if (!ghi.data) return loi('Bảng công vừa được xác nhận ở nơi khác — tải lại trang.', 409)
       if (body.xacNhan) {
         await supabase.from('luong_cham_cong_log').insert({
-          cham_cong_id: ghi.data.id, staff_id: caller.staffId, hanh_dong: 'xac_nhan',
+          cham_cong_id: ghi.data.id, staff_id: caller.staffId, hanh_dong: 'xac_nhan', ...(suaKhac ? { ly_do: 'Xác nhận số ' + (cu.sua_cho_xac_nhan.ten || 'người khác') + ' đã sửa' } : {}),
           sau: { ngay_di_lam: vao.ngay_di_lam, nghi_phep: vao.nghi_phep, nghi_khong_luong: vao.nghi_khong_luong, so_lan_vi_pham: vao.so_lan_vi_pham, ngay_cong_chuan: chuan },
           boi: caller.staffId,
         })
@@ -452,9 +457,21 @@ export async function POST(request) {
       if (![vao.ngay_di_lam, vao.nghi_phep, vao.nghi_khong_luong].every(tuMay ? soNgayMayHopLe : soNgayHopLe)) return loi('Số ngày không hợp lệ')
       const kq = kiemChamCong(vao, chuan, { tuMay })
       if (kq.loi) return loi(kq.loi)
+      // Người KHÁC sửa (TP, HCNS chấm công toàn công ty, quản trị) → bảng công quay về "Chờ bạn xác nhận": nhân viên phải
+      // Xác nhận đúng hoặc Báo sai (anh yêu cầu 03/11/2026 — ca Minh Lộc bị sửa mà không được hỏi lại). Quản trị tự sửa
+      // công của chính mình thì vẫn khoá như cũ. Chưa chạy sql/48 (thiếu cột) → giữ cách cũ (khoá luôn).
+      const nay = new Date().toISOString()
+      const hoiLai = cu.staff_id !== caller.staffId && 'sua_cho_xac_nhan' in cu
+      let tenNguoiSua = ''
+      if (hoiLai) { const { data: ns } = await supabase.from('staff').select('full_name').eq('id', caller.staffId).maybeSingle(); tenNguoiSua = ns?.full_name || '' }
       const { data, error } = await supabase.from('luong_cham_cong').update({
-        ...vao, ngay_cong_chuan: chuan, trang_thai: 'da_xac_nhan', xac_nhan_luc: cu.xac_nhan_luc || new Date().toISOString(),
-        updated_at: new Date().toISOString(), ...(tuMay ? { bao_sai: null } : {}),
+        ...vao, ngay_cong_chuan: chuan, updated_at: nay, ...(tuMay || hoiLai ? { bao_sai: null } : {}),
+        ...(hoiLai
+          ? { trang_thai: 'nhap', xac_nhan_luc: null, sua_cho_xac_nhan: {
+              boi: caller.staffId, ten: tenNguoiSua, ly_do: lyDo.slice(0, 300), luc: nay,
+              truoc: { ngay_di_lam: Number(cu.ngay_di_lam), nghi_phep: Number(cu.nghi_phep), nghi_khong_luong: Number(cu.nghi_khong_luong), so_lan_vi_pham: Number(cu.so_lan_vi_pham) || 0 },
+            } }
+          : { trang_thai: 'da_xac_nhan', xac_nhan_luc: cu.xac_nhan_luc || nay }),
       }).eq('id', cu.id).select('*').maybeSingle()
       if (error) return loi(error.message, 500)
       await supabase.from('luong_cham_cong_log').insert({
@@ -524,7 +541,7 @@ export async function POST(request) {
       if (ghiChu.length < 5) return loi('Ghi rõ chỗ sai (ít nhất 5 ký tự)')
       const { data: cu } = await supabase.from('luong_cham_cong').select('*')
         .eq('staff_id', caller.staffId).eq('nam', nt.nam).eq('thang', nt.thang).maybeSingle()
-      if (!cu || cu.nguon !== 'may_cham_cong') return loi('Chỉ báo sai được bảng công lấy từ máy chấm công')
+      if (!cu || (cu.nguon !== 'may_cham_cong' && !cu.sua_cho_xac_nhan)) return loi('Chỉ báo sai được bảng công lấy từ máy chấm công hoặc vừa được người khác sửa')
       if (cu.trang_thai === 'da_xac_nhan') return loi('Bảng công đã xác nhận — liên hệ trưởng phòng để sửa', 409)
       const { error } = await supabase.from('luong_cham_cong').update({ trang_thai: 'bao_sai', bao_sai: ghiChu.slice(0, 500), updated_at: new Date().toISOString() }).eq('id', cu.id)
       if (error) return loi(error.message, 500)

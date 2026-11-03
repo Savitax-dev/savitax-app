@@ -140,7 +140,8 @@ export default function CongPhong({ quyen }) {
                     </td>
                     <td className="px-4 py-2.5 whitespace-nowrap">
                       {c?.trang_thai === 'bao_sai' ? <span className="text-xs rounded-full border px-2.5 py-0.5 font-medium bg-rose-100 text-rose-800 border-rose-200">Báo sai</span>
-                        : c?.nguon === 'may_cham_cong' && c.trang_thai === 'nhap' ? <span className="text-xs rounded-full border px-2.5 py-0.5 font-medium bg-cyan-100 text-cyan-800 border-cyan-200">Chờ NV xác nhận</span>
+                        : (c?.nguon === 'may_cham_cong' || c?.sua_cho_xac_nhan) && c.trang_thai === 'nhap' ? <span className="text-xs rounded-full border px-2.5 py-0.5 font-medium bg-cyan-100 text-cyan-800 border-cyan-200"
+                            title={c.sua_cho_xac_nhan ? (c.sua_cho_xac_nhan.ten || '') + ' sửa: ' + (c.sua_cho_xac_nhan.ly_do || '') : undefined}>{c.sua_cho_xac_nhan ? 'Đã sửa · chờ NV xác nhận lại' : 'Chờ NV xác nhận'}</span>
                         : <span className={'text-xs rounded-full border px-2.5 py-0.5 font-medium ' + tt.lop}>{tt.nhan}</span>}
                       {c?.nguon === 'may_cham_cong' && <span className="ml-1 text-[10px] text-cyan-700" title="Số lấy từ máy chấm công">🕘 máy</span>}
                     </td>
