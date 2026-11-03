@@ -17,6 +17,7 @@ export default function BangLuong({ quyen }) {
   const [phong, setPhong] = useState('')
   const [tim, setTim] = useState('')
   const [mo, setMo] = useState(null)
+  const [moDvk, setMoDvk] = useState(null)  // ô Thưởng DVK đang mở danh sách dòng khai
   const [moHh, setMoHh] = useState(null)   // ô Hoa hồng GT đang mở danh sách công ty (như cột Doanh thu)
   const [sua, setSua] = useState(null)     // { staff_id, ten, phong, thucLinh, dong:[{khoa, id?, loai, so_tien, noi_dung}] } — đang nhập
   const [loiSua, setLoiSua] = useState(null)
@@ -259,7 +260,14 @@ export default function BangLuong({ quyen }) {
                         {mo === x.staff_id && <div className="text-left text-xs text-gray-600 mt-1 space-y-0.5 max-h-48 overflow-y-auto">{x.congTyDoanhThu.map(c => <div key={c.id}>{c.ma || c.ten}: {fmt(c.doanhThu)}{c.quy ? ' (quý ÷3)' : ''}{c.khongVat ? ' (không VAT)' : ''}</div>)}
                           {(x.hcns?.hoSo || []).map((h, i) => <div key={'td' + i} className="text-violet-700">TĐ · {h.cty} · {h.ten}: {fmt(h.doanhThu)}</div>)}</div>}
                       </td>
-                      <td className="px-3 py-2.5 text-right text-orange-700">{fmt(x.thuongDvk)}</td>
+                      {/* Bấm số thưởng DVK → từng dòng đã duyệt: dịch vụ · công ty, tiền × % → thưởng (anh yêu cầu 03/11/2026) */}
+                      <td className="px-3 py-2.5 text-right text-orange-700 whitespace-nowrap">
+                        {x.dvkDong?.length ? <button onClick={() => setMoDvk(moDvk === x.staff_id ? null : x.staff_id)} className="hover:underline">{fmt(x.thuongDvk)}</button> : fmt(x.thuongDvk)}
+                        {x.dvkDong?.length > 0 && <div className="text-[11px] text-gray-500">{x.dvkDong.length} dòng</div>}
+                        {moDvk === x.staff_id && <div className="text-left text-xs text-gray-600 mt-1 space-y-0.5 max-h-56 overflow-y-auto">
+                          {x.dvkDong.map((d, i) => <div key={i} title={d.ghiChu || ''}>{d.ten}: {fmt(d.soTien)} × {d.tyLe}% → <b className="text-orange-700">{fmt(d.thuong)}</b>{d.ghiChu ? <span className="text-gray-400"> · {d.ghiChu}</span> : null}</div>)}
+                        </div>}
+                      </td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">{x.hoaHongGt ? <>
                         <button onClick={() => setMoHh(moHh === x.staff_id ? null : x.staff_id)} className="font-semibold text-emerald-700 hover:underline">{fmt(x.thuongHoaHong)}</button>
                         <div className="text-[11px] text-gray-500" title={(x.hoaHongGt.chiTiet || []).map(c => (c.ma || c.ten) + ' · ' + c.nguon + ' kỳ ' + c.kyThang + (c.thangThu && c.thangThu !== c.kyThang ? ' (thu ' + c.thangThu + ')' : '') + ': ' + Number(c.so_tien).toLocaleString('vi-VN')).join('\n')}>
