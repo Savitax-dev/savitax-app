@@ -283,8 +283,8 @@ export default function BangLuong({ quyen }) {
                       </> : <span className="text-gray-300">—</span>}</td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">{x.phongTp?.length ? <>
                         <div className="font-semibold text-purple-800">{fmt(x.thuongDsPhong)}</div>
-                        <div className="text-[11px] text-gray-500" title={x.phongTp.map(r => 'Phòng ' + r.ten + ': ' + fmt(r.doanhThu)).join('\n')}>
-                          1% × {fmt(x.doanhThuPhongTp)}{x.phongTp.some(r => r.theoToiThieu) ? ' (tối thiểu HCNS)' : ''}{x.phongTp.some(r => r.room_id !== x.room_id) ? ' · kiêm ' + x.phongTp.map(r => r.ten).join(', ') : ''}</div>
+                        <div className="text-[11px] text-gray-500" title={x.phongTp.map(r => 'Phòng ' + r.ten + ': ' + fmt(r.doanhThu) + (r.theoToiThieu ? ' (thời kỳ ' + fmt(r.tongThoiKy) + ', tổng tối thiểu ' + fmt(r.tongToiThieu) + ' — lấy số nhỏ hơn)' : '')).join('\n')}>
+                          1% × {fmt(x.doanhThuPhongTp)}{x.phongTp.some(r => r.theoToiThieu) ? ' (thời kỳ HCNS, tối đa tối thiểu)' : ''}{x.phongTp.some(r => r.room_id !== x.room_id) ? ' · kiêm ' + x.phongTp.map(r => r.ten).join(', ') : ''}</div>
                       </> : <span className="text-gray-300">—</span>}</td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">
                         <span className={'font-semibold ' + pctMau(x.pctTacPhong)} title={(x.soLanViPham || 0) + ' lần vi phạm'}>{x.pctTacPhong ?? 100}%</span>

@@ -29,13 +29,14 @@ if (process.argv.includes('--that')) {
     kiem(x.ten + ': thưởng = luật thời điểm dư', x.thuongDoanhSo, thuongVuotHcns({ thoiKy: x.hcns.thoiKy, thoiDiem: x.hcns.thoiDiem, toiThieu: x.toiThieu }).thuong)
     kiem(x.ten + ': doanh thu = thời kỳ + thời điểm', x.doanhThu, x.hcns.thoiKy + x.hcns.thoiDiem)
   }
-  const tongMin = hcns.filter(x => !['hcns_leader'].includes(x.role)).reduce((a, x) => a + (Number(x.toiThieu) || 0), 0)
+  const nvHcns = hcns.filter(x => !['hcns_leader'].includes(x.role))
+  const tongMin = Math.min(nvHcns.reduce((a, x) => a + (Number(x.toiThieu) || 0), 0), nvHcns.reduce((a, x) => a + x.hcns.thoiKy, 0))
   const tp = bl.dong.filter(x => x.phongTp?.some(r => r.theoToiThieu))
   kiem('có trưởng phòng HCNS nhận 1% tổng tối thiểu', tp.length > 0, true)
   for (const x of tp) {
     const r = x.phongTp.find(r => r.theoToiThieu)
     console.log('  · TP HCNS ' + x.ten + ': 1% × ' + r.doanhThu.toLocaleString('vi-VN') + ' = ' + x.thuongDsPhong.toLocaleString('vi-VN'))
-    kiem(x.ten + ': 1% × tổng tối thiểu nhân viên HCNS', [r.doanhThu, x.thuongDsPhong], [tongMin, Math.round(tongMin * 0.01)])
+    kiem(x.ten + ': 1% × min(thời kỳ phòng, tổng tối thiểu)', [r.doanhThu, x.thuongDsPhong], [tongMin, Math.round(tongMin * 0.01)])
   }
   kiem('tổng thưởng mỗi người cộng đúng', bl.dong.every(x => x.tongThuong === x.thuongViec + x.thuongNo + x.thuongDoanhSo + x.thuongDsPhong + x.thuongDvk + x.thuongHoaHong + x.thuongPhong), true)
 }

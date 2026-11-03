@@ -65,7 +65,7 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
   thu) + THỜI ĐIỂM (tiền khách trả TRONG THÁNG cho hồ sơ mình phụ trách, chưa VAT — luật của `dvkHcns.js`). Thưởng: thời
   kỳ lấp mức tối thiểu trước, thiếu lấy thời điểm bù, **phần thời điểm còn dư × 20%** — thời kỳ vượt KHÔNG thưởng. Vẫn
   GIỮ khai thưởng DVK cho HCNS Thời điểm (anh chọn). TP HCNS (`hcns_leader` ở phòng HCNS, kể cả kiêm nhiệm như chị
-  Diệu): thưởng DS phòng = **1% × tổng mức tối thiểu** nhân viên phòng HCNS (không phải doanh thu thực). Excel ghi số
+  Diệu): thưởng DS phòng = **1% × tổng doanh thu thời kỳ** nhân viên phòng HCNS, **tối đa bằng tổng mức tối thiểu** (anh chốt lại 03/11). Excel ghi số
   app tính cho ô thưởng doanh số HCNS (không công thức). Kiểm: `node --env-file=.env.local scripts/test-luong-hcns.mjs --that`.
 - **Thưởng dịch vụ khác**: nhân viên tự khai (số tiền × tỉ lệ), trưởng phòng duyệt; dịch vụ ngoài app bắt buộc ghi chú.
 - **Khoản trừ** (chỉ người tham gia BHXH): BHXH 10,5% + KPCĐ 0,5% × lương đóng BHXH + Đoàn phí 40.000.
