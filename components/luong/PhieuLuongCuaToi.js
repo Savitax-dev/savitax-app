@@ -81,8 +81,8 @@ export default function PhieuLuongCuaToi() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 px-5 py-3">
             <div>
               <div className="text-xs font-bold text-blue-700 uppercase tracking-wide mt-2 mb-1">Lương theo công</div>
-              <Dong nhan="Lương cơ bản" giaTri={x.luongCoBan} />
-              <Dong nhan="Ngày tính lương" chu={(x.ngayTinhLuong ?? 0).toLocaleString('vi-VN') + ' ngày'} phu={'Công chuẩn ' + x.ngayCongChuan + ' ngày'} />
+              {/* Anh bỏ khỏi phiếu 03/11/2026: dòng "Lương cơ bản", chữ nhỏ "Công chuẩn …" và "Lương đóng BHXH …" */}
+              <Dong nhan="Ngày tính lương" chu={(x.ngayTinhLuong ?? 0).toLocaleString('vi-VN') + ' ngày'} />
               <Dong nhan="Lương theo công" giaTri={x.luongTheoCong} mau="text-blue-800" />
               <div className="text-xs font-bold text-emerald-700 uppercase tracking-wide mt-3 mb-1">Thưởng</div>
               {x.kpiApDung && <Dong nhan="KPI công việc" phu={'Tháng ' + p.ky.viec.thang + ': ' + (x.pctViec ?? '—') + '%'} giaTri={x.thuongViec} mau="text-emerald-700" />}
@@ -107,7 +107,7 @@ export default function PhieuLuongCuaToi() {
               <Dong nhan="Tổng thu nhập" giaTri={x.thuNhap} dam />
               <div className="text-xs font-bold text-rose-700 uppercase tracking-wide mt-3 mb-1">Khoản trừ</div>
               {x.thamGiaBhxh ? <>
-                <Dong nhan="BHXH, BHYT, BHTN (10,5%)" phu={'Lương đóng BHXH ' + fmt(x.luongBhxh)} giaTri={x.khauTru?.bhxh} mau="text-rose-700" am />
+                <Dong nhan="BHXH, BHYT, BHTN (10,5%)" giaTri={x.khauTru?.bhxh} mau="text-rose-700" am />
                 <Dong nhan="Kinh phí công đoàn (0,5%)" giaTri={x.khauTru?.kpcd} mau="text-rose-700" am />
                 <Dong nhan="Phí Đoàn Thanh niên" giaTri={x.khauTru?.doanPhi} mau="text-rose-700" am />
               </> : <div className="text-xs text-gray-500 py-2">Không tham gia BHXH — không trừ BHXH, KPCĐ, Đoàn phí.</div>}
