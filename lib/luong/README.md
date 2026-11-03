@@ -38,7 +38,8 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
   "Chấm công của tôi" khoá ô như số máy, hiện ai sửa + trước/sau; nhân viên chỉ Xác nhận đúng (xoá cờ) hoặc Báo sai.
   Quản trị sửa công của chính mình thì khoá luôn như cũ. Chưa chạy sql/48 thì `sua_cong` giữ cách cũ (khoá luôn).
 - **Thưởng DVK — dịch vụ HCNS Thời điểm** (`dvkHcns.js`, sql/48): ô chọn hồ sơ có thêm dịch vụ trong hồ sơ Thời điểm /
-  Vãng lai đã HOÀN THÀNH **và** đã thu (đủ hoặc một phần; tiền thu chung chia như trang công nợ HCNS, `lib/hcnsPhanBoThu.js`).
+  Vãng lai có tiền KHÁCH TRẢ TRONG THÁNG của kỳ lương (theo paid_at, đủ hoặc một phần, không cần đã hoàn thành — anh chốt
+  03/11/2026; khoản trả tháng trước đã chi kỳ trước). Tiền thu chung chia như trang công nợ HCNS (`lib/hcnsPhanBoThu.js`).
   Mã chọn `hcns:<id>`, lưu `luong_dvk_khai.hcns_case_service_id`. Phạm vi: người phụ trách hồ sơ hoặc người thuộc phòng
   HCNS; TP HCNS (`hcns_leader`) duyệt phòng mình (`phongDuyetDvk`). Kiểm: `node scripts/test-luong-dvk-hcns.mjs [--that]`.
 - **File hồ sơ lương** (`fileHoSoLuong.js`): tải mẫu điền sẵn danh sách (trừ remote), nhận người theo EMAIL; ô lương

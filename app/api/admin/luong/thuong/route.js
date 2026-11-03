@@ -98,7 +98,7 @@ export async function GET(request) {
       if (error) return loi('Chưa chạy sql/32_luong_thuong_dvk.sql (' + error.message + ')', 500)
       const kv = (await docCtyDacThu(supabase)).khongVat
       // Hồ sơ DVK kế toán + dịch vụ HCNS Thời điểm đã hoàn thành & đã thu (lib/luong/dvkHcns.js)
-      const [dvk, hcns] = await Promise.all([hoSoDvkChonDuoc(supabase, caller, quyen), hoSoHcnsChonDuoc(supabase, caller, quyen)])
+      const [dvk, hcns] = await Promise.all([hoSoDvkChonDuoc(supabase, caller, quyen), hoSoHcnsChonDuoc(supabase, caller, quyen, nt)])
       return Response.json({ data: (data || []).map(d => ({ ...d, khong_vat: !!d.client_id && kv.has(d.client_id) })), hoSo: [...dvk, ...hcns] })
     }
 
@@ -110,7 +110,7 @@ export async function GET(request) {
       const { data: ds, error } = await supabase.from('luong_dvk_khai').select('*, staff:staff_id(full_name, room_id, rooms(name))')
         .eq('nam', nt.nam).eq('thang', nt.thang).order('tao_luc')
       if (error) return loi('Chưa chạy sql/32_luong_thuong_dvk.sql (' + error.message + ')', 500)
-      const [dvkTat, hcnsTat] = await Promise.all([hoSoDvkChonDuoc(supabase, caller, { admin: true }), hoSoHcnsChonDuoc(supabase, caller, { admin: true })])
+      const [dvkTat, hcnsTat] = await Promise.all([hoSoDvkChonDuoc(supabase, caller, { admin: true }), hoSoHcnsChonDuoc(supabase, caller, { admin: true }, nt)])
       const hoSo = new Map([...dvkTat.map(h => [h.id, h]), ...hcnsTat.map(h => [h.hcns_case_service_id, h])])
       const khoaHoSo = d => d.service_id || d.hcns_case_service_id
       return Response.json({
@@ -167,10 +167,10 @@ export async function POST(request) {
       // Dịch vụ HCNS Thời điểm (mã 'hcns:<id>', sql/48): chỉ dịch vụ đã Hoàn thành VÀ đã thu, trong phạm vi mình.
       const laHcns = String(body.service_id || '').startsWith(TIEN_TO_HCNS)
       const hoSo = laHcns
-        ? (await hoSoHcnsChonDuoc(supabase, caller, quyen)).find(h => h.id === body.service_id)
+        ? (await hoSoHcnsChonDuoc(supabase, caller, quyen, nt)).find(h => h.id === body.service_id)
         : (await hoSoDvkChonDuoc(supabase, caller, quyen)).find(h => h.id === body.service_id)
       if (!hoSo) return loi(laHcns
-        ? 'Dịch vụ HCNS này không khai được: chưa Hoàn thành, chưa thu tiền, hoặc không phải hồ sơ mình phụ trách / phòng HCNS'
+        ? 'Dịch vụ HCNS này không khai được cho kỳ lương này: khách không trả tiền trong tháng của kỳ, hoặc không phải hồ sơ mình phụ trách / phòng HCNS'
         : 'Hồ sơ Dịch vụ khác này không nằm trong danh sách anh/chị được khai (chưa có thu, hoặc không thuộc công ty / phòng mình)', 403)
       const { data, error } = await supabase.from('luong_dvk_khai').insert({
         staff_id: caller.staffId, nam: nt.nam, thang: nt.thang,

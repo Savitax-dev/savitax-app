@@ -162,7 +162,7 @@ export default function ThuongDvk({ quyen }) {
               </div>
               {moDs && (
                 <div className="absolute z-30 left-0 right-0 mt-1 max-h-80 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl">
-                  {!hoSo.length && <div className="px-3 py-4 text-sm text-gray-400 text-center">{d?.hoSo?.length ? 'Không có hồ sơ khớp từ tìm.' : 'Chưa có hồ sơ Dịch vụ khác nào đã thu tiền (hoặc dịch vụ HCNS Thời điểm đã hoàn thành + đã thu) thuộc công ty / phòng của anh/chị.'}</div>}
+                  {!hoSo.length && <div className="px-3 py-4 text-sm text-gray-400 text-center">{d?.hoSo?.length ? 'Không có hồ sơ khớp từ tìm.' : 'Chưa có hồ sơ Dịch vụ khác nào đã thu tiền (hoặc dịch vụ HCNS Thời điểm khách trả trong tháng của kỳ) thuộc công ty / phòng của anh/chị.'}</div>}
                   {hoSo.map(h => (
                     <button key={h.id} type="button" onClick={() => { setF(v => ({ ...v, service_id: h.id })); setMoDs(false); setTim('') }}
                       className={'w-full text-left px-3 py-2 border-b border-gray-50 hover:bg-orange-50 ' + (h.id === f.service_id ? 'bg-orange-50' : '')}>
