@@ -518,8 +518,13 @@ export async function POST(request) {
       const { data: ns } = ids.length ? await supabase.from('staff').select('id, full_name, is_active').in('id', ids) : { data: [] }
       if (staffId && !(ns || []).some(s => s.id === staffId && s.is_active)) return loi('Nhân viên giới thiệu không tồn tại hoặc đã nghỉ')
       const tu = staffId ? m[1] + '-' + m[2] + '-01' : null
-      const { error } = await supabase.from('clients').update({ gioi_thieu_boi: staffId, gioi_thieu_tu: tu }).eq('id', cty.id)
+      // Ghi xong ĐỌC LẠI rồi mới báo đã lưu (03/11/2026: anh báo bấm Lưu hiện tên mà tải lại thì mất — trang chỉ tin
+      // vào số máy chủ trả về, không tự điền).
+      const { data: daLuu, error } = await supabase.from('clients').update({ gioi_thieu_boi: staffId, gioi_thieu_tu: tu }).eq('id', cty.id)
+        .select('gioi_thieu_boi, gioi_thieu_tu').maybeSingle()
       if (error) return loi(error.message, 500)
+      if (!daLuu || (daLuu.gioi_thieu_boi || null) !== staffId || (daLuu.gioi_thieu_tu ? String(daLuu.gioi_thieu_tu).slice(0, 10) : null) !== tu)
+        return loi('Chưa lưu được người giới thiệu — tải lại trang rồi thử lại', 500)
       // Nhật ký sửa thông tin công ty — như các ô khác của hồ sơ công ty.
       const ten = id => (ns || []).find(s => s.id === id)?.full_name || ''
       const chu = (id, d) => id ? ten(id) + (d ? ' (từ ' + String(d).slice(5, 7) + '/' + String(d).slice(0, 4) + ')' : '') : ''
@@ -529,7 +534,7 @@ export async function POST(request) {
           old_value: chu(cty.gioi_thieu_boi, cty.gioi_thieu_tu) || null, new_value: chu(staffId, tu) || null, action: 'update', changed_by: caller.staffId,
         })
       }
-      return Response.json({ ok: true })
+      return Response.json({ ok: true, gioi_thieu_boi: daLuu.gioi_thieu_boi, gioi_thieu_tu: daLuu.gioi_thieu_tu })
     }
 
     // ── Nhân viên báo sai số công lấy từ máy chấm công ────────────────────

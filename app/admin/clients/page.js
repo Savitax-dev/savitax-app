@@ -196,9 +196,10 @@ export default function AdminClientsPage() {
     setGtLoi('')
     const res = await fetch('/api/admin/luong', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ viec: 'luu_gioi_thieu', clientId: gtDang.id, staffId: gtDang.staffId || null, tuThang: gtDang.tuThang }) })
-    const j = await res.json().catch(() => ({ error: 'Lỗi máy chủ' }))
-    if (j.error) { setGtLoi(j.error); return }
-    setClients(cl => cl.map(c => c.id === gtDang.id ? { ...c, gioi_thieu_boi: gtDang.staffId || null, gioi_thieu_tu: gtDang.staffId ? gtDang.tuThang + '-01' : null } : c))
+    const j = await res.json().catch(() => ({ error: 'Lỗi máy chủ (' + res.status + ')' }))
+    // Chỉ coi là đã lưu khi máy chủ trả ok + số đã ghi (đọc lại từ database) — không tự điền số mình vừa chọn.
+    if (j.error || !j.ok) { setGtLoi(j.error || 'Chưa lưu được — tải lại trang rồi thử lại'); return }
+    setClients(cl => cl.map(c => c.id === gtDang.id ? { ...c, gioi_thieu_boi: j.gioi_thieu_boi ?? null, gioi_thieu_tu: j.gioi_thieu_tu ?? null } : c))
     setGtDang(null)
   }
 
