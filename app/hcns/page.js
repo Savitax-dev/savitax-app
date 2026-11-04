@@ -1041,8 +1041,10 @@ function HcnsFeeBar({ c, onChanged }) {
   const [err, setErr] = useState('')
   const per = c.fee_period === 'quarterly' ? 'Quý' : 'Tháng'
   const now = new Date()
+  // Lùi được 2 tháng (anh yêu cầu 04/11/2026 — báo ngưng muộn), tới 11 tháng sau. Mặc định tháng hiện tại.
+  const LUI_THANG = 2
   const opts = []
-  for (let i = 0; i < 12; i++) {
+  for (let i = -LUI_THANG; i < 12; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
     opts.push({ v: d.getFullYear() + '-' + (d.getMonth() + 1), label: 'T' + (d.getMonth() + 1) + '/' + d.getFullYear() })
   }
@@ -1066,7 +1068,7 @@ function HcnsFeeBar({ c, onChanged }) {
     send({ hcns_fee: v })
   }
   const doStop = () => {
-    const [y, m] = (month || opts[0].v).split('-').map(Number)
+    const [y, m] = (month || opts[LUI_THANG].v).split('-').map(Number)
     if (!window.confirm('Ngưng DV HCNS của "' + c.name + '" từ T' + m + '/' + y + '?')) return
     send({ hcns_stop_from: { year: y, month: m } },
       'Đã ghi ngưng DV HCNS. Nếu chọn tháng sau thì công ty còn ở tag Thời kỳ tới tháng đó.')
@@ -1084,7 +1086,7 @@ function HcnsFeeBar({ c, onChanged }) {
           : 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100')}>
         🏢 Sửa phí HCNS
       </button>
-      <button onClick={() => { setMode(mode === 'stop' ? null : 'stop'); setMonth(opts[0].v); setErr('') }}
+      <button onClick={() => { setMode(mode === 'stop' ? null : 'stop'); setMonth(opts[LUI_THANG].v); setErr('') }}
         className={btnCls + (mode === 'stop'
           ? 'bg-[#8B1A1A] text-white border-[#8B1A1A]'
           : 'bg-red-50 text-[#B3261E] border-red-200 hover:bg-red-100')}>
@@ -1123,7 +1125,7 @@ function HcnsFeeBar({ c, onChanged }) {
               </button>
               <button onClick={() => setMode(null)} className="text-xs px-2 py-1 rounded-md border border-slate-300 bg-white text-slate-600">Hủy</button>
               <p className="basis-full text-[11px] text-slate-500">
-                Chọn tháng sau thì công ty còn ở tag Thời kỳ tới tháng đó rồi mới tự gỡ.
+                Chọn tháng sau thì công ty còn ở tag Thời kỳ tới tháng đó rồi mới tự gỡ. Chọn tháng trước thì từ tháng đó không còn phí HCNS.
               </p>
             </>
           )}
