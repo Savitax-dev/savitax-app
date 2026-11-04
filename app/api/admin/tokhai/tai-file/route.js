@@ -21,8 +21,9 @@ import { chiaCuaSo } from '@/lib/tokhaiCuaSo'
 import { chuanHoaKyBang } from '@/lib/taxDeadline'
 import {
   duongDanToKhai, duongDanThongBao, tenFileToKhai, tenFileThongBao, macSacThue, tachKy,
-  soLanBoSung,
+  soLanBoSung, duongDanGnt, tenFileGnt,
 } from '@/lib/tokhaiThuMuc'
+import { ycGnt, docDiaChiSso, docForm, laTrangTraCuuGnt, docBangGnt, xmlTuPhanHoi, tenTheoNoiDung } from '@/lib/gntCong'
 
 export const maxDuration = 60
 
@@ -147,7 +148,9 @@ export async function POST(request) {
   try {
     // ── Bắt đầu ────────────────────────────────────────────────────────────
     if (!body.maPhien) {
-      const { clientId, tuNgay = null, denNgay = null, taiLai = false } = body
+      // toKhai (mặc định có) / gnt: chọn tải tờ khai + thông báo, giấy nộp tiền, hoặc cả hai (04/11/2026)
+      const { clientId, tuNgay = null, denNgay = null, taiLai = false, toKhai = true, gnt = false } = body
+      if (!toKhai && !gnt) return Response.json({ error: 'Chọn ít nhất một loại: tờ khai hoặc giấy nộp tiền' }, { status: 400 })
       if (!clientId) return Response.json({ error: 'Thiếu clientId' }, { status: 400 })
       if (!(await canAccessCredentials(supabase, auth.caller, clientId))) {
         return Response.json({ error: 'Không có quyền tải file của công ty này' }, { status: 403 })
@@ -179,6 +182,9 @@ export async function POST(request) {
         hangDoi: [], viHangDoi: 0, buocFile: null, viThongBao: 0,
         chiTietHienTai: null, tokenTai: null,
         soFile: 0, soBoQua: 0, loi: [],
+        toKhai: toKhai !== false,
+        // Giấy nộp tiền: tra theo "Ngày lập GNT" trong CÙNG khoảng ngày nhân viên chọn
+        gnt: gnt ? { bat: true, xong: false, form: null, hangDoi: [], vi: 0, trang: 1, soTrang: 1, soFile: 0, buocNhay: 0 } : { bat: false },
       })
       const p = phienTam.get(maPhien)
       return traYeuCau(p, {
@@ -276,6 +282,8 @@ export async function POST(request) {
 
       case 'trang_tra_cuu':
         p.csrf = docCsrf(noiDung) || p.csrf    // token ĐỔI sau khi đăng nhập
+        // Chỉ tải giấy nộp tiền: khỏi tra hồ sơ (đỡ một mã captcha), sang thẳng cổng eTax
+        if (!p.toKhai) return batDauGnt(p, null)
         p.buoc = 'anh_captcha_tc'
         return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: yc.anhCaptcha() })
 
@@ -362,6 +370,64 @@ export async function POST(request) {
         return tiepThongBao(p, ghi)
       }
 
+      // ── Giấy nộp tiền: SSO sang eTax → trang tra cứu → tra → tải từng giấy (lib/gntCong.js) ──
+      case 'gnt_sso': {
+        const url = docDiaChiSso(noiDung)
+        if (!url) {
+          p.loi.push('Giấy nộp tiền: cổng không cấp lối vào eTax (' + noiDung.trim().slice(0, 80) + ')')
+          return ketThucGnt(p, null)
+        }
+        p.buoc = 'gnt_mo'
+        return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: ycGnt.mo(url), tienDo: 'Giấy nộp tiền: vào trang tra cứu' })
+      }
+
+      case 'gnt_mo': {
+        if (laTrangTraCuuGnt(noiDung)) { p.gnt.form = docForm(noiDung); return traCuuGnt(p, 1) }
+        // Trang trung gian (tự gửi biểu mẫu / tự chuyển trang) — đi theo tối đa 3 bước
+        const tiep = p.gnt.buocNhay < 3 ? timChuyenTiep(noiDung) : null
+        if (tiep) { p.gnt.buocNhay++; return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: tiep, tienDo: 'Giấy nộp tiền: vào trang tra cứu' }) }
+        console.error('[GNT] không nhận ra trang sau SSO — status', ph.status, '| đầu trang:', noiDung.replace(/\s+/g, ' ').slice(0, 2500))
+        p.loi.push('Giấy nộp tiền: không vào được trang tra cứu của cổng eTax')
+        return ketThucGnt(p, null)
+      }
+
+      case 'gnt_tra_cuu': {
+        const f = docForm(noiDung)
+        if (!f || !laTrangTraCuuGnt(noiDung)) {
+          console.error('[GNT] trang tra cứu lạ — đầu trang:', noiDung.replace(/\s+/g, ' ').slice(0, 2500))
+          p.loi.push('Giấy nộp tiền: cổng trả trang tra cứu không đọc được')
+          return ketThucGnt(p, null)
+        }
+        p.gnt.form = f      // dse_pageId / dse_processorId đổi theo từng trang — luôn dùng bản mới nhất
+        const kq = docBangGnt(noiDung)
+        p.gnt.hangDoi = kq.ds; p.gnt.vi = 0; p.gnt.trang = kq.trang; p.gnt.soTrang = kq.soTrang
+        return taiGntKeTiep(p, null)
+      }
+
+      case 'gnt_tai': {
+        const dong = p.gnt.hangDoi[p.gnt.vi]
+        p.gnt.vi++
+        const xml = xmlTuPhanHoi(ph)
+        if (!xml) {
+          p.loi.push(`Giấy nộp tiền ${dong?.soGnt || dong?.id}: cổng không trả file XML`)
+          return taiGntKeTiep(p, null)
+        }
+        try {
+          const { periodCode, sacThue } = tenTheoNoiDung(xml)
+          const ghi = {
+            duongDan: duongDanGnt({ periodCode, maKH: p.maKH }),
+            tenFile: tenFileGnt({ sacThue, periodCode, maKH: p.maKH }),
+            nam: tachKy(periodCode)?.nam || null,
+            laGnt: true,
+          }
+          p.soFile++; p.gnt.soFile++
+          return taiGntKeTiep(p, ghi)
+        } catch (e) {
+          p.loi.push(`Giấy nộp tiền ${dong?.soGnt || dong?.id}: ${e.message}`)
+          return taiGntKeTiep(p, null)
+        }
+      }
+
       case 'dang_xuat':
         return ketThuc(supabase, p, body.maPhien, null)
 
@@ -413,8 +479,83 @@ function hoSoKeTiep(p, ghiFile) {
     }
     return traCuuCuaSo(p, p.viCuaSo + 1, ghiFile)
   }
+  // Hết tờ khai: còn giấy nộp tiền thì làm tiếp trong CÙNG phiên đăng nhập, rồi mới đăng xuất
+  if (p.gnt?.bat && !p.gnt.xong) return batDauGnt(p, ghiFile)
   p.buoc = 'dang_xuat'
   return traYeuCau(p, { viec: 'goi', buoc: p.buoc, ghiFile, yeuCau: yc.dangXuat(p.csrf), tienDo: 'Đang đăng xuất' })
+}
+
+// ── Giấy nộp tiền ────────────────────────────────────────────────────────────
+// Khoảng "Ngày lập GNT" = đúng khoảng ngày nhân viên chọn (cửa sổ cuối là phần CŨ nhất)
+const khoangGnt = p => ({ tu: p.cuaSo[p.cuaSo.length - 1].tuNgay, den: p.cuaSo[0].denNgay })
+
+function batDauGnt(p, ghiFile) {
+  p.buoc = 'gnt_sso'
+  return traYeuCau(p, { viec: 'goi', buoc: p.buoc, ghiFile, yeuCau: ycGnt.sso(p.csrf), tienDo: 'Giấy nộp tiền: mở cổng eTax' })
+}
+
+function traCuuGnt(p, trang) {
+  const k = khoangGnt(p)
+  p.buoc = 'gnt_tra_cuu'
+  return traYeuCau(p, {
+    viec: 'goi', buoc: p.buoc,
+    yeuCau: ycGnt.guiForm(p.gnt.form, { dse_nextEventName: 'query', pn: String(trang), ctuId: '', ngay_lap_tu_ngay: k.tu, ngay_lap_den_ngay: k.den }),
+    tienDo: `Giấy nộp tiền: tra cứu ${k.tu} – ${k.den}` + (trang > 1 ? ` (trang ${trang})` : ''),
+  })
+}
+
+// Còn giấy trong trang này thì tải, hết thì sang trang kết quả kế, hết trang thì xong phần GNT.
+// ghiFile đi kèm: lệnh ghi của giấy VỪA tải (nội dung nằm ở phản hồi lượt trước — xem tokhaiTaiFileClient)
+function taiGntKeTiep(p, ghiFile) {
+  const g = p.gnt
+  if (g.vi < g.hangDoi.length) {
+    p.buoc = 'gnt_tai'
+    return traYeuCau(p, {
+      viec: 'goi', buoc: p.buoc, ghiFile,
+      yeuCau: ycGnt.guiForm(g.form, { dse_nextEventName: 'download', ctuId: g.hangDoi[g.vi].id }),
+      tienDo: `Tải giấy nộp tiền ${g.vi + 1}/${g.hangDoi.length}` + (g.soTrang > 1 ? ` (trang ${g.trang}/${g.soTrang})` : ''),
+    })
+  }
+  if (g.trang < g.soTrang) {
+    // Lệnh ghi của giấy cuối trang phải đi kèm lượt kế tiếp, kẻo rơi mất
+    const r = traCuuGnt(p, g.trang + 1)
+    return ghiFile ? kemGhi(r, ghiFile) : r
+  }
+  return ketThucGnt(p, ghiFile)
+}
+
+function ketThucGnt(p, ghiFile) {
+  p.gnt.xong = true
+  p.buoc = 'dang_xuat'
+  return traYeuCau(p, { viec: 'goi', buoc: p.buoc, ghiFile, yeuCau: yc.dangXuat(p.csrf), tienDo: 'Đang đăng xuất' })
+}
+
+// Gắn ghiFile vào một phản hồi đã dựng (Response.json) — dùng khi chuyển trang kết quả GNT
+async function kemGhi(res, ghiFile) {
+  const j = await res.json()
+  return Response.json({ ...j, ghiFile })
+}
+
+// Trang trung gian sau SSO: biểu mẫu tự gửi (onload submit) hoặc lệnh chuyển trang bằng mã / meta refresh.
+function timChuyenTiep(html) {
+  const s = String(html || '')
+  const tuyetDoi = u => new URL(u.replace(/&amp;/g, '&'), 'https://thuedientu.gdt.gov.vn/etaxnnt/').toString()
+  const moForm = s.match(/<form\b[^>]*>/i)
+  if (moForm && /\.submit\(\)/.test(s)) {
+    const ten = moForm[0].match(/\b(?:id|name)\s*=\s*["']?([\w-]+)/i)?.[1]
+    const f = ten ? docForm(s, ten) : null
+    const action = moForm[0].match(/\baction\s*=\s*["']([^"']+)/i)?.[1] || '/etaxnnt/Request'
+    if (f) {
+      return {
+        url: tuyetDoi(action), method: (moForm[0].match(/\bmethod\s*=\s*["']?(\w+)/i)?.[1] || 'POST').toUpperCase(),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', Referer: 'https://thuedientu.gdt.gov.vn/etaxnnt/', Origin: 'https://thuedientu.gdt.gov.vn' },
+        body: new URLSearchParams([...Object.entries(f.truong).filter(([k]) => k !== '__multi'), ...f.truong.__multi]).toString(),
+      }
+    }
+  }
+  const den = s.match(/location\.(?:href\s*=|replace\(|assign\()\s*["']([^"']+)["']/i)?.[1]
+    || s.match(/http-equiv\s*=\s*["']refresh["'][^>]*url=([^"'>]+)/i)?.[1]
+  return den ? { url: tuyetDoi(den), method: 'GET', headers: { Referer: 'https://thuedientu.gdt.gov.vn/etaxnnt/' } } : null
 }
 
 // Còn thông báo thì tải tiếp, hết thì sang hồ sơ sau.
@@ -512,6 +653,6 @@ async function ketThuc(supabase, p, maPhien, loi) {
   if (loi) return Response.json({ viec: 'loi', moTa: loi, soFile: p.soFile })
   return Response.json({
     viec: 'xong', soFile: p.soFile, soBoQua: p.soBoQua, loi: p.loi.slice(0, 5),
-    tenCty: p.tenCty, maKH: p.maKH,
+    tenCty: p.tenCty, maKH: p.maKH, soGnt: p.gnt?.bat ? p.gnt.soFile : null,
   })
 }

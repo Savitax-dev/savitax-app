@@ -61,6 +61,9 @@ export default function TrangTaiFile() {
   const [tuNgay, setTuNgay] = useState(ngayChu(new Date(Date.now() - 89 * 864e5)))
   const [denNgay, setDenNgay] = useState(homNay)
   const [taiLai, setTaiLai] = useState(false)
+  // Loại cần tải (04/11/2026): tờ khai + thông báo, và/hoặc giấy nộp tiền (cổng eTax, cùng lần đăng nhập)
+  const [taiToKhai, setTaiToKhai] = useState(true)
+  const [taiGnt, setTaiGnt] = useState(false)
   const [soCungLuc, setSoCungLuc] = useState(SO_CUNG_LUC_MAC_DINH)
 
   const [dangChay, setDangChay] = useState(false)
@@ -220,7 +223,7 @@ export default function TrangTaiFile() {
       dangLam.add(c.id); capNhatDangLam()
       try {
         const kq = await chayTaiFile({
-          clientId: c.id, tuNgay, denNgay, taiLai, tayCty: thuMucCty[c.id]?.tay,
+          clientId: c.id, tuNgay, denNgay, taiLai, tayCty: thuMucCty[c.id]?.tay, toKhai: taiToKhai, gnt: taiGnt,
           onCaptcha: th => themCaptcha(c, th),
           onTienDo: chu => setTienDoCty(p => ({ ...p, [c.id]: chu })),
           onFile: ({ ten }) => setDsFileMoi(p => [...ten.map(t => ({ ten: t, cty: c.ten })), ...p].slice(0, 200)),
@@ -418,8 +421,20 @@ export default function TrangTaiFile() {
             <input type="date" value={denNgay} min={tuNgay} max={homNay} onChange={e => setDenNgay(e.target.value)}
               disabled={dangChay} className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm" />
 
+            {/* Chọn loại cần tải — bỏ cả hai thì nút Bắt đầu tắt */}
+            <label className="flex items-center gap-1.5 text-sm text-gray-700 ml-2">
+              <input type="checkbox" checked={taiToKhai} disabled={dangChay}
+                onChange={e => setTaiToKhai(e.target.checked)} />
+              Tờ khai + thông báo
+            </label>
+            <label className="flex items-center gap-1.5 text-sm text-gray-700" title="Tra theo Ngày lập GNT trong khoảng ngày trên; tải XML và dựng PDF mẫu C1-02/NS">
+              <input type="checkbox" checked={taiGnt} disabled={dangChay}
+                onChange={e => setTaiGnt(e.target.checked)} />
+              Giấy nộp tiền
+            </label>
+
             <label className="flex items-center gap-1.5 text-sm text-gray-600 ml-2">
-              <input type="checkbox" checked={taiLai} disabled={dangChay}
+              <input type="checkbox" checked={taiLai} disabled={dangChay || !taiToKhai}
                 onChange={e => setTaiLai(e.target.checked)} />
               Tải lại cả hồ sơ đã có file
             </label>
@@ -434,7 +449,7 @@ export default function TrangTaiFile() {
             <div className="flex-1" />
             {!dangChay ? (
               <button onClick={chay}
-                disabled={!dsChon.length || !tienIch?.co || thieuMaKH.length > 0 || chuaCoThuMuc.length > 0}
+                disabled={!dsChon.length || !tienIch?.co || thieuMaKH.length > 0 || chuaCoThuMuc.length > 0 || (!taiToKhai && !taiGnt)}
                 className="px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-medium disabled:opacity-40 shadow-sm">
                 Bắt đầu tải file
               </button>
@@ -588,6 +603,7 @@ export default function TrangTaiFile() {
                           {!dangLam && kq?.ket_qua === 'xong' && (
                             <span className="text-green-700">
                               ✓ {kq.dsFile?.length || 0} file
+                              {kq.soGnt != null ? ` · ${kq.soGnt} giấy nộp tiền` : ''}
                               {kq.soBoQua ? ` · bỏ qua ${kq.soBoQua} hồ sơ đã có` : ''}
                             </span>
                           )}
