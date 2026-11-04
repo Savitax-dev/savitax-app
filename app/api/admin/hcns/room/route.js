@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { callerHasPermission } from '@/lib/serverAuth'
 import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
 import { resolveHcnsFeeForMonth } from '@/lib/hcnsFee'
+import { stoppedByMonth } from '@/lib/contractDates'
 import { HCNS_STATUSES as STATUSES, HCNS_STATUS_LABEL as STATUS_LABEL } from '@/lib/hcnsStatus'
 import { getHcnsTeam } from '@/lib/hcnsTeam'
 import { effectiveDeadlineDate } from '@/lib/deadline'
@@ -64,6 +65,13 @@ export async function GET(request) {
     ? await supabase.from('clients').select('id, uses_hcns').in('id', tkLinked)
     : { data: [] }
   const usesHcns = new Map((usesRows || []).map(c => [c.id, c.uses_hcns === true]))
+  // Tháng ngưng dịch vụ của công ty kế toán (clients.service_end, sql/25): từ tháng đó KHÔNG phát sinh phí HCNS — cùng
+  // luật bảng lương / dòng tiền kế toán (ca Kim Dung 04/11/2026: ngưng từ T10 mà trang này vẫn cộng phí T10). Đọc riêng,
+  // thiếu cột thì coi như không công ty nào ngưng.
+  const { data: ngungRows, error: ngungErr } = tkLinked.length
+    ? await supabase.from('clients').select('id, service_end').in('id', tkLinked).not('service_end', 'is', null)
+    : { data: [] }
+  const ngungTu = new Map(ngungErr ? [] : (ngungRows || []).map(c => [c.id, c.service_end]))
   const thoiKy = clients.filter(c => c.category === 'thoi_ky' &&
     (!c.linked_client_id || usesHcns.get(c.linked_client_id) !== false))
   const cases = clients.filter(c => c.category === 'thoi_diem' || c.category === 'vang_lai')
@@ -156,6 +164,7 @@ export async function GET(request) {
   // khi phí T9 chưa thu của cả phòng lớn hơn nhiều.
   const HCNS_TU_KEY = 2026 * 12 + 9
   const phiThang = (c, y, m) => feeCountsForMonth(c.fee_period, y, m, now)
+    && !(c.linked_client_id && stoppedByMonth(ngungTu.get(c.linked_client_id), y, m))
     ? (Number(resolveHcnsFeeForMonth(planRows, c.id, y, m, c.hcns_fee, c.created_at)) || 0) : 0
   const thuThang = (c, y, m) => (paidMap.get(c.id + '_' + y + '_' + m) || 0)
     + (c.linked_client_id ? (traQuaNoTon.get(c.linked_client_id + '_' + (y * 12 + m)) || 0) : 0)
