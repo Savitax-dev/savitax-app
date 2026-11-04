@@ -256,7 +256,7 @@ export default function BangLuong({ quyen }) {
                         <span className="text-gray-400"> / {x.laTruongPhong && !x.hcns ? 'TP 20%' : fmt(x.toiThieu)}</span> → <b className="text-violet-800">{fmt(x.thuongDoanhSo)}</b>
                         {/* Phòng HCNS (03/11/2026): thời kỳ lấp tối thiểu trước, phần thời điểm còn dư × 20% */}
                         {x.hcns && <div className="text-[11px] text-gray-500" title={'Thời kỳ lấp mức tối thiểu trước; thiếu thì lấy thời điểm bù; phần thời điểm còn dư × 20%. Thời kỳ vượt không thưởng.'}>
-                          TK {fmt(x.hcns.thoiKy)} + TĐ {fmt(x.hcns.thoiDiem)}{x.hcns.thieu ? ' · thiếu ' + fmt(x.hcns.thieu) : ''}{x.hcns.thoiDiemDu ? ' · TĐ dư ' + fmt(x.hcns.thoiDiemDu) + ' × 20%' : ''}</div>}
+                          TK {fmt(x.hcns.thoiKy)} + TĐ {fmt(x.hcns.thoiDiem)}{x.hcns.thieu ? ' · thiếu ' + fmt(x.hcns.thieu) : ''}{x.hcns.vuot ? ' · vượt ' + fmt(x.hcns.vuot) + ' × 20%' : ''}</div>}
                         {mo === x.staff_id && <div className="text-left text-xs text-gray-600 mt-1 space-y-0.5 max-h-48 overflow-y-auto">{x.congTyDoanhThu.map(c => <div key={c.id}>{c.ma || c.ten}: {fmt(c.doanhThu)}{c.quy ? ' (quý ÷3)' : ''}{c.khongVat ? ' (không VAT)' : ''}</div>)}
                           {(x.hcns?.hoSo || []).map((h, i) => <div key={'td' + i} className="text-violet-700">TĐ · {h.cty} · {h.ten}: {fmt(h.doanhThu)}</div>)}</div>}
                       </td>

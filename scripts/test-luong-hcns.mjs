@@ -10,11 +10,12 @@ const kiem = (ten, thuc, mong) => {
   else { hong++; console.log('  HỎNG ' + ten + '\n         ra ' + a + '\n         đáng lẽ ' + b) }
 }
 
-console.log('Thời kỳ lấp tối thiểu trước, phần THỜI ĐIỂM còn dư × 20%:')
-kiem('thời kỳ đủ (60tr / 51tr), thời điểm 10tr → 20% × 10tr', thuongVuotHcns({ thoiKy: 60e6, thoiDiem: 10e6, toiThieu: 51e6 }), { thieu: 0, thoiDiemDu: 10e6, thuong: 2e6 })
-kiem('thời kỳ vượt mà không có thời điểm → 0 (thời kỳ vượt không thưởng)', thuongVuotHcns({ thoiKy: 60e6, thoiDiem: 0, toiThieu: 51e6 }).thuong, 0)
-kiem('thiếu 3,1tr (24,9 / 28), thời điểm 5tr → bù 3,1tr, dư 1,9tr × 20%', thuongVuotHcns({ thoiKy: 24.9e6, thoiDiem: 5e6, toiThieu: 28e6 }), { thieu: 3.1e6, thoiDiemDu: 1.9e6, thuong: 380000 })
-kiem('thời điểm chưa đủ bù → 0', thuongVuotHcns({ thoiKy: 20e6, thoiDiem: 5e6, toiThieu: 28e6 }), { thieu: 8e6, thoiDiemDu: 0, thuong: 0 })
+console.log('(Thời kỳ + thời điểm − tối thiểu) × 20%:')
+kiem('thời kỳ 60tr + thời điểm 10tr / 51tr → vượt 19tr × 20%', thuongVuotHcns({ thoiKy: 60e6, thoiDiem: 10e6, toiThieu: 51e6 }), { thieu: 0, vuot: 19e6, thuong: 3.8e6 })
+kiem('thời kỳ vượt, không có thời điểm → vẫn thưởng (Duy Minh T10: 56,7 / 51 → 1.140.000)', thuongVuotHcns({ thoiKy: 56.7e6, thoiDiem: 0, toiThieu: 51e6 }), { thieu: 0, vuot: 5.7e6, thuong: 1140000 })
+kiem('thiếu 3,1tr (24,9 / 28), thời điểm 5tr → vượt 1,9tr × 20%', thuongVuotHcns({ thoiKy: 24.9e6, thoiDiem: 5e6, toiThieu: 28e6 }), { thieu: 0, vuot: 1.9e6, thuong: 380000 })
+kiem('vừa đúng mức tối thiểu → 0', thuongVuotHcns({ thoiKy: 28e6, thoiDiem: 0, toiThieu: 28e6 }), { thieu: 0, vuot: 0, thuong: 0 })
+kiem('chưa đủ → 0', thuongVuotHcns({ thoiKy: 20e6, thoiDiem: 5e6, toiThieu: 28e6 }), { thieu: 3e6, vuot: 0, thuong: 0 })
 kiem('chưa đặt mức tối thiểu → không thưởng', thuongVuotHcns({ thoiKy: 10e6, thoiDiem: 10e6, toiThieu: null }).thuong, 0)
 
 if (process.argv.includes('--that')) {
@@ -26,7 +27,7 @@ if (process.argv.includes('--that')) {
   const hcns = bl.dong.filter(x => x.hcns)
   for (const x of hcns) {
     console.log('  · ' + x.ten + ': TK ' + x.hcns.thoiKy.toLocaleString('vi-VN') + ' + TĐ ' + x.hcns.thoiDiem.toLocaleString('vi-VN') + ' / tối thiểu ' + Number(x.toiThieu).toLocaleString('vi-VN') + ' → ' + x.thuongDoanhSo.toLocaleString('vi-VN'))
-    kiem(x.ten + ': thưởng = luật thời điểm dư', x.thuongDoanhSo, thuongVuotHcns({ thoiKy: x.hcns.thoiKy, thoiDiem: x.hcns.thoiDiem, toiThieu: x.toiThieu }).thuong)
+    kiem(x.ten + ': thưởng = phần vượt × 20%', x.thuongDoanhSo, thuongVuotHcns({ thoiKy: x.hcns.thoiKy, thoiDiem: x.hcns.thoiDiem, toiThieu: x.toiThieu }).thuong)
     kiem(x.ten + ': doanh thu = thời kỳ + thời điểm', x.doanhThu, x.hcns.thoiKy + x.hcns.thoiDiem)
   }
   const nvHcns = hcns.filter(x => !['hcns_leader'].includes(x.role))

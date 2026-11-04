@@ -62,8 +62,8 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
   Excel: cột "DT phòng làm TP" + "Thưởng DS phòng 1%", tỉ lệ ở Tham so **B18** (thêm cuối để không xô B2…B17).
 - **Phòng HCNS** (`doanhThuHcns.js`, anh chốt 03/11/2026, từ kỳ lương T10): nhân viên phòng type `hcns` có doanh thu =
   THỜI KỲ (phí HCNS hằng tháng chưa VAT, quý ÷ 3, công ty Thời kỳ mình phụ trách `hcns_clients.assigned_to`, phí phải
-  thu) + THỜI ĐIỂM (tiền khách trả TRONG THÁNG cho hồ sơ mình phụ trách, chưa VAT — luật của `dvkHcns.js`). Thưởng: thời
-  kỳ lấp mức tối thiểu trước, thiếu lấy thời điểm bù, **phần thời điểm còn dư × 20%** — thời kỳ vượt KHÔNG thưởng. Vẫn
+  thu) + THỜI ĐIỂM (tiền khách trả TRONG THÁNG cho hồ sơ mình phụ trách, chưa VAT — luật của `dvkHcns.js`). Thưởng:
+  **(thời kỳ + thời điểm − mức tối thiểu) × 20%** — thời kỳ vượt cũng được thưởng (anh đổi 04/11/2026). Vẫn
   GIỮ khai thưởng DVK cho HCNS Thời điểm (anh chọn). TP HCNS (`hcns_leader` ở phòng HCNS, kể cả kiêm nhiệm như chị
   Diệu): thưởng DS phòng = **1% × tổng doanh thu thời kỳ** nhân viên phòng HCNS, **tối đa bằng tổng mức tối thiểu** (anh chốt lại 03/11). Excel ghi số
   app tính cho ô thưởng doanh số HCNS (không công thức). Kiểm: `node --env-file=.env.local scripts/test-luong-hcns.mjs --that`.

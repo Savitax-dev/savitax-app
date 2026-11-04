@@ -89,7 +89,7 @@ export default function PhieuLuongCuaToi() {
               {x.kpiApDung && <Dong nhan="KPI công nợ" phu={'Tháng ' + p.ky.no.thang + ': ' + (x.pctNo ?? '—') + '%'} giaTri={x.thuongNo} mau="text-emerald-700" />}
               {x.kpiApDung && <Dong nhan="KPI phòng" phu={'Điểm phòng ' + (x.diemKpiPhong ?? '—') + '% · tác phong của bạn ' + (x.pctTacPhong ?? 100) + '%'} giaTri={x.thuongPhong} mau="text-fuchsia-700" />}
               {x.hcns
-                ? <Dong nhan="Vượt doanh số (thời điểm × 20%)" phu={'Thời kỳ ' + fmt(x.hcns.thoiKy) + ' + thời điểm ' + fmt(x.hcns.thoiDiem) + ' / tối thiểu ' + fmt(x.toiThieu) + (x.hcns.thoiDiemDu ? ' · thời điểm dư ' + fmt(x.hcns.thoiDiemDu) : '')} giaTri={x.thuongDoanhSo} mau="text-violet-700" />
+                ? <Dong nhan="Vượt doanh số (phần vượt × 20%)" phu={'Thời kỳ ' + fmt(x.hcns.thoiKy) + ' + thời điểm ' + fmt(x.hcns.thoiDiem) + ' / tối thiểu ' + fmt(x.toiThieu) + (x.hcns.vuot ? ' · vượt ' + fmt(x.hcns.vuot) : '')} giaTri={x.thuongDoanhSo} mau="text-violet-700" />
                 : <Dong nhan={x.laTruongPhong ? 'Doanh số (20% công ty tự làm)' : 'Vượt doanh số'} phu={'Doanh thu ' + fmt(x.doanhThu) + (x.laTruongPhong ? '' : ' / tối thiểu ' + fmt(x.toiThieu))} giaTri={x.thuongDoanhSo} mau="text-violet-700" />}
               {x.phongTp?.length > 0 && <Dong nhan="Doanh số phòng (1%)" phu={(x.phongTp.some(r => r.theoToiThieu) ? 'Doanh thu thời kỳ phòng (tối đa tổng tối thiểu) ' : 'Doanh thu kế toán phòng ') + x.phongTp.map(r => r.ten).join(', ') + ' ' + fmt(x.doanhThuPhongTp)} giaTri={x.thuongDsPhong} mau="text-purple-700" />}
               <Dong nhan="Dịch vụ khác" phu={(x.dvkDong || []).length ? (x.dvkDong.length + ' khoản đã duyệt') : null} giaTri={x.thuongDvk} mau="text-orange-700" />
