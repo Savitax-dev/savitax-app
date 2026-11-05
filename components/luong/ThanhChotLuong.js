@@ -51,15 +51,15 @@ export default function ThanhChotLuong({ d, ky, onXong }) {
       const baoSai = kq.ra.filter(r => r.baoSai)
       const NL = '\n'
       const loi = [
-        kq.thieu.length ? '⚠ ' + kq.thieu.length + ' người KHÔNG có trong file (thiếu tài khoản — bổ sung ở Quản lý nhân viên):' + NL + kq.thieu.map(x => '  • ' + x.ten + ' — ' + x.ly + ' (' + fmt(x.tien) + 'đ)').join(NL) : '',
+        kq.thieu.length ? '⚠ ' + kq.thieu.length + ' người thiếu tài khoản (tổng ' + fmt(kq.tongThieu) + 'đ) — tách riêng sheet "Chuyen tay", KHÔNG có ở Sheet1 gửi ngân hàng (bổ sung ở Quản lý nhân viên):' + NL + kq.thieu.map(x => '  • ' + x.ten + ' — ' + x.ly + ' (' + fmt(x.tien) + 'đ)').join(NL) : '',
         baoSai.length ? '⚠ ' + baoSai.length + ' người đang BÁO SAI phiếu lương nhưng vẫn có trong file:' + NL + baoSai.map(r => '  • ' + r.ten + ' (' + fmt(r.tien) + 'đ)').join(NL) : '',
         kq.khongTra.length ? kq.khongTra.length + ' người thực lĩnh ≤ 0 — không chuyển.' : '',
       ].filter(Boolean)
       if (!kq.ra.length) { setMsg('Không có ai đủ điều kiện chuyển khoản. ' + loi.join(' ').split(NL).join(' ')); return }
       if (!confirm('Xuất file chuyển khoản lương tháng ' + ky.thang + '/' + ky.nam + ':' + NL + kq.ra.length + ' người · tổng ' + fmt(kq.tong) + 'đ' +
         (loi.length ? NL + NL + loi.join(NL + NL) : '') + NL + NL + 'Xuất file?')) return
-      await xuatFileChuyenKhoan(kq.ra, ky.nam, ky.thang)
-      if (kq.thieu.length) setMsg('Đã xuất file, còn ' + kq.thieu.length + ' người thiếu tài khoản phải chuyển tay: ' + kq.thieu.map(x => x.ten).join(', ') + '.')
+      await xuatFileChuyenKhoan(kq.ra, ky.nam, ky.thang, kq.thieu)
+      if (kq.thieu.length) setMsg('Đã xuất file. ' + kq.thieu.length + ' người thiếu tài khoản nằm ở sheet "Chuyen tay" (tổng ' + fmt(kq.tongThieu) + 'đ), phải chuyển tay: ' + kq.thieu.map(x => x.ten).join(', ') + '.')
     } catch (e) { setMsg(String(e.message || e)) } finally { setBan(false) }
   }
 
