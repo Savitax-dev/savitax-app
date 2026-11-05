@@ -5,6 +5,7 @@ import { checkPrevMonthUnpaid, prevMonthOf } from '@/lib/prevMonthDebt'
 import { evaluateCap, CAP_OK, CAP_UNVERIFIABLE } from '@/lib/feeCap'
 import { canWriteAccountingDebt } from '@/lib/debtScope'
 import { docCtyDacThu } from '@/lib/ctyDacThu'
+import { dieuChinhNoTonKy, noTonThat } from '@/lib/debtRollover'
 
 function getAdmin() {
   return createClient(
@@ -72,7 +73,9 @@ export async function POST(request) {
       // tồn thì ghi đúng phí kỳ rồi trừ phần dư vào nợ tồn (save-old-debt).
       const { data: cliGop } = await supabase.from('clients')
         .select('other_debt').eq('id', clientId).maybeSingle()
-      const debtGop = Number(cliGop?.other_debt) || 0
+      // Nợ tồn THẬT — không tính phần của kỳ đã chuyển nợ tồn từ ngày 01 nhưng còn trong hạn ghi vào kỳ
+      // (anh chốt 05/11/2026), không thì 10 ngày đầu tháng không ai ghi gộp được.
+      const debtGop = type === 'ketoan' ? await noTonThat(supabase, clientId, cliGop?.other_debt) : Number(cliGop?.other_debt) || 0
       if (debtGop > 0) {
         return Response.json({
           error: 'Công ty đang còn nợ tồn ' + debtGop.toLocaleString('vi-VN') + 'đ nên không ghi gộp nhiều kỳ được. '
@@ -88,9 +91,19 @@ export async function POST(request) {
         created_by: createdBy || null,
         created_at: new Date().toISOString(),
       }))
+      // Số đã thu TRƯỚC khi ghi của từng kỳ — để trừ dòng chốt nợ tồn của kỳ còn trong hạn.
+      const { data: cuGop } = type === 'ketoan'
+        ? await supabase.from('service_fees').select('year, month, amount').eq('client_id', clientId).eq('type', 'ketoan')
+        : { data: [] }
       const { error } = await supabase.from('service_fees')
         .upsert(rows, { onConflict: 'client_id,year,month,type' })
       if (error) return Response.json({ error: error.message }, { status: 500 })
+      if (type === 'ketoan') {
+        for (const r of rows) {
+          const cu = (cuGop || []).find(x => x.year === r.year && x.month === r.month)
+          await dieuChinhNoTonKy(supabase, clientId, r.year, r.month, 'ketoan', r.amount - (Number(cu?.amount) || 0))
+        }
+      }
       return Response.json({ ok: true, savedPeriods: rows.length })
     }
 
@@ -136,8 +149,8 @@ export async function POST(request) {
         amount: numAmount, fee, reliable, year: numYear, month: numMonth,
         paidPeriods: new Set((paidRows || []).map(r => r.year * 12 + r.month)),
         label: 'phí dịch vụ kế toán',
-        // Còn nợ tồn thì KHÔNG gợi ý trả gộp nữa — xem lib/feeCap.js.
-        otherDebt: Number(cli?.other_debt) || 0,
+        // Còn nợ tồn (THẬT — bỏ phần kỳ còn trong hạn) thì KHÔNG gợi ý trả gộp nữa — xem lib/feeCap.js.
+        otherDebt: await noTonThat(supabase, clientId, cli?.other_debt),
       })
       // Vượt thật -> trả 409 để giao diện hỏi lại, KHÔNG tự ý lưu.
       if (verdict.kind !== CAP_OK && verdict.kind !== CAP_UNVERIFIABLE) {
@@ -171,25 +184,10 @@ export async function POST(request) {
     }
 
     if (type === 'ketoan') {
-      const delta = numAmount - prevAmount
-      if (delta > 0) {
-        // CHỈ nguồn kế toán. Đây là nhánh `type === 'ketoan'` — thu phí kế toán thì trừ vào nợ tồn
-        // kế toán. Từ sql/28 một tháng có thể có hai dòng; thiếu bộ lọc này thì maybeSingle() gặp
-        // hai dòng sẽ lỗi, mà tệ hơn là nó có thể vớ đúng dòng HCNS và TRỪ NHẦM tiền khách nợ
-        // phí nhân sự bằng khoản khách trả phí kế toán.
-        const { data: rollover } = await supabase.from('debt_rollovers')
-          .select('id, remaining_amount').eq('client_id', clientId).eq('year', numYear).eq('month', numMonth)
-          .or('source.is.null,source.eq.ketoan').maybeSingle()
-        if (rollover && Number(rollover.remaining_amount) > 0) {
-          const reduce = Math.min(delta, Number(rollover.remaining_amount))
-          const { data: clientRow } = await supabase.from('clients').select('other_debt').eq('id', clientId).single()
-          const currentOtherDebt = Number(clientRow?.other_debt) || 0
-          await Promise.all([
-            supabase.from('debt_rollovers').update({ remaining_amount: Number(rollover.remaining_amount) - reduce }).eq('id', rollover.id),
-            supabase.from('clients').update({ other_debt: Math.max(0, currentOtherDebt - reduce) }).eq('id', clientId),
-          ])
-        }
-      }
+      // Kỳ đã chuyển nợ tồn (từ ngày 01 tháng sau — còn ghi vào kỳ được tới hết ngày 10): phần thu thêm trừ
+      // vào dòng chốt nợ tồn của kỳ + other_debt, sửa bớt thì cộng lại (lib/debtRollover.js dieuChinhNoTonKy).
+      // CHỈ dòng chốt nguồn kế toán — không đụng nợ tồn HCNS cùng tháng.
+      await dieuChinhNoTonKy(supabase, clientId, numYear, numMonth, 'ketoan', numAmount - prevAmount)
     }
 
     return Response.json({ ok: true })

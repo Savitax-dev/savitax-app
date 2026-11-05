@@ -6,6 +6,7 @@ import { hcnsStartMonth } from '@/lib/hcnsFee'
 import { evaluateCap, CAP_OK, CAP_UNVERIFIABLE } from '@/lib/feeCap'
 import { checkPrevMonthUnpaid, prevMonthOf } from '@/lib/prevMonthDebt'
 import { vaiTroCoQuyen } from '@/lib/quyenCache'
+import { dieuChinhNoTonKy, noTonThat } from '@/lib/debtRollover'
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -60,11 +61,12 @@ export async function POST(request) {
 
     // Nợ tồn của HCNS dồn chung vào clients.other_debt khi có liên kết công ty kế toán (xem
     // lib/hcnsRollover.js); hồ sơ HCNS độc lập thì dùng cột riêng hcns_clients.other_debt.
+    // Nợ tồn THẬT: bỏ phần của kỳ đã chuyển nợ tồn từ ngày 01 nhưng còn trong hạn ghi vào kỳ (05/11/2026).
     const readOtherDebt = async () => {
       if (hc.linked_client_id) {
         const { data: c } = await supabase.from('clients')
           .select('other_debt').eq('id', hc.linked_client_id).maybeSingle()
-        return Number(c?.other_debt) || 0
+        return noTonThat(supabase, hc.linked_client_id, c?.other_debt)
       }
       return Number(hc.other_debt) || 0
     }
@@ -88,9 +90,17 @@ export async function POST(request) {
         created_by: createdBy || null,
         created_at: new Date().toISOString(),
       }))
+      const { data: cuGop } = await supabase.from('hcns_service_fees')
+        .select('year, month, amount').eq('hcns_client_id', hcnsId).eq('type', 'hcns')
       const { error } = await supabase.from('hcns_service_fees')
         .upsert(rows, { onConflict: 'hcns_client_id,year,month,type' })
       if (error) return Response.json({ error: error.message }, { status: 500 })
+      if (hc.linked_client_id) {
+        for (const r of rows) {
+          const cu = (cuGop || []).find(x => x.year === r.year && x.month === r.month)
+          await dieuChinhNoTonKy(supabase, hc.linked_client_id, r.year, r.month, 'hcns', r.amount - (Number(cu?.amount) || 0))
+        }
+      }
       return Response.json({ ok: true, savedPeriods: rows.length })
     }
 
@@ -135,6 +145,8 @@ export async function POST(request) {
       return Response.json({ error: verdict.message, cap: verdict }, { status: 409 })
     }
 
+    const truocKy = (paidRows || []).filter(r => r.year === numYear && r.month === numMonth)
+      .reduce((a, r) => a + (Number(r.amount) || 0), 0)
     const { error } = await supabase.from('hcns_service_fees').upsert({
       hcns_client_id: hcnsId,
       year: numYear, month: numMonth, type: 'hcns',
@@ -144,6 +156,8 @@ export async function POST(request) {
       created_at: new Date().toISOString(),
     }, { onConflict: 'hcns_client_id,year,month,type' })
     if (error) return Response.json({ error: error.message }, { status: 500 })
+    // Kỳ đã chuyển nợ tồn mà còn trong hạn ghi vào kỳ: trừ / cộng lại dòng chốt nợ tồn HCNS (lib/debtRollover.js).
+    if (hc.linked_client_id) await dieuChinhNoTonKy(supabase, hc.linked_client_id, numYear, numMonth, 'hcns', numAmount - truocKy)
 
     return Response.json({
       ok: true,

@@ -55,6 +55,15 @@ công việc hàng tháng/quý, công nợ dịch vụ, KPI nhân viên/phòng b
   tháng ĐÃ có dòng `debt_rollovers` phải lấy theo `remaining_amount`, KHÔNG lấy "phí trừ đã thu"
   — nếu không sẽ báo nợ oan khoản khách đã trả (đã gây ghi thu trùng thật). Bất biến khi audit:
   `SUM(debt_rollovers.remaining_amount)` của 1 công ty không được lớn hơn `clients.other_debt`.
+- **Chuyển nợ tồn từ NGÀY 01, ghi vào kỳ tới hết NGÀY 10** (anh chốt 05/11/2026): hết tháng M là phần chưa thu (kế toán
+  + HCNS) chuyển nợ tồn (`isPastRolloverDeadline`), nhưng tới hết ngày 10 tháng M+1 vẫn ghi thu VÀO KỲ M (vẫn tính
+  %-công nợ kỳ M); gia hạn N tháng (chỉ phí kế toán) thì cả hai mốc lùi N tháng. Trong khoảng đó một khoản nằm ở HAI nơi,
+  nên mọi chỗ ghi thu đi qua `lib/debtRollover.js`: ghi vào ô kỳ → `dieuChinhNoTonKy` (trừ CẢ `rolled_amount` lẫn
+  `remaining_amount` — dòng tiền suy điểm xuất phát bằng Σ rolled); thu ở tab Nợ tồn cũ / dòng nợ tồn Đối soát NH →
+  `phanBoThuNoTon`: kỳ cũ nhất trước (dòng chốt quá hạn → nợ nhập tay → kỳ còn trong hạn, cùng kỳ kế toán trước HCNS),
+  phần rơi vào kỳ còn trong hạn GHI VÀO KỲ (`ghiVaoKyTrongHan`), không ghi `no_ton`. Khách trả kỳ nào ghi kỳ đó: Đối soát
+  NH coi kỳ còn trong hạn là CHƯA chuyển (`bankMatch` xét `isPastEditDeadline`). Luật "còn nợ tồn thì…" (trả gộp, gợi ý
+  gộp, TỰ GHI ngân hàng) dùng nợ tồn THẬT = `noTonThat` (bỏ phần kỳ còn trong hạn). Bộ kiểm: `test-no-ton-tu-ngay-1`.
 - **Trả gộp nhiều kỳ** (`periods` ở `save-debt`): CHỈ cho phép khi công ty `other_debt = 0`. Còn
   nợ tồn thì ghi đúng phí kỳ, phần dư tự trừ vào nợ tồn qua `save-old-debt` (dư hơn nợ tồn thì
   báo cho nhân viên tự quyết, không tự ghi). Khi gộp, `suggestPeriods` ưu tiên các THÁNG SAU

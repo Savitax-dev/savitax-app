@@ -32,8 +32,9 @@ kiem('hạn cuối kỳ T9/2026 không gia hạn = 10/10/2026', hanCuoiKy(2026, 
 kiem('gia hạn 2 tháng → 10/12/2026', hanCuoiKy(2026, 9, 2).toDateString(), new Date(2026, 11, 10).toDateString())
 kiem('kỳ T11 gia hạn 3 tháng qua năm → 10/03/2027', hanCuoiKy(2026, 11, 3).toDateString(), new Date(2027, 2, 10).toDateString())
 kiem('hạn sửa công nợ T9: thường đã quá ngày 01/11, gia hạn 1 tháng vẫn sửa được', [isPastEditDeadline(2026, 9, ngay('2026-11-01')), isPastEditDeadline(2026, 9, ngay('2026-11-01'), 10, 1)], [true, false])
-kiem('hạn chuyển nợ tồn T9: thường đã tới, gia hạn 1 tháng chưa tới; 11/11 thì tới', [isPastRolloverDeadline('monthly', 2026, 9, ngay('2026-11-01')), isPastRolloverDeadline('monthly', 2026, 9, ngay('2026-11-01'), 10, 1), isPastRolloverDeadline('monthly', 2026, 9, ngay('2026-11-11'), 10, 1)], [true, false, true])
-kiem('công ty quý: tháng giữa quý vẫn không phải kỳ chuyển nợ tồn dù gia hạn', isPastRolloverDeadline('quarterly', 2026, 8, ngay('2027-01-01'), 10, 1), false)
+// Từ 05/11/2026 chuyển nợ tồn khi HẾT THÁNG (gia hạn N: hết tháng M+N), không chờ ngày 10 nữa.
+kiem('hạn chuyển nợ tồn T9: 15/10 thường đã tới, gia hạn 1 tháng chưa tới; 01/11 thì tới', [isPastRolloverDeadline('monthly', 2026, 9, ngay('2026-10-15')), isPastRolloverDeadline('monthly', 2026, 9, ngay('2026-10-15'), 1), isPastRolloverDeadline('monthly', 2026, 9, ngay('2026-11-01'), 1)], [true, false, true])
+kiem('công ty quý: tháng giữa quý vẫn không phải kỳ chuyển nợ tồn dù gia hạn', isPastRolloverDeadline('quarterly', 2026, 8, ngay('2027-01-01'), 1), false)
 kiem('không gia hạn → không bao giờ "trong gia hạn"', trongGiaHan(0, 2026, 9, ngay('2026-10-01')), false)
 const n = ngay('2026-11-01')
 kiem('%-nợ T9 gia hạn 1 tháng, chưa thu → TẠM KHÔNG TÍNH', tamBoQuaCongNo(1, 2026, 9, 5000000, 0, n), true)

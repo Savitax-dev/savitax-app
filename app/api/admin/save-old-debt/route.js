@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireLogin } from '@/lib/serverAuth'
 import { canWriteAccountingDebt } from '@/lib/debtScope'
-import { applyOldDebtPayment } from '@/lib/debtRollover'
+import { phanBoThuNoTon, ghiVaoKyTrongHan } from '@/lib/debtRollover'
 
 function getAdmin() {
   return createClient(
@@ -48,20 +48,27 @@ export async function POST(request) {
     }
 
     const now = new Date()
+    // Phân bổ TRƯỚC khi trừ other_debt (cần số cũ để biết phần nợ nhập tay): trả kỳ cũ nhất trước — dòng chốt
+    // đã quá hạn, nợ nhập tay, cuối cùng mới tới kỳ chuyển nợ tồn từ ngày 01 nhưng còn trong hạn ghi vào kỳ;
+    // phần rơi vào kỳ đó GHI VÀO KỲ (vẫn tính %-công nợ của kỳ — anh chốt 05/11/2026). Xem lib/debtRollover.js.
+    const alloc = await phanBoThuNoTon(supabase, clientId, paid, now)
+
     const { error: updateErr } = await supabase.from('clients').update({ other_debt: otherDebt - paid }).eq('id', clientId)
     if (updateErr) {
       console.error('save-old-debt update error:', updateErr)
       return Response.json({ error: updateErr.message }, { status: 500 })
     }
-
-    // Trừ song song vào các dòng "nợ tồn tự động" của tháng gốc, cũ nhất trước. Nếu bỏ bước này,
-    // other_debt và remaining_amount lệch dần sau mỗi lần thu — xem lib/debtRollover.js.
-    const alloc = await applyOldDebtPayment(supabase, clientId, paid)
+    if (alloc.trongHan.length) {
+      await ghiVaoKyTrongHan(supabase, clientId, alloc.trongHan, (note ? note + ' · ' : '') + 'thu ở mục Nợ tồn cũ', createdBy)
+    }
+    if (alloc.noTon <= 0) {
+      return Response.json({ ok: true, paid, remainingOtherDebt: otherDebt - paid, rolloverApplied: alloc.applied, vaoKy: alloc.trongHan })
+    }
 
     const year = now.getFullYear(), month = now.getMonth() + 1
     const { data: existingRow } = await supabase.from('service_fees')
       .select('amount').eq('client_id', clientId).eq('year', year).eq('month', month).eq('type', 'no_ton').maybeSingle()
-    const newTotal = (Number(existingRow?.amount) || 0) + paid
+    const newTotal = (Number(existingRow?.amount) || 0) + alloc.noTon
 
     const { error: insertErr } = await supabase.from('service_fees').upsert({
       client_id:  clientId,
@@ -78,7 +85,7 @@ export async function POST(request) {
       return Response.json({ error: insertErr.message }, { status: 500 })
     }
 
-    return Response.json({ ok: true, paid, remainingOtherDebt: otherDebt - paid, rolloverApplied: alloc.applied })
+    return Response.json({ ok: true, paid, remainingOtherDebt: otherDebt - paid, rolloverApplied: alloc.applied, vaoKy: alloc.trongHan })
   } catch (e) {
     console.error('save-old-debt exception:', e)
     return Response.json({ error: e.message }, { status: 500 })

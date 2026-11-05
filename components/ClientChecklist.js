@@ -599,7 +599,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
           const keep = window.confirm(
             'Ghi ' + fmt(paid) + 'đ vào ' + p.currentLabel + ' dù ' + p.targetLabel +
             ' còn thiếu ' + fmt(p.remain) + 'đ?\n\n' +
-            p.targetLabel + ' sẽ bị tính là chưa thu và chuyển thành nợ tồn sau ngày 10.'
+            p.targetLabel + ' sẽ bị tính là chưa thu (%-công nợ của kỳ đó tụt) và nằm ở nợ tồn.'
           )
           if (!keep) { setSavingDebt(false); return }
           basePayload.monthConfirmed = true
@@ -1432,6 +1432,10 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
               // lấy theo remaining_amount, KHÔNG lấy "phí trừ đã thu" — nếu không sẽ báo nợ oan
               // đúng khoản khách đã trả qua nợ tồn và nhân viên ghi thu lần hai (AGENTS.md).
               const roll = isFeeType ? rolloverByPeriod[debtType + ':' + selYear + '-' + thangGhi(debtType)] : null
+              // Từ 05/11/2026: hết tháng là chuyển nợ tồn, nhưng tới hết ngày 10 tháng sau vẫn GHI VÀO KỲ được (app tự trừ nợ tồn)
+              const giaHanKy = debtType === 'ketoan' ? (client?.gia_han_thu_thang || 0) : 0
+              const rollTrongHan = !!roll && !isPastEditDeadline(selYear, thangGhi(debtType), new Date(), 10, giaHanKy)
+              const hanGhiKy = (() => { const d = new Date(selYear, thangGhi(debtType) + giaHanKy, 10); return d.getDate() + '/' + (d.getMonth() + 1) })()
               // Công ty quý, đang xem tháng GIỮA quý: phần phải thu TỚI HẾT tháng đang xem = phí quý ÷ 3 × số tháng đã qua
               // của quý — trả đủ phần đó thì báo "đã thu đủ" 100% (anh yêu cầu 01/11/2026, ca PHƯƠNG NAM DD T10).
               const giuaQuy = debtType === 'ketoan' && thangGhi('ketoan') !== clientMonth
@@ -1469,7 +1473,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                         </div>
                         {roll && (
                           <div className="flex justify-between">
-                            <span className="text-gray-500">Đã chuyển nợ tồn:</span>
+                            <span className="text-gray-500">{rollTrongHan ? 'Tạm chuyển nợ tồn (vẫn ghi vào kỳ này tới hết ' + hanGhiKy + '):' : 'Đã chuyển nợ tồn:'}</span>
                             <span className="font-semibold text-gray-600">
                               {fmt(roll.rolled)}đ{roll.remaining < roll.rolled ? ' · đã thu qua nợ tồn ' + fmt(roll.rolled - roll.remaining) + 'đ' : ''}
                             </span>
@@ -1479,7 +1483,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                         <div className="flex justify-between">
                           <span className={'font-bold ' + (remain === 0 ? 'text-green-700' : 'text-orange-600')}>
                             {remain === 0 ? (roll ? '✓ Đã thu đủ (gồm thu qua nợ tồn)' : '✓ Đã thu đủ')
-                              : roll ? '⚠ Còn nợ tồn phải thu:' : '⚠ Còn phải thu:'}
+                              : roll && !rollTrongHan ? '⚠ Còn nợ tồn phải thu:' : '⚠ Còn phải thu:'}
                           </span>
                           <span className={'font-bold ' + (remain === 0 ? 'text-green-600' : 'text-orange-600')}>
                             {remain === 0 ? '0đ' : fmt(remain) + 'đ'}
