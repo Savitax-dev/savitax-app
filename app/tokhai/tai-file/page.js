@@ -610,6 +610,7 @@ export default function TrangTaiFile() {
                             <span className="text-green-700">
                               ✓ {kq.dsFile?.length || 0} file
                               {kq.soGnt != null ? ` · ${kq.soGnt} giấy nộp tiền` : ''}
+                              {kq.soGntLoi ? ` · bỏ ${kq.soGntLoi} giấy lỗi` : ''}
                               {kq.soBoQua ? ` · bỏ qua ${kq.soBoQua} hồ sơ đã có` : ''}
                             </span>
                           )}

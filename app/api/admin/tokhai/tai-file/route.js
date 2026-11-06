@@ -23,7 +23,7 @@ import {
   duongDanToKhai, duongDanThongBao, tenFileToKhai, tenFileThongBao, macSacThue, tachKy,
   soLanBoSung, duongDanGnt, tenFileGnt,
 } from '@/lib/tokhaiThuMuc'
-import { ycGnt, docDiaChiSso, docForm, laTrangTraCuuGnt, docBangGnt, xmlTuPhanHoi, tenTheoNoiDung } from '@/lib/gntCong'
+import { ycGnt, docDiaChiSso, docForm, laTrangTraCuuGnt, docBangGnt, xmlTuPhanHoi, tenTheoNoiDung, laGntLoi } from '@/lib/gntCong'
 
 export const maxDuration = 60
 
@@ -425,6 +425,10 @@ export async function POST(request) {
         }
         p.gnt.form = f      // dse_pageId / dse_processorId đổi theo từng trang — luôn dùng bản mới nhất
         const kq = docBangGnt(noiDung)
+        // Bỏ giấy ngân hàng báo lỗi / không thành công (anh chốt 06/11/2026) — xem laGntLoi
+        const giayLoi = kq.ds.filter(d => laGntLoi(d.trangThai))
+        p.gnt.soLoi = (p.gnt.soLoi || 0) + giayLoi.length
+        kq.ds = kq.ds.filter(d => !laGntLoi(d.trangThai))
         p.gnt.hangDoi = kq.ds; p.gnt.vi = 0; p.gnt.trang = kq.trang; p.gnt.soTrang = kq.soTrang
         return taiGntKeTiep(p, null)
       }
@@ -698,6 +702,6 @@ async function ketThuc(supabase, p, maPhien, loi) {
   if (loi) return Response.json({ viec: 'loi', moTa: loi, soFile: p.soFile })
   return Response.json({
     viec: 'xong', soFile: p.soFile, soBoQua: p.soBoQua, loi: p.loi.slice(0, 5),
-    tenCty: p.tenCty, maKH: p.maKH, soGnt: p.gnt?.bat ? p.gnt.soFile : null,
+    tenCty: p.tenCty, maKH: p.maKH, soGnt: p.gnt?.bat ? p.gnt.soFile : null, soGntLoi: p.gnt?.soLoi || 0,
   })
 }

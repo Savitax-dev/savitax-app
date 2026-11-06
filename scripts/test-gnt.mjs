@@ -6,7 +6,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { docGnt, kyApp, sacThueNdkt, soThanhChu, laGnt } from '../lib/gntXml.js'
 import { dungPdfGnt, coTheDungPdfGnt } from '../lib/gntPdf.js'
-import { docDiaChiSso, docForm, laTrangTraCuuGnt, docBangGnt, ycGnt, xmlTuPhanHoi, tenTheoNoiDung } from '../lib/gntCong.js'
+import { laGntLoi, docDiaChiSso, docForm, laTrangTraCuuGnt, docBangGnt, ycGnt, xmlTuPhanHoi, tenTheoNoiDung } from '../lib/gntCong.js'
 import { tenFileGnt, duongDanGnt, THU_MUC_GNT, laCungThuMuc } from '../lib/tokhaiThuMuc.js'
 
 const PHONG = Object.fromEntries([
@@ -114,6 +114,13 @@ kiem('tên file + thư mục', [tenFileGnt({ sacThue: 'TNCN', periodCode: 'Q3.20
 // Thư mục '10. GIẤY NỘP TIỀN' ngang hàng '7. BỘ BÁO CÁO' (anh chốt 06/11/2026); thư mục có sẵn đặt kiểu khác vẫn nhận ra
 kiem('thư mục GNT: tên + nhận thư mục có sẵn', [THU_MUC_GNT, laCungThuMuc('10.GIẤY NỘP TIỀN', THU_MUC_GNT), laCungThuMuc('GIẤY NỘP TIỀN', THU_MUC_GNT), laCungThuMuc('7. BỘ BÁO CÁO', THU_MUC_GNT)],
   ['10. GIẤY NỘP TIỀN', true, true, false])
+
+// Giấy ngân hàng báo lỗi thì không tải (anh chốt 06/11/2026, ca ZENIS)
+kiem('bỏ giấy lỗi theo trạng thái', [
+  'Nộp thuế thành công',
+  'Xử lý chứng từ không thành công tại Ngân hàng do Lỗi khi thực hiện thanh toán thuế (Lỗi do core bank trả ra)',
+  'Đã gửi ngân hàng', 'Ngân hàng từ chối', 'Đã hủy',
+].map(laGntLoi), [false, true, false, true, true])
 
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)
