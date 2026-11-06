@@ -7,7 +7,7 @@ import path from 'node:path'
 import { docGnt, kyApp, sacThueNdkt, soThanhChu, laGnt } from '../lib/gntXml.js'
 import { dungPdfGnt, coTheDungPdfGnt } from '../lib/gntPdf.js'
 import { docDiaChiSso, docForm, laTrangTraCuuGnt, docBangGnt, ycGnt, xmlTuPhanHoi, tenTheoNoiDung } from '../lib/gntCong.js'
-import { tenFileGnt, duongDanGnt } from '../lib/tokhaiThuMuc.js'
+import { tenFileGnt, duongDanGnt, THU_MUC_GNT, laCungThuMuc } from '../lib/tokhaiThuMuc.js'
 
 const PHONG = Object.fromEntries([
   ['thuong', 'Tinos-Regular'], ['dam', 'Tinos-Bold'], ['nghieng', 'Tinos-Italic'],
@@ -110,7 +110,10 @@ kiem('tên theo nội dung: dòng TIỀN LỚN NHẤT quyết định kỳ + s�
 const xPhat = xmlGia([dongGia('Tiền phạt vi phạm hành chính', '4254', '15/10/2026', 2000000)], 2000000)
 kiem('kỳ không phải kỳ thuế (tiền phạt) -> phát sinh theo ngày lập', tenTheoNoiDung(xPhat).periodCode, 'PS.2026-10-20')
 kiem('tên file + thư mục', [tenFileGnt({ sacThue: 'TNCN', periodCode: 'Q3.2026', maKH: 'TANNGUYENPHUC' }), duongDanGnt({ periodCode: 'Q3.2026', maKH: 'TANNGUYENPHUC' })],
-  ['GNT_TNCN_Q3.2026_TANNGUYENPHUC.xml', ['BAOCAOTHUE_Q3_2026_TANNGUYENPHUC', 'GIẤY NỘP TIỀN']])
+  ['GNT_TNCN_Q3.2026_TANNGUYENPHUC.xml', []])
+// Thư mục '10. GIẤY NỘP TIỀN' ngang hàng '7. BỘ BÁO CÁO' (anh chốt 06/11/2026); thư mục có sẵn đặt kiểu khác vẫn nhận ra
+kiem('thư mục GNT: tên + nhận thư mục có sẵn', [THU_MUC_GNT, laCungThuMuc('10.GIẤY NỘP TIỀN', THU_MUC_GNT), laCungThuMuc('GIẤY NỘP TIỀN', THU_MUC_GNT), laCungThuMuc('7. BỘ BÁO CÁO', THU_MUC_GNT)],
+  ['10. GIẤY NỘP TIỀN', true, true, false])
 
 console.log(hong === 0 ? '\nTẤT CẢ ĐỀU ĐẠT.' : `\nCÓ ${hong} MỤC HỎNG.`)
 process.exit(hong === 0 ? 0 : 1)

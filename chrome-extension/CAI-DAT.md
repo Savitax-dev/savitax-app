@@ -46,6 +46,8 @@ node -e "const c=require('crypto'),f=require('fs');const k=JSON.parse(f.readFile
 
 ## Cập nhật lên bản mới
 
+**Bản 1.2 (06/11/2026):** cần để tải **Giấy nộp tiền** (đi theo chuyển hướng khi vào eTax). Tải tờ khai vẫn chạy với bản 1.1.
+
 Chép đè thư mục rồi vào `chrome://extensions` nhấn nút **Tải lại** (mũi tên vòng) ở ô tiện ích. Mã
 không đổi nên web app không cần build lại.
 

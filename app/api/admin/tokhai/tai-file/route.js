@@ -375,7 +375,6 @@ export async function POST(request) {
       // trình duyệt thật mở địa chỉ SSO ra NGAY trang tra cứu (200); tiện ích chưa có cookie eTax thì bị 302
       // rồi rơi vào trang "chưa được phân quyền". Lượt này chỉ để lấy cookie, nội dung trả về bỏ qua.
       case 'gnt_lam_nong': {
-        console.error('[GNT] ghé eTax — status', ph.status, '| trang cuối:', String(ph.urlCuoi || '').split('?')[0], '| tiêu đề:', noiDung.match(/<title>([^<]*)/i)?.[1]?.trim())
         p.buoc = 'gnt_sso'
         return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: ycGnt.sso(p.csrf), tienDo: 'Giấy nộp tiền: mở cổng eTax' })
       }
@@ -391,9 +390,6 @@ export async function POST(request) {
       }
 
       case 'gnt_mo': {
-        // CHẨN ĐOÁN tạm (04/11/2026): ghi từng bước sau SSO để thấy trang trung gian. Che mã dài (code SSO, token).
-        console.error(`[GNT] bước ${p.gnt.buocNhay} — status ${ph.status} | trang cuối: ${String(ph.urlCuoi || '').replace(/code=[^&]+/, 'code=…')} | nội dung:`,
-          noiDung.replace(/\s+/g, ' ').replace(/[A-Za-z0-9+/=_.-]{60,}/g, '‹mã dài›').slice(0, 6000))
         if (laTrangTraCuuGnt(noiDung)) { p.gnt.form = docForm(noiDung); return traCuuGnt(p, 1) }
         // Cổng trả 302 nhiều lượt (đo 04/11/2026, GIẢI PHÁP VIỆT). Tiện ích 1.2 đi theo nhờ cờ theoChuyenHuong.
         // Bản cũ bỏ qua cờ, gọi redirect:'manual' nên chỉ thấy status 0 → báo cập nhật tiện ích.
@@ -585,6 +581,16 @@ function timChuyenTiep(html) {
     const f = ten ? docForm(s, ten) : null
     const action = moForm[0].match(/\baction\s*=\s*["']([^"']+)/i)?.[1] || '/etaxnnt/Request'
     if (f) {
+      // Mã trang đổi ô trước khi gửi (đo 04–06/11/2026, sau corporateHomeProc/startTTHC):
+      //   mainForm.dse_operationName.value = "corpQueryTaxProc"; mainForm.submit();
+      // Biểu mẫu gốc ghi retailIndexProc, gửi nguyên là eTax báo "chưa được phân quyền". Chỉ áp cho ô có sẵn
+      // trong biểu mẫu, bỏ dòng đã chú thích (//).
+      for (const dong of s.split(/\r?\n/)) {
+        const ma = dong.replace(/^\s*\/\/.*$/, '')
+        for (const [, ten, gt] of ma.matchAll(/\.(\w+)\.value\s*=\s*["']([^"']*)["']/g)) {
+          if (ten in f.truong) f.truong[ten] = gt
+        }
+      }
       return {
         url: tuyetDoi(action), theoChuyenHuong: true, method: (moForm[0].match(/\bmethod\s*=\s*["']?(\w+)/i)?.[1] || 'POST').toUpperCase(),
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', Referer: 'https://thuedientu.gdt.gov.vn/etaxnnt/', Origin: 'https://thuedientu.gdt.gov.vn' },
