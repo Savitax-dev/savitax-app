@@ -13,6 +13,8 @@
 // và nhân viên gõ được mã cho công ty kế tiếp NGAY TRONG LÚC công ty này đang tải file, thay vì
 // ngồi chờ từng công ty một. Xem chrome-extension/phien.js.
 //
+// BẢN 1.2: yêu cầu có `theoChuyenHuong: true` thì đi theo chuyển hướng (bước SSO sang eTax của giấy nộp tiền)
+// và trả kèm `urlCuoi`. Trang đích vẫn phải thuộc 2 tên miền thuế. Mọi yêu cầu khác giữ redirect manual như cũ.
 // Cookie phiên cổng chỉ nằm trong bộ nhớ (chrome.storage.session), không ghi ra đĩa.
 
 import {
@@ -49,9 +51,16 @@ async function goiMotLuot(req, phien) {
       headers: req.headers || {},
       body: req.body ?? undefined,
       credentials: 'include',      // cookie phiên cổng do trình duyệt giữ
-      redirect: 'manual',
+      // Mặc định KHÔNG đi theo chuyển hướng. Bản 1.2: yêu cầu nào ghi rõ theoChuyenHuong thì mới đi theo
+      // (bước SSO sang eTax trả 302 liên tiếp, chế độ manual chỉ thấy status 0 và không biết địa chỉ đích).
+      redirect: req.theoChuyenHuong ? 'follow' : 'manual',
       signal: kiemSoat.signal,
     })
+
+    // Đi theo chuyển hướng mà dừng ở tên miền khác → không trả nội dung về
+    if (req.theoChuyenHuong && res.url && !duocPhep(res.url)) {
+      return { ok: false, loi: 'Cổng chuyển hướng ra ngoài tên miền thuế: ' + res.url.split('?')[0] }
+    }
 
     const kieu = res.headers.get('content-type') || ''
     // Ảnh captcha và file tải về phải giữ nguyên dạng nhị phân → mã hóa base64 để đi qua tin nhắn.
@@ -69,7 +78,7 @@ async function goiMotLuot(req, phien) {
       noiDung = await res.text()
     }
 
-    return { ok: true, status: res.status, kieu, laNhiPhan, noiDung }
+    return { ok: true, status: res.status, kieu, laNhiPhan, noiDung, urlCuoi: res.url || req.url }
   } catch (e) {
     return { ok: false, loi: e.name === 'AbortError' ? 'Cổng thuế không phản hồi kịp' : String(e.message || e) }
   } finally {
@@ -120,7 +129,7 @@ chrome.runtime.onMessageExternal.addListener((tin, nguoiGui, traLoi) => {
   }
 
   if (tin?.viec === 'ping') {
-    traLoi({ ok: true, phienBan: chrome.runtime.getManifest().version, coPhienAo: true })
+    traLoi({ ok: true, phienBan: chrome.runtime.getManifest().version, coPhienAo: true, theoChuyenHuong: true })
     return false
   }
   if (tin?.viec === 'xoaCookie') { donCookie().then(traLoi); return true }

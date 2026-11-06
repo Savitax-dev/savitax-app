@@ -358,6 +358,12 @@ export default function TrangTaiFile() {
             <b>Chưa có tiện ích Chrome</b> — cần tiện ích <b>Savitax — Cầu nối cổng thuế</b> để gọi cổng thuế.
           </div>
         )}
+        {tienIch?.co && taiGnt && !tienIch.theoChuyenHuong && (
+          <div className="mb-3 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
+            Tải <b>giấy nộp tiền</b> cần tiện ích bản <b>1.2</b> (máy này đang bản <b>{tienIch.phienBan}</b>). Chép đè thư mục
+            tiện ích mới rồi vào <b>chrome://extensions</b> bấm <b>Tải lại</b>, sau đó tải lại trang này.
+          </div>
+        )}
         {tienIch?.co && !coPhienAo && (
           <div className="mb-3 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
             Tiện ích đang là bản <b>{tienIch.phienBan}</b> — bản này chỉ chạy được <b>một công ty một

@@ -371,6 +371,15 @@ export async function POST(request) {
       }
 
       // ── Giấy nộp tiền: SSO sang eTax → trang tra cứu → tra → tải từng giấy (lib/gntCong.js) ──
+      // Ghé eTax trước để trình duyệt có cookie eTax như máy nhân viên đã từng vào cổng. Đo 04/11/2026:
+      // trình duyệt thật mở địa chỉ SSO ra NGAY trang tra cứu (200); tiện ích chưa có cookie eTax thì bị 302
+      // rồi rơi vào trang "chưa được phân quyền". Lượt này chỉ để lấy cookie, nội dung trả về bỏ qua.
+      case 'gnt_lam_nong': {
+        console.error('[GNT] ghé eTax — status', ph.status, '| trang cuối:', String(ph.urlCuoi || '').split('?')[0], '| tiêu đề:', noiDung.match(/<title>([^<]*)/i)?.[1]?.trim())
+        p.buoc = 'gnt_sso'
+        return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: ycGnt.sso(p.csrf), tienDo: 'Giấy nộp tiền: mở cổng eTax' })
+      }
+
       case 'gnt_sso': {
         const url = docDiaChiSso(noiDung)
         if (!url) {
@@ -382,11 +391,31 @@ export async function POST(request) {
       }
 
       case 'gnt_mo': {
+        // CHẨN ĐOÁN tạm (04/11/2026): ghi từng bước sau SSO để thấy trang trung gian. Che mã dài (code SSO, token).
+        console.error(`[GNT] bước ${p.gnt.buocNhay} — status ${ph.status} | trang cuối: ${String(ph.urlCuoi || '').replace(/code=[^&]+/, 'code=…')} | nội dung:`,
+          noiDung.replace(/\s+/g, ' ').replace(/[A-Za-z0-9+/=_.-]{60,}/g, '‹mã dài›').slice(0, 6000))
         if (laTrangTraCuuGnt(noiDung)) { p.gnt.form = docForm(noiDung); return traCuuGnt(p, 1) }
-        // Trang trung gian (tự gửi biểu mẫu / tự chuyển trang) — đi theo tối đa 3 bước
-        const tiep = p.gnt.buocNhay < 3 ? timChuyenTiep(noiDung) : null
+        // Cổng trả 302 nhiều lượt (đo 04/11/2026, GIẢI PHÁP VIỆT). Tiện ích 1.2 đi theo nhờ cờ theoChuyenHuong.
+        // Bản cũ bỏ qua cờ, gọi redirect:'manual' nên chỉ thấy status 0 → báo cập nhật tiện ích.
+        // (Mở thẳng /etaxnnt/Request hay /etaxnnt/ cũng chỉ ra 302, đã thử.)
+        if (ph.status === 0 || (ph.status >= 300 && ph.status < 400)) {
+          console.error('[GNT] SSO chuyển hướng mà tiện ích không đi theo (status', ph.status + ')')
+          p.loi.push('Giấy nộp tiền: cần cập nhật tiện ích Chrome "Savitax — Cầu nối cổng thuế" lên bản 1.2')
+          return ketThucGnt(p, null)
+        }
+        // Trang trung gian (tự gửi biểu mẫu / tự chuyển trang) — đi theo tối đa 5 bước
+        const tiep = p.gnt.buocNhay < 5 ? timChuyenTiep(noiDung) : null
         if (tiep) { p.gnt.buocNhay++; return traYeuCau(p, { viec: 'goi', buoc: p.buoc, yeuCau: tiep, tienDo: 'Giấy nộp tiền: vào trang tra cứu' }) }
-        console.error('[GNT] không nhận ra trang sau SSO — status', ph.status, '| đầu trang:', noiDung.replace(/\s+/g, ' ').slice(0, 2500))
+        // Đo 04/11/2026 (GIẢI PHÁP VIỆT): eTax vào được nhưng trả "Lỗi truy cập — Bạn chưa được phân quyền sử dụng chức năng này!"
+        if (/chưa được phân quyền/i.test(noiDung)) {
+          console.error('[GNT] eTax báo chưa được phân quyền chức năng tra cứu GNT — trang cuối:', String(ph.urlCuoi || '').replace(/code=[^&]+/, 'code=…'))
+          p.loi.push('Giấy nộp tiền: cổng eTax báo tài khoản "chưa được phân quyền sử dụng chức năng này" (tra cứu giấy nộp tiền)')
+          return ketThucGnt(p, null)
+        }
+        console.error('[GNT] không nhận ra trang sau SSO — status', ph.status, '| tiêu đề:', noiDung.match(/<title>([^<]*)/i)?.[1]?.trim(),
+          '| biểu mẫu:', [...noiDung.matchAll(/<form\b[^>]*>/gi)].map(m => m[0]).join(' '),
+          '| goProc/nextEvent:', [...new Set([...noiDung.matchAll(/(?:goProc|nextEvent)\([^)]*\)/g)].map(m => m[0]))].slice(0, 30).join(' '),
+          '| đầu trang:', noiDung.replace(/\s+/g, ' ').slice(0, 2500))
         p.loi.push('Giấy nộp tiền: không vào được trang tra cứu của cổng eTax')
         return ketThucGnt(p, null)
       }
@@ -490,8 +519,8 @@ function hoSoKeTiep(p, ghiFile) {
 const khoangGnt = p => ({ tu: p.cuaSo[p.cuaSo.length - 1].tuNgay, den: p.cuaSo[0].denNgay })
 
 function batDauGnt(p, ghiFile) {
-  p.buoc = 'gnt_sso'
-  return traYeuCau(p, { viec: 'goi', buoc: p.buoc, ghiFile, yeuCau: ycGnt.sso(p.csrf), tienDo: 'Giấy nộp tiền: mở cổng eTax' })
+  p.buoc = 'gnt_lam_nong'
+  return traYeuCau(p, { viec: 'goi', buoc: p.buoc, ghiFile, yeuCau: ycGnt.lamNong(), tienDo: 'Giấy nộp tiền: mở cổng eTax' })
 }
 
 function traCuuGnt(p, trang) {
@@ -540,6 +569,16 @@ async function kemGhi(res, ghiFile) {
 function timChuyenTiep(html) {
   const s = String(html || '')
   const tuyetDoi = u => new URL(u.replace(/&amp;/g, '&'), 'https://thuedientu.gdt.gov.vn/etaxnnt/').toString()
+  // Trang chủ eTax sau đăng nhập SSO (đo 04/11/2026): mã trang kiểm plugin ký số. Có plugin thì gọi
+  // goProc('corporateHomeProc','startTTHC') để vào ĐÚNG chức năng DVC đã xin (module). Không có thì sang
+  // corpPluginProc. Tra cứu GNT không cần ký số, nên đi thẳng nhánh "đã có plugin". Địa chỉ lấy từ chính
+  // dòng mẫu cổng để sẵn trong trang (giữ đúng dse_sessionId / dse_pageId của phiên).
+  if (/goProc\(\s*'corporateHomeProc'\s*,\s*'startTTHC'\s*\)/.test(s)) {
+    const mau = s.match(/['"](https:\/\/thuedientu\.gdt\.gov\.vn)?(\/etaxnnt\/Request\?[^'"]*dse_operationName=corporateHomeProc[^'"]*dse_nextEventName=startTTHC[^'"]*)['"]/)?.[2]
+    const phien = s.match(/dse_sessionId=([\w-]+)/)?.[1]
+    const den = mau || (phien && `/etaxnnt/Request?&dse_sessionId=${phien}&dse_applicationId=-1&dse_pageId=4&dse_operationName=corporateHomeProc&dse_errorPage=error_page.jsp&dse_processorState=initial&dse_nextEventName=startTTHC`)
+    if (den) return { url: tuyetDoi(den), method: 'GET', theoChuyenHuong: true, headers: { Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' } }
+  }
   const moForm = s.match(/<form\b[^>]*>/i)
   if (moForm && /\.submit\(\)/.test(s)) {
     const ten = moForm[0].match(/\b(?:id|name)\s*=\s*["']?([\w-]+)/i)?.[1]
@@ -547,7 +586,7 @@ function timChuyenTiep(html) {
     const action = moForm[0].match(/\baction\s*=\s*["']([^"']+)/i)?.[1] || '/etaxnnt/Request'
     if (f) {
       return {
-        url: tuyetDoi(action), method: (moForm[0].match(/\bmethod\s*=\s*["']?(\w+)/i)?.[1] || 'POST').toUpperCase(),
+        url: tuyetDoi(action), theoChuyenHuong: true, method: (moForm[0].match(/\bmethod\s*=\s*["']?(\w+)/i)?.[1] || 'POST').toUpperCase(),
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', Referer: 'https://thuedientu.gdt.gov.vn/etaxnnt/', Origin: 'https://thuedientu.gdt.gov.vn' },
         body: new URLSearchParams([...Object.entries(f.truong).filter(([k]) => k !== '__multi'), ...f.truong.__multi]).toString(),
       }
@@ -555,7 +594,7 @@ function timChuyenTiep(html) {
   }
   const den = s.match(/location\.(?:href\s*=|replace\(|assign\()\s*["']([^"']+)["']/i)?.[1]
     || s.match(/http-equiv\s*=\s*["']refresh["'][^>]*url=([^"'>]+)/i)?.[1]
-  return den ? { url: tuyetDoi(den), method: 'GET', headers: { Referer: 'https://thuedientu.gdt.gov.vn/etaxnnt/' } } : null
+  return den ? { url: tuyetDoi(den), method: 'GET', theoChuyenHuong: true, headers: { Referer: 'https://thuedientu.gdt.gov.vn/etaxnnt/' } } : null
 }
 
 // Còn thông báo thì tải tiếp, hết thì sang hồ sơ sau.
