@@ -9,6 +9,8 @@ import CapBacNgayLe from '@/components/luong/CapBacNgayLe'
 import ThuongDvk from '@/components/luong/ThuongDvk'
 import BangLuong from '@/components/luong/BangLuong'
 import PhieuLuongCuaToi from '@/components/luong/PhieuLuongCuaToi'
+import BangLuongCtv from '@/components/luong/BangLuongCtv'
+import PhieuCtvCuaToi from '@/components/luong/PhieuCtvCuaToi'
 import { layQuyenLuong } from '@/lib/khoiDong'
 import ThanhTabLuong, { dsTabLuong } from '@/components/luong/ThanhTabLuong'
 
@@ -33,6 +35,7 @@ export default function LuongPage() {
       // Mở đúng tab khi quay về từ trang Hướng dẫn dùng (/luong?tab=…); tab không được phép thì giữ mặc định
       const t = new URLSearchParams(window.location.search).get('tab')
       if (t && dsTabLuong(q).some(([k]) => k === t)) setTab(t)
+      else if (q.laCtv) setTab('phieu')   // người phòng remote / CTV không chấm công
       setQuyen(q)
     })()
   }, [router])
@@ -58,8 +61,10 @@ export default function LuongPage() {
         {tab === 'cua_toi' && quyen.cham_cong && <ChamCongCuaToi thangDuocKhai={quyen.thangDuocKhai} />}
         {tab === 'phong' && <ChamCongPhong quyen={quyen} />}
         {tab === 'dvk' && quyen.cham_cong && <ThuongDvk quyen={quyen} />}
-        {tab === 'phieu' && quyen.cham_cong && <PhieuLuongCuaToi />}
+        {tab === 'phieu' && quyen.laCtv && <PhieuCtvCuaToi />}
+        {tab === 'phieu' && !quyen.laCtv && quyen.cham_cong && <PhieuLuongCuaToi />}
         {tab === 'bang_luong' && quyen.view && <BangLuong quyen={quyen} />}
+        {tab === 'luong_ctv' && quyen.view && <BangLuongCtv quyen={quyen} />}
         {tab === 'thiet_lap' && quyen.manage && <CapBacNgayLe />}
         {!tabs.length && <p className="text-sm text-gray-500">Tài khoản chưa được cấp quyền chấm công.</p>}
       </div>

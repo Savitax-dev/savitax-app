@@ -383,7 +383,15 @@ bộ quy tắc). Anh yêu cầu tách cho dễ sửa: đổi quy tắc bước n
   không thêm dòng lạ; mã ngân hàng nhập ở ô Lương trang nhân viên (sql/36). Chốt = chụp
   nguyên bảng lương vào `luong_bang_chot`; mở chốt bắt buộc lý do. Excel có công thức: KPI tác
   phong tự tính theo phòng; phụ cấp / điều chỉnh ngoại lệ prefill từ app, sửa trên file thì file tự tính.
-- **Phòng remote không tính lương.** Nhập file máy chấm công (`mayChamCong.js`, sql/38) → bảng công nháp từ máy, NV chỉ
+- **Lương CTV — phòng remote** (Danxia, Dakshin, CTV Savitax; anh chốt 06/11/2026, sql/51, `lib/luong/luongCtv.js`, tab
+  "Lương CTV", API `api/admin/luong/ctv`): TÁCH RIÊNG bảng lương nhân viên (không đụng `luong_bang_chot` / phiếu NV). Không
+  chấm công. Hoa hồng = tỷ lệ phòng × doanh thu phí kế toán PHẢI THU theo kỳ, chưa VAT (cùng `doanhThuTheoNhanVien`) —
+  Danxia DN 30% / HKD 20% (`clients.is_hkd`), Dakshin 30%, CTV 20% (tỷ lệ nhận theo TÊN phòng, `TY_LE_PHONG`); SVT giữ
+  lại 20% hoa hồng (sổ `luong_ctv_giu_lai`: 'giu' ghi khi chốt, xoá khi mở chốt; 'tra' quản trị bấm trả tay ở tháng
+  chưa chốt, cộng vào thu nhập) → thuế TNCN 10% thu nhập → thực nhận. Chốt / phiếu xác nhận / Excel / file chuyển khoản
+  riêng (`luong_ctv_chot`, `luong_ctv_phieu`). Người phòng remote chỉ thấy tab Phiếu lương (CTV) — `quyenLuong.laCtv`.
+  Bộ kiểm: `node --env-file=.env.local scripts/test-luong-ctv.mjs --that 2026 10`.
+- **Phòng remote không tính lương NHÂN VIÊN (xem Lương CTV ở trên).** Nhập file máy chấm công (`mayChamCong.js`, sql/38) → bảng công nháp từ máy, NV chỉ
   Xác nhận / Báo sai; mã NV ở `staff.ma_nhan_vien` (mã trên file sẽ đổi), `staff.cham_cong_may = false` cho NV online /
   ban giám đốc. File hồ sơ lương (`fileHoSoLuong.js`) nhận người theo email. Quy đổi cột: xem lib/luong/README.md.
   Báo cáo thâm niên (`thamNien.js`, tab Báo cáo KPI, chỉ view_payroll): mốc lên cấp đọc từ MÔ TẢ cấp bậc.

@@ -111,3 +111,9 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
 
 ## Bộ kiểm
 `node scripts/test-luong-ngay-cong.mjs` · `node scripts/test-luong-may-cham-cong.mjs [file.xlsx]` · `node scripts/test-luong-tham-nien.mjs` · `node scripts/test-luong-hoa-hong.mjs` · `node --env-file=.env.local scripts/test-luong-thuong.mjs --that`
+
+## Lương CTV — phòng remote (06/11/2026)
+
+Tab riêng "Lương CTV", không đụng bảng lương nhân viên. Mọi luật ở `luongCtv.js` (hàm thuần `tinhDongCtv` + `tinhBangLuongCtv`),
+API `app/api/admin/luong/ctv/route.js`, SQL `sql/51_luong_ctv.sql`. Doanh thu = phí kế toán phải thu theo kỳ, chưa VAT (dùng lại
+`doanhThuTheoNhanVien`) × tỷ lệ phòng → giữ lại 20% → + trả giữ lại → thuế 10% → thực nhận. Bộ kiểm `scripts/test-luong-ctv.mjs`.
