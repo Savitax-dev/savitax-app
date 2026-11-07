@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import {
-  SECTORS, AREA_SURCHARGE, EXTRA_SERVICES, HCNS_PER_HEAD, CONTRACT_STATES, PRICE_STATES,
+  SECTORS, EXTRA_SERVICES, MISA_PACKAGES, HCNS_PER_HEAD, CONTRACT_STATES, PRICE_STATES,
   emptySurvey, syncDocs, priceQuote, canExportPrice, awaitingApproval, APPROVE_OVERRIDE_QUOTES,
 } from '@/lib/salesPricing'
 import { readSurveyDocx, applySurveyRows } from '@/lib/salesSurvey'
@@ -590,6 +590,7 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
               <Field label="Tổng chứng từ/tháng">
                 <input value={fmt(s.docs)} readOnly className={inputCls + ' bg-gray-50 tabular-nums font-semibold'} />
               </Field>
+              {N('invRetail', 'HĐ bán lẻ từ máy tính tiền', 'không tính phí theo từng hóa đơn')}
               {N('revenueYear', 'Doanh thu (đồng/năm)')}
               {T('taxMix', 'Cơ cấu thuế suất', { ph: 'VD: 100% thuế suất 8%' })}
               <p className="sm:col-span-3 text-xs font-semibold text-gray-500 uppercase tracking-wide -mb-1">Nhân sự</p>
@@ -600,22 +601,19 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
               {T('software', 'Phần mềm kế toán')}
               {T('einvoice', 'Hóa đơn điện tử')}
               {T('settled', 'Tình trạng quyết toán thuế', { ph: 'VD: chưa quyết toán từ 2021' })}
-              <Field label="Địa bàn (phụ thu đi lại)" className="sm:col-span-3">
-                <select value={s.area} disabled={locked} onChange={e => setS('area', e.target.value)} className={inputCls}>
-                  {AREA_SURCHARGE.map(a => <option key={a.k} value={a.k}>{a.label}{a.fee ? ' — ' + fmtMoney(a.fee) + '/tháng' : ''}</option>)}
-                </select>
-              </Field>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
               {Tog('customs', 'Có tờ khai hải quan')}
               {Tog('monthlyFiling', 'Kê khai thuế theo tháng')}
               {Tog('wantHcns', 'Dùng dịch vụ hành chính nhân sự')}
               {Tog('wantReview', 'Cần hoàn thiện sổ sách kỳ trước')}
+              {Tog('wantBctc', 'Lập BCTC và quyết toán thuế năm')}
             </div>
-            {(s.customs || s.wantHcns) && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+            {(s.customs || s.wantHcns || s.wantReview) && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
                 {s.customs && T('customsCount', 'Số tờ khai hải quan', { ph: 'VD: 02 – 03 tờ khai/tháng' })}
                 {s.wantHcns && N('hcnsHeads', 'Số lao động tính phí HCNS')}
+                {s.wantReview && N('reviewMonths', 'Số tháng cần hoàn thiện sổ sách', 'để trống thì báo theo tháng')}
               </div>
             )}
           </Card>
@@ -628,11 +626,33 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
                   <label key={x.k} className={'flex items-start gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer ' + (on ? 'border-[#2A6CA8] bg-[#E2EEF8]' : 'border-[#D5E2ED] bg-white')}>
                     <input type="checkbox" checked={on} disabled={locked} className="mt-0.5 accent-[#2A6CA8]"
                       onChange={e => upd(n => { n.survey.extras = e.target.checked ? [...n.survey.extras.filter(k => k !== x.k), x.k] : n.survey.extras.filter(k => k !== x.k) })} />
-                    <span>{x.label} <span className="text-gray-400 whitespace-nowrap">— {fmtMoney(x.fee)}/{x.unit}</span></span>
+                    <span>{x.label} <span className="text-gray-400 whitespace-nowrap">— {x.negotiable ? 'báo phí riêng' : fmtMoney(x.fee) + '/' + x.unit}</span></span>
                   </label>
                 )
               })}
             </div>
+            {/* MISA ASP: khách trả thẳng cho MISA, chỉ chọn MỘT thời hạn nên dùng nút chọn một lựa chọn. */}
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-4 mb-1.5">Phần mềm kế toán MISA ASP</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {MISA_PACKAGES.map(m => {
+                const on = s.extras.includes(m.k)
+                return (
+                  <label key={m.k} className={'flex items-start gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer ' + (on ? 'border-[#2A6CA8] bg-[#E2EEF8]' : 'border-[#D5E2ED] bg-white')}>
+                    <input type="radio" name="misa" checked={on} disabled={locked} className="mt-0.5 accent-[#2A6CA8]"
+                      onClick={() => upd(n => {
+                        const others = n.survey.extras.filter(k => !MISA_PACKAGES.some(x => x.k === k))
+                        n.survey.extras = on ? others : [...others, m.k]
+                      })} onChange={() => {}} />
+                    <span>
+                      <b className="block">{m.years} năm {m.recommended && <span className="text-[11px] font-semibold text-[#15803D]">· khuyên dùng</span>}</b>
+                      <span className="num">{fmtMoney(m.fee)}</span>
+                      <span className="block text-[11px] text-gray-500">tặng {fmt(m.bonus)} số hóa đơn · đã giảm {fmtMoney(m.list - m.fee)}</span>
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+            <p className="text-xs text-gray-500 mt-1.5">Khách thanh toán trực tiếp cho MISA — khoản này in trên báo giá nhưng không tính vào doanh số Savitax. Bấm lại gói đang chọn để bỏ chọn.</p>
           </Card>
 
           <Card title="Bước 5 · Lưu ý gửi khách hàng">

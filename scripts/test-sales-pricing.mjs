@@ -8,7 +8,7 @@
 // Chỉ đọc file, KHÔNG đụng database. state.json nằm trong app.baogia/ (đã gitignore vì chứa dữ liệu
 // khách thật) — máy không có file đó thì lớp 1 tự bỏ qua.
 import { readFileSync, existsSync } from 'node:fs'
-import { computeFees, normalizeSurvey, priceQuote, money, HCNS_PER_HEAD, nextPriceStatus, pricingChanged, canExportPrice, awaitingApproval, APPROVE_ALL_QUOTES, APPROVE_OVERRIDE_QUOTES } from '../lib/salesPricing.js'
+import { computeFees, normalizeSurvey, priceQuote, money, HCNS_PER_HEAD, MISA_PACKAGES, nextPriceStatus, pricingChanged, canExportPrice, awaitingApproval, APPROVE_ALL_QUOTES, APPROVE_OVERRIDE_QUOTES } from '../lib/salesPricing.js'
 import { printedMonthlyLines } from '../lib/salesDocx.js'
 
 let pass = 0, fail = 0
@@ -29,7 +29,8 @@ if (existsSync(statePath)) {
     const heads = Number(q.survey.hcnsHeads || 0)
     const fix = l => /hành chính nhân sự/.test(l.label)
       ? { ...l, fee: heads * HCNS_PER_HEAD, ...(l.note ? { note: l.note.replace(money(OLD_HCNS), money(HCNS_PER_HEAD)) } : {}) } : l
-    const lines = q.fees.lines.map(fix)
+    // Biểu phí 2026-11-07: BỎ phụ thu đi lại, BCTC chỉ hiện khi khách chọn (bản chạy thử luôn in).
+    const lines = q.fees.lines.filter(l => l.key !== 'area' && l.key !== 'bctc').map(fix)
     const diff = lines.reduce((a, l) => a + (l.yearly ? 0 : l.fee), 0) - q.fees.lines.reduce((a, l) => a + (l.yearly ? 0 : l.fee), 0)
     return { lines, optional: q.fees.optional.map(fix), standard: q.standardMonthly + diff,
       final: q.override?.on ? q.monthlyFinal : q.monthlyFinal + diff }
@@ -75,7 +76,8 @@ t('Vượt bậc, doanh thu 30 tỷ -> 20.000.000', base({ invIn: 100, revenueYe
   t('perInv (5.000.000+30×50.000=6.500.000) THẤP hơn 7.000.000 -> KHÔNG in câu so sánh', f.basis.length, 1)
 }
 t('Kê khai tháng ×1,2: 2.500.000 -> 3.000.000', base({ invIn: 15, monthlyFiling: true }), 3000000)
-t('Phụ thu vùng b cộng vào tổng tháng', fee({ invIn: 15, area: 'b' }), 3000000)
+t('ĐÃ BỎ phụ thu đi lại: chọn vùng b vẫn 2.500.000', fee({ invIn: 15, area: 'b' }), 2500000)
+t('Tổng tháng không còn dòng phụ thu', computeFees(normalizeSurvey({ invIn: 15, area: 'b' })).lines.some(l => l.key === 'area'), false)
 t('Phí HCNS = 300.000 đ/người/tháng', HCNS_PER_HEAD, 300000)
 t('HCNS có chọn: 5 người cộng 1.500.000 vào tổng', fee({ invIn: 15, wantHcns: true, hcnsHeads: 5 }), 4000000)
 {
@@ -83,14 +85,38 @@ t('HCNS có chọn: 5 người cộng 1.500.000 vào tổng', fee({ invIn: 15, w
   t('HCNS không chọn: không vào tổng, xuống mục tùy chọn', [f.monthly, f.optional.length], [2500000, 1])
 }
 {
-  const f = computeFees(normalizeSurvey({ invIn: 15, monthlyFiling: true }))
+  t('BCTC KHÔNG tự hiện khi chưa tích', computeFees(normalizeSurvey({ invIn: 15, monthlyFiling: true })).lines.some(l => l.key === 'bctc'), false)
+  const f = computeFees(normalizeSurvey({ invIn: 15, monthlyFiling: true, wantBctc: true }))
   const bctc = f.lines.find(l => l.key === 'bctc')
-  t('BCTC năm = 1 tháng phí gốc (đã ×1,2) và KHÔNG vào tổng tháng', [bctc.fee, bctc.yearly, f.monthly], [3000000, true, 3000000])
+  t('Tích BCTC: = 1 tháng phí gốc (đã ×1,2), KHÔNG vào tổng tháng', [bctc.fee, bctc.yearly, f.monthly], [3000000, true, 3000000])
 }
 {
   const f = computeFees(normalizeSurvey({ invIn: 15, wantReview: true }))
-  t('Hoàn thiện sổ sách = 80% phí gốc, ở mục tùy chọn', f.optional[0].fee, 2000000)
+  t('Hoàn thiện sổ sách chưa nhập số tháng = 80% phí gốc/tháng', [f.optional[0].fee, f.optional[0].unit], [2000000, 'tháng'])
+  const f6 = computeFees(normalizeSurvey({ invIn: 15, wantReview: true, reviewMonths: 6 }))
+  t('Hoàn thiện sổ sách 6 tháng = 80% × 6', [f6.optional[0].fee, f6.optional[0].unit], [12000000, 'lần'])
 }
+{
+  const f = computeFees(normalizeSurvey({ invIn: 15, invRetail: 3000 }))
+  t('Hóa đơn bán lẻ máy tính tiền KHÔNG cộng vào chứng từ tính phí', [f.lines[0].fee, normalizeSurvey({ invIn: 15, invRetail: 3000 }).docs], [2500000, 15])
+  t('Có ghi căn cứ hóa đơn bán lẻ', f.basis.some(x => x.includes('bán lẻ từ máy tính tiền')), true)
+}
+{
+  const f = computeFees(normalizeSurvey({ invIn: 15, extras: ['hcns_bandau', 'bhxh_landau_10', 'bhxh_landau_tren10', 'misa_3y'] }))
+  const by = l => f.optional.find(o => o.label.includes(l))
+  t('Hồ sơ HCNS ban đầu 30 triệu/lần', by('Xây dựng bộ hồ sơ').fee, 30000000)
+  t('BHXH lần đầu 6–10 lao động = 5 triệu', by('6 – 10 lao động').fee, 5000000)
+  t('BHXH lần đầu trên 10 lao động = báo phí riêng', by('trên 10 lao động').negotiable, true)
+  const misa = by('MISA ASP')
+  t('MISA 3 năm 8.100.000, ghi rõ trả thẳng MISA', [misa.fee, misa.toMisa, misa.note.includes('900 số hóa đơn')], [8100000, true, true])
+  t('Gói MISA KHÔNG cộng vào tổng phí tháng', f.monthly, 2500000)
+}
+{
+  const f = computeFees(normalizeSurvey({ invIn: 15, extras: ['misa_2y', 'misa_5y'] }))
+  t('Chọn 2 gói MISA -> cảnh báo', f.warnings.some(w => w.includes('nhiều gói MISA')), true)
+}
+t('Đã bỏ gói MISA 1 năm', MISA_PACKAGES.map(m => m.years), [2, 3, 5])
+t('Gói khuyên dùng là 3 năm', MISA_PACKAGES.find(m => m.recommended).years, 3)
 t('docs tự cộng, không nhận số nhập tay', normalizeSurvey({ invIn: 5, invOut: 7, bankStmt: 3, docs: 999 }).docs, 15)
 t('Báo giá cũ chỉ có docs -> dồn vào HĐ mua vào', normalizeSurvey({ docs: 40 }).invIn, 40)
 t('Mã dịch vụ lẻ lạ bị loại', normalizeSurvey({ extras: ['qt_tncn', 'hack'] }).extras, ['qt_tncn'])
@@ -127,8 +153,8 @@ console.log('\n3. Dòng phí in trong file Word khi đề xuất mức khác\n')
   t('Chênh làm dòng kế toán âm → giữ nguyên theo biểu phí, không in số âm', printedMonthlyLines(p.fees, p.monthlyFinal).map(l => l.fee), [2500000, 1500000])
 }
 {
-  const p = priceQuote({ invIn: 15, area: 'a' }, null)
-  t('Không đề xuất: in y như biểu phí', printedMonthlyLines(p.fees, p.monthlyFinal).map(l => l.fee), [2500000, 200000])
+  const p = priceQuote({ invIn: 15, wantHcns: true, hcnsHeads: 5 }, null)
+  t('Không đề xuất: in y như biểu phí', printedMonthlyLines(p.fees, p.monthlyFinal).map(l => l.fee), [2500000, 1500000])
 }
 
 console.log('\n4. Duyệt báo giá (từ 2026-09-21 mọi báo giá phải quản trị duyệt)\n')
