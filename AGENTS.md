@@ -339,7 +339,7 @@ SQL `sql/40_phantich_xem_phi.sql` (đã chạy). **KHÔNG đưa vào bản clone
   Sheet "BẢNG KÊ HÓA ĐƠN GIẢM THUẾ GTGT THEO NGHỊ QUYẾT…" trong file HTKK là PHỤ LỤC (liệt kê lại hóa đơn bán ra) → bỏ. Sheet
   "TỜ KHAI THUẾ GTGT" trong file phần mềm → `mau: 'tk_pm'` (không có tiền tố `pm_`, không lẫn vào đếm hóa đơn), so từng chỉ
   tiêu với XML đã nộp. Cả năm chỉ cộng kỳ có ĐỦ bảng kê cổng + phần mềm (`gopBangKeKy` kyDu/kyBo). Đổi cách đọc bảng kê thì
-  đổi khoá đệm (`'bangke5|'` ở `docHoSo.js`) — không thì máy nhân viên dùng kết quả đọc cũ.
+  đổi khoá đệm (`'bangke6|'` ở `docHoSo.js`) — không thì máy nhân viên dùng kết quả đọc cũ.
 - **05/KK-TNCN mã chỉ tiêu theo MẪU**: TT80/2021 (HTKK 2.9.x, maTKhai 864) [16] số lao động, [21] thu nhập chịu thuế, [29]
   thuế đã khấu trừ ([32] chỉ là thuế trên phí bảo hiểm); TT156/2013 lùi 5 ([26], [32], có [33][34]).
 - **Bảng lương / C12** (HOANGTIENSG 28/10): file `.xls` có liên kết ngoài tên trống làm SheetJS ném "Unexpected SupBook type: 0"
