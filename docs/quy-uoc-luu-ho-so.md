@@ -89,24 +89,24 @@ App chỉ ghi nhận có thư mục, không soát.
    ├─ Mua vào\
    │  ├─ XML\                 ← file XML hóa đơn mua vào tải từ cổng (BẮT BUỘC)
    │  ├─ HTML\                ← bản xem hóa đơn mua vào
-   │  └─ <MST> - Mua vào - Tổng quan - <từ ngày>_<đến ngày>.xlsx
+   │  └─ <MST> - Mua vào - Chi tiết - <từ ngày>_<đến ngày>.xlsx
    └─ Bán ra\
-      └─ <MST> - Bán ra - Tổng quan - <từ ngày>_<đến ngày>.xlsx
+      └─ <MST> - Bán ra - Chi tiết - <từ ngày>_<đến ngày>.xlsx
 ```
 
 | Thư mục | Lưu gì | Tên file |
 | --- | --- | --- |
 | `Mua vào\XML` | File XML từng hóa đơn mua vào, tải từ cổng hóa đơn điện tử | Giữ nguyên tên cổng đặt |
 | `Mua vào\HTML` | Bản xem từng hóa đơn mua vào | Giữ nguyên tên cổng đặt |
-| `Mua vào` | Bảng kê Excel **"Tổng quan" mua vào** tải từ cổng, phủ đủ kỳ | Giữ nguyên tên cổng đặt |
-| `Bán ra` | Bảng kê Excel **"Tổng quan" bán ra** tải từ cổng, phủ đủ kỳ | Giữ nguyên tên cổng đặt |
+| `Mua vào` | Bảng kê Excel **"Chi tiết" mua vào** tải từ cổng, phủ đủ kỳ | Giữ nguyên tên cổng đặt |
+| `Bán ra` | Bảng kê Excel **"Chi tiết" bán ra** tải từ cổng, phủ đủ kỳ | Giữ nguyên tên cổng đặt |
 
 - **Không đổi tên file tải từ cổng** — cả hóa đơn lẻ lẫn bảng kê. Tên cổng đặt sẵn có MST và khoảng ngày, app dựa
   vào đó để nhận mua vào / bán ra và kỳ.
 - **Hóa đơn mua vào bắt buộc có file XML** (app đếm, đối chiếu từng hóa đơn). Bán ra **không lưu file lẻ**, chỉ cần
-  bảng kê "Tổng quan" — hóa đơn bán ra đã có trong phần mềm xuất hóa đơn.
+  bảng kê "Chi tiết" — hóa đơn bán ra đã có trong phần mềm xuất hóa đơn.
 - **Không lưu PDF** hóa đơn (trùng với HTML, nặng Drive).
-- Bảng kê "Tổng quan" tải **đúng khoảng ngày của kỳ** (quý: 01/07–30/09; tháng: cả tháng). Công ty khai tháng tải cả
+- Bảng kê "Chi tiết" tải **đúng khoảng ngày của kỳ** (quý: 01/07–30/09; tháng: cả tháng). Công ty khai tháng tải cả
   quý một lần cũng được — app tự chia hóa đơn vào từng tháng theo ngày lập.
 
 ### 3. HỢP ĐỒNG KHÁC
@@ -178,7 +178,7 @@ sheet MV và BR):
 | Bảng kê mua vào / bán ra kèm tờ khai 01/GTGT (sheet MV, BR) | `BK_MVBR_Q3.2026_<MÃ KH>.xlsx` |
 | Nộp bổ sung: bảng kê kèm tờ khai bổ sung — để trong thư mục kỳ `_BSLn` của lần đó | `BK_MVBR_Q3.2026_<MÃ KH>_BSL1.xlsx` |
 
-- Bảng kê "Tổng quan" tải từ **cổng hóa đơn điện tử** lưu ở **mục 2** (`Mua vào` / `Bán ra`), không lưu ở đây.
+- Bảng kê "Chi tiết" tải từ **cổng hóa đơn điện tử** lưu ở **mục 2** (`Mua vào` / `Bán ra`), không lưu ở đây.
 - Muốn **soát trước khi nộp** (không bắt buộc): xuất tờ khai nháp từ HTKK (`TKNHAP_GTGT_Q3.2026_<MÃ KH>.xml`) và bảng kê
   từ phần mềm kế toán (`BKPM_MV_…`, `BKPM_BR_…`) bỏ tạm vào `BẢNG KÊ`, bấm Tải lại thư mục trên app. Nộp xong thì
   **xoá các file nháp đó**, chỉ để lại bảng kê kèm tờ khai đã nộp.
