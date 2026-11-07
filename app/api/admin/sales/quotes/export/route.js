@@ -25,8 +25,16 @@ export async function POST(request) {
     }, { status: 400 })
   }
 
+  // Bảng khoản phí (nếu đã tách dòng) — file Word in đúng từng khoản kèm cách thu.
+  let items = []
+  try {
+    const { data } = await admin.from('sales_quote_items').select('sort_order, service, billing, amount, months, start_month, to_savitax, note')
+      .eq('quote_id', q.id).order('sort_order')
+    items = data || []
+  } catch (_) { items = [] }
   const bytes = buildQuoteDocx({
-    quoteNo: q.quote_no, quoteDate: q.quote_date, survey: q.survey, fees: q.fees, monthlyFinal: Number(q.monthly_final) || 0,
+    quoteNo: q.quote_no, quoteDate: q.quote_date, survey: q.survey, fees: q.fees,
+    monthlyFinal: Number(q.monthly_final) || 0, items,
   })
   const drive = await fileQuoteToDrive(admin, q, 'quote', bytes)
   return Response.json({

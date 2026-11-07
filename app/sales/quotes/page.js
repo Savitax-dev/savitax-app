@@ -9,9 +9,10 @@ import {
   emptySurvey, syncDocs, priceQuote, canExportPrice, awaitingApproval, APPROVE_OVERRIDE_QUOTES,
 } from '@/lib/salesPricing'
 import { readSurveyDocx, applySurveyRows } from '@/lib/salesSurvey'
+import { BILLINGS, billingOf, normalizeItems, totalsFromItems, itemsFromFees, lineTotal, itemsNeedingReason, monthVN } from '@/lib/salesItems'
 import {
   PeriodFilter, defaultPeriod, inPeriod, periodLabel, StatCard, Field, inputCls, btnPrimary, btnGhost,
-  NumInput, useToast, api, fmt, fmtMoney, dmy, dmyTime, StageChip, GOLD, Modal, PageHead, STAGES, stageOf,
+  NumInput, MonthInput, useToast, api, fmt, fmtMoney, dmy, dmyTime, StageChip, GOLD, Modal, PageHead, STAGES, stageOf,
 } from '../_ui'
 
 const DRAFT_KEY = 'svt_sales_quote_draft_v1'
@@ -145,8 +146,15 @@ export default function SalesQuotesPage() {
   const pending = inKy.filter(q => awaitingApproval(q.price_status)).length
   const sent = inKy.filter(q => q.contract_status === 'sent' || q.contract_status === 'signed').length
   const signed = inKy.filter(q => q.contract_status === 'signed').length
-  const sum = inKy.reduce((a, q) => a + (Number(q.monthly_final) || 0), 0)
-  const sumSigned = inKy.filter(q => q.contract_status === 'signed').reduce((a, q) => a + (Number(q.monthly_final) || 0), 0)
+  // 3 con số: phí hằng tháng · thu một lần · tổng 12 tháng đầu. Báo giá chưa tách dòng (fee_* null)
+  // thì vẫn lấy monthly_final như trước để số cũ không nhảy.
+  const feeM = q => Number(q.fee_monthly ?? q.monthly_final) || 0
+  const feeO = q => Number(q.fee_once) || 0
+  const feeY1 = q => Number(q.fee_year1 ?? (Number(q.monthly_final) || 0) * 12) || 0
+  const sum = inKy.reduce((a, q) => a + feeM(q), 0)
+  const sumOnce = inKy.reduce((a, q) => a + feeO(q), 0)
+  const sumYear1 = inKy.reduce((a, q) => a + feeY1(q), 0)
+  const sumSigned = inKy.filter(q => q.contract_status === 'signed').reduce((a, q) => a + feeY1(q), 0)
   // Mọi cột canh giữa cả tiêu đề lẫn nội dung, riêng cột Khách hàng canh trái — tiêu đề và số liệu
   // luôn thẳng một hàng (trước đây trộn trái/phải nên nhìn lộn xộn).
   const th = ''
@@ -195,8 +203,8 @@ export default function SalesQuotesPage() {
           <StatCard label="Tổng báo giá" value={inKy.length} foot={pl + (pending ? ' · ' + pending + ' chờ duyệt' : '')} tone="red" />
           <StatCard label="Hợp đồng đã gửi" value={sent} foot={inKy.length ? Math.round(sent * 100 / inKy.length) + '% số báo giá' : '—'} tone="amb" />
           <StatCard label="Hợp đồng đã chốt" value={signed} foot={sent ? Math.round(signed * 100 / sent) + '% số đã gửi' : '—'} tone="grn" />
-          <StatCard label="Tổng phí báo giá" value={fmt(sum)} unit="đ/tháng" foot={pl} tone="blue" />
-          <StatCard label="Phí đã chốt" value={fmt(sumSigned)} unit="đ/tháng" foot={sum ? Math.round(sumSigned * 100 / sum) + '% tổng phí báo giá' : 'chưa có hợp đồng chốt'} tone="gold" />
+          <StatCard label="Phí hằng tháng" value={fmt(sum)} unit="đ/tháng" foot={sumOnce ? 'thu một lần ' + fmt(sumOnce) + ' đ' : pl} tone="blue" />
+          <StatCard label="Tổng 12 tháng đầu" value={fmt(sumYear1)} unit="đ" foot={sumSigned ? 'đã chốt ' + fmt(sumSigned) + ' đ' : 'chưa có hợp đồng chốt'} tone="gold" />
         </div>
 
         {/* Đếm theo tình trạng 7 bước — bấm để lọc */}
@@ -226,7 +234,9 @@ export default function SalesQuotesPage() {
                     <th className={th}>Số</th>
                     <th className="l">Khách hàng</th>
                     <th className={th}>Ngày</th>
-                    <th className={th}>Phí/tháng</th>
+                    <th className={th}>Phí hằng tháng</th>
+                    <th className={th}>Thu một lần</th>
+                    <th className={th}>12 tháng đầu</th>
                     <th className={th}>Lưu ý</th>
                     <th className={th}>Tình trạng</th>
                     <th className={th}>Người lập</th>
@@ -249,8 +259,12 @@ export default function SalesQuotesPage() {
                         </td>
                         <td className={td + ' whitespace-nowrap text-gray-700'}>{dmy(q.quote_date)}</td>
                         <td className="num whitespace-nowrap">
-                          {fmtMoney(q.monthly_final)}
+                          {fmtMoney(feeM(q))}
                           {q.override_on && <p className="text-xs text-gray-400 line-through">{fmtMoney(q.standard_monthly)}</p>}
+                        </td>
+                        <td className="num whitespace-nowrap">{feeO(q) ? fmtMoney(feeO(q)) : <span className="text-gray-300">—</span>}</td>
+                        <td className="num whitespace-nowrap font-semibold">{fmtMoney(feeY1(q))}
+                          {q.fee_monthly == null && <p className="text-[11px] font-normal text-gray-400">chưa tách dòng</p>}
                         </td>
                         <td className={td}><PriceChip status={q.price_status} /></td>
                         <td className={td}>
@@ -348,10 +362,13 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
         if (!editor.restore) setD({
           id: q.id, lead_id: q.lead_id, survey: { ...emptySurvey(), ...q.survey },
           override: { on: !!q.override_on, amount: Number(q.override_amount) || 0, reason: q.override_reason || '' },
+          // Báo giá cũ chưa tách dòng thì bảng để trống — bấm "Dựng lại từ biểu phí" là có ngay.
+          items: r.data.items || [],
         })
       } else {
         setMeta({ canEdit: true, driveReady: res.driveReady })
-        if (!editor.restore) setD({ id: null, lead_id: editor.leadId || null, channel_id: '', source_note: '', survey: emptySurvey(), override: { on: false, amount: 0, reason: '' } })
+        if (!editor.restore) setD({ id: null, lead_id: editor.leadId || null, channel_id: '', source_note: '', survey: emptySurvey(),
+          override: { on: false, amount: 0, reason: '' }, items: [] })
         const r = await api('/api/admin/sales/leads')
         if (r.ok) {
           setLeads(r.data)
@@ -413,8 +430,8 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
     if (d.override.on && !d.override.reason.trim()) { toast('Ghi lý do đề xuất mức phí khác', true); return }
     if (isNew && !d.lead_id && !d.channel_id) { toast('Chọn kênh khách đến, hoặc chọn khách tiềm năng đã có', true); return }
     const payload = isNew
-      ? { lead_id: d.lead_id, channel_id: d.channel_id, source_note: d.source_note, survey: s, override: d.override }
-      : { id: d.id, action: 'update', survey: s, override: d.override }
+      ? { lead_id: d.lead_id, channel_id: d.channel_id, source_note: d.source_note, survey: s, override: d.override, items }
+      : { id: d.id, action: 'update', survey: s, override: d.override, items }
     let body = payload
     if (file) { body = new FormData(); body.append('payload', JSON.stringify(payload)); body.append('surveyFile', file) }
     setSaving(true)
@@ -436,6 +453,7 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
       (awaitingApproval(q.price_status) ? ' — chờ quản trị duyệt, duyệt xong mới xuất được file gửi khách' : '') +
       (dv.filed?.length ? '. Đã nộp ' + dv.filed.join(' + ') + ' vào Drive' : '') +
       (dv.warning ? '. ' + dv.warning : ''), !!dv.warning)
+    if (r.data.items) upd(n => { n.items = r.data.items })
     if (isNew) onSavedNew(q.id)
     else {
       setMeta(m => ({ ...m, ...q }))
@@ -463,6 +481,22 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
     if (!r.ok) { toast(r.data.error || 'Chưa đổi được tình trạng', true); return }
     setMeta(m => ({ ...m, contract_status: r.data.contract_status, lead: m.lead ? { ...m.lead, stage } : m.lead }))
     toast('Đã chuyển: ' + stageOf(stage).label)
+  }
+
+  // Bảng khoản phí: nguồn duy nhất để tính 3 con số của báo giá.
+  const items = d.items || []
+  const totals = totalsFromItems(normalizeItems(items, meta.quote_date?.slice(0, 7)))
+  const thieuLyDo = itemsNeedingReason(normalizeItems(items, meta.quote_date?.slice(0, 7)))
+  const setItems = fn => { setD(p => { const n = structuredClone(p); n.items = fn(n.items || []); return n }); setDirty(true) }
+  const setItem = (i, k, v) => setItems(list => list.map((it, j) => j === i ? { ...it, [k]: v } : it))
+  const addItem = () => setItems(list => [...list, {
+    service: '', billing: 'monthly', amount: 0, months: null,
+    start_month: meta.quote_date?.slice(0, 7) || monthVN(), to_savitax: true, standard_amount: null, note: '',
+  }])
+  const fromFees = () => {
+    if (items.length && !window.confirm('Dựng lại bảng khoản phí từ biểu phí? Các dòng đang có sẽ bị thay hết.')) return
+    setItems(() => itemsFromFees(priced.fees, { month: meta.quote_date?.slice(0, 7), monthlyFinal: priced.monthlyFinal }))
+    toast('Đã dựng bảng khoản phí từ biểu phí — kiểm lại cách thu và tháng thu giúp em')
   }
 
   const leadOptions = (leads?.leads || []).filter(l => l.canEdit && l.stage !== 'chot' && l.stage !== 'that_bai')
@@ -655,7 +689,101 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
             <p className="text-xs text-gray-500 mt-1.5">Khách thanh toán trực tiếp cho MISA — khoản này in trên báo giá nhưng không tính vào doanh số Savitax. Bấm lại gói đang chọn để bỏ chọn.</p>
           </Card>
 
-          <Card title="Bước 5 · Lưu ý gửi khách hàng">
+          <Card title="Bước 5 · Bảng khoản phí (dùng để tính doanh số)">
+            <p className="text-xs text-gray-500 mb-2">
+              Mỗi khoản thu một dòng. <b>Cách thu</b> quyết định tiền rơi vào tháng nào: khoản một lần chỉ tính ở tháng đã ghi,
+              khoản hằng tháng tính mọi tháng. Số tiền chưa gồm VAT; chưa biết số thì để 0, chốt xong nhập lại.
+            </p>
+            {!items.length ? (
+              <div className="text-center py-6 border border-dashed border-[#D5E2ED] rounded-xl">
+                <p className="text-sm text-gray-500">Chưa có dòng phí nào</p>
+                {!locked && (
+                  <div className="flex gap-2 justify-center mt-2">
+                    <button onClick={fromFees} className={btnPrimary}>Dựng từ biểu phí</button>
+                    <button onClick={addItem} className={btnGhost}>+ Thêm dòng trống</button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="s-tbl">
+                  <thead>
+                    <tr>
+                      <th className="l">Dịch vụ</th>
+                      <th>Cách thu</th>
+                      <th>Số tiền</th>
+                      <th>Tháng bắt đầu thu</th>
+                      <th>Về Savitax</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((it, i) => {
+                      const lech = it.standard_amount != null && Number(it.amount) !== Number(it.standard_amount)
+                      return (
+                        <tr key={i}>
+                          <td className="l min-w-[260px]">
+                            <input value={it.service} disabled={locked} onChange={e => setItem(i, 'service', e.target.value)}
+                              placeholder="Tên dịch vụ" className="s-input !py-1.5" />
+                            {(lech || it.note) && (
+                              <input value={it.note || ''} disabled={locked} onChange={e => setItem(i, 'note', e.target.value)}
+                                placeholder={lech ? 'Lý do báo khác biểu phí (bắt buộc)' : 'Ghi chú in kèm'}
+                                className={'s-input !py-1 !text-xs mt-1 ' + (lech && !it.note ? '!border-red-400' : '')} />
+                            )}
+                            {lech && <p className="text-[11px] text-gray-500 mt-0.5">Biểu phí: <span className="num">{fmtMoney(it.standard_amount)}</span></p>}
+                          </td>
+                          <td>
+                            <select value={it.billing} disabled={locked} onChange={e => setItem(i, 'billing', e.target.value)}
+                              className="s-input !py-1.5 !w-auto">
+                              {BILLINGS.map(b => <option key={b.k} value={b.k}>{b.label}</option>)}
+                            </select>
+                            {it.billing === 'multi' && (
+                              <div className="flex items-center gap-1 justify-center mt-1">
+                                <NumInput value={it.months || 1} disabled={locked} onChange={v => setItem(i, 'months', v)} className="s-input !py-1 !w-16 num" />
+                                <span className="text-[11px] text-gray-500">tháng</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="min-w-[140px]">
+                            <NumInput value={it.amount} disabled={locked} onChange={v => setItem(i, 'amount', v)} className="s-input !py-1.5 num" />
+                            {it.billing === 'multi' && <p className="text-[11px] text-gray-500 mt-0.5">= <span className="num">{fmtMoney(lineTotal(it))}</span></p>}
+                          </td>
+                          <td>
+                            <MonthInput value={it.start_month || ''} disabled={locked}
+                              onChange={v => setItem(i, 'start_month', v)} className="s-input !py-1.5" />
+                          </td>
+                          <td>
+                            <input type="checkbox" checked={it.to_savitax !== false} disabled={locked}
+                              onChange={e => setItem(i, 'to_savitax', e.target.checked)} className="accent-[#2A6CA8] w-4 h-4" />
+                          </td>
+                          <td>
+                            {!locked && <button onClick={() => setItems(list => list.filter((_, j) => j !== i))}
+                              className="text-red-600 text-xs px-2 py-1 rounded-lg hover:bg-red-50">Xoá</button>}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {items.length > 0 && !locked && (
+              <div className="flex gap-2 mt-3 flex-wrap">
+                <button onClick={addItem} className={btnGhost}>+ Thêm dòng</button>
+                <button onClick={fromFees} className={btnGhost}>Dựng lại từ biểu phí</button>
+              </div>
+            )}
+            {thieuLyDo.length > 0 && (
+              <p className="text-xs text-red-700 mt-2">Có {thieuLyDo.length} dòng báo khác biểu phí chưa ghi lý do: {thieuLyDo.map(x => x.service).join(', ')}</p>
+            )}
+            {totals.other.year1 > 0 && (
+              <p className="text-xs text-gray-500 mt-2">
+                Khoản khách trả thẳng cho bên khác: <span className="num">{fmtMoney(totals.other.once + totals.other.monthly * 12 + totals.other.yearly)}</span> trong 12 tháng đầu — in trên báo giá nhưng không tính doanh số.
+              </p>
+            )}
+          </Card>
+
+          <Card title="Bước 6 · Lưu ý gửi khách hàng">
             <Field label="Mỗi dòng là một gạch đầu dòng trong báo giá (để trống thì bỏ mục này)">
               <textarea rows={5} value={s.notes} disabled={locked} onChange={e => setS('notes', e.target.value)} className={inputCls}
                 placeholder="VD: Chưa quyết toán thuế từ 2021 đến nay – toàn bộ nghĩa vụ thuế của 5 năm vẫn đang ở trạng thái mở." />
@@ -682,6 +810,19 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
               <p className="text-sm font-bold text-[#15283C]">Tổng phí hàng tháng</p>
               <p className="num">{fmtMoney(priced.monthlyFinal)}</p>
             </div>
+            {/* 3 con số THỰC của báo giá — lấy từ Bước 6, đây là số đi vào doanh số */}
+            {items.length > 0 && (
+              <div className="px-4 py-3 border-t border-[#D5E2ED] bg-[#F6F9FC]">
+                <p className="text-xs font-semibold text-[#2A6CA8] uppercase tracking-wide mb-1.5">Báo giá thực tế (Bước 5)</p>
+                {[['Phí hằng tháng', totals.monthly], ['Thu một lần', totals.once], ['Mỗi năm', totals.yearly]]
+                  .filter(([, v]) => v > 0).map(([k, v]) => (
+                    <div key={k} className="flex justify-between text-sm"><span className="text-gray-600">{k}</span><span className="num">{fmtMoney(v)}</span></div>
+                  ))}
+                <div className="flex justify-between text-sm font-semibold border-t border-[#D5E2ED] mt-1 pt-1">
+                  <span>Tổng 12 tháng đầu</span><span className="num text-[#2A6CA8]">{fmtMoney(totals.year1)}</span>
+                </div>
+              </div>
+            )}
             <div className="px-4 pb-4">
             {d.override.on && <p className="text-xs text-gray-500 text-right mt-1">theo biểu phí: {fmtMoney(priced.standardMonthly)}</p>}
             {f.optional.length > 0 && (

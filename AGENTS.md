@@ -224,6 +224,16 @@ Khách tiềm năng + báo giá SVT.MB03 + báo cáo, dựng 2026-09-11 (commit 
   `gui_khao_sat`, `bao_gia`, `chot_bao_gia`, `gui_hd`, `chot`, `that_bai`; `moi` cũ = Đang chăm sóc). Đổi ở cột
   "Tình trạng" của danh sách báo giá (action `stage`) → trạng thái HĐ của báo giá đi theo (`contractForStage`).
   Tự đẩy chỉ đi TIẾN. Báo cáo: phễu 6 bước lũy kế + bảng tình trạng hiện tại (`lib/salesReport.js`).
+- **Bảng khoản phí** (2026-11-07, `sql/53_sales_quote_items.sql` — đã chạy): mỗi khoản thu MỘT dòng trong
+  `sales_quote_items` (dịch vụ · cách thu `monthly`/`once`/`yearly`/`multi` · số tiền · tháng bắt đầu thu ·
+  `to_savitax`), hàm thuần ở `lib/salesItems.js`, kiểm `node scripts/test-sales-items.mjs`. Lý do: trước đây
+  mỗi báo giá chỉ có MỘT ô `monthly_final` nên khoản thu một lần bị cộng vào MỌI tháng (ca RESINVA, Minh
+  Trang, Gau Gau) — doanh số và thưởng sai. Ba con số `fee_monthly` / `fee_once` / `fee_year1` tính lại ở
+  server lúc lưu (`saveItems`), `monthly_final` vẫn đồng bộ để số cũ không nhảy. Báo giá CHƯA tách dòng thì
+  mọi nơi (danh sách, Word, Drive) tự rơi về đường cũ. Khoản `to_savitax = false` (MISA) VẪN in cho khách
+  nhưng KHÔNG vào doanh số. 38 báo giá cũ đã nạp bằng `scripts/migrate-sales-quote-items.mjs --apply`
+  (07/11/2026) — script này KHÔNG lấy "Dịch vụ tùy chọn" (khoản chào thêm, khách chưa đồng ý) và luôn ép tổng
+  phí tháng khớp `monthly_final`.
 - **Dò trùng**: `phone_norm` / `tax_norm` (MST bỏ số 0 đầu), so cả với `clients` đang phục vụ.
 - Phòng `rooms.type='kinhdoanh'` (và `phaply` — Phòng Pháp lý, sql/43, 31/10/2026, tạm để gán nhân viên) bị loại khỏi KPI/công
   nợ phòng nghiệp vụ như `hcns` — danh sách DUY NHẤT ở `lib/loaiPhong.js` (`PHONG_NGOAI_NGHIEP_VU`); người chỉ thuộc phòng

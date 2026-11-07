@@ -1,7 +1,7 @@
 'use client'
 // Thành phần giao diện + nhãn dùng chung cho 3 trang Phòng Kinh doanh (/sales, /sales/quotes,
 // /sales/report). File bắt đầu bằng "_" nên Next không coi là route.
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 // Phương án B "Xanh báo giá" (chốt 2026-09-11) — màu + kiểu dáng ở app/sales/sales.css (.sales-ui ...)
 export const BRAND = '#2A6CA8'
@@ -141,6 +141,77 @@ export function NumInput({ value, onChange, disabled, className }) {
     <input type="text" inputMode="numeric" value={show} disabled={disabled}
       onChange={e => { const d = e.target.value.replace(/\D/g, ''); onChange(d ? Number(d) : 0) }}
       className={(className || inputCls) + ' num'} />
+  )
+}
+
+// Ô chọn tháng — hiện "11/2026", bấm ra bảng 12 tháng như lịch của Chrome (anh Lộc chốt 07/11/2026).
+// Giá trị thật vẫn là 'YYYY-MM'. Không dùng <input type="month"> vì Chrome tiếng Việt in
+// "Tháng Mười Một 2026" quá dài so với bề ngang cột.
+// Bảng chọn đặt theo toạ độ màn hình (position: fixed) vì bảng phí nằm trong khung cuộn ngang —
+// để absolute sẽ bị khung cắt mất.
+export function MonthInput({ value, onChange, disabled, className }) {
+  const co = /^\d{4}-\d{2}$/.test(value || '')
+  const hienNam = co ? Number(value.slice(0, 4)) : new Date().getFullYear()
+  const hienThang = co ? Number(value.slice(5, 7)) : 0
+  const [mo, setMo] = useState(null)   // { top, left } khi đang mở
+  const [nam, setNam] = useState(hienNam)
+  const nut = useRef(null)
+  const bang = useRef(null)
+  useEffect(() => {
+    if (!mo) return
+    const ngoai = e => {
+      if (nut.current?.contains(e.target) || bang.current?.contains(e.target)) return
+      setMo(null)
+    }
+    const phim = e => { if (e.key === 'Escape') setMo(null) }
+    // Cuộn trang/khung thì đóng lại, vì bảng neo theo toạ độ màn hình sẽ lệch khỏi ô.
+    const cuon = () => setMo(null)
+    document.addEventListener('mousedown', ngoai)
+    document.addEventListener('keydown', phim)
+    window.addEventListener('scroll', cuon, true)
+    return () => {
+      document.removeEventListener('mousedown', ngoai)
+      document.removeEventListener('keydown', phim)
+      window.removeEventListener('scroll', cuon, true)
+    }
+  }, [mo])
+  const bat = () => {
+    if (disabled) return
+    if (mo) return setMo(null)
+    const r = nut.current.getBoundingClientRect()
+    setNam(hienNam)
+    setMo({ top: Math.min(r.bottom + 4, window.innerHeight - 190), left: Math.min(r.left, window.innerWidth - 224) })
+  }
+  const chon = (m, y = nam) => { onChange(y + '-' + String(m).padStart(2, '0')); setMo(null) }
+  return (
+    <>
+      <button type="button" ref={nut} disabled={disabled} onClick={bat}
+        className={(className || inputCls) + ' num !w-auto !px-2.5 text-center'}>
+        {co ? value.slice(5) + '/' + value.slice(0, 4) : 'MM/YYYY'}
+      </button>
+      {mo && (
+        <div ref={bang} style={{ top: mo.top, left: mo.left }}
+          className="fixed z-[70] w-[216px] bg-white border border-[#D5E2ED] rounded-xl shadow-xl p-2">
+          <div className="flex items-center justify-between mb-1">
+            <button type="button" onClick={() => setNam(y => y - 1)} className="px-2 rounded-lg text-gray-500 hover:bg-gray-100">‹</button>
+            <span className="text-sm font-semibold num">{nam}</span>
+            <button type="button" onClick={() => setNam(y => y + 1)} className="px-2 rounded-lg text-gray-500 hover:bg-gray-100">›</button>
+          </div>
+          <div className="grid grid-cols-4 gap-1">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
+              const dang = co && nam === hienNam && m === hienThang
+              return (
+                <button key={m} type="button" onClick={() => chon(m)}
+                  className={'text-xs py-1.5 rounded-lg ' + (dang ? 'text-white font-semibold' : 'text-gray-700 hover:bg-gray-100')}
+                  style={dang ? { background: BRAND } : undefined}>Thg{m}</button>
+              )
+            })}
+          </div>
+          <button type="button" onClick={() => { const d = new Date(); chon(d.getMonth() + 1, d.getFullYear()) }}
+            className="w-full mt-1.5 text-xs py-1 rounded-lg hover:bg-gray-100" style={{ color: BRAND }}>Tháng này</button>
+        </div>
+      )}
+    </>
   )
 }
 

@@ -1,12 +1,13 @@
 import { requireSales, canEditLead, canEditQuote, fetchAll, normPhone, normTax, todayVN, advanceLeadStage, recomputeLeadStage, STAGE_ORDER, STAGE_LABEL, contractForStage } from '@/lib/salesScope'
 import { priceQuote, canExportPrice, awaitingApproval, nextPriceStatus, pricingChanged, money, CONTRACT_STATES } from '@/lib/salesPricing'
+import { normalizeItems, totalsFromItems, itemsFromFees } from '@/lib/salesItems'
 import { fileOnSave } from '@/lib/salesFiling'
 import { driveConfigured } from '@/lib/googleDrive'
 
 const LIST_COLS = 'id, lead_id, quote_no, quote_date, seq, author_id, author_name, company_name, tax_code, ' +
   'standard_monthly, monthly_final, override_on, override_amount, override_reason, price_status, reviewed_by, ' +
   'reviewed_at, review_note, contract_status, contract_changed_at, drive_folder_url, survey_file_name, created_at, updated_at, ' +
-  'contact:survey->>contact, phone:survey->>phone'
+  'fee_monthly, fee_once, fee_year1, contact:survey->>contact, phone:survey->>phone'
 const MAX_SURVEY_BYTES = 4 * 1024 * 1024 // giới hạn body của Vercel ~4,5MB
 
 const pad2 = n => String(n).padStart(2, '0')
@@ -28,6 +29,40 @@ async function readBody(request) {
     return { payload, file }
   }
   return { payload: await request.json().catch(() => ({})), file: null }
+}
+
+const ITEM_COLS = 'id, sort_order, service, billing, amount, months, start_month, to_savitax, standard_amount, note'
+
+// Đọc bảng dòng phí của một báo giá. Bảng chưa cài (chưa chạy sql/53) thì coi như chưa tách dòng —
+// báo giá vẫn chạy theo monthly_final như trước, KHÔNG văng lỗi.
+async function loadItems(admin, quoteId) {
+  try {
+    const { data, error } = await admin.from('sales_quote_items').select(ITEM_COLS)
+      .eq('quote_id', quoteId).order('sort_order')
+    if (error) return null
+    return data || []
+  } catch (_) { return null }
+}
+
+// Ghi đè toàn bộ dòng phí của báo giá + cập nhật 3 con số tổng. Trả { items, totals } hoặc null khi
+// chưa cài bảng. Xoá rồi chèn lại (danh sách ngắn, vài dòng) — đơn giản và luôn khớp thứ tự.
+async function saveItems(admin, quoteId, rawItems, fallbackMonth) {
+  const items = normalizeItems(rawItems, fallbackMonth)
+  const { error: delErr } = await admin.from('sales_quote_items').delete().eq('quote_id', quoteId)
+  if (delErr) return null
+  if (items.length) {
+    const { error } = await admin.from('sales_quote_items').insert(items.map(it => ({ ...it, quote_id: quoteId })))
+    if (error) throw new Error('Chưa lưu được bảng khoản phí: ' + error.message)
+  }
+  const totals = totalsFromItems(items)
+  await admin.from('sales_quotes').update({
+    fee_monthly: items.length ? totals.monthly : null,
+    fee_once: items.length ? totals.once : null,
+    fee_year1: items.length ? totals.year1 : null,
+    // monthly_final giữ nguyên ý nghĩa "phí hằng tháng" để danh sách, báo cáo và file Word cũ vẫn đúng.
+    ...(items.length ? { monthly_final: totals.monthly } : {}),
+  }).eq('id', quoteId)
+  return { items, totals }
 }
 
 async function staffName(admin, id) {
@@ -72,8 +107,11 @@ export async function GET(request) {
     const { data: lead } = q.lead_id
       ? await admin.from('sales_leads').select('id, company_name, contact_name, channel_id, assigned_to, stage').eq('id', q.lead_id).maybeSingle()
       : { data: null }
+    const items = await loadItems(admin, q.id)
     return Response.json({
       data: { ...q, reviewerName: await staffName(admin, q.reviewed_by) },
+      items: items || [],
+      itemsReady: items !== null,
       lead, canEdit: canEditQuote(auth, q, lead), perms: auth.perms, driveReady: driveConfigured(),
       driveRootUrl: process.env.SALES_DRIVE_FOLDER_ID ? 'https://drive.google.com/drive/folders/' + process.env.SALES_DRIVE_FOLDER_ID : null,
     })
@@ -173,13 +211,24 @@ export async function POST(request) {
     return Response.json({ error: e.message }, { status: 400 })
   }
 
+  // Bảng khoản phí: dùng dòng người lập gửi lên; chưa có thì dựng sẵn từ biểu phí để không bỏ trống.
+  let saved = null
+  try {
+    saved = await saveItems(admin, quote.id, b.items?.length ? b.items : itemsFromFees(p.fees, { month: quote.quote_date.slice(0, 7), monthlyFinal: p.monthlyFinal }),
+      quote.quote_date.slice(0, 7))
+  } catch (e) {
+    return Response.json({ error: e.message }, { status: 400 })
+  }
+  if (saved) quote = { ...quote, fee_monthly: saved.totals.monthly, fee_once: saved.totals.once, fee_year1: saved.totals.year1,
+    monthly_final: saved.items.length ? saved.totals.monthly : quote.monthly_final }
+
   await advanceLeadStage(admin, lead.id, 'bao_gia', me, 'lập báo giá ' + quote.quote_no)
   await logLead(admin, lead.id, 'Lập báo giá số ' + quote.quote_no + ' — ' + money(quote.monthly_final) + '/tháng' +
     (p.overrideOn ? ' (đề xuất khác biểu phí ' + money(p.standardMonthly) + ')' : '') + ' — chờ quản trị duyệt', me)
 
   // Nộp Drive ngay khi lưu: phiếu khảo sát (nếu có) + file báo giá (nếu đúng biểu phí).
   const drive = await fileOnSave(admin, quote, file?.bytes)
-  return Response.json({ data: { ...quote, drive_folder_url: drive.folderUrl || quote.drive_folder_url }, drive })
+  return Response.json({ data: { ...quote, drive_folder_url: drive.folderUrl || quote.drive_folder_url }, items: saved?.items || [], drive })
 }
 
 // PATCH — { id, action: 'update' | 'contract' | 'review', ... }
@@ -300,8 +349,18 @@ export async function PATCH(request) {
       await logLead(admin, q.lead_id, 'Sửa báo giá ' + q.quote_no + ': ' + money(q.monthly_final) + ' → ' + money(p.monthlyFinal) + '/tháng' +
         (awaitingApproval(price_status) ? ' — chờ quản trị duyệt lại' : ''), me)
     }
-    const drive = await fileOnSave(admin, updated, file?.bytes)
-    return Response.json({ data: { ...updated, drive_folder_url: drive.folderUrl || updated.drive_folder_url }, drive })
+    let saved2 = null
+    if (b.items !== undefined) {
+      try { saved2 = await saveItems(admin, q.id, b.items, updated.quote_date.slice(0, 7)) }
+      catch (e) { return Response.json({ error: e.message }, { status: 400 }) }
+    }
+    const after = saved2
+      ? { ...updated, fee_monthly: saved2.totals.monthly, fee_once: saved2.totals.once, fee_year1: saved2.totals.year1,
+          monthly_final: saved2.items.length ? saved2.totals.monthly : updated.monthly_final }
+      : updated
+    const drive = await fileOnSave(admin, after, file?.bytes)
+    return Response.json({ data: { ...after, drive_folder_url: drive.folderUrl || after.drive_folder_url },
+      items: saved2?.items || undefined, drive })
   }
 
   return Response.json({ error: 'Thao tác không hợp lệ' }, { status: 400 })
