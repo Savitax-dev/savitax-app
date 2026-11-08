@@ -234,6 +234,18 @@ Khách tiềm năng + báo giá SVT.MB03 + báo cáo, dựng 2026-09-11 (commit 
   nhưng KHÔNG vào doanh số. 38 báo giá cũ đã nạp bằng `scripts/migrate-sales-quote-items.mjs --apply`
   (07/11/2026) — script này KHÔNG lấy "Dịch vụ tùy chọn" (khoản chào thêm, khách chưa đồng ý) và luôn ép tổng
   phí tháng khớp `monthly_final`.
+- **Theo dõi hợp đồng** (2026-11-08, `sql/54_sales_contract_payments.sql`): tab cạnh "Thất bại" ở trang Báo giá
+  (`app/sales/_theoDoiHopDong.js`), hợp đồng `contract_status='signed'` hiện ở đây. HAI THÁNG KHÁC NHAU, đừng
+  lẫn: `due_month` = KỲ PHÍ (khoản này trả cho tháng nào), `paid_month` = THÁNG TIỀN VỀ → **doanh số tính cho
+  paid_month**. Số CẦN THU không lưu, tính thẳng từ bảng khoản phí (`trackContract` trong `lib/salesContract.js`)
+  nên hợp đồng có phí tháng tự sinh kỳ mới mỗi tháng. Người lập nhập tiền VỀ TÀI KHOẢN (đã gồm VAT), server
+  chia ra `net` chưa VAT — **không tin số trình duyệt gửi**.
+- **Doanh số & thưởng** (2026-11-08, `sql/55_sales_bonus.sql`): tab thứ hai ở trang Báo cáo
+  (`app/sales/_doanhSoThuong.js`), hàm thuần `lib/salesBonus.js`. Doanh số = tiền thực thu trong tháng, CHƯA
+  VAT, chỉ khoản `to_savitax`. Thưởng = (doanh số − mốc) × tỷ lệ; mốc 30tr thử việc / 35tr chính thức, tỷ lệ
+  10% — sửa trong "Cài đặt thưởng" (`sales_bonus_settings`), KHÔNG sửa mã nguồn. "Làm báo cáo tháng" chụp số
+  vào `sales_bonus_reports` để sếp duyệt; ghi thêm lần thu sau đó thì app báo **lệch** chứ không tự đổi số đã
+  duyệt. Kiểm cả hai: `node scripts/test-sales-contract.mjs` (47 ca, lấy đúng ví dụ tờ trình 04/11).
 - **Dò trùng**: `phone_norm` / `tax_norm` (MST bỏ số 0 đầu), so cả với `clients` đang phục vụ.
 - Phòng `rooms.type='kinhdoanh'` (và `phaply` — Phòng Pháp lý, sql/43, 31/10/2026, tạm để gán nhân viên) bị loại khỏi KPI/công
   nợ phòng nghiệp vụ như `hcns` — danh sách DUY NHẤT ở `lib/loaiPhong.js` (`PHONG_NGOAI_NGHIEP_VU`); người chỉ thuộc phòng
