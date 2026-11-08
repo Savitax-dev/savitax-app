@@ -4,13 +4,17 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import { buildSalesReport, FUNNEL, STATE_KEYS } from '@/lib/salesReport'
-import { PeriodFilter, defaultPeriod, inPeriod, periodLabel, StatCard, PageHead, api, fmt, todayVN, isoVN, stageOf } from '../_ui'
+import { PeriodFilter, defaultPeriod, inPeriod, periodLabel, StatCard, PageHead, api, fmt, todayVN, isoVN, stageOf, useToast } from '../_ui'
+import DoanhSoThuong from '../_doanhSoThuong'
 
 export default function SalesReportPage() {
   const router = useRouter()
   const [res, setRes] = useState(null)
   const [err, setErr] = useState(null)
   const [period, setPeriod] = useState(defaultPeriod)
+  // 2 màn: phễu khách (cũ) và doanh số/thưởng cuối tháng (đề xuất 04/11/2026, "Sửa 4").
+  const [tab, setTab] = useState('pheu')
+  const [toastNode, toast] = useToast()
 
   useEffect(() => {
     const init = async () => {
@@ -49,10 +53,20 @@ export default function SalesReportPage() {
       <div className="sales-ui">
       <div className="px-4 md:px-8 py-5">
         <div className="mb-4">
-          <PageHead title="Báo cáo kinh doanh" sub={<>Tính theo lứa khách <b>tiếp nhận trong {pl}</b> — lứa đó đã đi được tới đâu (lũy kế theo phễu)</>}>
-            <PeriodFilter value={period} onChange={setPeriod} />
+          <PageHead title="Báo cáo kinh doanh" sub={tab === 'pheu'
+            ? <>Tính theo lứa khách <b>tiếp nhận trong {pl}</b> — lứa đó đã đi được tới đâu (lũy kế theo phễu)</>
+            : <>Doanh số là <b>tiền thực thu trong tháng, chưa gồm thuế GTGT</b>; thưởng tính trên phần vượt mốc</>}>
+            {tab === 'pheu' && <PeriodFilter value={period} onChange={setPeriod} />}
           </PageHead>
         </div>
+
+        <div className="flex gap-1.5 flex-wrap mb-3">
+          {[['pheu', 'Phễu khách hàng'], ['thuong', '💰 Doanh số & thưởng']].map(([k, lb]) => (
+            <button key={k} onClick={() => setTab(k)} className={'s-chip' + (tab === k ? ' on' : '')}>{lb}</button>
+          ))}
+        </div>
+
+        {tab === 'thuong' ? <DoanhSoThuong toast={toast} /> : (<>
 
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
           <StatCard label="Khách tiếp nhận" value={t.leads} foot={pl} tone="sky" />
@@ -187,7 +201,9 @@ export default function SalesReportPage() {
           </div>
           </div>
         </div>
+        </>)}
       </div>
+      {toastNode}
       </div>
     </AppShell>
   )

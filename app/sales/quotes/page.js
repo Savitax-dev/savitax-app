@@ -9,6 +9,7 @@ import {
   emptySurvey, syncDocs, priceQuote, canExportPrice, awaitingApproval, APPROVE_OVERRIDE_QUOTES,
 } from '@/lib/salesPricing'
 import { readSurveyDocx, applySurveyRows } from '@/lib/salesSurvey'
+import TheoDoiHopDong from '../_theoDoiHopDong'
 import { BILLINGS, billingOf, normalizeItems, totalsFromItems, itemsFromFees, lineTotal, itemsNeedingReason, monthVN } from '@/lib/salesItems'
 import {
   PeriodFilter, defaultPeriod, inPeriod, periodLabel, StatCard, Field, inputCls, btnPrimary, btnGhost,
@@ -62,6 +63,8 @@ export default function SalesQuotesPage() {
   const [draftInfo, setDraftInfo] = useState(null)
   const [qText, setQText] = useState('')
   const [fStage, setFStage] = useState('')
+  // Tab "Theo dõi hợp đồng" (đề xuất 04/11/2026): đứng cạnh "Thất bại", đổi hẳn nội dung bên dưới.
+  const [tabHD, setTabHD] = useState(false)
   const [lostFor, setLostFor] = useState(null)
   const [lostText, setLostText] = useState('')
   const [toastNode, toast] = useToast()
@@ -192,6 +195,7 @@ export default function SalesQuotesPage() {
         )}
 
         {/* Ô tìm giãn hết phần còn trống, bộ lọc kỳ dồn về cuối hàng */}
+        {!tabHD && (<>
         <div className="flex items-center gap-2 flex-wrap mb-3">
           <input value={qText} onChange={e => setQText(e.target.value)} placeholder="Tìm số BG, tên công ty, MST, người liên hệ, SĐT…"
             className="s-input !w-auto flex-1 min-w-[260px]" />
@@ -206,20 +210,27 @@ export default function SalesQuotesPage() {
           <StatCard label="Phí hằng tháng" value={fmt(sum)} unit="đ/tháng" foot={sumOnce ? 'thu một lần ' + fmt(sumOnce) + ' đ' : pl} tone="blue" />
           <StatCard label="Tổng 12 tháng đầu" value={fmt(sumYear1)} unit="đ" foot={sumSigned ? 'đã chốt ' + fmt(sumSigned) + ' đ' : 'chưa có hợp đồng chốt'} tone="gold" />
         </div>
+        </>)}
 
         {/* Đếm theo tình trạng 7 bước — bấm để lọc */}
         <div className="flex gap-1.5 flex-wrap mb-3">
           {[{ k: '', label: 'Tất cả' }, ...STAGES].map(c => {
             const n = c.k ? inKy.filter(q => stageKey(q.lead_stage) === c.k).length : inKy.length
-            const on = fStage === c.k
+            const on = !tabHD && fStage === c.k
             return (
-              <button key={c.k || 'all'} onClick={() => setFStage(c.k)} className={'s-chip' + (on ? ' on' : '')}>
+              <button key={c.k || 'all'} onClick={() => { setTabHD(false); setFStage(c.k) }} className={'s-chip' + (on ? ' on' : '')}>
                 {c.label}<span className="n num">{n}</span>
               </button>
             )
           })}
+          {/* Hợp đồng chốt xong sang đây: khách đã trả bao nhiêu, tháng nào, còn thiếu bao nhiêu */}
+          <button onClick={() => setTabHD(true)} className={'s-chip' + (tabHD ? ' on' : '')}
+            style={tabHD ? undefined : { borderColor: GOLD, color: '#8A6D12' }}>
+            📒 Theo dõi hợp đồng
+          </button>
         </div>
 
+        {tabHD ? <TheoDoiHopDong toast={toast} /> : (
         <div className="s-panel">
           {!qs.length ? (
             <div className="py-12 text-center">
@@ -297,6 +308,7 @@ export default function SalesQuotesPage() {
             </div>
           )}
         </div>
+        )}
       </div>
 
       {lostFor && (
