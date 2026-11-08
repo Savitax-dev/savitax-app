@@ -279,7 +279,11 @@ hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công 
   mã KH + `_BSLn`. Nhân viên **tự trỏ thư mục từng công ty** (File System Access API, tay lưu trong
   IndexedDB) — không dò tự động; app cảnh báo khi hai công ty trỏ trùng nhưng **không chặn**. Thư mục năm nhận
   mọi kiểu `namCuaTen` (`lib/tokhaiLuuDia.js`): `Năm 2026`, `NĂM 2026`, `2026` (144 thư mục trên ổ G:), `1. NĂM 2026`,
-  `NĂM_2026`; chưa có mới tạo `Năm <năm>`. Quy ước lưu file thư mục 1–12 cho nhân viên: `docs/quy-uoc-luu-ho-so.md`.
+  `NĂM_2026`; chưa có mới tạo `Năm <năm>`. Quy ước lưu file cho nhân viên: `docs/quy-uoc-luu-ho-so.md` — **chuẩn duy nhất
+  là cây ISO SVT.MB09** (anh chốt 08/11/2026, bản gốc ở ổ G: `…\5.7.2.2 MẪU BIỄU ISO v2\SVT.MB09. CAY THU MUC\`): 11 thư mục
+  trong năm (không có `12. HÌNH ẢNH` — kiểm kê bỏ dòng này khi thiếu), kỳ báo cáo `7. BỘ BÁO CÁO\1. BỘ BCT QUÝ_THÁNG\BCT-Q1`
+  (Tờ khai vẫn tải về `BAOCAOTHUE_…`, app đọc cả hai), hóa đơn `QUÝ n\HĐ MUA VÀO|HĐ BÁN RA` (khai tháng: `THÁNG 01…12`, để
+  `QUÝ n` thì hóa đơn bị gán cả 3 tháng). Thư mục năm trong cây mẫu tên giữ chỗ `NĂM TÀI CHÍNH` — app KHÔNG nhận, phải đổi.
 - **Cổng trả TỜ KHAI dạng .zip** chứa XML tên máy (mở nén bằng `pizzip` rồi đổi tên), **thông báo
   dạng .xml**. ✅ **PDF tờ khai ĐÚNG MẪU cổng** (31/10/2026, cờ `DUNG_PDF_MAU`, `lib/tokhaiPdfMau.js`): chép
   theo bản PDF cổng in từ XML (PD4ML) anh gửi — **01/GTGT + 05/KK-TNCN (TT80)**, đã so từng cụm
