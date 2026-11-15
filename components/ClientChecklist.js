@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { isPastEditDeadline } from '@/lib/feeDue'
+import { noTonChoDntt } from '@/lib/noTonDntt'
 import { loadPermissionData, can } from '@/lib/permissions'
 import DichVuKhac from './DichVuKhac'
 import { layMe } from '@/lib/khoiDong'
@@ -413,6 +414,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     }
     if (p === 'dntt') {
       setExtraRows([])
+      loadDebtHistory()   // cần dòng chốt nợ tồn để tính đúng dòng A của phiếu tháng đang chọn
       // Hồ sơ "Dịch vụ khác" còn phải thu tự thành dòng trên phiếu — trước đây nhân viên phải tự gõ
       // lại, dễ quên hẳn một dịch vụ đã làm. Số trên phiếu là số CHƯA VAT (như B1/B2) nên chia 1.08;
       // nhân viên vẫn sửa/xoá dòng được trước khi mở PDF.
@@ -772,7 +774,11 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   // dòng dịch vụ khác tự dịch số lên, khớp với phiếu PDF (app/api/admin/dntt).
   const soDongCoDinh = ((b1Label || b1Amount) ? 1 : 0) + ((hcnsClient && (hcnsLabel || hcnsAmount)) ? 1 : 0)
   const subTotal   = b1AmountNum + hcnsAmountNum + extraTotal
-  const prevBal    = Number(client.other_debt) || 0
+  // Nợ tồn trên phiếu tháng đang chọn: bỏ phần đã chuyển nợ tồn của chính kỳ đó trở về sau — trùng với dòng B (lib/noTonDntt.js)
+  const prevBal    = noTonChoDntt(client.other_debt, Object.entries(rolloverByPeriod || {}).map(([k, v]) => {
+    const [y, m] = k.split(':')[1].split('-').map(Number)
+    return { year: y, month: m, remaining: v.remaining }
+  }), selYear, clientMonth)
   // "Tồn" (A) đã là số gồm VAT sẵn — lấy thẳng, không nhân 1.08 nữa
   const prevBalVat = prevBal
   const vatAmt     = Math.round(subTotal * 0.08)

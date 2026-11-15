@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { noTonChoDntt } from '@/lib/noTonDntt'
 import { requireLogin } from '@/lib/serverAuth'
 import { docCtyDacThu } from '@/lib/ctyDacThu'
 
@@ -98,7 +99,14 @@ export async function GET(request) {
 
   const extraTotal = extraRows.reduce((s, r) => s + (Number(r.amount) || 0), 0)
   const subTotal   = baseFee + hcnsFee + extraTotal   // tổng trước VAT (mọi dòng B đều là số chưa VAT)
-  const prevBal    = Number(client.other_debt) || 0
+  // Nợ tồn của phiếu tháng M KHÔNG gồm phần đã chuyển nợ tồn của chính kỳ M trở về sau (lib/noTonDntt.js, 15/11/2026)
+  let dongChot = []
+  if (!hcnsClientId && Number(client.other_debt) > 0) {
+    const { data: rs } = await supabase.from('debt_rollovers').select('year, month, remaining_amount')
+      .eq('client_id', client.id).gt('remaining_amount', 0)
+    dongChot = rs || []
+  }
+  const prevBal    = noTonChoDntt(client.other_debt, dongChot, year, month)
   // "Tồn" (A) đã là số gồm VAT sẵn (cộng dồn từ phí dịch vụ chưa thu, vốn đã gồm VAT) — lấy thẳng, không nhân 1.08 nữa
   const prevBalVat = prevBal
   const vatAmt     = khongVat ? 0 : Math.round(subTotal * 0.08)
