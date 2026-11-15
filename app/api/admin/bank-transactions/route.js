@@ -68,15 +68,19 @@ export async function GET(request) {
         .select('id, name, tax_code, case_code').eq('category', 'thoi_diem').eq('is_active', true).order('name')
       const ids = (hc || []).map(h => h.id)
       const [{ data: svc }, { data: pay }] = await Promise.all([
-        supabase.from('hcns_case_services').select('hcns_client_id, cost').in('hcns_client_id', ids),
+        supabase.from('hcns_case_services').select('hcns_client_id, cost, received_at').in('hcns_client_id', ids),
         supabase.from('hcns_case_payments').select('hcns_client_id, amount').in('hcns_client_id', ids),
       ])
-      const phi = new Map(), thu = new Map()
-      for (const s of svc || []) phi.set(s.hcns_client_id, (phi.get(s.hcns_client_id) || 0) + (Number(s.cost) || 0))
+      const phi = new Map(), thu = new Map(), nhan = new Map()
+      for (const s of svc || []) {
+        phi.set(s.hcns_client_id, (phi.get(s.hcns_client_id) || 0) + (Number(s.cost) || 0))
+        const d = s.received_at ? String(s.received_at).slice(0, 10) : null   // ngày nhận sớm nhất của hồ sơ
+        if (d && (!nhan.get(s.hcns_client_id) || d < nhan.get(s.hcns_client_id))) nhan.set(s.hcns_client_id, d)
+      }
       for (const p of pay || []) thu.set(p.hcns_client_id, (thu.get(p.hcns_client_id) || 0) + (Number(p.amount) || 0))
       return Response.json({
         data: (hc || []).map(h => ({
-          id: h.id, name: h.name, tax_code: h.tax_code, case_code: h.case_code,
+          id: h.id, name: h.name, tax_code: h.tax_code, case_code: h.case_code, nhan: nhan.get(h.id) || null,
           fee: phi.get(h.id) || 0, paid: thu.get(h.id) || 0,
           remain: Math.max(0, (phi.get(h.id) || 0) - (thu.get(h.id) || 0)),
         })),

@@ -119,8 +119,8 @@ export default function BankPage() {
 
   // Hồ sơ HCNS "Thời điểm" không gắn công ty kế toán nên không có trong danh sách chọn công ty —
   // phải lấy riêng, và chỉ lấy khi nhân viên bấm vào (danh sách ít dùng).
+  // Lấy lại mỗi lần mở ô (không nhớ): vừa ghi xong một hồ sơ thì số còn phải thu đã đổi.
   const loadHcnsCases = async () => {
-    if (hcnsCases) return
     const json = await fetch('/api/admin/bank-transactions?hcnsCases=1', { cache: 'no-store' }).then(r => r.json())
     setHcnsCases(json.data || [])
   }
@@ -299,7 +299,14 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
   const motPhan = r.state === 'open' && (r.daGhi || 0) > 0
   const conLaiGd = r.conLai ?? r.amount
 
-  const pickedCase = hcnsCases && hcnsPick ? hcnsCases.find(c => c.name === hcnsPick) : null
+  // CHỈ hồ sơ CÒN phải thu (anh yêu cầu 15/11/2026: hồ sơ đã thu đủ hiện ra là dễ nhầm — ca Gold Tea có 3 hồ sơ trùng
+  // tên, đều "còn 0đ", nhân viên đọc thành "chưa thu"). Một công ty có nhiều hồ sơ cùng tên → nhãn ghép tên hồ sơ + ngày
+  // nhận, và chọn theo NHÃN (duy nhất) chứ không theo tên công ty (trùng tên là vớ nhầm hồ sơ).
+  const ddmm = d => d ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : ''
+  const nhanHs = c => c.name + (c.case_code ? ' · ' + c.case_code : '') + (c.nhan ? ' · nhận ' + ddmm(c.nhan) : '')
+  const hsConNo = (hcnsCases || []).filter(c => Number(c.remain) > 0)
+    .sort((a, b) => String(a.name).localeCompare(String(b.name), 'vi') || String(a.nhan || '').localeCompare(String(b.nhan || '')))
+  const pickedCase = hcnsPick ? hsConNo.find(c => nhanHs(c) === hcnsPick) || null : null
   // Số tiền mặc định = phần nhỏ hơn giữa tiền vào và phần còn phải thu của hồ sơ — ghi quá phần
   // còn lại thì server chặn, nên đừng để nhân viên phải tự tính.
   const goiY = (remain) => String(Math.min(Number(conLaiGd) || 0, Number(remain) || 0))
@@ -326,7 +333,7 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
   }
   const pickHcns = (name) => {
     setHcnsPick(name)
-    const x = (hcnsCases || []).find(c => c.name === name)
+    const x = hsConNo.find(c => nhanHs(c) === name)
     setHcnsAmount(x ? goiY(x.remain) : '')
   }
 
@@ -469,11 +476,12 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
                 {target === 'hcns' && (
                   <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
                     <input list={'hc-' + r.id} value={hcnsPick} onChange={e => pickHcns(e.target.value)}
-                      placeholder="Gõ tên hồ sơ HCNS Thời điểm…"
-                      className="border border-gray-200 rounded-md px-2 py-1 w-64 max-w-full" />
+                      placeholder={hcnsCases === null ? 'Đang lấy hồ sơ…' : 'Gõ tên công ty / hồ sơ HCNS Thời điểm còn nợ…'}
+                      className="border border-gray-200 rounded-md px-2 py-1 w-96 max-w-full" />
                     <datalist id={'hc-' + r.id}>
-                      {(hcnsCases || []).map(c => <option key={c.id} value={c.name}>{'còn ' + fmt(c.remain) + ' / phí ' + fmt(c.fee)}</option>)}
+                      {hsConNo.map(c => <option key={c.id} value={nhanHs(c)}>{'còn ' + fmt(c.remain) + ' / phí ' + fmt(c.fee)}</option>)}
                     </datalist>
+                    {hcnsCases !== null && !hsConNo.length && <span className="text-gray-500">Không còn hồ sơ HCNS Thời điểm nào chưa thu đủ.</span>}
                     <input value={hcnsAmount} onChange={e => setHcnsAmount(e.target.value.replace(/[^0-9]/g, ''))}
                       className="border border-gray-200 rounded-md px-2 py-1 w-32 text-right" />
                     <button disabled={busy || !pickedCase || !Number(hcnsAmount)} onClick={async () => {
