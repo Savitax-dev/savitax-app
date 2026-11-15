@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { noTonChoDntt } from '@/lib/noTonDntt'
+import { noTonChoDntt, vatPhieu } from '@/lib/noTonDntt'
 import { requireLogin } from '@/lib/serverAuth'
 import { docCtyDacThu } from '@/lib/ctyDacThu'
 
@@ -109,7 +109,9 @@ export async function GET(request) {
   const prevBal    = noTonChoDntt(client.other_debt, dongChot, year, month)
   // "Tồn" (A) đã là số gồm VAT sẵn (cộng dồn từ phí dịch vụ chưa thu, vốn đã gồm VAT) — lấy thẳng, không nhân 1.08 nữa
   const prevBalVat = prevBal
-  const vatAmt     = khongVat ? 0 : Math.round(subTotal * 0.08)
+  // Kéo sai số làm tròn ÷1,08 về số tròn nghìn (7.000.000 không in thành 6.999.999) — lib/noTonDntt.js vatPhieu
+  const soDongB    = [baseFee, hcnsFee, ...extraRows.map(r => Number(r.amount) || 0)].filter(v => v > 0).length
+  const vatAmt     = khongVat ? 0 : vatPhieu(subTotal, soDongB)
   const totalB     = subTotal + vatAmt
   const totalC     = prevBalVat + totalB
 
@@ -337,6 +339,9 @@ var rows = allRows.map(function(n){ return 'xrow'+n })
 var baseFeeVal = ${baseFee + hcnsFee}
 // Công ty thu phí không VAT → 0 (lib/ctyDacThu.js)
 var TY_LE_VAT = ${khongVat ? 0 : 0.08}
+// Cùng hàm vatPhieu ở lib/noTonDntt.js (chép nguyên) — sai số làm tròn ÷1,08 kéo về số tròn nghìn
+var vatPhieu = ${vatPhieu.toString()}
+var soDongCoDinh = ${[baseFee, hcnsFee].filter(v => v > 0).length}
 var prevBalVal = ${prevBalVat}
 
 function addRow() {
@@ -372,7 +377,12 @@ function recalc() {
   }
   // VAT chỉ tính trên B (B1 + B2...B7) — A (nợ tồn) đã hiển thị gồm VAT riêng (A×1.08) ở trên
   var subTotal = baseFeeVal + extra
-  var vatAmt   = Math.round(subTotal * TY_LE_VAT)
+  var soDong = soDongCoDinh
+  for (var j = 0; j < rows.length; j++) {
+    var rj = document.getElementById(rows[j])
+    if (rj && rj.style.display !== 'none') { var cj = rj.querySelectorAll('td[contenteditable]'); if (cj[1] && parseAmt(cj[1].innerText) > 0) soDong++ }
+  }
+  var vatAmt   = vatPhieu(subTotal, soDong, TY_LE_VAT)
   var totalB   = subTotal + vatAmt
   var totalC   = prevBalVal + totalB
   var f = function(n){ return n.toLocaleString('vi-VN') }

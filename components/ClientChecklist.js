@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { isPastEditDeadline } from '@/lib/feeDue'
-import { noTonChoDntt } from '@/lib/noTonDntt'
+import { noTonChoDntt, vatPhieu } from '@/lib/noTonDntt'
 import { loadPermissionData, can } from '@/lib/permissions'
 import DichVuKhac from './DichVuKhac'
 import { layMe } from '@/lib/khoiDong'
@@ -781,7 +781,8 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   }), selYear, clientMonth)
   // "Tồn" (A) đã là số gồm VAT sẵn — lấy thẳng, không nhân 1.08 nữa
   const prevBalVat = prevBal
-  const vatAmt     = Math.round(subTotal * 0.08)
+  // Sai số làm tròn ÷1,08 kéo về số tròn nghìn — cùng hàm với phiếu PDF (lib/noTonDntt.js vatPhieu)
+  const vatAmt     = vatPhieu(subTotal, [b1AmountNum, hcnsAmountNum, ...extraRows.map(r => Number(r.amount) || 0)].filter(v => v > 0).length, khongVat ? 0 : 0.08)
   const totalB     = subTotal + vatAmt
   const totalC     = prevBalVat + totalB
   const credsByCat = {}
