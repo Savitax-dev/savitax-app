@@ -308,7 +308,11 @@ hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công 
   204/2025** (PL_NQ142_GTGT đủ mua vào + bán ra, kỳ từ 07/2025) — trang riêng, đánh số riêng. Phụ lục NQ 142/174 (kỳ trước
   07/2025) và mẫu cũ có phụ lục: chưa có bản gốc → chỉ XML. Khác bản cổng duy nhất: cổng cắt đôi một hàng bảng qua 2 trang,
   app chuyển nguyên hàng sang trang sau. Thêm **thông báo CHẤP NHẬN 01-2/TB-TĐT**
-  (maTBao 844, trạng thái Y) chép theo trang cổng anh in. **Thông báo TIẾP NHẬN (843) KHÔNG tải nữa** (route tai-file bỏ
+  (maTBao 844, trạng thái Y) chép theo trang cổng anh in. **Tờ khai bổ sung** (16/11/2026, bản cổng in UMAMI 01/GTGT Q1/2026 BSL1): dựng thêm
+  phụ lục **01/KHBS + 01-1/KHBS khổ ngang** (`lib/tokhaiKhbs.js`, chỉ mẫu mới), cổng in chữ cỡ 10,17; bảng tự co cột như bảng
+  HTML (`dongCot`: rộng theo nội dung dài nhất, "từ dài nhất" ngắt được sau dấu '-', ô gộp nhiều cột nới các cột bên dưới) —
+  6 bảng khớp bản cổng ≤ 0,7pt. Dòng xanh "Ký điện tử bởi" theo bản này: dấu tích, 2 dòng, KHÔNG còn câu "Không thể kiểm tra
+  tình trạng thu hồi…". **Thông báo TIẾP NHẬN (843) KHÔNG tải nữa** (route tai-file bỏ
   qua, anh chốt 31/10). ⚠ Phông: `subset: true` của pdf-lib 1.17 + fontkit 1.1.1 làm HỎNG Tinos (mất chữ có dấu, đọc lại
   báo lỗi — bộ dựng cũ `lib/tokhaiPdf.js` dính lỗi này) → tự cắt bằng `lib/catPhong.js` (giữ nguyên số hiệu nét chữ,
   dựng 2 lượt), nhúng `subset: false`: ~60–80 KB/file, ảnh in giống hệt bản nhúng nguyên. ⛔ Bộ dựng cũ (cờ `DUNG_PDF`) vẫn TẮT.
