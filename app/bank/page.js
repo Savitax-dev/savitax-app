@@ -243,7 +243,7 @@ export default function BankPage() {
               toggle={() => setOpen(o => ({ ...o, [r.id]: !o[r.id] }))}
               busy={busy === r.id || busy === 'all'} act={act}
               clients={clients} loadClients={loadClients}
-              hcnsCases={hcnsCases} loadHcnsCases={loadHcnsCases} />
+              hcnsCases={hcnsCases} loadHcnsCases={loadHcnsCases} isAdmin={isAdmin} />
           ))}
         </div>
 
@@ -261,7 +261,7 @@ export default function BankPage() {
   )
 }
 
-function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCases, loadHcnsCases }) {
+function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCases, loadHcnsCases, isAdmin }) {
   const g = groupOf(r)
   const st = ST[g]
   const pill = r.state === "open" ? st.label : pillLabel(r)
@@ -556,7 +556,8 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
                   }}
                     className="px-3 py-1 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-40">{motPhan ? 'Đóng phần còn lại' : 'Bỏ qua'}</button>
                 )}
-                {g !== 'done' && !motPhan && (
+                {/* "Loại bỏ" CHỈ quản trị (anh yêu cầu 16/11/2026) — nhân viên / trưởng phòng dùng "Bỏ qua"; máy chủ cũng chặn */}
+                {isAdmin && g !== 'done' && !motPhan && (
                   <button disabled={busy} title="Không phải tiền khách (chuyển nội bộ, nộp tiền…) — ẩn với nhân viên, trưởng phòng; quản trị vẫn thấy"
                     onClick={async () => {
                       if (!confirm('Loại bỏ giao dịch ' + Number(r.amount).toLocaleString('vi-VN') + 'đ khỏi trang Đối soát?\n\nDùng cho tiền KHÔNG phải phí khách (chuyển nội bộ, nộp tiền…). Nhân viên, trưởng phòng sẽ không thấy giao dịch này nữa; quản trị vẫn thấy.')) return

@@ -193,6 +193,11 @@ export async function POST(request) {
   if (!tx) return Response.json({ error: 'Không tìm thấy giao dịch' }, { status: 404 })
 
   if (action === 'ignore') {
+    // "Loại bỏ" (ghi chú bắt đầu "Loại bỏ" → ẩn giao dịch với nhân viên / trưởng phòng) CHỈ quản trị (anh chốt 16/11/2026)
+    if (/^Loại bỏ/.test(String(body.note || '').trim())) {
+      const laQT = (auth.caller?.roles?.length ? auth.caller.roles : [auth.caller?.role]).includes('admin')
+      if (!laQT) return Response.json({ error: 'Chỉ tài khoản quản trị được loại bỏ giao dịch — dùng "Bỏ qua" nếu không phải phí khách' }, { status: 403 })
+    }
     // Giao dịch ĐÃ GHI một phần: "bỏ qua" là đóng PHẦN CÒN LẠI (vd phần dư nhân viên đã ghi tay ở công nợ → khớp sổ).
     if (daGhiCuaGd(tx) > 0) {
       if (tx.state !== 'open') return Response.json({ error: 'Giao dịch đã được xử lý — tải lại trang' }, { status: 409 })
