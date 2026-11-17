@@ -430,7 +430,8 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
   `outputFileTracingIncludes`** (next.config.mjs), thiếu là Vercel báo không thấy file. Dựng bộ ở MỘT hàm `lib/phaply/xuatBo.js`
   (nút tải về và nút lưu Drive ra file giống hệt).
 - **CCCD** (GĐ 2b, 17/11/2026): trình duyệt thu nhỏ ảnh (cạnh 1800px — Vercel nhận tối đa 4,5 MB/lượt) → `ho-so/[id]/cccd` lưu bucket
-  PRIVATE `phaply-cccd/<case_id>/<uuid>-<mặt>.jpg` TRƯỚC rồi mới đọc (đọc lỗi không mất ảnh) → Claude `claude-opus-5-5` structured outputs
+  PRIVATE `phaply-cccd/<case_id>/<uuid>-<mặt>.jpg` SONG SONG với đọc (đọc lỗi không mất ảnh) → Claude `claude-sonnet-5-5` effort thấp, structured outputs
+  (anh chọn 17/11/2026 sau khi đo 24 lượt thẻ giả: Opus vừa ~11 giây, Sonnet ~4 giây, cùng đúng 6/6; Haiku đọc sai MRZ 1/6 — đổi model phải đo lại)
   (`lib/phaply/cccdDoc.js`, khoá `ANTHROPIC_API_KEY` MỚI — khoá bản thử đã lộ) → `lib/phaply/cccd.js` chuẩn hoá + kiểm chéo (12 số, chữ số 4 =
   thế kỷ + giới tính, số 5–6 = năm sinh, MRZ mặt sau có chữ số kiểm tra ICAO) → lệch thì tô vàng, KHÔNG tự sửa. Địa chỉ trên thẻ cũ (quận/huyện)
   không khớp danh mục → giữ nguyên văn, bắt chọn lại. Ảnh gốc: link ký 5 phút, cần `view_phaply_cccd_image`. Người chỉ nhận đường dẫn ảnh nằm
