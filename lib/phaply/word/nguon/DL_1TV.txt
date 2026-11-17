@@ -52,7 +52,7 @@ a) Người được ủy quyền vẫn tiếp tục thực hiện các quyền 
 b) Người được ủy quyền vẫn tiếp tục thực hiện các quyền và nghĩa vụ của người đại diện theo pháp luật của công ty trong phạm vi đã được ủy quyền cho đến khi người đại diện theo pháp luật của công ty trở lại làm việc tại công ty hoặc cho đến khi Chủ sở hữu công ty, quyết định cử người khác làm người đại diện theo pháp luật của Công ty;
 5. Người đại diện theo pháp luật vắng mặt tại Việt Nam quá 30 ngày mà không ủy quyền cho người khác thực hiện các quyền và nghĩa vụ của người đại diện theo pháp luật của doanh nghiệp hoặc bị chết, mất tích, tạm giam, kết án tù, bị hạn chế hoặc mất năng lực hành vi dân sự thì chủ sở hữu công ty cử người khác làm người đại diện theo pháp luật của công ty.
 6. Trong một số trường hợp đặc biệt, Tòa án có thẩm quyền có quyền chỉ định người đại diện theo pháp luật trong quá trình tố tụng tại Tòa án.
-#cb Chương II
+#cbkp Chương II
 #cb VỐN VÀ CHỦ SỞ HỮU CÔNG TY
 #b Điều 6. Vốn điều lệ, chủ sở hữu công ty
 1. Vốn điều lệ của công ty là: {von_dieu_le} đồng
@@ -92,7 +92,7 @@ trong đó bao gồm:
 4. Tuân thủ quy định của pháp luật về hợp đồng và quy định khác của pháp luật có liên quan trong việc mua, bán, vay, cho vay, thuê, cho thuê, hợp đồng, giao dịch khác giữa công ty và Chủ sở hữu công ty.
 5. Chủ sở hữu công ty chỉ được quyền rút vốn bằng cách chuyển nhượng một phần hoặc toàn bộ vốn điều lệ cho tổ chức hoặc cá nhân khác; trường hợp rút một phần hoặc toàn bộ vốn điều lệ đã góp ra khỏi công ty dưới hình thức khác thì chủ sở hữu công ty và cá nhân, tổ chức có liên quan phải liên đới chịu trách nhiệm về các khoản nợ và nghĩa vụ tài sản khác của công ty.
 6. Chủ sở hữu công ty không được rút lợi nhuận khi công ty không thanh toán đủ các khoản nợ và nghĩa vụ tài sản khác đến hạn.
-#cb Chương III
+#cbkp Chương III
 #cb CƠ CẤU TỔ CHỨC QUẢN LÝ CÔNG TY
 #b Điều 9. Cơ cấu tổ chức quản lý
 1. Công ty có Chủ tịch công ty, {chuc_danh_gd}.
@@ -135,7 +135,7 @@ a) Quyết định các vấn đề liên quan đến hoạt động kinh doanh 
 b) Các Quyết định liên quan tổ chức thực hiện kế hoạch kinh doanh và phương án đầu tư của công ty;
 c) Các Quyết định liên quan việc ban hành quy chế quản lý nội bộ của công ty;
 d) Các Quyết định liên quan việc bổ nhiệm, miễn nhiệm, bãi nhiệm các chức danh quản lý trong công ty (trừ các chức danh thuộc thẩm quyền Chủ sở hữu quyết định).
-#cb Chương IV
+#cbkp Chương IV
 #cb NĂM TÀI CHÍNH PHÂN PHỐI LỢI NHUẬN
 #b Điều 15. Năm tài chính
 Năm tài chính của Công ty bắt đầu từ ngày đầu tiên của tháng 1 (một) hàng năm và kết thúc vào ngày thứ 31 của tháng 12.
@@ -146,7 +146,7 @@ Năm tài chính đầu tiên bắt đầu từ ngày cấp Giấy chứng nhậ
 3. Trường hợp quyết toán năm tài chính bị lỗ, Chủ tịch công ty được quyết định theo các hướng sau:
 a) Trích quỹ dự trữ để bù;
 b) Chuyển sang năm sau để trừ vào lợi nhuận của năm tài chính sau trước khi phân phối lợi nhuận.
-#cb Chương V
+#cbkp Chương V
 #cb THÀNH LẬP, TỔ CHỨC LẠI, GIẢI THỂ
 #b Điều 17. Thành lập, tổ chức lại
 Công ty được thành lập sau khi Bản Điều lệ này được Chủ sở hữu thông qua và được Cơ quan đăng ký kinh doanh cấp Giấy chứng nhận đăng ký doanh nghiệp.
@@ -170,7 +170,7 @@ c) Bị thu hồi Giấy chứng nhận đăng ký doanh nghiệp, trừ trườ
 Sau khi thực hiện xong 03 nội dung trên thì Chủ sở hữu mới thông qua quyết định giải thể doanh nghiệp.
 2. Trong thời hạn 02 ngày làm việc kể từ ngày thông qua quyết định giải thể thì phải gửi bản chính hoặc bản sao (tùy theo đối tượng) Quyết định này đến Cơ quan đăng ký kinh doanh, cơ quan thuế, người lao động trong doanh nghiệp, các đối tác (nếu có nhu cầu).
 3. Người đại diện theo pháp luật của doanh nghiệp nộp hồ sơ giải thể doanh nghiệp cho Cơ quan đăng ký kinh doanh sớm nhất có thể ngay sau khi có kết quả nộp Quyết định giải thể cho Cơ quan đăng ký kinh doanh (nhưng không được quá 05 ngày làm việc kể từ ngày thanh toán hết các khoản nợ của doanh nghiệp).
-#cb Chương VI
+#cbkp Chương VI
 #cb ĐIỀU KHOẢN THI HÀNH
 #b Điều 20. Hiệu lực của Điều lệ
 Điều lệ này có hiệu lực kể từ ngày được cơ quan đăng ký kinh doanh cấp Giấy chứng nhận đăng ký doanh nghiệp.

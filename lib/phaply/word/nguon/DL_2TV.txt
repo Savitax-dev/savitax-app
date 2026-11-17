@@ -53,7 +53,7 @@ a) Thực hiện quyền và nghĩa vụ được giao một cách trung thực,
 b) Trung thành với lợi ích của doanh nghiệp; không lạm dụng địa vị, chức vụ và sử dụng thông tin, bí quyết, cơ hội kinh doanh, tài sản khác của doanh nghiệp để tư lợi hoặc phục vụ lợi ích của tổ chức, cá nhân khác;
 c) Thông báo kịp thời, đầy đủ, chính xác cho doanh nghiệp về doanh nghiệp mà mình, người có liên quan của mình làm chủ hoặc có cổ phần, phần vốn góp theo quy định của Luật Doanh nghiệp.
 Người đại diện theo pháp luật của doanh nghiệp chịu trách nhiệm cá nhân đối với thiệt hại cho doanh nghiệp do vi phạm trách nhiệm quy định tại khoản 3 Điều này.
-#cb Chương II
+#cbkp Chương II
 #cb VỐN ĐIỀU LỆ, QUYỀN VÀ NGHĨA VỤ CỦA THÀNH VIÊN
 #b Điều 7. Vốn điều lệ, phần vốn góp của thành viên công ty
 #b 1. Vốn điều lệ của công ty:
@@ -122,7 +122,7 @@ a) Chào bán phần vốn góp đó cho các thành viên còn lại theo tỷ 
 b) Chuyển nhượng với cùng điều kiện chào bán đối với các thành viên còn lại quy định tại điểm a khoản này cho người không phải là thành viên nếu các thành viên còn lại của công ty không mua hoặc không mua hết trong thời hạn 30 ngày kể từ ngày chào bán.
 2. Thành viên chuyển nhượng vẫn có các quyền và nghĩa vụ đối với công ty tương ứng với phần vốn góp có liên quan cho đến khi thông tin về người mua quy định tại các điểm b, c và đ khoản 2 Điều 48 của Luật Doanh nghiệp được ghi đầy đủ vào sổ đăng ký thành viên.
 3. Trường hợp chuyển nhượng hoặc thay đổi phần vốn góp của các thành viên dẫn đến chỉ còn một thành viên công ty thì công ty phải tổ chức quản lý theo loại hình công ty trách nhiệm hữu hạn một thành viên và thực hiện đăng ký thay đổi nội dung đăng ký doanh nghiệp trong thời hạn 15 ngày kể từ ngày hoàn thành việc chuyển nhượng.
-#cb Chương III
+#cbkp Chương III
 #cb CƠ CẤU TỔ CHỨC QUẢN LÝ, NGUYÊN TẮC HOẠT ĐỘNG CỦA CÔNG TY
 #b Điều 12. Cơ cấu tổ chức quản lý
 Cơ cấu tổ chức của Công ty gồm có:
@@ -226,7 +226,7 @@ e) Họ, tên, chữ ký của người kiểm phiếu và Chủ tịch Hội đ
 #b Điều 21. Nguyên tắc giải quyết tranh chấp nội bộ
 1. Các tranh chấp nội bộ giữa Công ty với thành viên của Công ty, giữa các thành viên Công ty với nhau liên quan đến thành lập, hoạt động, giải thể Công ty trước hết phải được giải quyết thông qua thương lượng, hoà giải.
 2. Trường hợp giải quyết tranh chấp nội bộ theo phương thức thương lượng, hòa giải không đạt được kết quả thì bất kỳ bên nào cũng có quyền đưa tranh chấp ra Tòa án có thẩm quyền để giải quyết.
-#cb Chương IV
+#cbkp Chương IV
 #cb NĂM TÀI CHÍNH PHÂN PHỐI LỢI NHUẬN
 #b Điều 22. Năm tài chính
 Năm tài chính của Công ty bắt đầu từ ngày đầu tiên của tháng 1 (một) hàng năm và kết thúc vào ngày thứ 31 của tháng 12.
@@ -240,7 +240,7 @@ a) Trích quỹ dự trữ để bù.
 b) Chuyển sang năm sau để trừ vào lợi nhuận của năm tài chính sau trước khi phân phối lợi nhuận.
 #b Điều 24. Thu hồi phần vốn góp đã hoàn trả hoặc lợi nhuận đã chia
 Trường hợp hoàn trả một phần vốn góp do giảm vốn điều lệ trái với quy định tại khoản 3 Điều 68 của Luật Doanh nghiệp hoặc chia lợi nhuận cho thành viên trái với quy định tại Điều 69 của Luật Doanh nghiệp thì các thành viên công ty phải hoàn trả cho công ty số tiền, tài sản khác đã nhận; phải cùng liên đới chịu trách nhiệm về các khoản nợ và nghĩa vụ tài sản khác của công ty tương ứng với số tiền, tài sản chưa hoàn trả đủ cho đến khi hoàn trả đủ số tiền, tài sản khác đã nhận.
-#cb Chương V
+#cbkp Chương V
 #cb THÀNH LẬP, TỔ CHỨC LẠI, GIẢI THỂ
 #b Điều 25. Thành lập, tổ chức lại
 Công ty được thành lập sau khi được cơ quan đăng ký kinh doanh cấp giấy chứng nhận đăng ký doanh nghiệp.
@@ -269,7 +269,7 @@ b) Nợ thuế;
 c) Các khoản nợ khác;
 5. Sau khi đã thanh toán chi phí giải thể doanh nghiệp và các khoản nợ, phần còn lại chia cho chủ doanh nghiệp tư nhân, các thành viên, cổ đông hoặc chủ sở hữu công ty theo tỷ lệ sở hữu phần vốn góp, cổ phần;
 6. Người đại diện theo pháp luật của doanh nghiệp gửi hồ sơ giải thể doanh nghiệp cho Cơ quan đăng ký kinh doanh trong thời hạn 05 ngày làm việc kể từ ngày thanh toán hết các khoản nợ của doanh nghiệp;
-#cb Chương VI
+#cbkp Chương VI
 #cb ĐIỀU KHOẢN THI HÀNH
 #b Điều 28. Hiệu lực của Điều lệ
 Điều lệ này có hiệu lực kể từ ngày được cơ quan đăng ký kinh doanh cấp giấy chứng nhận đăng ký doanh nghiệp.
