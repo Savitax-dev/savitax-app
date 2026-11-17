@@ -246,6 +246,9 @@ export default function Sidebar({ onClose }) {
   const canViewHcns = can(role, 'view_hcns', permData)
   // Khu Phòng Kinh doanh — cùng cơ chế tự ẩn như HCNS. Giám đốc chỉ có quyền duyệt giá vẫn thấy để duyệt.
   const canViewSales = can(role, 'view_sales', permData) || can(role, 'approve_sales_quote', permData)
+  // Khu PHÁP LÝ (sql/56) — tự ẩn như HCNS; bản clone không cài thì quyền không tồn tại, khu biến mất.
+  const canViewPhapLy = can(role, 'view_phaply', permData) || can(role, 'view_phaply_all_staff', permData)
+  const canMauPhapLy = can(role, 'manage_phaply_template', permData)
   const onRoomPage = pathname && pathname.startsWith('/room/')
 
   // Greeting by time — dùng full_name trực tiếp
@@ -404,6 +407,16 @@ export default function Sidebar({ onClose }) {
             <NavItem href="/hcns"           icon="💼" label="Phòng HCNS" pathname={pathname} onClose={onClose} />
             <NavItem href="/hcns/checklist" icon="📝" label="Checklist HCNS"    pathname={pathname} onClose={onClose} />
             <NavItem href="/hcns/work-log"  icon="📔" label="Nhật ký làm việc HCNS" pathname={pathname} onClose={onClose} />
+          </div>
+        )}
+
+        {/* Phân khu PHÁP LÝ — anh chốt 31/10/2026: khu RIÊNG, ngay dưới HCNS - BHXH (không lồng vào). */}
+        {canViewPhapLy && (
+          <div>
+            <SectionLabel>Pháp lý</SectionLabel>
+            <NavItem href="/phaply"         icon="⚖️" label="Hồ sơ pháp lý"   pathname={pathname} onClose={onClose} />
+            <NavItem href="/phaply/bao-cao" icon="📈" label="Báo cáo pháp lý" pathname={pathname} onClose={onClose} />
+            {canMauPhapLy && <NavItem href="/phaply/mau" icon="🗂️" label="Mẫu & checklist" pathname={pathname} onClose={onClose} />}
           </div>
         )}
 

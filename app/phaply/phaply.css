@@ -1,0 +1,181 @@
+/* Giao diện Phòng Kinh doanh — phương án B "Xanh báo giá" (chốt 2026-09-11).
+   Bảng màu lấy đúng từ mẫu báo giá SVT.MB03 Giám đốc đã duyệt: xanh 2A6CA8, xanh thanh 4A8FC4,
+   vàng kim C9A027, nền xen kẽ F2F8FD, viền CFE2F0. Mọi selector nằm dưới .pl-ui nên không lan
+   sang trang khác của app. */
+.pl-ui {
+  --pl-canvas: #F5F0ED;
+  --pl-surface: #FFFFFF;
+  --pl-raised: #FBF7F5;
+  --pl-ink: #2B1A17;
+  --pl-muted: #76615C;
+  --pl-line: #EAD8D2;
+  --pl-primary: #8E1F1F;
+  --pl-primary-h: #741818;
+  --pl-primary-soft: #F8E5E1;
+  --pl-bar: #A8322D;
+  --pl-gold: #C9A027;
+  --pl-gold-ink: #8E6A0C;
+  --pl-gold-soft: #FFF4D6;
+  --pl-wash: #FDF6F4;
+  --pl-row-h: #F9EAE6;
+  font-family: var(--font-pl-sans), "Segoe UI", Arial, sans-serif;
+  color: var(--pl-ink);
+  background: var(--pl-canvas);
+  min-height: 100vh;
+}
+.pl-ui .num {
+  font-family: var(--font-pl-mono), ui-monospace, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+/* Dải tiêu đề trang — như dải banner xanh viền vàng của file báo giá */
+.pl-ui .p-head {
+  background: var(--pl-primary);
+  color: #fff;
+  border-radius: 14px;
+  border-bottom: 3px solid var(--pl-gold);
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pl-ui .p-head h1 { margin: 0; font-size: 20px; font-weight: 700; color: #fff; }
+.pl-ui .p-head p { margin: 2px 0 0; font-size: 13px; color: #F4D9D3; }
+.pl-ui .p-head .p-btn { background: rgba(255, 255, 255, .12); color: #fff; border-color: rgba(255, 255, 255, .35); }
+.pl-ui .p-head .p-btn:hover { background: rgba(255, 255, 255, .2); }
+.pl-ui .p-head .p-btn-p { background: var(--pl-gold); color: var(--pl-ink); border-color: transparent; }
+.pl-ui .p-head .p-btn-p:hover { background: #D8B03A; }
+
+/* Nút */
+.pl-ui .p-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 500;
+  border: 1px solid var(--pl-line); background: var(--pl-surface); color: var(--pl-ink);
+  white-space: nowrap; transition: background .15s, border-color .15s;
+}
+.pl-ui .p-btn:hover { background: var(--pl-raised); border-color: #D9BDB5; }
+.pl-ui .p-btn:disabled { opacity: .5; cursor: not-allowed; }
+.pl-ui .p-btn-p { background: var(--pl-primary); color: #fff; border-color: transparent; font-weight: 600; }
+.pl-ui .p-btn-p:hover { background: var(--pl-primary-h); }
+.pl-ui .p-btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 8px; }
+.pl-ui .p-btn:focus-visible, .pl-ui .p-back:focus-visible { outline: 2px solid var(--pl-gold); outline-offset: 2px; }
+
+/* Nút quay lại danh sách — nổi bật, ghim trên đầu khi cuộn */
+.pl-ui .p-topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: var(--pl-surface); border: 1px solid var(--pl-line);
+  border-top: 3px solid var(--pl-gold); border-radius: 14px;
+  padding: 10px 14px; box-shadow: 0 6px 16px rgba(21, 40, 60, .06);
+}
+.pl-ui .p-back {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 16px 8px 10px; border-radius: 11px;
+  background: var(--pl-primary-soft); color: var(--pl-primary);
+  border: 1.5px solid var(--pl-primary); font-weight: 700; font-size: 14px; white-space: nowrap;
+}
+.pl-ui .p-back:hover { background: #F2D6D0; }
+.pl-ui .p-back .ar {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--pl-primary); color: #fff;
+  display: grid; place-items: center; font-size: 14px; line-height: 1;
+}
+
+/* Ô số liệu — mỗi ô một màu nhạt riêng */
+.pl-ui .p-tile { border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; background: var(--tb); color: var(--tc); }
+.pl-ui .p-tile .k { font-size: 12px; font-weight: 600; }
+.pl-ui .p-tile .v { font-size: 24px; font-weight: 700; line-height: 1.2; }
+.pl-ui .p-tile .v small { font-size: 12px; font-weight: 500; margin-left: 3px; }
+.pl-ui .p-tile .f { font-size: 12px; color: var(--pl-muted); }
+.pl-ui .tone-red  { --tc: #B42318; --tb: #FDE8E6; }
+.pl-ui .tone-amb  { --tc: #A15C07; --tb: #FDF0DC; }
+.pl-ui .tone-grn  { --tc: #18704A; --tb: #E0F3E9; }
+.pl-ui .tone-blue { --tc: #1D4ED8; --tb: #E3ECFC; }
+.pl-ui .tone-gold { --tc: #8E6A0C; --tb: #FFF2CC; }
+.pl-ui .tone-sky  { --tc: #0E7490; --tb: #DDF3F7; }
+.pl-ui .tone-wine { --tc: #8E1F1F; --tb: #F8E5E1; }
+
+/* Khối nội dung + tiêu đề khối */
+.pl-ui .p-panel { background: var(--pl-surface); border: 1px solid var(--pl-line); border-radius: 14px; overflow: hidden; }
+.pl-ui .p-panel-h {
+  padding: 10px 16px; font-size: 14px; font-weight: 700;
+  background: var(--pl-primary-soft); color: var(--pl-primary); border-bottom: 1px solid var(--pl-line);
+}
+.pl-ui .p-card-h {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; font-size: 14px; font-weight: 700;
+  background: var(--pl-bar); color: #fff;
+}
+.pl-ui .p-card-h .st {
+  font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  background: #FFD98A; color: var(--pl-ink); padding: 2px 8px; border-radius: 6px;
+}
+.pl-ui .p-card-b { padding: 14px 16px; }
+
+/* Bảng — tiêu đề nền xanh, dòng xen kẽ như bảng trong file báo giá */
+.pl-ui .p-tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.pl-ui .p-tbl th {
+  background: var(--pl-bar); color: #fff; font-size: 12px; font-weight: 600;
+  padding: 10px 12px; text-align: center; white-space: nowrap;
+}
+.pl-ui .p-tbl td { padding: 10px 12px; border-top: 1px solid var(--pl-line); text-align: center; vertical-align: middle; }
+.pl-ui .p-tbl th.l, .pl-ui .p-tbl td.l { text-align: left; }
+.pl-ui .p-tbl th.r, .pl-ui .p-tbl td.r { text-align: right; }
+.pl-ui .p-tbl tbody tr:nth-child(even) td { background: var(--pl-wash); }
+.pl-ui .p-tbl tbody tr.p-click { cursor: pointer; }
+.pl-ui .p-tbl tbody tr:hover td { background: var(--pl-row-h); }
+
+/* Nút lọc dạng chip */
+.pl-ui .p-chip {
+  padding: 6px 12px; border-radius: 9px; font-size: 13px;
+  border: 1px solid var(--pl-line); background: var(--pl-surface); color: var(--pl-ink);
+}
+.pl-ui .p-chip:hover { border-color: #D9BDB5; }
+.pl-ui .p-chip.on { background: var(--pl-primary); color: #fff; border-color: var(--pl-primary); font-weight: 600; }
+.pl-ui .p-chip .n { margin-left: 4px; opacity: .65; font-weight: 600; }
+
+/* Ô nhập */
+.pl-ui .p-input {
+  width: 100%; padding: 8px 12px; border-radius: 10px; font-size: 14px;
+  border: 1px solid var(--pl-line); background: var(--pl-surface); color: var(--pl-ink);
+}
+.pl-ui .p-input:focus { outline: none; border-color: var(--pl-primary); box-shadow: 0 0 0 3px var(--pl-primary-soft); }
+.pl-ui .p-input:disabled { background: var(--pl-raised); color: var(--pl-muted); }
+
+/* Khung tổng phí */
+.pl-ui .p-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; background: var(--pl-gold-soft); border-top: 2px solid var(--pl-gold);
+}
+.pl-ui .p-total .num { font-size: 22px; font-weight: 600; color: var(--pl-gold-ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pl-ui * { transition: none !important; }
+}
+
+/* Bộ lọc kỳ đặt trên dải tiêu đề xanh */
+.pl-ui .p-head .p-chip { background: rgba(255, 255, 255, .12); color: #fff; border-color: rgba(255, 255, 255, .3); }
+.pl-ui .p-head .p-chip:hover { background: rgba(255, 255, 255, .2); }
+.pl-ui .p-head .p-chip.on { background: var(--pl-gold); color: var(--pl-ink); border-color: transparent; }
+.pl-ui .p-head .p-input { background: #fff; }
+.pl-ui .p-head b { color: #FFE8A3; }
+
+/* Thanh 10 bước của hồ sơ */
+.pl-ui .p-steps { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
+.pl-ui .p-step { border-radius: 9px; padding: 6px 4px; text-align: center; font-size: 11.5px; line-height: 1.25;
+  background: var(--pl-raised); color: var(--pl-muted); border: 1px solid var(--pl-line); }
+.pl-ui .p-step b { display: block; font-size: 12px; }
+.pl-ui .p-step.xong { background: #E0F3E9; color: #18704A; border-color: #BFE3CF; }
+.pl-ui .p-step.dang { background: var(--pl-primary); color: #fff; border-color: var(--pl-primary); font-weight: 700; }
+.pl-ui button.p-step:hover { border-color: var(--pl-gold); }
+
+/* Bảng theo bước (kanban) */
+.pl-ui .p-kanban { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+.pl-ui .p-col { background: var(--pl-raised); border: 1px solid var(--pl-line); border-radius: 12px; display: flex; flex-direction: column; min-height: 140px; }
+.pl-ui .p-col-h { padding: 8px 10px; font-weight: 700; font-size: 13px; display: flex; justify-content: space-between; border-bottom: 1px solid var(--pl-line); }
+.pl-ui .p-the { background: var(--pl-surface); border: 1px solid var(--pl-line); border-radius: 10px; padding: 8px 10px; margin: 6px 8px 0; cursor: pointer; font-size: 12.5px; }
+.pl-ui .p-the:hover { border-color: var(--pl-gold); }
+.pl-ui .p-chip-cho { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; color: #fff; }

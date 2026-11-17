@@ -395,6 +395,27 @@ bộ quy tắc). Anh yêu cầu tách cho dễ sửa: đổi quy tắc bước n
 - ⏳ Chưa làm (chờ anh thử): nạp cấp bậc + lương cho toàn bộ nhân viên (anh gửi file Excel nhân sự
   gốc hoặc kế toán nội bộ tự đặt), chưa chốt tháng nào.
 
+## Phân hệ Pháp lý (`/phaply`) — ĐANG LÀM trên nhánh `feat/phap-ly`, CHƯA lên app
+
+Kế hoạch: `docs/phan-he-phap-ly-ke-hoach.md` (7 giai đoạn). **Anh dặn 01/11/2026: toàn bộ phân hệ CHƯA đưa lên app** cho tới khi anh
+duyệt bản hoàn chỉnh — không push, không chạy SQL production. Làm trong worktree `D:\savitax-pl` (đã bỏ upstream). Thử trên DATABASE
+DEMO: `node --env-file=.env.local scripts/phaply-chuan-bi-demo.mjs [--mau]` (chạy sql/56 + mẫu mặc định + hồ sơ giả; demo bị làm
+mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổng 3010. **KHÔNG đưa vào bản clone** (bỏ `sql/56`, `app/phaply`,
+`app/api/admin/phaply`, `lib/phaply`, `templates/phaply`, `data/phaply`, mục menu "Pháp lý" trong Sidebar).
+
+- GĐ 1 (17/11/2026, `sql/56_phap_ly_ho_so.sql`): hồ sơ `legal_cases` mã `PL-YYMM-NN` (giờ VN), 10 bước + trạng thái chờ tách riêng, checklist
+  theo thủ tục (mẫu xoá MỀM), hạn nội bộ bỏ chủ nhật, nhật ký, ghi chú; tiền TÁCH phí dịch vụ / thu hộ, thu theo ĐỢT (đến hạn khi sang bước
+  hoặc theo ngày), sổ thu ghi nối tiếp xoá mềm có lý do; ĐNTT riêng (`ho-so/[id]/dntt`) — chỉ phí dịch vụ chịu VAT, thu hộ KHÔNG.
+- **Bảng `legal_*` bật RLS KHÔNG policy** (chỉ service_role) — cố ý khác sql/06, vì sẽ giữ CCCD. Mọi đọc ghi qua `app/api/admin/phaply/**`.
+- Quyền nhóm "Phòng Pháp lý" (`lib/phaply/quyen.js` + luật thuần `phamVi.js`): nhân viên thấy hồ sơ mình + chưa ai nhận; trưởng phòng
+  (`view_phaply_all_staff`) cả phòng; `close_phaply_case` đóng còn nợ / mở lại / xoá khoản thu / sửa phí sau khi đã thu.
+- Tiền (`lib/phaply/tien.js`, hàm thuần): **doanh số = phần dịch vụ ĐÃ THU theo tháng paid_at**, tính cho người phụ trách LÚC THU; khách trả
+  thiếu → trừ THU HỘ trước; dòng tiền: đợt phát sinh ở tháng đến hạn, trả TRƯỚC hạn thì phát sinh ngay tháng trả (đã thu = tiền thật về).
+  Đợt "khi nhận" (bước 1) đến hạn = ngày nhận, không phải ngày chuyển bước đầu (lỗi đã vá).
+- Bộ kiểm: `node scripts/test-phaply-tien.mjs` (offline) · `node --env-file=.env.local scripts/test-phaply-api.mjs` (demo + máy chủ thử;
+  CHỈ cấp phiên cho tài khoản đăng nhập ĐÃ CÓ — `generateLink` với email chưa có sẽ TẠO tài khoản mới) · `node scripts/test-phaply-word.mjs`.
+- Mẫu Word thành lập mới (19 mẫu, pháp lý đã chốt 17/11): `templates/phaply/word/README.md`, từ điển trường DUY NHẤT `lib/phaply/word/duLieu.js`.
+
 ## Phân hệ Hóa đơn điện tử — ĐANG GÁC (13/10/2026)
 
 Cổng hoadondientu.gdt.gov.vn **chặn** cả đăng nhập gửi từ tiện ích lẫn lượt đọc chạy trong tab đã
