@@ -483,6 +483,13 @@ function TaiCccd({ caseId, p, setP, toast, canhBao, setCanhBao }) {
   const [dang, setDang] = useState(false)
   const [loiDoc, setLoiDoc] = useState('')
   const blobs = useRef([])
+  const [giay, setGiay] = useState(0)
+  useEffect(() => {
+    if (!dang) return
+    const t0 = Date.now()
+    const h = setInterval(() => setGiay(Math.floor((Date.now() - t0) / 1000)), 500)
+    return () => { clearInterval(h); setGiay(0) }
+  }, [dang])
   useEffect(() => () => blobs.current.forEach(u => URL.revokeObjectURL(u)), [])   // chỉ dọn khi đóng hộp
   // mở lại người đã lưu: lấy link ký 5 phút để hiện ảnh (người không có quyền xem ảnh CCCD nhận 'an' → không hiện)
   useEffect(() => {
@@ -518,7 +525,8 @@ function TaiCccd({ caseId, p, setP, toast, canhBao, setCanhBao }) {
       // giữ nguyên ảnh vừa tải để đối chiếu với các ô bên dưới
       setDaLuu(o => ({ ...o, ...Object.fromEntries(Object.entries(anh).map(([m, a]) => [m, a.url])) }))
       setAnh({})
-      if (!j.loi_doc) toast(j.canh_bao?.length ? `Đã đọc — ${j.canh_bao.length} chỗ cần đối chiếu (tô vàng)` : 'Đã đọc CCCD — đối chiếu ảnh với các ô rồi bấm Lưu')
+      const sg = j.thoi_gian ? ` (${Math.round(j.thoi_gian.tong / 1000)} giây)` : ''
+      if (!j.loi_doc) toast(j.canh_bao?.length ? `Đã đọc${sg} — ${j.canh_bao.length} chỗ cần đối chiếu (tô vàng)` : `Đã đọc CCCD${sg} — đối chiếu ảnh với các ô rồi bấm Lưu`)
     } catch { toast('Mất kết nối — thử lại', true) } finally { setDang(false) }
   }
   const o = (mat, ten) => {
@@ -549,7 +557,7 @@ function TaiCccd({ caseId, p, setP, toast, canhBao, setCanhBao }) {
       {LA_DEMO && <div className="text-xs rounded bg-amber-50 text-amber-900 px-2 py-1.5">Bản demo: chỉ tài khoản phòng pháp lý tải được; mọi ảnh <b>tự xoá lúc 2h sáng</b>. Tài khoản demo dùng chung mật khẩu — chỉ dùng CCCD thử, đừng tải CCCD khách thật.</div>}
       <div className="flex gap-3 flex-wrap">{o('truoc', 'Mặt trước')}{o('sau', 'Mặt sau')}</div>
       <div className="flex items-center gap-2 flex-wrap">
-        <button type="button" className={btnPrimary + ' p-btn-sm'} disabled={dang || (!anh.truoc && !anh.sau)} onClick={doc}>{dang ? 'Đang đọc… (10–30 giây)' : 'Tải lên & đọc CCCD'}</button>
+        <button type="button" className={btnPrimary + ' p-btn-sm'} disabled={dang || (!anh.truoc && !anh.sau)} onClick={doc}>{dang ? `Đang đọc… ${giay} giây` : 'Tải lên & đọc CCCD'}</button>
         <span className="text-xs text-gray-500">Nên chụp cả 2 mặt: mặt sau có mã MRZ để kiểm chéo số, ngày sinh, giới tính. Bấm vào ảnh để phóng to.</span>
       </div>
       {loiDoc && <div className="text-xs rounded bg-amber-50 text-amber-900 px-2 py-1.5">{loiDoc}</div>}

@@ -23,11 +23,26 @@ async function moHoSo(auth, id) {
   return hs && !hs.is_deleted && xemDuoc(auth, hs) ? hs : null
 }
 
+let coBucket = false   // máy chủ còn ấm thì khỏi hỏi lại kho đã có chưa
 async function damBaoBucket(admin) {
+  if (coBucket) return
   const { error } = await admin.storage.getBucket(BUCKET)
-  if (!error) return
+  if (!error) { coBucket = true; return }
   const { error: e2 } = await admin.storage.createBucket(BUCKET, { public: false, fileSizeLimit: TOI_DA, allowedMimeTypes: Object.keys(KIEU) })
   if (e2 && !/exist/i.test(e2.message)) throw new Error('Không tạo được kho ảnh CCCD: ' + e2.message)
+  coBucket = true
+}
+
+// Danh mục tỉnh + 3.321 phường/xã (ít đổi) — nhớ 1 giờ trong máy chủ còn ấm, khỏi lật 4 trang mỗi lần đọc
+let dmNho = null
+async function napDanhMuc(admin) {
+  if (dmNho && Date.now() - dmNho.luc < 3600e3) return dmNho
+  const [tinh, xa] = await Promise.all([
+    admin.from('legal_places').select('ma, ten').eq('cap', 'tinh').then(r => r.data || []),
+    docHet((a, b) => admin.from('legal_places').select('ma, ten, ma_tinh').eq('cap', 'xa').order('ma').range(a, b)),
+  ])
+  if (tinh.length && xa.length) dmNho = { tinh, xa, luc: Date.now() }
+  return { tinh, xa }
 }
 
 export async function POST(request, { params }) {
@@ -51,33 +66,41 @@ export async function POST(request, { params }) {
   }
   if (!anh.length) return loi(400, 'Chưa chọn ảnh mặt trước / mặt sau')
 
+  // Đọc ảnh (chặng lâu nhất) chạy SONG SONG với lưu ảnh + nạp danh mục (17/11/2026, anh báo đọc chậm). Lưu lỗi thì vẫn trả 500
+  // như cũ; đọc lỗi thì ảnh đã lưu vẫn còn — giữ nguyên luật "đọc lỗi không mất ảnh".
+  const t0 = Date.now()
+  const docP = coKhoaDoc()
+    ? docAnhCccd(anh.map(a => ({ mat: a.mat, mime: a.mime, base64: a.buf.toString('base64') })))
+      .then(d => ({ d, ms: Date.now() - t0 }), e => ({ e, ms: Date.now() - t0 }))
+    : null
+  const dmP = docP ? napDanhMuc(admin).catch(() => ({ tinh: [], xa: [] })) : null
   try {
     await damBaoBucket(admin)
     const duongDan = {}
-    for (const a of anh) {
+    await Promise.all(anh.map(async a => {
       // khoá chỉ chữ ASCII (bẫy client-files: SDK từ chối ký tự tiếng Việt / khoảng trắng)
       const path = `${id}/${randomUUID()}-${a.mat}.${KIEU[a.mime]}`
       const { error } = await admin.storage.from(BUCKET).upload(path, a.buf, { contentType: a.mime, upsert: false })
       if (error) throw new Error('Không lưu được ảnh: ' + error.message)
       duongDan[a.mat] = path
-    }
+    }))
     await ghiNhatKy(admin, id, 'edit', null, null, caller.staffId, `Tải ảnh CCCD (${anh.map(a => a.mat === 'truoc' ? 'mặt trước' : 'mặt sau').join(', ')})`)
+    const luuMs = Date.now() - t0
 
-    if (!coKhoaDoc()) return Response.json({ duong_dan: duongDan, loi_doc: 'Chưa cài khoá đọc CCCD tự động — ảnh đã lưu, nhập tay các ô bên dưới' })
-    let doc
-    try { doc = await docAnhCccd(anh.map(a => ({ mat: a.mat, mime: a.mime, base64: a.buf.toString('base64') }))) }
-    catch (e) { return Response.json({ duong_dan: duongDan, loi_doc: e.message + ' (ảnh đã lưu)' }) }
+    if (!docP) return Response.json({ duong_dan: duongDan, loi_doc: 'Chưa cài khoá đọc CCCD tự động — ảnh đã lưu, nhập tay các ô bên dưới' })
+    const kq = await docP
+    const thoiGian = { luu: luuMs, doc: kq.ms, tong: Date.now() - t0 }
+    if (kq.e) return Response.json({ duong_dan: duongDan, loi_doc: kq.e.message + ' (ảnh đã lưu)', thoi_gian: thoiGian })
+    const doc = kq.d
 
     // danh mục để tách địa chỉ thường trú về tỉnh + phường/xã mới
-    const [tinh, xa] = await Promise.all([
-      admin.from('legal_places').select('ma, ten').eq('cap', 'tinh').then(r => r.data || []),
-      docHet((a, b) => admin.from('legal_places').select('ma, ten, ma_tinh').eq('cap', 'xa').order('ma').range(a, b)),
-    ])
+    const { tinh, xa } = await dmP
+    thoiGian.tong = Date.now() - t0
     const { nguoi, diaChiKhop } = veNguoi(doc, { tinh, xa })
     const canhBao = kiemCheo(nguoi, doc)
     if (doc.noi_thuong_tru && !diaChiKhop) canhBao.push({ truong: 'thuong_tru', muc: 'Địa chỉ trên thẻ là địa giới CŨ hoặc không khớp danh mục — chọn lại tỉnh + phường/xã mới' })
     if (doc.ghi_chu) canhBao.push({ truong: '', muc: 'Ghi chú khi đọc: ' + doc.ghi_chu })
-    return Response.json({ duong_dan: duongDan, nguoi, canh_bao: canhBao, cccd_doc: { loai_the: doc.loai_the, mrz: doc.mrz, khong_chac: doc.khong_chac, doc_luc: new Date().toISOString() } })
+    return Response.json({ duong_dan: duongDan, nguoi, canh_bao: canhBao, thoi_gian: thoiGian, cccd_doc: { loai_the: doc.loai_the, mrz: doc.mrz, khong_chac: doc.khong_chac, doc_luc: new Date().toISOString() } })
   } catch (e) { return loi(500, e.message) }
 }
 
