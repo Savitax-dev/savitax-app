@@ -459,6 +459,12 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
   kích thước), Segoe UI Symbol → DejaVu; bản in khớp Word (đường chấm, ô ☐☒, số trang) — Google Drive làm MẤT đường chấm, đừng dùng.
   App: `lib/phaply/pdf.js` (doiPdf, gopPdf), route `ho-so/[id]/pdf` (cả bộ = từng PDF + "00. Bo trinh ky (gop).pdf"), nút Lưu Drive kèm PDF.
   PDF lỗi không chặn Word. Kiểm `node --env-file=.env.local scripts/test-phaply-pdf.mjs [--that]`.
+- **GĐ 6** (17/11/2026): báo cáo thêm tab **Theo hồ sơ** + **Hồ sơ treo** + đếm hồ sơ mới/xong/đang làm theo nhân viên (`lib/phaply/baoCao.js`,
+  route bao-cao, Excel 4 sheet). Bộ kiểm `test-phaply-bao-cao [--that]` chạy 3 BẤT BIẾN trên kết quả API thật. Hướng dẫn nhân viên
+  `docs/huong-dan-phan-he-phap-ly.md` = trang `/phaply/huong-dan` (TrangTaiLieu) + `.docx` dựng bằng `node scripts/phaply-huong-dan-docx.mjs`
+  (Word trên máy; mỗi Phần sang trang mới). Sửa giao diện thì sửa cả tài liệu.
+- Mẫu Word: **mỗi Chương (từ Chương II) sang trang mới** — mã đoạn `#p` trong khung.js (pageBreakBefore, không sinh trang trắng); anh dặn
+  17/11/2026, áp cho mẫu mới có chương.
 
 ## Phân hệ Hóa đơn điện tử — ĐANG GÁC (13/10/2026)
 

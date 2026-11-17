@@ -26,6 +26,7 @@ const nextConfig = {
     // Trang tài liệu (components/TrangTaiLieu.js) đọc docs lúc chạy — cần đăng nhập nên không dựng tĩnh được
     '/soatbaocao/quy-uoc': ['./docs/quy-uoc-luu-ho-so.md'],
     '/tokhai/huong-dan': ['./docs/huong-dan-phan-he-to-khai.md'],
+    '/phaply/huong-dan': ['./docs/huong-dan-phan-he-phap-ly.md'],
     '/api/admin/tai-lieu/anh/[ten]': ['./docs/img/**'],
   },
 };
