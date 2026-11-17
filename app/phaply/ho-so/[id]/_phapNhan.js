@@ -289,13 +289,34 @@ function Nganh({ d, sua, goi }) {
     api('/api/admin/phaply/danh-muc?loai=nganh').then(r => { if (r.ok) { nhoVsic = r.data.ds; setVsic(r.data.ds) } })
   }, [])
   const doi = JSON.stringify(ds) !== JSON.stringify(dau())
+  // Danh sách sổ xuống: bấm vào ô là hiện cả danh mục, gõ tới đâu loại trừ tới đó. Gõ nhiều chữ = phải có ĐỦ các chữ
+  // (không cần dấu, không cần đúng thứ tự): "ban buon thuc" → các ngành bán buôn thực phẩm / thức ăn…; gõ số = lọc theo mã.
+  const [mo, setMo] = useState(false)
+  const [chonIdx, setChonIdx] = useState(0)
   const goiYTim = useMemo(() => {
-    const q = boDau(tim.trim())
-    if (!q) return []
+    const tu = boDau(tim.trim()).split(/\s+/).filter(Boolean)
     const co = new Set(ds.map(n => n.ma))
-    return vsic.filter(n => !co.has(n.ma) && (n.ma.startsWith(q) || boDau(n.ten).includes(q))).slice(0, 12)
+    return vsic.filter(n => {
+      const chu = n.ma + ' ' + boDau(n.ten)
+      return tu.every(t => (/^\d+$/.test(t) ? n.ma.startsWith(t) : chu.includes(t)))
+    }).map(n => ({ ...n, daCo: co.has(n.ma) }))   // ngành đã chọn vẫn hiện (mờ, ghi "đã có") để khỏi tưởng tìm không ra
+      // ngành có ĐÚNG cụm chữ liền nhau lên đầu ("tu van quan ly" → 7020 trước 6220 "tư vấn máy vi tính và quản lý…")
+      .map(n => ({ ...n, lien: tu.length > 1 && boDau(n.ten).includes(tu.join(' ')) ? 0 : 1 }))
+      .sort((a, b) => a.lien - b.lien || a.ma.localeCompare(b.ma))
   }, [tim, vsic, ds])
-  const them = n => { setDs(o => [...o, { ma: n.ma, ten: n.ten, chi_tiet: '', chinh: !o.length }]); setTim('') }
+  const them = n => { if (n.daCo) return; setDs(o => [...o, { ma: n.ma, ten: n.ten, chi_tiet: '', chinh: !o.length }]); setTim(''); setChonIdx(0) }
+  const phim = e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setMo(true); setChonIdx(i => Math.min(i + 1, goiYTim.length - 1)) }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setChonIdx(i => Math.max(i - 1, 0)) }
+    else if (e.key === 'Escape') setMo(false)
+    else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (mo && goiYTim[chonIdx]) them(goiYTim[chonIdx])
+      else if (maTay) them({ ma: tim.trim(), ten: '' })
+    }
+  }
+  // giữ dòng đang chọn bằng phím trong tầm nhìn
+  useEffect(() => { document.getElementById('pl-vsic-' + chonIdx)?.scrollIntoView({ block: 'nearest' }) }, [chonIdx])
   const setN = (i, k, v) => setDs(o => o.map((n, j) => (j === i ? { ...n, [k]: v } : k === 'chinh' && v ? { ...n, chinh: false } : n)))
   const doiCho = (i, buoc) => setDs(o => { const n = [...o], j = i + buoc; if (j < 0 || j >= n.length) return o; [n[i], n[j]] = [n[j], n[i]]; return n })
   const maTay = /^\d{4}$/.test(tim.trim()) && !vsic.some(n => n.ma === tim.trim())
@@ -305,11 +326,26 @@ function Nganh({ d, sua, goi }) {
       <div className="p-4 space-y-3">
         {sua && (
           <div className="relative">
-            <input className={inputCls} value={tim} onChange={e => setTim(e.target.value)} placeholder={vsic.length ? 'Gõ mã 4 số hoặc tên ngành để thêm (không cần dấu)…' : 'Danh mục ngành chưa nạp — gõ mã 4 số rồi Enter để thêm tay'}
-              onKeyDown={e => { if (e.key === 'Enter' && maTay) them({ ma: tim.trim(), ten: '' }) }} />
-            {goiYTim.length > 0 && (
-              <div className="absolute z-10 left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border max-h-72 overflow-y-auto">
-                {goiYTim.map(n => <button key={n.ma} className="block w-full text-left px-3 py-1.5 text-sm hover:bg-amber-50" onClick={() => them(n)}><b className="num">{n.ma}</b> {n.ten}</button>)}
+            <div className="relative">
+              <input className={inputCls + ' pr-8'} value={tim} onKeyDown={phim} onFocus={() => setMo(true)} onBlur={() => setTimeout(() => setMo(false), 150)}
+                onChange={e => { setTim(e.target.value); setMo(true); setChonIdx(0) }}
+                placeholder={vsic.length ? `Chọn ngành để thêm — bấm để xem cả ${vsic.length} ngành, gõ mã hoặc chữ để lọc (không cần dấu)` : 'Danh mục ngành chưa nạp — gõ mã 4 số rồi Enter để thêm tay'} />
+              <button type="button" tabIndex={-1} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs" aria-label="Mở danh sách ngành"
+                onMouseDown={e => { e.preventDefault(); setMo(m => !m) }}>▼</button>
+            </div>
+            {mo && vsic.length > 0 && (
+              <div className="absolute z-20 left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border">
+                <div className="px-3 py-1.5 text-xs text-gray-500 border-b">
+                  {goiYTim.length ? `${goiYTim.length} ngành${tim.trim() ? ' khớp "' + tim.trim() + '"' : ''} — ↑↓ chọn, Enter thêm` : `Không có ngành nào khớp "${tim.trim()}"`}
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {goiYTim.map((n, i) => (
+                    <button key={n.ma} id={'pl-vsic-' + i} type="button" onMouseDown={e => { e.preventDefault(); them(n) }} onMouseEnter={() => setChonIdx(i)}
+                      className={'flex gap-2 w-full text-left px-3 py-1.5 text-sm ' + (n.daCo ? 'text-gray-400 cursor-default ' : '') + (i === chonIdx ? 'bg-amber-100' : 'hover:bg-amber-50')}>
+                      <b className="num w-11 shrink-0">{n.ma}</b><span className="flex-1">{n.ten}</span>{n.daCo && <span className="text-xs">✓ đã có</span>}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {maTay && <div className="text-xs text-gray-500 mt-1">Mã {tim.trim()} không có trong danh mục — Enter để thêm tay rồi gõ tên ngành.</div>}
