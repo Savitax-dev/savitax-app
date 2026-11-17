@@ -1,0 +1,864 @@
+﻿cap,ma,ten,ma_cha,nguon
+1,A,"NÔNG NGHIỆP, LÂM NGHIỆP VÀ THỦY SẢN",,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,01,Nông nghiệp và hoạt động dịch vụ có liên quan,A,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,011,Trồng cây hàng năm,01,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0111,Trồng lúa,011,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0112,Trồng ngô và cây lương thực có hạt khác,011,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0113,Trồng cây lấy củ có chất bột,011,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0114,Trồng cây mía,011,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0115,"Trồng cây thuốc lá, thuốc lào",011,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0116,Trồng cây lấy sợi,011,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0117,Trồng cây có hạt chứa dầu,011,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0118,"Trồng rau, đậu các loại và trồng hoa",011,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0119,Trồng cây hàng năm khác,011,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,012,Trồng cây lâu năm,01,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0121,Trồng cây ăn quả,012,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0122,Trồng cây lấy quả chứa dầu,012,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0123,Trồng cây điều,012,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0124,Trồng cây hồ tiêu,012,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0125,Trồng cây cao su,012,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0126,Trồng cây cà phê,012,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0127,Trồng cây chè,012,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0128,"Trồng cây gia vị, cây dược liệu, cây hương liệu lâu năm",012,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0129,Trồng cây lâu năm khác,012,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,013,Nhân và chăm sóc cây giống nông nghiệp,01,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0130,Nhân và chăm sóc cây giống nông nghiệp,013,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,014,Chăn nuôi,01,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0141,"Chăn nuôi trâu, bò và sản xuất giống trâu, bò",014,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0142,"Chăn nuôi ngựa, lừa, la và sản xuất giống ngựa, lừa",014,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0144,"Chăn nuôi dê, cừu, hươu, nai và sản xuất giống dê, cừu, hươu, nai",014,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0145,Chăn nuôi lợn và sản xuất giống lợn,014,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0146,Chăn nuôi gia cầm,014,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0149,Chăn nuôi khác,014,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,015,"Trồng trọt, chăn nuôi hỗn hợp",01,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0150,"Trồng trọt, chăn nuôi hỗn hợp",015,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,016,Hoạt động dịch vụ nông nghiệp,01,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0161,Hoạt động dịch vụ trồng trọt,016,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0162,Hoạt động dịch vụ chăn nuôi,016,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0163,Hoạt động dịch vụ sau thu hoạch,016,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0164,Xử lý hạt giống để nhân giống,016,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,017,"Săn bắt, đánh bẫy và hoạt động dịch vụ có liên quan",01,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0170,"Săn bắt, đánh bẫy và hoạt động dịch vụ có liên quan",017,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,02,Lâm nghiệp và hoạt động dịch vụ có liên quan,A,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,021,"Trồng rừng, chăm sóc rừng và ươm giống cây lâm nghiệp",02,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0210,"Trồng rừng, chăm sóc rừng và ươm giống cây lâm nghiệp",021,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,022,Khai thác gỗ,02,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0220,Khai thác gỗ,022,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,023,"Khai thác, thu nhặt lâm sản trừ gỗ",02,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0230,"Khai thác, thu nhặt lâm sản trừ gỗ",023,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,024,Hoạt động dịch vụ lâm nghiệp,02,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0240,Hoạt động dịch vụ lâm nghiệp,024,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,03,"Khai thác, nuôi trồng thủy sản và hoạt động dịch vụ có liên quan",A,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,031,Khai thác thủy sản,03,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0311,Khai thác thủy sản biển,031,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0312,Khai thác thủy sản nội địa,031,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,032,Nuôi trồng thủy sản,03,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0321,Nuôi trồng thủy sản biển,032,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0322,Nuôi trồng thủy sản nội địa,032,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,033,"Hoạt động dịch vụ hỗ trợ khai thác, nuôi trồng thủy sản",03,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0331,Hoạt động dịch vụ hỗ trợ khai thác thủy sản,033,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0332,Hoạt động dịch vụ hỗ trợ nuôi trồng thủy sản,033,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,B,KHAI KHOÁNG,,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,05,Khai thác than cứng và than non,B,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,051,Khai thác và thu gom than cứng,05,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0510,Khai thác và thu gom than cứng,051,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,052,Khai thác và thu gom than non,05,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0520,Khai thác và thu gom than non,052,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,06,Khai thác dầu thô và khí đốt tự nhiên,B,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,061,Khai thác dầu thô,06,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0610,Khai thác dầu thô,061,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,062,Khai thác khí đốt tự nhiên,06,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0620,Khai thác khí đốt tự nhiên,062,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,07,Khai thác quặng kim loại,B,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,071,Khai thác quặng sắt,07,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0710,Khai thác quặng sắt,071,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,072,Khai thác quặng không chứa sắt (trừ quặng kim loại quý hiếm),07,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0721,Khai thác quặng uranium và quặng thorium,072,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0729,Khai thác quặng kim loại khác không chứa sắt,072,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,073,Khai thác quặng kim loại quý hiếm,07,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0730,Khai thác quặng kim loại quý hiếm,073,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,08,Khai khoáng khác,B,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,081,"Khai thác đá, cát, sỏi, đất sét",08,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0810,"Khai thác đá, cát, sỏi, đất sét",081,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,089,Khai khoáng chưa được phân vào đâu,08,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0891,Khai thác khoáng hóa chất và khoáng phân bón,089,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0892,Khai thác và thu gom than bùn,089,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0893,Khai thác muối,089,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0899,Khai khoáng khác chưa được phân vào đâu,089,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,09,Hoạt động dịch vụ hỗ trợ khai khoáng,B,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,091,Hoạt động dịch vụ hỗ trợ khai thác dầu thô và khí tự nhiên,09,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0910,Hoạt động dịch vụ hỗ trợ khai thác dầu thô và khí tự nhiên,091,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,099,Hoạt động dịch vụ hỗ trợ khai khoáng khác,09,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,0990,Hoạt động dịch vụ hỗ trợ khai khoáng khác,099,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,C,"CÔNG NGHIỆP CHẾ BIẾN, CHẾ TẠO",,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,10,"Sản xuất, chế biến thực phẩm",C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,101,"Chế biến, bảo quản thịt và các sản phẩm từ thịt",10,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1010,"Chế biến, bảo quản thịt và các sản phẩm từ thịt",101,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,102,"Chế biến, bảo quản thủy sản và các sản phẩm từ thủy sản",10,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1020,"Chế biến, bảo quản thủy sản và các sản phẩm từ thủy sản",102,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,103,Chế biến và bảo quản rau quả,10,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1030,Chế biến và bảo quản rau quả,103,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,104,"Sản xuất dầu, mỡ động, thực vật",10,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1040,"Sản xuất dầu, mỡ động, thực vật",104,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,105,Chế biến sữa và các sản phẩm từ sữa,10,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1050,Chế biến sữa và các sản phẩm từ sữa,105,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,106,Xay xát và sản xuất bột,10,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1061,Xay xát và sản xuất bột thô,106,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1062,Sản xuất tinh bột và các sản phẩm từ tinh bột,106,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,107,Sản xuất thực phẩm khác,10,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1071,Sản xuất các loại bánh từ bột,107,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1072,Sản xuất đường,107,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1073,"Sản xuất ca cao, sôcôla và bánh kẹo",107,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1074,"Sản xuất mì ống, mỳ sợi và sản phẩm tương tự",107,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1075,"Sản xuất món ăn, thức ăn chế biến sẵn",107,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1076,Sản xuất chè,107,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1077,Sản xuất cà phê,107,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1079,Sản xuất thực phẩm khác chưa được phân vào đâu,107,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,108,"Sản xuất thức ăn gia súc, gia cầm và thủy sản",10,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1080,"Sản xuất thức ăn gia súc, gia cầm và thủy sản",108,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,11,Sản xuất đồ uống,C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,110,Sản xuất đồ uống,11,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1101,"Chưng, tinh cất và pha chế các loại rượu mạnh",110,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1102,Sản xuất rượu vang,110,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1103,Sản xuất bia,110,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1104,Sản xuất mạch nha ủ men bia,110,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1105,"Sản xuất đồ uống không cồn, nước khoáng",110,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,12,Sản xuất sản phẩm thuốc lá,C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,120,Sản xuất sản phẩm thuốc lá,12,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1200,Sản xuất sản phẩm thuốc lá,120,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,13,Dệt,C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,131,"Sản xuất sợi, vải dệt thoi và hoàn thiện sản phẩm dệt",13,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1311,Sản xuất sợi,131,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1312,Sản xuất vải dệt thoi,131,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1313,Hoàn thiện sản phẩm dệt,131,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,139,Sản xuất hàng dệt khác,13,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1391,"Sản xuất vải dệt kim, vải đan móc và vải không dệt khác",139,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1392,Sản xuất hàng dệt sẵn (trừ trang phục),139,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1393,"Sản xuất thảm, chăn, đệm",139,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1394,Sản xuất các loại dây bện và lưới,139,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1399,Sản xuất các loại hàng dệt khác chưa được phân vào đâu,139,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,14,Sản xuất trang phục,C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,141,Sản xuất trang phục (trừ trang phục từ da lông thú),14,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1410,Sản xuất trang phục (trừ trang phục từ da lông thú),141,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,142,Sản xuất sản phẩm từ da lông thú,14,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1420,Sản xuất sản phẩm từ da lông thú,142,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,143,Sản xuất trang phục đan móc,14,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1430,Sản xuất trang phục đan móc,143,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,15,Sản xuất da và các sản phẩm có liên quan,C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,151,"Thuộc, sơ chế da; sản xuất va li, túi xách, yên đệm; sơ chế và nhuộm da lông thú",15,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1511,"Thuộc, sơ chế da; sơ chế và nhuộm da lông thú",151,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1512,"Sản xuất vali, túi xách và các loại tương tự, sản xuất yên đệm",151,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,152,"Sản xuất giày, dép",15,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1520,"Sản xuất giày, dép",152,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,16,"Chế biến gỗ và sản xuất sản phẩm từ gỗ, tre, nứa (trừ giường, tủ, bàn, ghế); sản xuất sản phẩm từ rơm, rạ và vật liệu tết bện",C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,161,"Cưa, xẻ, bào gỗ và bảo quản gỗ",16,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1610,"Cưa, xẻ, bào gỗ và bảo quản gỗ",161,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,162,"Sản xuất sản phẩm từ gỗ, tre, nứa (trừ giường, tủ, bàn, ghế); sản xuất sản phẩm từ rơm, rạ và vật liệu tết bện",16,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1621,"Sản xuất gỗ dán, gỗ lạng, ván ép và ván mỏng khác",162,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1622,Sản xuất đồ gỗ xây dựng,162,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1623,Sản xuất bao bì bằng gỗ,162,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1629,"Sản xuất sản phẩm khác từ gỗ; sản xuất sản phẩm từ tre, nứa, rơm, rạ và vật liệu tết bện",162,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,17,Sản xuất giấy và sản phẩm từ giấy,C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,170,Sản xuất giấy và sản phẩm từ giấy,17,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1701,"Sản xuất bột giấy, giấy và bìa",170,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1702,"Sản xuất giấy nhăn, bìa nhăn, bao bì từ giấy và bìa",170,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1709,Sản xuất các sản phẩm khác từ giấy và bìa chưa được phân vào đâu,170,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,18,"In, sao chép bản ghi các loại",C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,181,In ấn và dịch vụ liên quan đến in,18,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1811,In ấn,181,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1812,Dịch vụ liên quan đến in,181,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,182,Sao chép bản ghi các loại,18,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1820,Sao chép bản ghi các loại,182,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,19,"Sản xuất than cốc, sản phẩm dầu mỏ tinh chế",C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,191,Sản xuất than cốc,19,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1910,Sản xuất than cốc,191,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,192,Sản xuất sản phẩm dầu mỏ tinh chế; sản xuất sản phẩm nhiên liệu hóa thạch,19,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,1920,Sản xuất sản phẩm dầu mỏ tinh chế; sản xuất sản phẩm nhiên liệu hóa thạch,192,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,20,Sản xuất hóa chất và sản phẩm hóa chất,C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,201,"Sản xuất hóa chất cơ bản, phân bón và hợp chất ni tơ; sản xuất plastic và cao su tổng hợp dạng nguyên sinh",20,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2011,Sản xuất hóa chất cơ bản,201,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2012,Sản xuất phân bón và hợp chất ni tơ,201,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2013,Sản xuất plastic và cao su tổng hợp dạng nguyên sinh,201,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,202,Sản xuất sản phẩm hóa chất khác,20,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2021,Sản xuất thuốc trừ sâu và sản phẩm hóa chất khác dùng trong nông nghiệp,202,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2022,"Sản xuất sơn, véc ni và các chất sơn, quét tương tự; sản xuất mực in và ma tít",202,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2023,"Sản xuất mỹ phẩm, nước hoa, xà phòng, chất tẩy rửa, làm bóng và chế phẩm vệ sinh",202,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2029,Sản xuất sản phẩm hóa chất khác chưa được phân vào đâu,202,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,203,Sản xuất sợi nhân tạo,20,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2030,Sản xuất sợi nhân tạo,203,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,21,"Sản xuất thuốc, hóa dược và dược liệu",C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,210,"Sản xuất thuốc, hóa dược và dược liệu",21,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2100,"Sản xuất thuốc, hóa dược và dược liệu",210,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,22,Sản xuất sản phẩm từ cao su và plastic,C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,221,Sản xuất sản phẩm từ cao su,22,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2211,"Sản xuất săm, lốp cao su; đắp và tái chế lốp cao su",221,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2219,Sản xuất sản phẩm khác từ cao su,221,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,222,Sản xuất sản phẩm từ plastic,22,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2220,Sản xuất sản phẩm từ plastic,222,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,23,Sản xuất sản phẩm từ khoáng phi kim loại khác,C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,231,Sản xuất thủy tinh và sản phẩm từ thủy tinh,23,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2310,Sản xuất thủy tinh và sản phẩm từ thủy tinh,231,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,239,Sản xuất sản phẩm từ khoáng phi kim loại chưa được phân vào đâu,23,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2391,Sản xuất sản phẩm chịu lửa,239,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2392,Sản xuất vật liệu xây dựng từ đất sét,239,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2393,Sản xuất sản phẩm gốm sứ khác,239,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2394,"Sản xuất xi măng, vôi và thạch cao",239,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2395,"Sản xuất bê tông và các sản phẩm từ bê tông, xi măng và thạch cao",239,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2396,"Cắt, tạo dáng và hoàn thiện đá",239,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2399,Sản xuất sản phẩm từ chất khoáng phi kim loại khác chưa được phân vào đâu,239,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,24,Sản xuất kim loại,C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,241,"Sản xuất sắt, thép, gang",24,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2410,"Sản xuất sắt, thép, gang",241,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,242,Sản xuất kim loại quý và kim loại màu,24,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2420,Sản xuất kim loại quý và kim loại màu,242,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,243,Đúc kim loại,24,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2431,"Đúc sắt, thép",243,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2432,Đúc kim loại màu,243,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,25,"Sản xuất sản phẩm từ kim loại đúc sẵn (trừ máy móc, thiết bị)",C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,251,"Sản xuất các cấu kiện kim loại, thùng, bể chứa và nồi hơi",25,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2511,Sản xuất các cấu kiện kim loại,251,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2512,"Sản xuất thùng, bể chứa và dụng cụ chứa đựng bằng kim loại",251,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2513,Sản xuất nồi hơi (trừ nồi hơi trung tâm),251,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,252,Sản xuất vũ khí và đạn dược,25,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2520,Sản xuất vũ khí và đạn dược,252,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,259,"Sản xuất sản phẩm khác bằng kim loại; các dịch vụ xử lý, gia công kim loại",25,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2591,"Rèn, dập, ép và cán kim loại; luyện bột kim loại",259,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2592,Gia công cơ khí; xử lý và tráng phủ kim loại,259,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2593,"Sản xuất dao kéo, dụng cụ cầm tay và đồ kim loại thông dụng",259,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2599,Sản xuất sản phẩm khác bằng kim loại chưa được phân vào đâu,259,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,26,"Sản xuất sản phẩm điện tử, máy tính và sản phẩm quang học",C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,261,Sản xuất linh kiện điện tử,26,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2611,"Sản xuất pin mặt trời, tấm pin mặt trời và bộ biến tần quang điện",261,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2619,Sản xuất linh kiện điện tử khác,261,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,262,Sản xuất máy tính và thiết bị ngoại vi của máy tính,26,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2620,Sản xuất máy tính và thiết bị ngoại vi của máy tính,262,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,263,Sản xuất thiết bị truyền thông,26,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2630,Sản xuất thiết bị truyền thông,263,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,264,Sản xuất sản phẩm điện tử dân dụng,26,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2640,Sản xuất sản phẩm điện tử dân dụng,264,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,265,"Sản xuất thiết bị đo lường, kiểm tra, định hướng và điều khiển; sản xuất đồng hồ",26,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2651,"Sản xuất thiết bị đo lường, kiểm tra, định hướng và điều khiển",265,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2652,Sản xuất đồng hồ,265,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,266,"Sản xuất thiết bị bức xạ, thiết bị điện tử trong y học, điện liệu pháp",26,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2660,"Sản xuất thiết bị bức xạ, thiết bị điện tử trong y học, điện liệu pháp",266,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,267,Sản xuất thiết bị và dụng cụ quang học,26,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2670,Sản xuất thiết bị và dụng cụ quang học,267,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,268,"Sản xuất băng, đĩa từ tính và quang học",26,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2680,"Sản xuất băng, đĩa từ tính và quang học",268,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,27,Sản xuất thiết bị điện,C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,271,"Sản xuất mô tơ, máy phát, biến thế điện, thiết bị phân phối và điều khiển điện",27,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2710,"Sản xuất mô tơ, máy phát, biến thế điện, thiết bị phân phối và điều khiển điện",271,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,272,Sản xuất pin và ắc quy,27,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2720,Sản xuất pin và ắc quy,272,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,273,Sản xuất dây và thiết bị dây dẫn,27,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2731,"Sản xuất dây cáp, sợi cáp quang học",273,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2732,"Sản xuất dây, cáp điện và điện tử khác",273,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2733,Sản xuất thiết bị dây dẫn điện các loại,273,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,274,Sản xuất thiết bị điện chiếu sáng,27,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2740,Sản xuất thiết bị điện chiếu sáng,274,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,275,Sản xuất đồ điện dân dụng,27,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2750,Sản xuất đồ điện dân dụng,275,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,279,Sản xuất thiết bị điện khác,27,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2790,Sản xuất thiết bị điện khác,279,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,28,"Sản xuất máy móc, thiết bị chưa được phân vào đâu",C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,281,Sản xuất máy thông dụng,28,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2811,"Sản xuất động cơ, tua bin (trừ động cơ máy bay, ô tô, mô tô và xe máy)",281,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2812,Sản xuất thiết bị sử dụng năng lượng chiết lưu,281,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2813,"Sản xuất máy bơm, máy nén, vòi và van khác",281,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2814,"Sản xuất bi, bánh răng, hộp số, các bộ phận điều khiển và truyền chuyển động",281,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2815,"Sản xuất lò nướng, lò luyện và lò nung",281,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2816,"Sản xuất các thiết bị nâng, hạ và bốc xếp",281,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2817,Sản xuất máy móc và thiết bị văn phòng (trừ máy tính và thiết bị ngoại vi của máy tính),281,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2818,Sản xuất dụng cụ cầm tay chạy bằng mô tơ hoặc khí nén,281,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2819,Sản xuất máy thông dụng khác,281,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,282,Sản xuất máy chuyên dụng,28,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2821,Sản xuất máy nông nghiệp và lâm nghiệp,282,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2822,Sản xuất máy công cụ và máy tạo hình kim loại,282,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2823,"Sản xuất máy móc, thiết bị cho ngành luyện kim",282,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2824,Sản xuất máy khai thác mỏ và xây dựng,282,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2825,"Sản xuất máy chế biến thực phẩm, đồ uống và thuốc lá",282,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2826,"Sản xuất máy cho ngành dệt, may và da",282,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2829,Sản xuất máy chuyên dụng khác,282,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,29,Sản xuất ô tô và xe có động cơ khác,C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,291,Sản xuất ô tô và xe có động cơ khác,29,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2910,Sản xuất ô tô và xe có động cơ khác,291,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,292,"Sản xuất thân xe ô tô và xe có động cơ khác, rơ moóc và bán rơ moóc",29,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2920,"Sản xuất thân xe ô tô và xe có động cơ khác, rơ moóc và bán rơ moóc",292,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,293,Sản xuất phụ tùng và bộ phận phụ trợ cho xe ô tô và xe có động cơ khác,29,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,2930,Sản xuất phụ tùng và bộ phận phụ trợ cho xe ô tô và xe có động cơ khác,293,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,30,Sản xuất phương tiện vận tải khác,C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,301,Đóng tàu và thuyền,30,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3011,Đóng tàu và cấu kiện nổi,301,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3012,"Đóng thuyền, xuồng thể thao và giải trí",301,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,302,"Sản xuất đầu máy xe lửa, xe điện, toa xe và phương tiện, thiết bị chuyên dùng trên đường ray",30,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3020,"Sản xuất đầu máy xe lửa, xe điện, toa xe và phương tiện, thiết bị chuyên dùng trên đường ray",302,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,303,"Sản xuất máy bay, tàu vũ trụ và máy móc liên quan",30,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3030,"Sản xuất máy bay, tàu vũ trụ và máy móc liên quan",303,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,304,Sản xuất xe cơ giới chiến đấu dùng trong quân đội,30,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3040,Sản xuất xe cơ giới chiến đấu dùng trong quân đội,304,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,309,Sản xuất phương tiện và thiết bị vận tải chưa được phân vào đâu,30,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3091,"Sản xuất mô tô, xe máy",309,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3092,Sản xuất xe đạp và xe cho người khuyết tật,309,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3099,Sản xuất phương tiện và thiết bị vận tải khác chưa được phân vào đâu,309,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,31,"Sản xuất giường, tủ, bàn, ghế",C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,310,"Sản xuất giường, tủ, bàn, ghế",31,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3101,"Sản xuất giường, tủ, bàn, ghế bằng gỗ",310,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3102,"Sản xuất giường, tủ, bàn, ghế bằng kim loại",310,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3109,"Sản xuất giường, tủ, bàn, ghế bằng vật liệu khác",310,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,32,"Công nghiệp chế biến, chế tạo khác",C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,321,"Sản xuất đồ kim hoàn, đồ giả kim hoàn và các chi tiết liên quan",32,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3211,Sản xuất đồ kim hoàn và chi tiết liên quan,321,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3212,Sản xuất đồ giả kim hoàn và chi tiết liên quan,321,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,322,Sản xuất nhạc cụ,32,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3220,Sản xuất nhạc cụ,322,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,323,"Sản xuất dụng cụ thể dục, thể thao",32,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3230,"Sản xuất dụng cụ thể dục, thể thao",323,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,324,"Sản xuất đồ chơi, trò chơi",32,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3240,"Sản xuất đồ chơi, trò chơi",324,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,325,"Sản xuất thiết bị, dụng cụ y tế, nha khoa, chỉnh hình và phục hồi chức năng",32,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3250,"Sản xuất thiết bị, dụng cụ y tế, nha khoa, chỉnh hình và phục hồi chức năng",325,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,329,Sản xuất khác chưa được phân vào đâu,32,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3290,Sản xuất khác chưa được phân vào đâu,329,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,33,"Sửa chữa, bảo dưỡng và lắp đặt máy móc, thiết bị",C,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,331,"Sửa chữa, bảo dưỡng máy móc, thiết bị và sản phẩm kim loại đúc sẵn",33,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3311,"Sửa chữa, bảo dưỡng các sản phẩm kim loại đúc sẵn",331,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3312,"Sửa chữa, bảo dưỡng máy móc, thiết bị",331,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3313,"Sửa chữa, bảo dưỡng thiết bị điện tử và quang học",331,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3314,"Sửa chữa, bảo dưỡng thiết bị điện",331,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3315,"Sửa chữa, bảo dưỡng phương tiện vận tải (trừ ô tô, mô tô, xe máy và xe có động cơ khác)",331,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3319,"Sửa chữa, bảo dưỡng thiết bị khác",331,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,332,Lắp đặt máy móc và thiết bị công nghiệp,33,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3320,Lắp đặt máy móc và thiết bị công nghiệp,332,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,D,"SẢN XUẤT VÀ PHÂN PHỐI ĐIỆN, KHÍ ĐỐT, NƯỚC NÓNG, HƠI NƯỚC VÀ ĐIỀU HOÀ KHÔNG KHÍ",,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,35,"Sản xuất và phân phối điện, khí đốt, nước nóng, hơi nước và điều hoà không khí",D,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,351,"Sản xuất, truyền tải và phân phối điện",35,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3511,Sản xuất điện từ nguồn năng lượng không tái tạo,351,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3512,Sản xuất điện từ nguồn năng lượng tái tạo,351,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3513,Truyền tải và phân phối điện,351,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,352,"Sản xuất khí đốt, phân phối nhiên liệu khí bằng đường ống",35,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3520,"Sản xuất khí đốt, phân phối nhiên liệu khí bằng đường ống",352,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,353,"Sản xuất, phân phối hơi nước, nước nóng, điều hoà không khí và sản xuất nước đá",35,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3530,"Sản xuất, phân phối hơi nước, nước nóng, điều hoà không khí và sản xuất nước đá",353,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,354,"Hoạt động trung gian hoặc đại lý điện, khí đốt",35,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3540,"Hoạt động trung gian hoặc đại lý điện, khí đốt",354,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,E,"CUNG CẤP NƯỚC; HOẠT ĐỘNG QUẢN LÝ VÀ XỬ LÝ RÁC THẢI, NƯỚC THẢI",,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,36,"Khai thác, xử lý và cung cấp nước",E,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,360,"Khai thác, xử lý và cung cấp nước",36,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3600,"Khai thác, xử lý và cung cấp nước",360,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,37,Thoát nước và xử lý nước thải,E,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,370,Thoát nước và xử lý nước thải,37,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3700,Thoát nước và xử lý nước thải,370,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,38,"Hoạt động thu gom, xử lý và tiêu hủy rác thải; tái chế phế liệu",E,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,381,Thu gom rác thải,38,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3811,Thu gom rác thải không độc hại,381,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3812,Thu gom rác thải độc hại,381,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,382,Xử lý và tiêu hủy rác thải,38,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3821,Xử lý và tiêu hủy rác thải không độc hại,382,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3822,Xử lý và tiêu hủy rác thải độc hại,382,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,383,Tái chế phế liệu,38,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3830,Tái chế phế liệu,383,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,39,Xử lý ô nhiễm và hoạt động quản lý chất thải khác,E,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,390,Xử lý ô nhiễm và hoạt động quản lý chất thải khác,39,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,3900,Xử lý ô nhiễm và hoạt động quản lý chất thải khác,390,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,F,XÂY DỰNG,,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,41,Xây dựng nhà các loại,F,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,410,Xây dựng nhà các loại,41,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4101,Xây dựng nhà để ở,410,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4102,Xây dựng nhà không để ở,410,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,42,Xây dựng công trình kỹ thuật dân dụng,F,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,421,Xây dựng công trình đường sắt và đường bộ,42,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4211,Xây dựng công trình đường sắt,421,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4212,Xây dựng công trình đường bộ,421,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,422,Xây dựng công trình công ích,42,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4221,Xây dựng công trình điện,422,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4222,"Xây dựng công trình cấp, thoát nước",422,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4223,"Xây dựng công trình viễn thông, thông tin liên lạc",422,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4229,Xây dựng công trình công ích khác,422,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,429,Xây dựng công trình kỹ thuật dân dụng khác,42,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4291,Xây dựng công trình thủy,429,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4292,Xây dựng công trình khai khoáng,429,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4293,"Xây dựng công trình chế biến, chế tạo",429,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4299,Xây dựng công trình kỹ thuật dân dụng khác,429,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,43,Hoạt động xây dựng chuyên dụng,F,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,431,Phá dỡ và chuẩn bị mặt bằng,43,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4311,Phá dỡ,431,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4312,Chuẩn bị mặt bằng,431,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,432,"Lắp đặt hệ thống điện, hệ thống cấp thoát nước và lắp đặt xây dựng khác",43,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4321,Lắp đặt hệ thống điện,432,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4322,"Lắp đặt hệ thống cấp, thoát nước, hệ thống sưởi và điều hoà không khí",432,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4329,Lắp đặt hệ thống xây dựng khác,432,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,433,Hoàn thiện công trình xây dựng,43,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4330,Hoàn thiện công trình xây dựng,433,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,434,Hoạt động dịch vụ trung gian cho xây dựng chuyên dụng,43,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4340,Hoạt động dịch vụ trung gian cho xây dựng chuyên dụng,434,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,439,Hoạt động xây dựng chuyên dụng khác,43,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4390,Hoạt động xây dựng chuyên dụng khác,439,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,G,BÁN BUÔN VÀ BÁN LẺ,,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,46,Bán buôn,G,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,461,"Đại lý, môi giới, đấu giá hàng hóa",46,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4610,"Đại lý, môi giới, đấu giá hàng hóa",461,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,462,"Bán buôn nông, lâm sản nguyên liệu (trừ gỗ, tre, nứa) và động vật sống",46,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4620,"Bán buôn nông, lâm sản nguyên liệu (trừ gỗ, tre, nứa) và động vật sống",462,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,463,"Bán buôn lương thực, thực phẩm, đồ uống và sản phẩm thuốc lá, thuốc lào",46,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4631,"Bán buôn gạo, lúa mỳ, sản phẩm từ ngũ cốc khác, bột mỳ",463,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4632,Bán buôn thực phẩm,463,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4633,Bán buôn đồ uống,463,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4634,"Bán buôn sản phẩm thuốc lá, thuốc lào",463,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,464,Bán buôn đồ dùng gia đình,46,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4641,"Bán buôn vải, hàng may mặc, giày dép",464,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4642,"Bán buôn giường, tủ, bàn ghế và đồ nội thất tương tự trong gia đình, văn phòng, cửa hàng; thảm, đệm và thiết bị chiếu sáng",464,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4649,Bán buôn đồ dùng khác cho gia đình,464,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,465,"Bán buôn máy móc, thiết bị và phụ tùng máy",46,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4651,"Bán buôn máy tính, thiết bị ngoại vi và phần mềm",465,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4652,"Bán buôn thiết bị và linh kiện điện tử, viễn thông",465,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4653,"Bán buôn máy móc, thiết bị và phụ tùng máy nông nghiệp",465,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4659,"Bán buôn máy móc, thiết bị và phụ tùng máy khác",465,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,466,"Bán buôn ô tô, mô tô, xe máy, xe có động cơ khác và các bộ phận phụ trợ",46,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4661,Bán buôn ô tô và xe có động cơ khác,466,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4662,Bán buôn phụ tùng và các bộ phận phụ trợ của ô tô và xe có động cơ khác,466,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4663,"Bán buôn mô tô, xe máy, phụ tùng và các bộ phận phụ trợ của mô tô, xe máy",466,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,467,Bán buôn chuyên doanh khác,46,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4671,"Bán buôn nhiên liệu rắn, lỏng, khí và các sản phẩm liên quan",467,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4672,Bán buôn kim loại và quặng kim loại,467,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4673,"Bán buôn vật liệu, thiết bị lắp đặt khác trong xây dựng",467,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4679,Bán buôn chuyên doanh khác chưa được phân vào đâu,467,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,469,Bán buôn tổng hợp,46,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4690,Bán buôn tổng hợp,469,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,47,Bán lẻ,G,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,471,Bán lẻ tổng hợp,47,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4711,"Bán lẻ tổng hợp với lương thực, thực phẩm, đồ uống, thuốc lá, thuốc lào chiếm tỷ trọng lớn",471,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4719,Bán lẻ tổng hợp khác,471,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,472,"Bán lẻ lương thực, thực phẩm, đồ uống hoặc thuốc lá, thuốc lào",47,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4721,Bán lẻ lương thực,472,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4722,Bán lẻ thực phẩm,472,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4723,Bán lẻ đồ uống,472,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4724,"Bán lẻ sản phẩm thuốc lá, thuốc lào",472,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,473,Bán lẻ nhiên liệu động cơ,47,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4730,Bán lẻ nhiên liệu động cơ,473,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,474,Bán lẻ thiết bị công nghệ thông tin và truyền thông,47,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4740,Bán lẻ thiết bị công nghệ thông tin và truyền thông,474,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,475,Bán lẻ thiết bị gia đình khác,47,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4751,"Bán lẻ vải, len, sợi, chỉ khâu và hàng dệt khác",475,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4752,"Bán lẻ đồ ngũ kim, sơn, kính, vật liệu và thiết bị lắp đặt khác trong xây dựng",475,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4753,"Bán lẻ thảm, đệm, chăn, màn, rèm, vật liệu phủ tường và sàn",475,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4759,"Bán lẻ đồ điện gia dụng, giường, tủ, bàn, ghế và đồ nội thất tương tự, đèn và bộ đèn điện, đồ dùng gia đình khác chưa được phân vào đâu",475,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,476,"Bán lẻ hàng văn hóa, giải trí",47,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4761,"Bán lẻ sách, báo, tạp chí, văn phòng phẩm",476,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4762,"Bán lẻ thiết bị, dụng cụ thể dục, thể thao",476,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4763,"Bán lẻ trò chơi, đồ chơi",476,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4769,"Bán lẻ sản phẩm văn hóa, giải trí khác chưa phân vào đâu",476,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,477,"Bán lẻ hàng hóa khác (trừ ô tô, mô tô, xe máy và các bộ phận phụ trợ)",47,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4771,"Bán lẻ hàng may mặc, giày, dép, hàng da và giả da",477,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4772,"Bán lẻ thuốc, dụng cụ y tế, mỹ phẩm và vật phẩm vệ sinh",477,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4773,"Bán lẻ hàng hóa khác mới (trừ ô tô, mô tô, xe máy và các bộ phận phụ trợ)",477,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4774,Bán lẻ hàng hóa đã qua sử dụng,477,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,478,"Bán lẻ ô tô, mô tô, xe máy, xe có động cơ khác và các bộ phận phụ trợ",47,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4781,Bán lẻ ô tô và xe có động cơ khác,478,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4782,Bán lẻ phụ tùng và các bộ phận phụ trợ của ô tô và xe có động cơ khác,478,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4783,"Bán lẻ mô tô, xe máy, phụ tùng và các bộ phận phụ trợ của mô tô, xe máy",478,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,479,Hoạt động dịch vụ trung gian bán lẻ,47,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4790,Hoạt động dịch vụ trung gian bán lẻ,479,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,H,"VẬN TẢI, KHO BÃI",,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,49,"Vận tải đường sắt, đường bộ và vận tải bằng đường ống",H,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,491,Vận tải đường sắt,49,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4911,Vận tải hành khách đường sắt,491,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4912,Vận tải hàng hóa đường sắt,491,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,492,Vận tải hành khách bằng xe buýt,49,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4921,Vận tải hành khách bằng xe buýt trong nội thành,492,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4922,"Vận tải hành khách bằng xe buýt giữa nội thành và ngoại thành, liên tỉnh",492,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4929,Vận tải hành khách bằng xe buýt loại khác,492,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,493,Vận tải đường bộ khác,49,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4931,"Vận tải hành khách đường bộ trong nội thành, ngoại thành (trừ vận tải bằng xe buýt)",493,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4932,Vận tải hành khách đường bộ khác,493,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4933,Vận tải hàng hóa bằng đường bộ,493,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,494,Vận tải đường ống,49,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,4940,Vận tải đường ống,494,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,50,Vận tải đường thủy,H,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,501,Vận tải ven biển và viễn dương,50,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5011,Vận tải hành khách ven biển và viễn dương,501,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5012,Vận tải hàng hóa ven biển và viễn dương,501,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,502,Vận tải đường thủy nội địa,50,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5021,Vận tải hành khách đường thủy nội địa,502,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5022,Vận tải hàng hóa đường thủy nội địa,502,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,51,Vận tải hàng không,H,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,511,Vận tải hành khách hàng không,51,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5110,Vận tải hành khách hàng không,511,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,512,Vận tải hàng hóa hàng không,51,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5120,Vận tải hàng hóa hàng không,512,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,52,Kho bãi và các hoạt động hỗ trợ cho vận tải,H,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,521,Kho bãi và lưu giữ hàng hóa,52,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5210,Kho bãi và lưu giữ hàng hóa,521,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,522,Hoạt động dịch vụ hỗ trợ cho vận tải,52,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5221,Hoạt động dịch vụ hỗ trợ trực tiếp cho vận tải đường sắt,522,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5222,Hoạt động dịch vụ hỗ trợ trực tiếp cho vận tải đường thủy,522,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5223,Hoạt động dịch vụ hỗ trợ trực tiếp cho vận tải hàng không,522,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5224,Bốc xếp hàng hóa,522,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5225,Hoạt động dịch vụ hỗ trợ trực tiếp cho vận tải đường bộ,522,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5229,Hoạt động dịch vụ hỗ trợ khác liên quan đến vận tải,522,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,523,Hoạt động dịch vụ trung gian cho vận tải,52,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5231,Hoạt động dịch vụ trung gian cho vận tải hàng hóa,523,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5232,Hoạt động dịch vụ trung gian cho vận tải hành khách,523,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,53,Bưu chính và chuyển phát,H,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,531,Bưu chính,53,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5310,Bưu chính,531,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,532,Chuyển phát,53,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5320,Chuyển phát,532,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,533,Hoạt động dịch vụ trung gian cho hoạt động bưu chính và chuyển phát,53,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5330,Hoạt động dịch vụ trung gian cho hoạt động bưu chính và chuyển phát,533,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,I,DỊCH VỤ LƯU TRÚ VÀ ĂN UỐNG,,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,55,Dịch vụ lưu trú,I,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,551,Khách sạn và dịch vụ lưu trú tương tự,55,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5510,Khách sạn và dịch vụ lưu trú tương tự,551,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,552,Dịch vụ lưu trú ngắn ngày khác,55,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5520,Dịch vụ lưu trú ngắn ngày khác,552,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,553,Hoạt động dịch vụ trung gian cho dịch vụ lưu trú,55,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5530,Hoạt động dịch vụ trung gian cho dịch vụ lưu trú,553,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,559,Cơ sở lưu trú khác,55,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5590,Cơ sở lưu trú khác,559,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,56,Dịch vụ ăn uống,I,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,561,Nhà hàng và các dịch vụ ăn uống phục vụ lưu động,56,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5610,Nhà hàng và các dịch vụ ăn uống phục vụ lưu động,561,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,562,Cung cấp dịch vụ ăn uống theo hợp đồng không thường xuyên và dịch vụ ăn uống khác,56,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5621,Cung cấp dịch vụ ăn uống theo hợp đồng không thường xuyên với khách hàng,562,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5629,Dịch vụ ăn uống khác,562,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,563,Dịch vụ phục vụ đồ uống,56,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5630,Dịch vụ phục vụ đồ uống,563,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,564,Hoạt động dịch vụ trung gian cho dịch vụ ăn uống,56,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5640,Hoạt động dịch vụ trung gian cho dịch vụ ăn uống,564,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,J,"HOẠT ĐỘNG XUẤT BẢN, PHÁT SÓNG, SẢN XUẤT VÀ PHÂN PHỐI NỘI DUNG",,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,58,Hoạt động xuất bản,J,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,581,"Xuất bản sách, báo, ấn phẩm định kỳ và các hoạt động xuất bản khác",58,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5811,Xuất bản sách,581,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5812,Xuất bản báo,581,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5813,Xuất bản tạp chí và các ấn phẩm định kỳ,581,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5819,Hoạt động xuất bản khác,581,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,582,Xuất bản phần mềm,58,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5821,Xuất bản trò chơi điện tử,582,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5829,Xuất bản phần mềm khác,582,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,59,"Hoạt động sản xuất phim điện ảnh, video, chương trình truyền hình, ghi âm và xuất bản âm nhạc",J,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,591,"Hoạt động phim điện ảnh, video và chương trình truyền hình",59,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5911,"Hoạt động sản xuất phim điện ảnh, video và chương trình truyền hình",591,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5912,"Hoạt động hậu kỳ phim điện ảnh, video và chương trình truyền hình",591,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5913,"Hoạt động phát hành phim điện ảnh, video và chương trình truyền hình",591,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5914,Hoạt động chiếu phim,591,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,592,Hoạt động ghi âm và xuất bản âm nhạc,59,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,5920,Hoạt động ghi âm và xuất bản âm nhạc,592,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,60,"Hoạt động xây dựng chương trình, phát sóng, thông tấn và phân phối nội dung khác",J,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,601,Hoạt động phát thanh và phân phối âm thanh,60,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6010,Hoạt động phát thanh và phân phối âm thanh,601,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,602,"Hoạt động xây dựng chương trình truyền hình, phát sóng truyền hình và phân phối video",60,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6020,"Hoạt động xây dựng chương trình truyền hình, phát sóng truyền hình và phân phối video",602,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,603,Hoạt động thông tấn và hoạt động phân phối nội dung khác,60,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6031,Hoạt động thông tấn,603,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6039,Hoạt động các trang mạng xã hội và hoạt động phân phối nội dung khác,603,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,K,"HOẠT ĐỘNG VIỄN THÔNG; LẬP TRÌNH MÁY TÍNH, TƯ VẤN, CƠ SỞ HẠ TẦNG MÁY TÍNH VÀ CÁC DỊCH VỤ THÔNG TIN KHÁC",,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,61,Hoạt động viễn thông,K,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,611,"Hoạt động viễn thông có dây, không dây và vệ tinh",61,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6110,"Hoạt động viễn thông có dây, không dây và vệ tinh",611,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,612,Hoạt động bán lại dịch vụ viễn thông và dịch vụ trung gian cho hoạt động viễn thông,61,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6120,Hoạt động bán lại dịch vụ viễn thông và dịch vụ trung gian cho hoạt động viễn thông,612,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,619,Hoạt động viễn thông khác,61,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6190,Hoạt động viễn thông khác,619,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,62,"Lập trình máy tính, dịch vụ tư vấn và các hoạt động liên quan",K,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,621,Lập trình máy tính,62,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6211,"Phát triển trò chơi điện tử, phần mềm trò chơi điện tử và các công cụ phần mềm trò chơi điện tử",621,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6219,Lập trình máy tính khác,621,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,622,Tư vấn máy tính và quản lý cơ sở hạ tầng máy tính,62,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6220,Tư vấn máy tính và quản lý cơ sở hạ tầng máy tính,622,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,629,Hoạt động dịch vụ máy tính và công nghệ thông tin khác,62,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6290,Hoạt động dịch vụ máy tính và công nghệ thông tin khác,629,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,63,"Cơ sở hạ tầng công nghệ thông tin, xử lý dữ liệu, lưu trữ và các dịch vụ thông tin liên quan khác",K,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,631,"Cơ sở hạ tầng công nghệ thông tin, xử lý dữ liệu, lưu trữ và các hoạt động liên quan",63,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6310,"Cơ sở hạ tầng công nghệ thông tin, xử lý dữ liệu, lưu trữ và các hoạt động liên quan",631,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,639,Hoạt động cổng tìm kiếm web và các dịch vụ thông tin khác,63,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6390,Hoạt động cổng tìm kiếm web và các dịch vụ thông tin khác,639,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,L,"HOẠT ĐỘNG TÀI CHÍNH, NGÂN HÀNG VÀ BẢO HIỂM",,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,64,Hoạt động dịch vụ tài chính (trừ bảo hiểm và hoạt động quỹ hưu trí),L,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,641,Hoạt động trung gian tiền tệ,64,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6411,Hoạt động Ngân hàng trung ương,641,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6419,Hoạt động trung gian tiền tệ khác,641,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,642,Hoạt động công ty nắm giữ tài sản và các kênh dẫn vốn,64,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6421,Hoạt động công ty nắm giữ tài sản,642,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6422,Hoạt động của các kênh dẫn vốn,642,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,643,"Hoạt động quỹ tín thác, các quỹ và các tổ chức tài chính khác",64,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6431,Hoạt động quỹ thị trường tiền tệ,643,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6432,Hoạt động quỹ đầu tư phi thị trường tiền tệ,643,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6433,"Hoạt động quỹ tín thác, tài sản và tài khoản đại lý",643,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,649,Hoạt động dịch vụ tài chính khác (trừ bảo hiểm và hoạt động quỹ hưu trí),64,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6491,Hoạt động cho thuê tài chính,649,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6492,Hoạt động tài trợ thương mại quốc tế,649,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6493,Hoạt động bao thanh toán,649,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6494,Hoạt động chứng khoán hóa,649,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6495,Hoạt động cấp tín dụng khác,649,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6499,Hoạt động dịch vụ tài chính khác chưa được phân vào đâu (trừ bảo hiểm và hoạt động quỹ hưu trí),649,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,65,"Bảo hiểm, tái bảo hiểm và hoạt động quỹ hưu trí (trừ bảo đảm xã hội bắt buộc)",L,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,651,Bảo hiểm,65,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6511,Bảo hiểm nhân thọ,651,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6512,Bảo hiểm phi nhân thọ,651,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6513,Bảo hiểm sức khỏe,651,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,652,Tái bảo hiểm,65,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6520,Tái bảo hiểm,652,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,653,Hoạt động quỹ hưu trí,65,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6530,Hoạt động quỹ hưu trí,653,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,66,Hoạt động tài chính khác,L,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,661,Hoạt động hỗ trợ dịch vụ tài chính (trừ bảo hiểm và hoạt động quỹ hưu trí),66,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6611,Quản lý thị trường tài chính,661,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6612,Môi giới hợp đồng hàng hóa và chứng khoán,661,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6619,Hoạt động hỗ trợ dịch vụ tài chính chưa được phân vào đâu,661,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,662,Hoạt động hỗ trợ bảo hiểm và quỹ hưu trí,66,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6621,Đánh giá rủi ro và thiệt hại,662,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6622,Hoạt động của đại lý và môi giới bảo hiểm,662,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6629,Hoạt động hỗ trợ khác cho bảo hiểm và quỹ hưu trí,662,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,663,Hoạt động quản lý quỹ,66,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6630,Hoạt động quản lý quỹ,663,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,M,HOẠT ĐỘNG KINH DOANH BẤT ĐỘNG SẢN,,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,68,Hoạt động kinh doanh bất động sản,M,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,681,"Kinh doanh bất động sản, quyền sử dụng đất thuộc chủ sở hữu, chủ sử dụng hoặc đi thuê",68,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6810,"Kinh doanh bất động sản, quyền sử dụng đất thuộc chủ sở hữu, chủ sử dụng hoặc đi thuê",681,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,682,Hoạt động bất động sản trên cơ sở phí hoặc hợp đồng,68,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6821,Dịch vụ trung gian cho hoạt động bất động sản,682,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6829,Hoạt động bất động sản khác trên cơ sở phí hoặc hợp đồng,682,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,N,"HOẠT ĐỘNG CHUYÊN MÔN, KHOA HỌC VÀ CÔNG NGHỆ",,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,69,"Hoạt động pháp luật, kế toán và kiểm toán",N,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,691,Hoạt động pháp luật,69,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6910,Hoạt động pháp luật,691,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,692,"Hoạt động liên quan đến kế toán, kiểm toán và tư vấn về thuế",69,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,6920,"Hoạt động liên quan đến kế toán, kiểm toán và tư vấn về thuế",692,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,70,Hoạt động của trụ sở văn phòng; hoạt động tư vấn quản lý,N,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,701,Hoạt động của trụ sở văn phòng,70,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7010,Hoạt động của trụ sở văn phòng,701,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,702,Hoạt động tư vấn quản lý kinh doanh và hoạt động tư vấn quản lý khác,70,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7020,Hoạt động tư vấn quản lý kinh doanh và hoạt động tư vấn quản lý khác,702,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,71,Hoạt động kiến trúc; kiểm tra và phân tích kỹ thuật,N,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,711,Hoạt động kiến trúc và tư vấn kỹ thuật có liên quan,71,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7110,Hoạt động kiến trúc và tư vấn kỹ thuật có liên quan,711,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,712,Kiểm tra và phân tích kỹ thuật,71,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7120,Kiểm tra và phân tích kỹ thuật,712,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,72,Nghiên cứu khoa học và phát triển công nghệ,N,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,721,Nghiên cứu khoa học và phát triển công nghệ trong lĩnh vực khoa học tự nhiên và kỹ thuật,72,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7211,Nghiên cứu khoa học và phát triển công nghệ trong lĩnh vực khoa học tự nhiên,721,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7212,Nghiên cứu khoa học và phát triển công nghệ trong lĩnh vực khoa học kỹ thuật và công nghệ,721,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7213,"Nghiên cứu khoa học và phát triển công nghệ trong lĩnh vực khoa học y, dược",721,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7214,Nghiên cứu khoa học và phát triển công nghệ trong lĩnh vực khoa học nông nghiệp,721,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,722,Nghiên cứu khoa học và phát triển công nghệ trong lĩnh vực khoa học xã hội và nhân văn,72,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7221,Nghiên cứu khoa học và phát triển công nghệ trong lĩnh vực khoa học xã hội,722,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7222,Nghiên cứu khoa học và phát triển công nghệ trong lĩnh vực khoa học nhân văn,722,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,73,"Quảng cáo, nghiên cứu thị trường và quan hệ công chúng",N,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,731,Quảng cáo,73,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7310,Quảng cáo,731,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,732,Nghiên cứu thị trường và thăm dò dư luận,73,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7320,Nghiên cứu thị trường và thăm dò dư luận,732,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,733,Hoạt động quan hệ công chúng,73,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7330,Hoạt động quan hệ công chúng,733,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,74,"Hoạt động chuyên môn, khoa học và công nghệ khác",N,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,741,Hoạt động thiết kế chuyên dụng,74,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7410,Hoạt động thiết kế chuyên dụng,741,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,742,Hoạt động nhiếp ảnh,74,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7420,Hoạt động nhiếp ảnh,742,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,743,Hoạt động phiên dịch,74,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7430,Hoạt động phiên dịch,743,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,749,"Hoạt động chuyên môn, khoa học và công nghệ khác chưa được phân vào đâu",74,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7491,Hoạt động môi giới và tiếp thị bằng sáng chế,749,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7499,"Hoạt động chuyên môn, khoa học và công nghệ khác còn lại chưa được phân vào đâu",749,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,75,Hoạt động thú y,N,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,750,Hoạt động thú y,75,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7500,Hoạt động thú y,750,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,O,HOẠT ĐỘNG HÀNH CHÍNH VÀ DỊCH VỤ HỖ TRỢ,,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,77,Cho thuê hoạt động,O,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,771,Cho thuê xe có động cơ,77,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7710,Cho thuê xe có động cơ,771,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,772,Cho thuê đồ dùng cá nhân và gia đình,77,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7721,"Cho thuê thiết bị thể thao, vui chơi giải trí",772,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7729,Cho thuê đồ dùng cá nhân và gia đình khác,772,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,773,"Cho thuê máy móc, thiết bị và đồ dùng hữu hình khác không kèm người điều khiển",77,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7730,"Cho thuê máy móc, thiết bị và đồ dùng hữu hình khác không kèm người điều khiển",773,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,774,Cho thuê tài sản vô hình phi tài chính,77,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7740,Cho thuê tài sản vô hình phi tài chính,774,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,775,Hoạt động dịch vụ trung gian cho thuê đồ dùng hữu hình và tài sản vô hình phi tài chính,77,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7750,Hoạt động dịch vụ trung gian cho thuê đồ dùng hữu hình và tài sản vô hình phi tài chính,775,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,78,Hoạt động dịch vụ lao động và việc làm,O,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,781,Hoạt động của các trung tâm giới thiệu việc làm,78,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7810,Hoạt động của các trung tâm giới thiệu việc làm,781,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,782,Cung ứng lao động tạm thời và nguồn nhân lực khác,78,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7821,Cung ứng lao động tạm thời,782,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7822,Cung ứng nguồn nhân lực khác,782,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,79,"Hoạt động của các đại lý lữ hành, kinh doanh tua du lịch và hoạt động liên quan đến du lịch khác",O,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,791,"Hoạt động của các đại lý lữ hành, kinh doanh tua du lịch",79,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7911,Đại lý lữ hành,791,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7912,Điều hành tua du lịch,791,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,799,Hoạt động liên quan đến du lịch khác,79,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,7990,Hoạt động liên quan đến du lịch khác,799,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,80,Hoạt động điều tra bảo đảm an toàn,O,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,801,Hoạt động điều tra bảo đảm an toàn,80,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8011,Dịch vụ điều tra và hoạt động bảo vệ tư nhân,801,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8019,Dịch vụ bảo đảm an toàn khác,801,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,81,"Hoạt động dịch vụ vệ sinh nhà cửa, công trình và cảnh quan",O,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,811,Dịch vụ hỗ trợ tổng hợp,81,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8110,Dịch vụ hỗ trợ tổng hợp,811,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,812,Dịch vụ vệ sinh,81,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8121,Vệ sinh chung nhà cửa,812,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8129,Dịch vụ vệ sinh khác,812,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,813,Dịch vụ cảnh quan,81,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8130,Dịch vụ cảnh quan,813,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,82,"Hoạt động hành chính, hỗ trợ văn phòng và các hoạt động hỗ trợ kinh doanh khác",O,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,821,Hoạt động hành chính và hỗ trợ văn phòng,82,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8210,Hoạt động hành chính và hỗ trợ văn phòng,821,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,822,Hoạt động dịch vụ liên quan đến các cuộc gọi,82,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8220,Hoạt động dịch vụ liên quan đến các cuộc gọi,822,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,823,Tổ chức giới thiệu và xúc tiến thương mại,82,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8230,Tổ chức giới thiệu và xúc tiến thương mại,823,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,824,Hoạt động dịch vụ trung gian cho các hoạt động dịch vụ hỗ trợ kinh doanh chưa được phân vào đâu (trừ trung gian tài chính),82,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8240,Hoạt động dịch vụ trung gian cho các hoạt động dịch vụ hỗ trợ kinh doanh chưa được phân vào đâu (trừ trung gian tài chính),824,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,829,Hoạt động dịch vụ hỗ trợ kinh doanh khác chưa được phân vào đâu,82,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8291,"Hoạt động dịch vụ hỗ trợ thanh toán, tín dụng",829,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8292,Dịch vụ đóng gói,829,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8299,Hoạt động dịch vụ hỗ trợ kinh doanh khác còn lại chưa được phân vào đâu,829,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,P,"HOẠT ĐỘNG CỦA ĐẢNG CỘNG SẢN, TỔ CHỨC CHÍNH TRỊ - XÃ HỘI, QUẢN LÝ NHÀ NƯỚC, AN NINH QUỐC PHÒNG; BẢO ĐẢM XÃ HỘI BẮT BUỘC",,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,84,"Hoạt động của Đảng Cộng sản, tổ chức chính trị - xã hội, quản lý nhà nước, an ninh quốc phòng, đối ngoại; bảo đảm xã hội bắt buộc",P,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,841,"Hoạt động của Đảng Cộng sản, tổ chức chính trị - xã hội, quản lý nhà nước và quản lý chính sách kinh tế, xã hội, môi trường",84,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8411,"Hoạt động của Đảng Cộng sản, tổ chức chính trị - xã hội, hoạt động quản lý nhà nước nói chung và kinh tế tổng hợp",841,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8412,"Hoạt động quản lý nhà nước trong các lĩnh vực y tế, giáo dục, văn hóa và các dịch vụ xã hội khác (trừ môi trường và bảo đảm xã hội bắt buộc)",841,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8413,Hoạt động quản lý nhà nước trong lĩnh vực môi trường,841,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8414,Hoạt động quản lý nhà nước trong các lĩnh vực kinh tế chuyên ngành,841,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,842,Hoạt động phục vụ chung cho toàn đất nước,84,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8421,Hoạt động đối ngoại,842,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8422,Hoạt động quốc phòng,842,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8423,"Hoạt động an ninh, trật tự an toàn xã hội",842,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,843,Hoạt động bảo đảm xã hội bắt buộc,84,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8430,Hoạt động bảo đảm xã hội bắt buộc,843,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,Q,GIÁO DỤC VÀ ĐÀO TẠO,,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,85,Giáo dục và đào tạo,Q,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,851,Giáo dục mầm non,85,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8511,Giáo dục nhà trẻ,851,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8512,Giáo dục mẫu giáo,851,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,852,Giáo dục phổ thông,85,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8521,Giáo dục tiểu học,852,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8522,Giáo dục trung học cơ sở,852,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8523,Giáo dục trung học phổ thông,852,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,853,Giáo dục nghề nghiệp,85,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8531,Đào tạo sơ cấp,853,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8532,Đào tạo trung cấp,853,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8533,Đào tạo cao đẳng,853,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,854,Giáo dục đại học,85,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8541,Đào tạo đại học,854,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8542,Đào tạo thạc sỹ,854,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8543,Đào tạo tiến sỹ,854,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,855,Giáo dục khác,85,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8551,Giáo dục thể thao và giải trí,855,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8552,Giáo dục văn hóa nghệ thuật,855,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8553,Hoạt động đào tạo sử dụng phương tiện vận tải phi thương mại,855,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8554,Giáo dục dự bị đại học,855,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8559,Giáo dục khác chưa được phân vào đâu,855,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,856,Hoạt động hỗ trợ giáo dục,85,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8561,Hoạt động dịch vụ trung gian cho các khóa học và gia sư,856,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8569,Hoạt động hỗ trợ giáo dục khác,856,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,R,Y TẾ VÀ HOẠT ĐỘNG TRỢ GIÚP XÃ HỘI,,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,86,Hoạt động y tế,R,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,861,"Hoạt động của các bệnh viện, trạm y tế",86,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8610,"Hoạt động của các bệnh viện, trạm y tế",861,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,862,"Hoạt động của các phòng khám đa khoa, chuyên khoa và nha khoa",86,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8620,"Hoạt động của các phòng khám đa khoa, chuyên khoa và nha khoa",862,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,869,Hoạt động y tế khác,86,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8691,"Hoạt động dịch vụ trung gian cho các dịch vụ y tế, nha khoa và dịch vụ y tế khác",869,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8692,Hoạt động y tế dự phòng,869,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8693,"Hoạt động của hệ thống cơ sở chỉnh hình, phục hồi chức năng",869,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8699,Hoạt động y tế khác chưa được phân vào đâu,869,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,87,"Hoạt động chăm sóc, điều dưỡng tập trung",R,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,871,"Hoạt động của các cơ sở nuôi dưỡng, điều dưỡng",87,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8710,"Hoạt động của các cơ sở nuôi dưỡng, điều dưỡng",871,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,872,"Hoạt động chăm sóc sức khoẻ người khuyết tật trí tuệ, thần kinh, tâm thần và người nghiện",87,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8720,"Hoạt động chăm sóc sức khoẻ người khuyết tật trí tuệ, thần kinh, tâm thần và người nghiện",872,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,873,"Hoạt động chăm sóc sức khoẻ người có công, người già và người khuyết tật không có khả năng tự chăm sóc",87,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8730,"Hoạt động chăm sóc sức khoẻ người có công, người già và người khuyết tật không có khả năng tự chăm sóc",873,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,879,Hoạt động chăm sóc tập trung khác,87,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8791,Hoạt động dịch vụ trung gian cho các hoạt động chăm sóc tập trung,879,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8799,Hoạt động chăm sóc tập trung khác chưa được phân vào đâu,879,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,88,Hoạt động trợ giúp xã hội không tập trung,R,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,881,"Hoạt động trợ giúp xã hội không tập trung đối với người có công, thương bệnh binh, người già và người khuyết tật",88,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8810,"Hoạt động trợ giúp xã hội không tập trung đối với người có công, thương bệnh binh, người già và người khuyết tật",881,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,889,Hoạt động trợ giúp xã hội không tập trung khác,88,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,8890,Hoạt động trợ giúp xã hội không tập trung khác,889,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,S,"NGHỆ THUẬT, THỂ THAO VÀ GIẢI TRÍ",,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,90,Hoạt động sáng tạo nghệ thuật và biểu diễn nghệ thuật,S,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,901,Hoạt động sáng tạo nghệ thuật,90,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9011,Hoạt động sáng tác văn học và sáng tác âm nhạc,901,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9012,Hoạt động sáng tạo nghệ thuật thị giác,901,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9019,Hoạt động sáng tạo nghệ thuật khác,901,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,902,Hoạt động biểu diễn nghệ thuật,90,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9020,Hoạt động biểu diễn nghệ thuật,902,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,903,Hoạt động hỗ trợ sáng tạo nghệ thuật và biểu diễn nghệ thuật,90,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9031,Hoạt động của cơ sở và địa điểm nghệ thuật,903,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9039,Hoạt động hỗ trợ khác cho sáng tạo nghệ thuật và biểu diễn nghệ thuật,903,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,91,"Hoạt động của thư viện, lưu trữ, bảo tàng và các hoạt động văn hóa khác",S,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,911,Hoạt động thư viện và lưu trữ,91,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9111,Hoạt động thư viện,911,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9112,Hoạt động lưu trữ,911,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,912,"Hoạt động bảo tàng, sưu tập, di tích và di sản",91,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9121,Hoạt động bảo tàng và sưu tập,912,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9122,Hoạt động di tích lịch sử và di tích,912,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,913,"Bảo tồn, phục hồi và các hoạt động hỗ trợ khác cho di sản văn hóa",91,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9130,"Bảo tồn, phục hồi và các hoạt động hỗ trợ khác cho di sản văn hóa",913,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,914,"Hoạt động của các vườn bách thảo, bách thú và khu bảo tồn thiên nhiên",91,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9141,Hoạt động của các vườn bách thảo và bách thú,914,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9142,Hoạt động của khu bảo tồn thiên nhiên,914,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,92,"Hoạt động xổ số, cá cược và đánh bạc",S,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,920,"Hoạt động xổ số, cá cược và đánh bạc",92,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9200,"Hoạt động xổ số, cá cược và đánh bạc",920,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,93,"Hoạt động thể thao, vui chơi và giải trí",S,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,931,Hoạt động thể thao,93,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9311,Hoạt động của các cơ sở thể thao,931,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9312,Hoạt động của các câu lạc bộ thể thao,931,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9319,Hoạt động thể thao khác,931,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,932,Hoạt động vui chơi giải trí,93,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9321,Hoạt động của các công viên vui chơi và công viên theo chủ đề,932,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9329,Hoạt động vui chơi giải trí khác,932,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,T,HOẠT ĐỘNG DỊCH VỤ KHÁC,,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,94,"Hoạt động của các hiệp hội, tổ chức khác",T,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,941,"Hoạt động của các hiệp hội kinh doanh, nghiệp chủ và nghề nghiệp",94,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9411,Hoạt động của các hiệp hội kinh doanh và nghiệp chủ,941,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9412,Hoạt động của các hội nghề nghiệp,941,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,942,Hoạt động của công đoàn,94,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9420,Hoạt động của công đoàn,942,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,949,Hoạt động của các tổ chức khác,94,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9491,Hoạt động của các tổ chức tôn giáo,949,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9499,Hoạt động của các tổ chức khác chưa được phân vào đâu,949,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,95,"Sửa chữa, bảo dưỡng máy tính, đồ dùng cá nhân và gia đình, ô tô, mô tô, xe máy và xe có động cơ khác",T,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,951,"Sửa chữa, bảo dưỡng máy tính, thiết bị thông tin và truyền thông",95,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9510,"Sửa chữa, bảo dưỡng máy tính, thiết bị thông tin và truyền thông",951,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,952,"Sửa chữa, bảo dưỡng đồ dùng cá nhân và gia đình",95,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9521,"Sửa chữa, bảo dưỡng thiết bị nghe nhìn điện tử gia dụng",952,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9522,"Sửa chữa, bảo dưỡng thiết bị, đồ dùng gia đình",952,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9523,"Sửa chữa, bảo dưỡng giày, dép, hàng da và giả da",952,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9524,"Sửa chữa, bảo dưỡng giường, tủ, bàn, ghế và đồ nội thất tương tự",952,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9529,"Sửa chữa, bảo dưỡng xe đạp, đồng hồ, đồ dùng cá nhân và gia đình khác chưa được phân vào đâu",952,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,953,"Sửa chữa, bảo dưỡng ô tô, mô tô, xe máy và xe có động cơ khác",95,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9531,"Sửa chữa, bảo dưỡng ô tô và xe có động cơ khác",953,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9532,"Sửa chữa, bảo dưỡng mô tô, xe máy",953,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,954,"Hoạt động dịch vụ trung gian cho sửa chữa, bảo dưỡng máy tính, đồ dùng cá nhân và gia đình, ô tô, mô tô, xe máy và xe có động cơ khác",95,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9540,"Hoạt động dịch vụ trung gian cho sửa chữa, bảo dưỡng máy tính, đồ dùng cá nhân và gia đình, ô tô, mô tô, xe máy và xe có động cơ khác",954,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,96,Hoạt động dịch vụ phục vụ cá nhân,T,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,961,"Giặt là, làm sạch các sản phẩm dệt và lông thú",96,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9610,"Giặt là, làm sạch các sản phẩm dệt và lông thú",961,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,962,"Dịch vụ làm tóc, chăm sóc sắc đẹp, spa và các hoạt động tương tự",96,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9621,Dịch vụ làm tóc,962,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9622,Dịch vụ chăm sóc sắc đẹp và các hoạt động làm đẹp khác,962,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9623,Dịch vụ spa và xông hơi,962,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,963,Hoạt động dịch vụ phục vụ tang lễ và các dịch vụ liên quan,96,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9630,Hoạt động dịch vụ phục vụ tang lễ và các dịch vụ liên quan,963,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,964,Hoạt động trung gian cho dịch vụ cá nhân,96,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9640,Hoạt động trung gian cho dịch vụ cá nhân,964,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,969,Hoạt động dịch vụ phục vụ cá nhân khác,96,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9690,Hoạt động dịch vụ phục vụ cá nhân khác,969,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,U,"HOẠT ĐỘNG LÀM THUÊ CÁC CÔNG VIỆC TRONG CÁC HỘ GIA ĐÌNH, SẢN XUẤT SẢN PHẨM VẬT CHẤT VÀ DỊCH VỤ TỰ TIÊU DÙNG CỦA HỘ GIA ĐÌNH",,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,97,Hoạt động làm thuê công việc gia đình trong các hộ gia đình,U,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,970,Hoạt động làm thuê công việc gia đình trong các hộ gia đình,97,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9700,Hoạt động làm thuê công việc gia đình trong các hộ gia đình,970,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,98,Hoạt động sản xuất sản phẩm vật chất và dịch vụ tự tiêu dùng của hộ gia đình,U,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,981,Hoạt động sản xuất các sản phẩm vật chất tự tiêu dùng của hộ gia đình,98,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9810,Hoạt động sản xuất các sản phẩm vật chất tự tiêu dùng của hộ gia đình,981,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,982,Hoạt động sản xuất các sản phẩm dịch vụ tự tiêu dùng của hộ gia đình,98,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9820,Hoạt động sản xuất các sản phẩm dịch vụ tự tiêu dùng của hộ gia đình,982,QĐ 36/2025/QĐ-TTg - Phụ lục I
+1,V,HOẠT ĐỘNG CỦA CÁC TỔ CHỨC VÀ CƠ QUAN QUỐC TẾ,,QĐ 36/2025/QĐ-TTg - Phụ lục I
+2,99,Hoạt động của các tổ chức và cơ quan quốc tế,V,QĐ 36/2025/QĐ-TTg - Phụ lục I
+3,990,Hoạt động của các tổ chức và cơ quan quốc tế,99,QĐ 36/2025/QĐ-TTg - Phụ lục I
+4,9900,Hoạt động của các tổ chức và cơ quan quốc tế,990,QĐ 36/2025/QĐ-TTg - Phụ lục I

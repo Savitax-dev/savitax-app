@@ -1,0 +1,313 @@
+﻿loai,ma,ten_moi,ten_cu
+moi,0122,Trồng cây lấy quả chứa dầu,
+moi,0220,Khai thác gỗ,
+moi,0331,Hoạt động dịch vụ hỗ trợ khai thác thủy sản,
+moi,0332,Hoạt động dịch vụ hỗ trợ nuôi trồng thủy sản,
+moi,0729,Khai thác quặng kim loại khác không chứa sắt,
+moi,1076,Sản xuất chè,
+moi,1077,Sản xuất cà phê,
+moi,1105,"Sản xuất đồ uống không cồn, nước khoáng",
+moi,1391,"Sản xuất vải dệt kim, vải đan móc và vải không dệt khác",
+moi,1392,Sản xuất hàng dệt sẵn (trừ trang phục),
+moi,1393,"Sản xuất thảm, chăn, đệm",
+moi,1394,Sản xuất các loại dây bện và lưới,
+moi,1399,Sản xuất các loại hàng dệt khác chưa được phân vào đâu,
+moi,2219,Sản xuất sản phẩm khác từ cao su,
+moi,2611,"Sản xuất pin mặt trời, tấm pin mặt trời và bộ biến tần quang điện",
+moi,2619,Sản xuất linh kiện điện tử khác,
+moi,3101,"Sản xuất giường, tủ, bàn, ghế bằng gỗ",
+moi,3102,"Sản xuất giường, tủ, bàn, ghế bằng kim loại",
+moi,3109,"Sản xuất giường, tủ, bàn, ghế bằng vật liệu khác",
+moi,3511,Sản xuất điện từ nguồn năng lượng không tái tạo,
+moi,3512,Sản xuất điện từ nguồn năng lượng tái tạo,
+moi,3513,Truyền tải và phân phối điện,
+moi,3540,"Hoạt động trung gian hoặc đại lý điện, khí đốt",
+moi,4101,Xây dựng nhà để ở,
+moi,4102,Xây dựng nhà không để ở,
+moi,4211,Xây dựng công trình đường sắt,
+moi,4212,Xây dựng công trình đường bộ,
+moi,4221,Xây dựng công trình điện,
+moi,4222,"Xây dựng công trình cấp, thoát nước",
+moi,4223,"Xây dựng công trình viễn thông, thông tin liên lạc",
+moi,4229,Xây dựng công trình công ích khác,
+moi,4291,Xây dựng công trình thủy,
+moi,4292,Xây dựng công trình khai khoáng,
+moi,4293,"Xây dựng công trình chế biến, chế tạo",
+moi,4299,Xây dựng công trình kỹ thuật dân dụng khác,
+moi,4340,Hoạt động dịch vụ trung gian cho xây dựng chuyên dụng,
+moi,4642,"Bán buôn giường, tủ, bàn ghế và đồ nội thất tương tự trong gia đình, văn phòng, cửa hàng; thảm, đệm và thiết bị chiếu sáng",
+moi,4671,"Bán buôn nhiên liệu rắn, lỏng, khí và các sản phẩm liên quan",
+moi,4672,Bán buôn kim loại và quặng kim loại,
+moi,4673,"Bán buôn vật liệu, thiết bị lắp đặt khác trong xây dựng",
+moi,4679,Bán buôn chuyên doanh khác chưa được phân vào đâu,
+moi,4740,Bán lẻ thiết bị công nghệ thông tin và truyền thông,
+moi,4769,"Bán lẻ sản phẩm văn hóa, giải trí khác chưa phân vào đâu",
+moi,4783,"Bán lẻ mô tô, xe máy, phụ tùng và các bộ phận phụ trợ của mô tô, xe máy",
+moi,4790,Hoạt động dịch vụ trung gian bán lẻ,
+moi,4921,Vận tải hành khách bằng xe buýt trong nội thành,
+moi,4922,"Vận tải hành khách bằng xe buýt giữa nội thành và ngoại thành, liên tỉnh",
+moi,4929,Vận tải hành khách bằng xe buýt loại khác,
+moi,5225,Hoạt động dịch vụ hỗ trợ trực tiếp cho vận tải đường bộ,
+moi,5231,Hoạt động dịch vụ trung gian cho vận tải hàng hóa,
+moi,5232,Hoạt động dịch vụ trung gian cho vận tải hành khách,
+moi,5330,Hoạt động dịch vụ trung gian cho hoạt động bưu chính và chuyển phát,
+moi,5520,Dịch vụ lưu trú ngắn ngày khác,
+moi,5530,Hoạt động dịch vụ trung gian cho dịch vụ lưu trú,
+moi,5640,Hoạt động dịch vụ trung gian cho dịch vụ ăn uống,
+moi,5821,Xuất bản trò chơi điện tử,
+moi,5829,Xuất bản phần mềm khác,
+moi,6020,"Hoạt động xây dựng chương trình truyền hình, phát sóng truyền hình và phân phối video",
+moi,6031,Hoạt động thông tấn,
+moi,6039,Hoạt động các trang mạng xã hội và hoạt động phân phối nội dung khác,
+moi,6211,"Phát triển trò chơi điện tử, phần mềm trò chơi điện tử và các công cụ phần mềm trò chơi điện tử",
+moi,6219,Lập trình máy tính khác,
+moi,6220,Tư vấn máy tính và quản lý cơ sở hạ tầng máy tính,
+moi,6290,Hoạt động dịch vụ máy tính và công nghệ thông tin khác,
+moi,6310,"Cơ sở hạ tầng công nghệ thông tin, xử lý dữ liệu, lưu trữ và các hoạt động liên quan",
+moi,6390,Hoạt động cổng tìm kiếm web và các dịch vụ thông tin khác,
+moi,6421,Hoạt động công ty nắm giữ tài sản,
+moi,6422,Hoạt động của các kênh dẫn vốn,
+moi,6431,Hoạt động quỹ thị trường tiền tệ,
+moi,6432,Hoạt động quỹ đầu tư phi thị trường tiền tệ,
+moi,6433,"Hoạt động quỹ tín thác, tài sản và tài khoản đại lý",
+moi,6493,Hoạt động bao thanh toán,
+moi,6494,Hoạt động chứng khoán hóa,
+moi,6495,Hoạt động cấp tín dụng khác,
+moi,6513,Bảo hiểm sức khỏe,
+moi,6821,Dịch vụ trung gian cho hoạt động bất động sản,
+moi,6829,Hoạt động bất động sản khác trên cơ sở phí hoặc hợp đồng,
+moi,7211,Nghiên cứu khoa học và phát triển công nghệ trong lĩnh vực khoa học tự nhiên,
+moi,7212,Nghiên cứu khoa học và phát triển công nghệ trong lĩnh vực khoa học kỹ thuật và công nghệ,
+moi,7213,"Nghiên cứu khoa học và phát triển công nghệ trong lĩnh vực khoa học y, dược",
+moi,7214,Nghiên cứu khoa học và phát triển công nghệ trong lĩnh vực khoa học nông nghiệp,
+moi,7221,Nghiên cứu khoa học và phát triển công nghệ trong lĩnh vực khoa học xã hội,
+moi,7222,Nghiên cứu khoa học và phát triển công nghệ trong lĩnh vực khoa học nhân văn,
+moi,7330,Hoạt động quan hệ công chúng,
+moi,7430,Hoạt động phiên dịch,
+moi,7491,Hoạt động môi giới và tiếp thị bằng sáng chế,
+moi,7499,"Hoạt động chuyên môn, khoa học và công nghệ khác còn lại chưa được phân vào đâu",
+moi,7750,Hoạt động dịch vụ trung gian cho thuê đồ dùng hữu hình và tài sản vô hình phi tài chính,
+moi,7821,Cung ứng lao động tạm thời,
+moi,7822,Cung ứng nguồn nhân lực khác,
+moi,7990,Hoạt động liên quan đến du lịch khác,
+moi,8011,Dịch vụ điều tra và hoạt động bảo vệ tư nhân,
+moi,8019,Dịch vụ bảo đảm an toàn khác,
+moi,8210,Hoạt động hành chính và hỗ trợ văn phòng,
+moi,8240,Hoạt động dịch vụ trung gian cho các hoạt động dịch vụ hỗ trợ kinh doanh chưa được phân vào đâu (trừ trung gian tài chính),
+moi,8414,Hoạt động quản lý nhà nước trong các lĩnh vực kinh tế chuyên ngành,
+moi,8511,Giáo dục nhà trẻ,
+moi,8512,Giáo dục mẫu giáo,
+moi,8521,Giáo dục tiểu học,
+moi,8522,Giáo dục trung học cơ sở,
+moi,8523,Giáo dục trung học phổ thông,
+moi,8533,Đào tạo cao đẳng,
+moi,8541,Đào tạo đại học,
+moi,8543,Đào tạo tiến sỹ,
+moi,8553,Hoạt động đào tạo sử dụng phương tiện vận tải phi thương mại,
+moi,8554,Giáo dục dự bị đại học,
+moi,8561,Hoạt động dịch vụ trung gian cho các khóa học và gia sư,
+moi,8569,Hoạt động hỗ trợ giáo dục khác,
+moi,8693,"Hoạt động của hệ thống cơ sở chỉnh hình, phục hồi chức năng",
+moi,8791,Hoạt động dịch vụ trung gian cho các hoạt động chăm sóc tập trung,
+moi,8799,Hoạt động chăm sóc tập trung khác chưa được phân vào đâu,
+moi,9011,Hoạt động sáng tác văn học và sáng tác âm nhạc,
+moi,9012,Hoạt động sáng tạo nghệ thuật thị giác,
+moi,9019,Hoạt động sáng tạo nghệ thuật khác,
+moi,9020,Hoạt động biểu diễn nghệ thuật,
+moi,9031,Hoạt động của cơ sở và địa điểm nghệ thuật,
+moi,9039,Hoạt động hỗ trợ khác cho sáng tạo nghệ thuật và biểu diễn nghệ thuật,
+moi,9111,Hoạt động thư viện,
+moi,9112,Hoạt động lưu trữ,
+moi,9121,Hoạt động bảo tàng và sưu tập,
+moi,9122,Hoạt động di tích lịch sử và di tích,
+moi,9130,"Bảo tồn, phục hồi và các hoạt động hỗ trợ khác cho di sản văn hóa",
+moi,9141,Hoạt động của các vườn bách thảo và bách thú,
+moi,9142,Hoạt động của khu bảo tồn thiên nhiên,
+moi,9200,"Hoạt động xổ số, cá cược và đánh bạc",
+moi,9510,"Sửa chữa, bảo dưỡng máy tính, thiết bị thông tin và truyền thông",
+moi,9531,"Sửa chữa, bảo dưỡng ô tô và xe có động cơ khác",
+moi,9532,"Sửa chữa, bảo dưỡng mô tô, xe máy",
+moi,9540,"Hoạt động dịch vụ trung gian cho sửa chữa, bảo dưỡng máy tính, đồ dùng cá nhân và gia đình, ô tô, mô tô, xe máy và xe có động cơ khác",
+moi,9621,Dịch vụ làm tóc,
+moi,9622,Dịch vụ chăm sóc sắc đẹp và các hoạt động làm đẹp khác,
+moi,9623,Dịch vụ spa và xông hơi,
+moi,9630,Hoạt động dịch vụ phục vụ tang lễ và các dịch vụ liên quan,
+moi,9640,Hoạt động trung gian cho dịch vụ cá nhân,
+moi,9690,Hoạt động dịch vụ phục vụ cá nhân khác,
+doi_ten,0118,"Trồng rau, đậu các loại và trồng hoa","Trồng rau, đậu các loại và trồng hoa, cây cảnh"
+doi_ten,0128,"Trồng cây gia vị, cây dược liệu, cây hương liệu lâu năm","Trồng cây gia vị, cây dược liệu"
+doi_ten,0141,"Chăn nuôi trâu, bò và sản xuất giống trâu, bò","Chăn nuôi trâu, bò"
+doi_ten,0142,"Chăn nuôi ngựa, lừa, la và sản xuất giống ngựa, lừa","Chăn nuôi ngựa, lừa, la"
+doi_ten,0144,"Chăn nuôi dê, cừu, hươu, nai và sản xuất giống dê, cừu, hươu, nai","Chăn nuôi dê, cừu"
+doi_ten,0145,Chăn nuôi lợn và sản xuất giống lợn,Chăn nuôi lợn
+doi_ten,0210,"Trồng rừng, chăm sóc rừng và ươm giống cây lâm nghiệp",Trồng rừng và chăm sóc rừng
+doi_ten,0230,"Khai thác, thu nhặt lâm sản trừ gỗ",Thu nhặt sản phẩm từ rừng không phải gỗ và lâm sản khác
+doi_ten,0721,Khai thác quặng uranium và quặng thorium,Khai thác quặng uranium và thorium
+doi_ten,0990,Hoạt động dịch vụ hỗ trợ khai khoáng khác,Hoạt động dịch vụ hỗ trợ khai thác mỏ và quặng khác
+doi_ten,1073,"Sản xuất ca cao, sôcôla và bánh kẹo","Sản xuất ca cao, sôcôla và mứt kẹo"
+doi_ten,1074,"Sản xuất mì ống, mỳ sợi và sản phẩm tương tự","Sản xuất mì ống, mì sợi và sản phẩm tương tự"
+doi_ten,1103,Sản xuất bia,Sản xuất bia và mạch nha ủ men bia
+doi_ten,1104,Sản xuất mạch nha ủ men bia,"Sản xuất đồ uống không cồn, nước khoáng"
+doi_ten,1410,Sản xuất trang phục (trừ trang phục từ da lông thú),May trang phục (trừ trang phục từ da lông thú)
+doi_ten,1430,Sản xuất trang phục đan móc,"Sản xuất trang phục dệt kim, đan móc"
+doi_ten,1920,Sản xuất sản phẩm dầu mỏ tinh chế; sản xuất sản phẩm nhiên liệu hóa thạch,Sản xuất sản phẩm dầu mỏ tinh chế
+doi_ten,2022,"Sản xuất sơn, véc ni và các chất sơn, quét tương tự; sản xuất mực in và ma tít","Sản xuất sơn, vec ni và các chất sơn, quét tương tự; sản xuất mực in và matít"
+doi_ten,2023,"Sản xuất mỹ phẩm, nước hoa, xà phòng, chất tẩy rửa, làm bóng và chế phẩm vệ sinh","Sản xuất mỹ phẩm, xà phòng, chất tẩy rửa, làm bóng và chế phẩm vệ sinh"
+doi_ten,2395,"Sản xuất bê tông và các sản phẩm từ bê tông, xi măng và thạch cao",Sản xuất bê tông và các sản phẩm từ xi măng và thạch cao
+doi_ten,2399,Sản xuất sản phẩm từ chất khoáng phi kim loại khác chưa được phân vào đâu,Sản xuất sản phẩm từ chất khoáng phi kim khác chưa được phân vào đâu
+doi_ten,2420,Sản xuất kim loại quý và kim loại màu,Sản xuất kim loại màu và kim loại quý
+doi_ten,2620,Sản xuất máy tính và thiết bị ngoại vi của máy tính,Sản xuất máy vi tính và thiết bị ngoại vi của máy vi tính
+doi_ten,2817,Sản xuất máy móc và thiết bị văn phòng (trừ máy tính và thiết bị ngoại vi của máy tính),Sản xuất máy móc và thiết bị văn phòng (trừ máy vi tính và thiết bị ngoại vi của máy vi tính)
+doi_ten,2823,"Sản xuất máy móc, thiết bị cho ngành luyện kim",Sản xuất máy luyện kim
+doi_ten,2910,Sản xuất ô tô và xe có động cơ khác,Sản xuất xe có động cơ
+doi_ten,2920,"Sản xuất thân xe ô tô và xe có động cơ khác, rơ moóc và bán rơ moóc","Sản xuất thân xe có động cơ, rơ moóc và bán rơ moóc"
+doi_ten,2930,Sản xuất phụ tùng và bộ phận phụ trợ cho xe ô tô và xe có động cơ khác,Sản xuất phụ tùng và bộ phận phụ trợ cho xe có động cơ và động cơ xe
+doi_ten,3020,"Sản xuất đầu máy xe lửa, xe điện, toa xe và phương tiện, thiết bị chuyên dùng trên đường ray","Sản xuất đầu máy xe lửa, xe điện và toa xe"
+doi_ten,3092,Sản xuất xe đạp và xe cho người khuyết tật,Sản xuất xe đạp và xe cho người tàn tật
+doi_ten,3311,"Sửa chữa, bảo dưỡng các sản phẩm kim loại đúc sẵn",Sửa chữa các sản phẩm kim loại đúc sẵn
+doi_ten,3312,"Sửa chữa, bảo dưỡng máy móc, thiết bị","Sửa chữa máy móc, thiết bị"
+doi_ten,3313,"Sửa chữa, bảo dưỡng thiết bị điện tử và quang học",Sửa chữa thiết bị điện tử và quang học
+doi_ten,3314,"Sửa chữa, bảo dưỡng thiết bị điện",Sửa chữa thiết bị điện
+doi_ten,3315,"Sửa chữa, bảo dưỡng phương tiện vận tải (trừ ô tô, mô tô, xe máy và xe có động cơ khác)","Sửa chữa và bảo dưỡng phương tiện vận tải (trừ ô tô, mô tô, xe máy và xe có động cơ khác)"
+doi_ten,3319,"Sửa chữa, bảo dưỡng thiết bị khác",Sửa chữa thiết bị khác
+doi_ten,4322,"Lắp đặt hệ thống cấp, thoát nước, hệ thống sưởi và điều hoà không khí","Lắp đặt hệ thống cấp, thoát nước, lò sưởi và điều hoà không khí"
+doi_ten,4610,"Đại lý, môi giới, đấu giá hàng hóa","Đại lý, môi giới, đấu giá"
+doi_ten,4631,"Bán buôn gạo, lúa mỳ, sản phẩm từ ngũ cốc khác, bột mỳ",Bán buôn gạo
+doi_ten,4641,"Bán buôn vải, hàng may mặc, giày dép","Bán buôn vải, hàng may sẵn, giày dép"
+doi_ten,4651,"Bán buôn máy tính, thiết bị ngoại vi và phần mềm","Bán buôn máy vi tính, thiết bị ngoại vi và phần mềm"
+doi_ten,4661,Bán buôn ô tô và xe có động cơ khác,"Bán buôn nhiên liệu rắn, lỏng, khí và các sản phẩm liên quan"
+doi_ten,4662,Bán buôn phụ tùng và các bộ phận phụ trợ của ô tô và xe có động cơ khác,Bán buôn kim loại và quặng kim loại
+doi_ten,4663,"Bán buôn mô tô, xe máy, phụ tùng và các bộ phận phụ trợ của mô tô, xe máy","Bán buôn vật liệu, thiết bị lắp đặt khác trong xây dựng"
+doi_ten,4711,"Bán lẻ tổng hợp với lương thực, thực phẩm, đồ uống, thuốc lá, thuốc lào chiếm tỷ trọng lớn","Bán lẻ lương thực, thực phẩm, đồ uống, thuốc lá, thuốc lào chiếm tỷ trọng lớn trong các cửa hàng kinh doanh tổng hợp"
+doi_ten,4719,Bán lẻ tổng hợp khác,Bán lẻ khác trong các cửa hàng kinh doanh tổng hợp loại khác
+doi_ten,4721,Bán lẻ lương thực,Bán lẻ lương thực trong các cửa hàng chuyên doanh
+doi_ten,4722,Bán lẻ thực phẩm,Bán lẻ thực phẩm trong các cửa hàng chuyên doanh
+doi_ten,4723,Bán lẻ đồ uống,Bán lẻ đồ uống trong các cửa hàng chuyên doanh
+doi_ten,4724,"Bán lẻ sản phẩm thuốc lá, thuốc lào","Bán lẻ sản phẩm thuốc lá, thuốc lào trong các cửa hàng chuyên doanh"
+doi_ten,4730,Bán lẻ nhiên liệu động cơ,Bán lẻ nhiên liệu động cơ trong các cửa hàng chuyên doanh
+doi_ten,4751,"Bán lẻ vải, len, sợi, chỉ khâu và hàng dệt khác","Bán lẻ vải, len, sợi, chỉ khâu và hàng dệt khác trong các cửa hàng chuyên doanh"
+doi_ten,4752,"Bán lẻ đồ ngũ kim, sơn, kính, vật liệu và thiết bị lắp đặt khác trong xây dựng","Bán lẻ đồ ngũ kim, sơn, kính và thiết bị lắp đặt khác trong xây dựng trong các cửa hàng chuyên doanh"
+doi_ten,4753,"Bán lẻ thảm, đệm, chăn, màn, rèm, vật liệu phủ tường và sàn","Bán lẻ thảm, đệm, chăn, màn, rèm, vật liệu phủ tường và sàn trong các cửa hàng chuyên doanh"
+doi_ten,4759,"Bán lẻ đồ điện gia dụng, giường, tủ, bàn, ghế và đồ nội thất tương tự, đèn và bộ đèn điện, đồ dùng gia đình khác chưa được phân vào đâu","Bán lẻ đồ điện gia dụng, giường, tủ, bàn, ghế và đồ nội thất tương tự, đèn và bộ đèn điện, đồ dùng gia đình khác chưa được phân vào đâu trong các cửa hàng chuyên doanh"
+doi_ten,4761,"Bán lẻ sách, báo, tạp chí, văn phòng phẩm","Bán lẻ sách, báo, tạp chí văn phòng phẩm trong các cửa hàng chuyên doanh"
+doi_ten,4762,"Bán lẻ thiết bị, dụng cụ thể dục, thể thao","Bán lẻ băng đĩa âm thanh, hình ảnh (kể cả băng, đĩa trắng) trong các cửa hàng chuyên doanh"
+doi_ten,4763,"Bán lẻ trò chơi, đồ chơi","Bán lẻ thiết bị, dụng cụ thể dục, thể thao trong các cửa hàng chuyên doanh"
+doi_ten,4771,"Bán lẻ hàng may mặc, giày, dép, hàng da và giả da","Bán lẻ hàng may mặc, giày dép, hàng da và giả da trong các cửa hàng chuyên doanh"
+doi_ten,4772,"Bán lẻ thuốc, dụng cụ y tế, mỹ phẩm và vật phẩm vệ sinh","Bán lẻ thuốc, dụng cụ y tế, mỹ phẩm và vật phẩm vệ sinh trong các cửa hàng chuyên doanh"
+doi_ten,4773,"Bán lẻ hàng hóa khác mới (trừ ô tô, mô tô, xe máy và các bộ phận phụ trợ)",Bán lẻ hàng hóa khác mới trong các cửa hàng chuyên doanh
+doi_ten,4774,Bán lẻ hàng hóa đã qua sử dụng,Bán lẻ hàng hóa đã qua sử dụng trong các cửa hàng chuyên doanh
+doi_ten,4781,Bán lẻ ô tô và xe có động cơ khác,"Bán lẻ lương thực, thực phẩm, đồ uống, thuốc lá, thuốc lào lưu động hoặc tại chợ"
+doi_ten,4782,Bán lẻ phụ tùng và các bộ phận phụ trợ của ô tô và xe có động cơ khác,"Bán lẻ hàng dệt, may sẵn, giày dép lưu động hoặc tại chợ"
+doi_ten,5221,Hoạt động dịch vụ hỗ trợ trực tiếp cho vận tải đường sắt,Hoạt động dịch vụ hỗ trợ trực tiếp cho vận tải đường sắt và đường bộ
+doi_ten,5510,Khách sạn và dịch vụ lưu trú tương tự,Dịch vụ lưu trú ngắn ngày
+doi_ten,5621,Cung cấp dịch vụ ăn uống theo hợp đồng không thường xuyên với khách hàng,"Cung cấp dịch vụ ăn uống theo hợp đồng không thường xuyên với khách hàng (phục vụ tiệc, hội họp, đám cưới,…)"
+doi_ten,5812,Xuất bản báo,Xuất bản các danh mục chỉ dẫn và địa chỉ
+doi_ten,5813,Xuất bản tạp chí và các ấn phẩm định kỳ,"Xuất bản báo, tạp chí và các ấn phẩm định kỳ"
+doi_ten,5911,"Hoạt động sản xuất phim điện ảnh, video và chương trình truyền hình","Hoạt động sản xuất phim điện ảnh, phim video và chương trình truyền hình"
+doi_ten,5912,"Hoạt động hậu kỳ phim điện ảnh, video và chương trình truyền hình",Hoạt động hậu kỳ
+doi_ten,5913,"Hoạt động phát hành phim điện ảnh, video và chương trình truyền hình","Hoạt động phát hành phim điện ảnh, phim video và chương trình truyền hình"
+doi_ten,6010,Hoạt động phát thanh và phân phối âm thanh,Hoạt động phát thanh
+doi_ten,6110,"Hoạt động viễn thông có dây, không dây và vệ tinh",Hoạt động viễn thông có dây
+doi_ten,6120,Hoạt động bán lại dịch vụ viễn thông và dịch vụ trung gian cho hoạt động viễn thông,Hoạt động viễn thông không dây
+doi_ten,6492,Hoạt động tài trợ thương mại quốc tế,Hoạt động cấp tín dụng khác
+doi_ten,6499,Hoạt động dịch vụ tài chính khác chưa được phân vào đâu (trừ bảo hiểm và hoạt động quỹ hưu trí),Hoạt động dịch vụ tài chính khác chưa được phân vào đâu( trừ bảo hiểm và bảo hiểm xã hội )
+doi_ten,6530,Hoạt động quỹ hưu trí,Bảo hiểm xã hội
+doi_ten,6629,Hoạt động hỗ trợ khác cho bảo hiểm và quỹ hưu trí,Hoạt động hỗ trợ khác cho bảo hiểm và bảo hiểm xã hội
+doi_ten,7020,Hoạt động tư vấn quản lý kinh doanh và hoạt động tư vấn quản lý khác,Hoạt động tư vấn quản lý
+doi_ten,7730,"Cho thuê máy móc, thiết bị và đồ dùng hữu hình khác không kèm người điều khiển","Cho thuê máy móc, thiết bị và đồ dùng hữu hình khác"
+doi_ten,7810,Hoạt động của các trung tâm giới thiệu việc làm,"Hoạt động của các trung tâm, đại lý tư vấn, giới thiệu và môi giới lao động, việc làm"
+doi_ten,7911,Đại lý lữ hành,Đại lý du lịch
+doi_ten,8129,Dịch vụ vệ sinh khác,Vệ sinh nhà cửa và các công trình khác
+doi_ten,8130,Dịch vụ cảnh quan,Dịch vụ chăm sóc và duy trì cảnh quan
+doi_ten,8299,Hoạt động dịch vụ hỗ trợ kinh doanh khác còn lại chưa được phân vào đâu,Hoạt động dịch vụ hỗ trợ kinh doanh khác còn lại chưa được phân vào
+doi_ten,8412,"Hoạt động quản lý nhà nước trong các lĩnh vực y tế, giáo dục, văn hóa và các dịch vụ xã hội khác (trừ môi trường và bảo đảm xã hội bắt buộc)","Hoạt động quản lý Nhà nước trong các lĩnh vực y tế, giáo dục, văn hóa và các dịch vụ xã hội khác ( trừ bảo đảm xã hội bắt buộc )"
+doi_ten,8413,Hoạt động quản lý nhà nước trong lĩnh vực môi trường,Hoạt động quản lý nhà nước trong các lĩnh vực kinh tế chuyên ngành
+doi_ten,8421,Hoạt động đối ngoại,Hoạt động ngoại giao
+doi_ten,8531,Đào tạo sơ cấp,Giáo dục trung học cơ sở và trung học phổ thông
+doi_ten,8532,Đào tạo trung cấp,Giáo dục nghề nghiệp
+doi_ten,8542,Đào tạo thạc sỹ,Đào tạo đại học và sau đại học
+doi_ten,8610,"Hoạt động của các bệnh viện, trạm y tế","Hoạt động của các bệnh viện, trạm xá"
+doi_ten,8691,"Hoạt động dịch vụ trung gian cho các dịch vụ y tế, nha khoa và dịch vụ y tế khác",Hoạt động y tế dự phòng
+doi_ten,8692,Hoạt động y tế dự phòng,"Hoạt động của hệ thống cơ sở chỉnh hình, phục hồi chức năng"
+doi_ten,8720,"Hoạt động chăm sóc sức khoẻ người khuyết tật trí tuệ, thần kinh, tâm thần và người nghiện","Hoạt động chăm sóc sức khoẻ người bị thiểu năng, tâm thần và người nghiện"
+doi_ten,8730,"Hoạt động chăm sóc sức khoẻ người có công, người già và người khuyết tật không có khả năng tự chăm sóc","Hoạt động chăm sóc sức khoẻ người có công, người già và người tàn tật không có khả năng tự chăm sóc"
+doi_ten,8810,"Hoạt động trợ giúp xã hội không tập trung đối với người có công, thương bệnh binh, người già và người khuyết tật","Hoạt động trợ giúp xã hội không tập trung đối với người có công, thương bệnh binh, người già và người tàn tật"
+doi_ten,9329,Hoạt động vui chơi giải trí khác,Hoạt động vui chơi giải trí khác chưa được phân vào đâu
+doi_ten,9521,"Sửa chữa, bảo dưỡng thiết bị nghe nhìn điện tử gia dụng",Sửa chữa thiết bị nghe nhìn điện tử gia dụng
+doi_ten,9522,"Sửa chữa, bảo dưỡng thiết bị, đồ dùng gia đình","Sửa chữa thiết bị, đồ dùng gia đình"
+doi_ten,9523,"Sửa chữa, bảo dưỡng giày, dép, hàng da và giả da","Sửa chữa giày, dép, hàng da và giả da"
+doi_ten,9524,"Sửa chữa, bảo dưỡng giường, tủ, bàn, ghế và đồ nội thất tương tự","Sửa chữa giường, tủ, bàn, ghế và đồ nội thất tương tự"
+doi_ten,9529,"Sửa chữa, bảo dưỡng xe đạp, đồng hồ, đồ dùng cá nhân và gia đình khác chưa được phân vào đâu",Sửa chữa đồ dùng cá nhân và gia đình khác
+doi_ten,9610,"Giặt là, làm sạch các sản phẩm dệt và lông thú","Dịch vụ tắm hơi, massage và các dịch vụ tăng cường sức khoẻ tương tự (trừ hoạt động thể thao)"
+bo,0221,,Khai thác gỗ
+bo,0222,,Khai thác lâm sản khác trừ gỗ
+bo,0323,,Sản xuất giống thuỷ sản
+bo,0722,,Khai thác quặng kim loại khác không chứa sắt
+bo,1321,,"Sản xuất vải dệt kim, vải đan móc và vải không dệt khác"
+bo,1322,,Sản xuất hàng may sẵn (trừ trang phục)
+bo,1323,,"Sản xuất thảm, chăn đệm"
+bo,1324,,Sản xuất các loại dây bện và lưới
+bo,1329,,Sản xuất các loại hàng dệt khác chưa được phân vào đâu
+bo,2212,,Sản xuất sản phẩm khác từ cao su
+bo,2610,,Sản xuất linh kiện điện tử
+bo,3100,,"Sản xuất giường, tủ, bàn, ghế"
+bo,3510,,"Sản xuất, truyền tải và phân phối điện"
+bo,4100,,Xây dựng nhà các loại
+bo,4210,,Xây dựng công trình đường sắt và đường bộ
+bo,4220,,Xây dựng công trình công ích
+bo,4290,,Xây dựng công trình kỹ thuật dân dụng khác
+bo,4511,,Bán buôn ô tô và xe có động cơ khác
+bo,4512,,Bán lẻ ô tô con (loại 12 chỗ ngồi trở xuống)
+bo,4513,,Đại lý ô tô và xe có động cơ khác
+bo,4520,,"Bảo dưỡng, sửa chữa ô tô và xe có động cơ khác"
+bo,4530,,Bán phụ tùng và các bộ phận phụ trợ của ô tô và xe có động cơ khác
+bo,4541,,"Bán mô tô, xe máy"
+bo,4542,,"Bảo dưỡng và sửa chữa mô tô, xe máy"
+bo,4543,,"Bán phụ tùng và các bộ phận phụ trợ của mô tô, xe máy"
+bo,4669,,Bán buôn chuyên doanh khác chưa được phân vào đâu
+bo,4741,,"Bán lẻ máy vi tính, thiết bị ngoại vi, phần mềm và thiết bị viễn thông trong các cửa hàng chuyên doanh"
+bo,4742,,Bán lẻ thiết bị nghe nhìn trong các cửa hàng chuyên doanh
+bo,4764,,"Bán lẻ trò chơi, đồ chơi trong các cửa hàng chuyên doanh"
+bo,4789,,Bán lẻ hàng hoá khác lưu động hoặc tại chợ
+bo,4791,,Bán lẻ theo yêu cầu đặt hàng qua bưu điện hoặc internet
+bo,4799,,Bán lẻ hình thức khác chưa được phân vào đâu
+bo,4920,,Vận tải bằng xe buýt
+bo,5820,,Xuất bản phần mềm
+bo,6021,,Hoạt động truyền hình
+bo,6022,,"Chương trình cáp, vệ tinh và các chương trình thuê bao khác"
+bo,6130,,Hoạt động viễn thông vệ tinh
+bo,6201,,Lập trình máy vi tính
+bo,6202,,Tư vấn máy vi tính và quản trị hệ thống máy vi tính
+bo,6209,,Hoạt động dịch vụ công nghệ thông tin và dịch vụ khác liên quan đến máy vi tính
+bo,6311,,"Xử lý dữ liệu, cho thuê và các hoạt động liên quan"
+bo,6312,,Cổng thông tin
+bo,6321,,Hoạt động thông tấn
+bo,6329,,Dịch vụ thông tin khác chưa được phân vào đâu
+bo,6420,,Hoạt động công ty nắm giữ tài sản
+bo,6430,,"Hoạt động quỹ tín thác, các quỹ và các tổ chức tài chính khác"
+bo,6820,,"Tư vấn, môi giới, đấu giá bất động sản, đấu giá quyền sử dụng đất"
+bo,7210,,Nghiên cứu và phát triển thực nghiệm khoa học tự nhiên và kỹ thuật
+bo,7220,,Nghiên cứu và phát triển thực nghiệm khoa học xã hội và nhân văn
+bo,7490,,"Hoạt động chuyên môn, khoa học và công nghệ khác chưa được phân vào đâu"
+bo,7722,,"Cho thuê băng, đĩa video"
+bo,7820,,Cung ứng lao động tạm thời
+bo,7830,,Cung ứng và quản lý nguồn lao động
+bo,7920,,Dịch vụ hỗ trợ liên quan đến quảng bá và tổ chức tua du lịch
+bo,8010,,Hoạt động bảo vệ cá nhân
+bo,8020,,Dịch vụ hệ thống bảo đảm an toàn
+bo,8030,,Dịch vụ điều tra
+bo,8211,,Dịch vụ hành chính văn phòng tổng hợp
+bo,8219,,"Photo, chuẩn bị tài liệu và các hoạt động hỗ trợ văn phòng đặc biệt khác"
+bo,8510,,Giáo dục mầm non
+bo,8520,,Giáo dục tiểu học
+bo,8560,,Dịch vụ hỗ trợ giáo dục
+bo,8790,,Hoạt động chăm sóc tập trung khác
+bo,9000,,"Hoạt động sáng tác, nghệ thuật và giải trí"
+bo,9102,,"Hoạt động bảo tồn, bảo tàng"
+bo,9103,,"Hoạt động của các vườn bách thảo, bách thú và khu bảo tồn tự nhiên"
+bo,9511,,Sửa chữa máy vi tính và thiết bị ngoại vi
+bo,9512,,Sửa chữa thiết bị liên lạc
+bo,9620,,"Giặt là, làm sạch các sản phẩm dệt và lông thú"
+bo,9632,,Hoạt động dịch vụ phục vụ tang lễ
+bo,9633,,Hoạt động dịch vụ phục vụ hôn lễ
+bo,9639,,Hoạt động dịch vụ phục vụ cá nhân khác còn lại chưa được phân vào đâu

@@ -399,8 +399,8 @@ bộ quy tắc). Anh yêu cầu tách cho dễ sửa: đổi quy tắc bước n
 
 Kế hoạch: `docs/phan-he-phap-ly-ke-hoach.md` (7 giai đoạn). **Anh dặn 01/11/2026: toàn bộ phân hệ CHƯA đưa lên app** cho tới khi anh
 duyệt bản hoàn chỉnh — không push, không chạy SQL production. Làm trong worktree `D:\savitax-pl` (đã bỏ upstream). Thử trên DATABASE
-DEMO: `node --env-file=.env.local scripts/phaply-chuan-bi-demo.mjs [--mau]` (chạy sql/56 + mẫu mặc định + hồ sơ giả; demo bị làm
-mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổng 3010. **KHÔNG đưa vào bản clone** (bỏ `sql/56`, `app/phaply`,
+DEMO: `node --env-file=.env.local scripts/phaply-chuan-bi-demo.mjs [--mau]` (chạy sql/56 + sql/57 + mẫu mặc định + hồ sơ giả; demo bị làm
+mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổng 3010. **KHÔNG đưa vào bản clone** (bỏ `sql/56`, `sql/57`, `app/phaply`,
 `app/api/admin/phaply`, `lib/phaply`, `templates/phaply`, `data/phaply`, mục menu "Pháp lý" trong Sidebar).
 
 - GĐ 1 (17/11/2026, `sql/56_phap_ly_ho_so.sql`): hồ sơ `legal_cases` mã `PL-YYMM-NN` (giờ VN), 10 bước + trạng thái chờ tách riêng, checklist
@@ -415,6 +415,19 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
 - Bộ kiểm: `node scripts/test-phaply-tien.mjs` (offline) · `node --env-file=.env.local scripts/test-phaply-api.mjs` (demo + máy chủ thử;
   CHỈ cấp phiên cho tài khoản đăng nhập ĐÃ CÓ — `generateLink` với email chưa có sẽ TẠO tài khoản mới) · `node scripts/test-phaply-word.mjs`.
 - Mẫu Word thành lập mới (19 mẫu, pháp lý đã chốt 17/11): `templates/phaply/word/README.md`, từ điển trường DUY NHẤT `lib/phaply/word/duLieu.js`.
+- GĐ 2 (17/11/2026, `sql/57_phap_ly_phap_nhan.sql`): doanh nghiệp (cột thêm vào `legal_entities`), người `legal_people` (cả hồ sơ cá nhân
+  của nhân viên pháp lý: `staff_id`, trang `/phaply/toi` → người được ủy quyền ở Giấy ủy quyền nộp sở = người PHỤ TRÁCH hồ sơ), vai trò
+  `legal_entity_people` (một người nhiều vai trò = nhiều dòng; Chủ tịch HĐTV/HĐQT chỉ một), ngành `legal_entity_industries`.
+  **DB → mẫu Word đi qua MỘT hàm thuần `hoSoDauVao` (`lib/phaply/phapNhan.js`)** — đổi cột thì sửa ở đó; `conThieu` = "Còn thiếu gì"
+  (không chặn xuất: ô thiếu in "…………"). Bộ kiểm khứ hồi `node scripts/test-phaply-phap-nhan.mjs`: dữ liệu giả của bộ kiểm Word tách thành
+  dòng DB rồi dựng lại phải ra GIỐNG HỆT mọi thẻ. API + xuất Word: `node --env-file=.env.local scripts/test-phaply-phap-nhan-api.mjs`.
+- Danh mục (`legal_places` 34 tỉnh + 3.321 xã, `legal_registries` Phòng ĐKKD, `legal_tax_offices` + `legal_place_tax` xã → Thuế cơ sở,
+  `legal_vsic`) nạp từ `data/phaply/danh-muc` bằng `scripts/phaply-nap-danh-muc.mjs [--ghi] [--vsic]`. Phòng ĐKKD / cơ quan thuế lưu ở
+  doanh nghiệp CHỈ khi gõ tay; để trống = gợi ý theo địa chỉ trụ sở lúc xuất. Ngành kinh tế theo **QĐ 36/2025/QĐ-TTg** (hiệu lực 15/11/2025,
+  495 mã cấp 4) — ~24 mã cũ được DÙNG LẠI với nghĩa khác (4661–4663, 4762…, xem `data/phaply/danh-muc/nganh/NGUON.md`), chép mã từ hồ sơ cũ
+  là đăng ký sai ngành.
+- Xuất Word `ho-so/[id]/word?dot=so|thue[&ma=]` đọc `templates/phaply/word/*.docx` bằng readFileSync → **phải có trong
+  `outputFileTracingIncludes`** (next.config.mjs), thiếu là Vercel báo không thấy file.
 
 ## Phân hệ Hóa đơn điện tử — ĐANG GÁC (13/10/2026)
 

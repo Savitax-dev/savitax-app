@@ -1,0 +1,403 @@
+'use client'
+// Phân hệ Pháp lý — 4 tab dữ liệu pháp nhân của một hồ sơ: Doanh nghiệp · Người & CCCD · Ngành nghề · Còn thiếu & xuất Word.
+// Một lần tải /api/admin/phaply/ho-so/[id]/phap-nhan dùng chung cho cả 4 tab (component luôn gắn, tab khác thì ẩn).
+// Máy chủ kiểm lại quyền + lọc cột — ở đây chỉ ẩn nút cho gọn.
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { Modal, Field, NumInput, inputCls, btnPrimary, btnGhost, api, fmt } from '../../_ui'
+import { NguoiForm, DiaChiChon, noiDiaChiNgan } from '../../_nguoi'
+import { VAI_TRO, VAI_TRO_THEO_LOAI, CHUC_DANH, THOI_HAN_GOP } from '@/lib/phaply/phapNhan'
+import { mauCuaBo } from '@/lib/phaply/word/danhMuc'
+
+export const TAB_PHAP_NHAN = [['doanh_nghiep', 'Doanh nghiệp'], ['nguoi', 'Người & CCCD'], ['nganh', 'Ngành nghề'], ['word', 'Còn thiếu & xuất Word']]
+
+export default function PhapNhan({ id, tab, sua, loaiHinh, toast, taiLaiHoSo }) {
+  const [d, setD] = useState(null)
+  const load = useCallback(async () => {
+    const r = await api(`/api/admin/phaply/ho-so/${id}/phap-nhan`)
+    if (!r.ok) { setD({ loi: r.data.error || 'Không tải được dữ liệu pháp nhân' }); return }
+    setD(r.data)
+  }, [id])
+  useEffect(() => { load() }, [load])
+  if (!TAB_PHAP_NHAN.some(([k]) => k === tab)) return null
+  if (!d) return <div className="p-panel p-6 text-sm text-gray-400">Đang tải…</div>
+  if (d.loi) return <div className="p-panel p-6 text-sm text-red-700">{d.loi}</div>
+  const coSua = sua && d.sua_duoc
+  const goi = async (body, thongBao) => {
+    const r = await api(`/api/admin/phaply/ho-so/${id}/phap-nhan`, { method: 'PATCH', body })
+    if (!r.ok) { toast(r.data.error || 'Không lưu được', true); return null }
+    if (thongBao) toast(thongBao)
+    await load(); if (body.action === 'cty') taiLaiHoSo()
+    return r.data
+  }
+  const lh = d.entity?.entity_type || loaiHinh
+  return (
+    <div className="space-y-4">
+      {tab !== 'word' && <ThieuGon thieu={d.thieu} />}
+      {tab === 'doanh_nghiep' && <DoanhNghiep d={d} lh={lh} sua={coSua} goi={goi} />}
+      {tab === 'nguoi' && <Nguoi d={d} lh={lh} sua={coSua} goi={goi} />}
+      {tab === 'nganh' && <Nganh d={d} sua={coSua} goi={goi} />}
+      {tab === 'word' && <XuatWord d={d} id={id} lh={lh} toast={toast} />}
+    </div>
+  )
+}
+
+// Dải "còn thiếu" gọn ở đầu mỗi tab
+function ThieuGon({ thieu }) {
+  const chan = [...new Map([...(thieu?.so || []), ...(thieu?.thue || [])].filter(t => t.chan).map(t => [t.muc, t])).values()]
+  if (!chan.length) return <div className="text-xs px-3 py-2 rounded-lg bg-green-50 text-green-800">✓ Đủ dữ liệu chính để xuất bộ hồ sơ.</div>
+  return (
+    <div className="text-xs px-3 py-2 rounded-lg bg-amber-50 text-amber-900">
+      <b>Còn thiếu {chan.length} mục:</b> {chan.slice(0, 6).map(t => t.muc).join(' · ')}{chan.length > 6 ? ` · … (+${chan.length - 6}, xem tab Còn thiếu & xuất Word)` : ''}
+    </div>
+  )
+}
+
+// ─── Doanh nghiệp ─────────────────────────────────────────────────────────────────────────────────────────
+const PP_GTGT = [['khau_tru', 'Khấu trừ'], ['truc_tiep_gtgt', 'Trực tiếp trên GTGT'], ['truc_tiep_doanh_so', 'Trực tiếp trên doanh số'], ['khong_nop', 'Không phải nộp']]
+const BHXH = [['hang_thang', 'Hằng tháng'], ['3_thang', '03 tháng một lần'], ['6_thang', '06 tháng một lần']]
+
+function DoanhNghiep({ d, lh, sua, goi }) {
+  const e = d.entity || {}
+  const dau = () => ({
+    name: e.name || '', name_en: e.name_en || '', name_short: e.name_short || '', tax_code: e.tax_code || '',
+    tru_so: { so_nha: e.tru_so_so_nha || '', ma_xa: e.tru_so_ma_xa || '', xa: e.tru_so_xa || '', ma_tinh: e.tru_so_ma_tinh || '', tinh: e.tru_so_tinh || '' },
+    phone: e.phone || '', email: e.email || '', fax: e.fax || '', website: e.website || '',
+    von_dieu_le: Number(e.von_dieu_le) || 0, menh_gia: Number(e.menh_gia) || (lh === 'cp' ? 10000 : 0), so_lao_dong: e.so_lao_dong ?? '',
+    mo_hinh: e.mo_hinh || 'chu_tich', csh_la_to_chuc: !!e.csh_la_to_chuc, co_ndt_nuoc_ngoai: !!e.co_ndt_nuoc_ngoai,
+    phong_dkkd: e.phong_dkkd || '', co_quan_thue: e.co_quan_thue || '', dien_thue_san: !!e.dien_thue_san,
+    thue: { ...(e.thue || {}) }, so_sach: { ...(e.so_sach || {}) }, khau_hao: e.khau_hao || '', quy_uoc_phieu: Number(e.quy_uoc_phieu) || 0,
+  })
+  const [f, setF] = useState(dau)
+  const [goiY, setGoiY] = useState(d.goi_y || {})
+  useEffect(() => { setF(dau()); setGoiY(d.goi_y || {}) }, [d]) // eslint-disable-line react-hooks/exhaustive-deps
+  const doi = useMemo(() => JSON.stringify(f) !== JSON.stringify(dau()), [f, d]) // eslint-disable-line react-hooks/exhaustive-deps
+  const set = (k, v) => setF(o => ({ ...o, [k]: v }))
+  const setT = (k, v) => setF(o => ({ ...o, thue: { ...o.thue, [k]: v } }))
+  const setS = (k, v) => setF(o => ({ ...o, so_sach: { ...o.so_sach, [k]: v } }))
+  // đổi địa chỉ trụ sở → hỏi gợi ý Phòng ĐKKD + Thuế cơ sở ngay
+  const doiTruSo = async ts => {
+    set('tru_so', ts)
+    if (ts.ma_tinh !== f.tru_so.ma_tinh || ts.ma_xa !== f.tru_so.ma_xa) {
+      const r = await api(`/api/admin/phaply/danh-muc?loai=goi_y&ma_tinh=${ts.ma_tinh || ''}&ma_xa=${ts.ma_xa || ''}`)
+      if (r.ok) setGoiY(r.data)
+    }
+  }
+  const luu = () => {
+    const { tru_so: ts, ...con } = f
+    goi({ action: 'cty', fields: { ...con, tru_so_so_nha: ts.so_nha, tru_so_ma_xa: ts.ma_xa, tru_so_xa: ts.xa, tru_so_ma_tinh: ts.ma_tinh, tru_so_tinh: ts.tinh } }, 'Đã lưu thông tin doanh nghiệp')
+  }
+  const o = (lb, k, them = {}) => (
+    <Field label={lb} hint={them.hint} className={them.cls}>
+      <input className={inputCls + (them.so ? ' num' : '')} value={f[k] ?? ''} disabled={!sua} placeholder={them.ph} onChange={ev => set(k, ev.target.value)} />
+    </Field>
+  )
+  const chon = (lb, gt, ds, onC, cls) => (
+    <Field label={lb} className={cls}><select className={inputCls} value={gt} disabled={!sua} onChange={ev => onC(ev.target.value)}>
+      {ds.map(([k, t]) => <option key={k} value={k}>{t}</option>)}</select></Field>
+  )
+  const hop = (lb, gt, onC) => <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!gt} disabled={!sua} onChange={ev => onC(ev.target.checked)} />{lb}</label>
+  return (
+    <div className="p-panel">
+      <div className="p-panel-h">Doanh nghiệp</div>
+      <div className="p-4 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+          {o('Tên công ty (tiếng Việt)', 'name', { cls: 'md:col-span-4', hint: 'tự in hoa khi lưu' })}
+          {o('Mã số doanh nghiệp', 'tax_code', { cls: 'md:col-span-2', so: true, hint: 'có sau khi được cấp GCN' })}
+          {o('Tên tiếng nước ngoài', 'name_en', { cls: 'md:col-span-4' })}
+          {o('Tên viết tắt', 'name_short', { cls: 'md:col-span-2' })}
+        </div>
+        <DiaChiChon nhan="Trụ sở chính" value={f.tru_so} disabled={!sua} onChange={doiTruSo} />
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+          {o('Điện thoại', 'phone', { so: true })}{o('Email', 'email', { cls: 'md:col-span-2' })}{o('Fax', 'fax', { so: true })}{o('Website', 'website', { cls: 'md:col-span-2' })}
+          <Field label="Vốn điều lệ (đồng)" className="col-span-2"><NumInput value={f.von_dieu_le} disabled={!sua} onChange={v => set('von_dieu_le', v)} /></Field>
+          {lh === 'cp' && <Field label="Mệnh giá cổ phần"><NumInput value={f.menh_gia} disabled={!sua} onChange={v => set('menh_gia', v)} /></Field>}
+          {lh === 'cp' && <Field label="Tổng số cổ phần"><input className={inputCls + ' num text-right'} disabled value={f.menh_gia ? fmt(Math.round(f.von_dieu_le / f.menh_gia)) : ''} /></Field>}
+          {o('Số lao động dự kiến', 'so_lao_dong', { so: true })}
+          {lh !== '1tv' && <Field label="Biên bản họp: mấy đồng = 1 phiếu" hint="mặc định 10.000"><NumInput value={f.quy_uoc_phieu} disabled={!sua} onChange={v => set('quy_uoc_phieu', v)} placeholder="10.000" /></Field>}
+        </div>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          {lh === '1tv' && hop('Chủ sở hữu là tổ chức', f.csh_la_to_chuc, v => set('csh_la_to_chuc', v))}
+          {lh === '1tv' && f.csh_la_to_chuc && chon('Mô hình tổ chức', f.mo_hinh, [['chu_tich', 'Chủ tịch công ty'], ['hdtv', 'Hội đồng thành viên']], v => set('mo_hinh', v))}
+          {lh === 'cp' && hop('Có nhà đầu tư nước ngoài (in câu cam kết ở Mẫu 4)', f.co_ndt_nuoc_ngoai, v => set('co_ndt_nuoc_ngoai', v))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Field label="Phòng Đăng ký kinh doanh nộp hồ sơ" hint={goiY.phong_dkkd ? 'để trống = theo tỉnh trụ sở' : 'chọn tỉnh trụ sở để tự điền'}>
+            <input className={inputCls} value={f.phong_dkkd} disabled={!sua} placeholder={goiY.phong_dkkd || ''} onChange={ev => set('phong_dkkd', ev.target.value)} />
+          </Field>
+          <Field label="Cơ quan thuế quản lý" hint={goiY.co_quan_thue ? `để trống = theo phường/xã${goiY.ma_cqt ? ' · mã ' + goiY.ma_cqt : ''}` : 'chọn phường/xã trụ sở để tự điền'}>
+            <input className={inputCls} value={f.co_quan_thue} disabled={!sua} placeholder={goiY.co_quan_thue || ''} onChange={ev => set('co_quan_thue', ev.target.value)} />
+          </Field>
+        </div>
+
+        <details className="rounded-lg border border-gray-200">
+          <summary className="px-3 py-2 text-sm font-semibold cursor-pointer">Đăng ký thuế (Mẫu 2/3/4) + hồ sơ pháp lý ban đầu (sau khi có GPKD)</summary>
+          <div className="p-3 space-y-3">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+              <Field label="Ngày bắt đầu hoạt động" className="col-span-2"><input className={inputCls + ' num'} value={f.thue.ngay_bat_dau || ''} disabled={!sua} placeholder="dd/mm/yyyy" onChange={ev => setT('ngay_bat_dau', ev.target.value)} /></Field>
+              {chon('Phương pháp tính thuế GTGT', f.thue.pp_gtgt || 'khau_tru', PP_GTGT, v => setT('pp_gtgt', v), 'col-span-2')}
+              {chon('Đóng BHXH', f.thue.bhxh || 'hang_thang', BHXH, v => setT('bhxh', v), 'col-span-2')}
+              {chon('Hạch toán', f.thue.hach_toan || 'doc_lap', [['doc_lap', 'Độc lập'], ['phu_thuoc', 'Phụ thuộc']], v => setT('hach_toan', v), 'col-span-2')}
+              <Field label="Năm tài chính từ"><input className={inputCls + ' num'} value={f.thue.nam_tc_tu || ''} placeholder="01/01" disabled={!sua} onChange={ev => setT('nam_tc_tu', ev.target.value)} /></Field>
+              <Field label="đến"><input className={inputCls + ' num'} value={f.thue.nam_tc_den || ''} placeholder="31/12" disabled={!sua} onChange={ev => setT('nam_tc_den', ev.target.value)} /></Field>
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              {hop('Có báo cáo tài chính hợp nhất', f.thue.bctc_hop_nhat, v => setT('bctc_hop_nhat', v))}
+              {hop('Có dự án BOT / BTO / BT…', f.thue.bot, v => setT('bot', v))}
+              {hop('Khách yêu cầu điền sẵn MST + cơ quan thuế (mặc định để trống cho viết tay)', f.dien_thue_san, v => set('dien_thue_san', v))}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+              <Field label="Phần mềm kế toán" className="col-span-2"><input className={inputCls} value={f.so_sach.phan_mem || ''} disabled={!sua} placeholder="VD: Misa" onChange={ev => setS('phan_mem', ev.target.value)} /></Field>
+              <Field label="Niên độ đầu tiên từ"><input className={inputCls + ' num'} value={f.so_sach.nien_do_dau_tu || ''} placeholder="dd/mm/yyyy" disabled={!sua} onChange={ev => setS('nien_do_dau_tu', ev.target.value)} /></Field>
+              <Field label="đến"><input className={inputCls + ' num'} value={f.so_sach.nien_do_dau_den || ''} placeholder="31/12/yyyy" disabled={!sua} onChange={ev => setS('nien_do_dau_den', ev.target.value)} /></Field>
+              {chon('Kỳ kế toán', f.so_sach.ky || 'nam', [['nam', 'Năm'], ['quy', 'Quý'], ['thang', 'Tháng']], v => setS('ky', v), 'col-span-2')}
+              <Field label="Hình thức sổ" className="col-span-2"><input className={inputCls} value={f.so_sach.hinh_thuc || ''} placeholder="Nhật ký chung" disabled={!sua} onChange={ev => setS('hinh_thuc', ev.target.value)} /></Field>
+              <Field label="Phương pháp khấu hao" className="col-span-2"><input className={inputCls} value={f.khau_hao} placeholder="Đường thẳng" disabled={!sua} onChange={ev => set('khau_hao', ev.target.value)} /></Field>
+            </div>
+            <div className="text-xs text-gray-500">Ô để trống in theo mặc định của mẫu (Nhật ký chung, Bình quân gia quyền, Thông tư 99/2025/TT-BTC, Đường thẳng…).</div>
+          </div>
+        </details>
+      </div>
+      {sua && <div className="px-4 pb-4 flex justify-end gap-2">
+        {doi && <button className={btnGhost} onClick={() => setF(dau())}>Bỏ thay đổi</button>}
+        <button className={btnPrimary} disabled={!doi} onClick={luu}>Lưu doanh nghiệp</button>
+      </div>}
+    </div>
+  )
+}
+
+// ─── Người & CCCD ─────────────────────────────────────────────────────────────────────────────────────────
+function Nguoi({ d, lh, sua, goi }) {
+  const [mo, setMo] = useState(null)   // { nguoi, vai_tro: [] } đang sửa
+  // gom vai trò theo người
+  const nguoi = useMemo(() => {
+    const m = new Map()
+    for (const v of d.vai_tro) {
+      if (!m.has(v.person_id)) m.set(v.person_id, { nguoi: v.nguoi, vai_tro: [] })
+      m.get(v.person_id).vai_tro.push(v)
+    }
+    return [...m.values()]
+  }, [d])
+  const choPhep = VAI_TRO_THEO_LOAI[lh] || Object.keys(VAI_TRO)
+  const vdl = Number(d.entity?.von_dieu_le) || 0, menh = Number(d.entity?.menh_gia) || 10000
+  const tongTv = d.vai_tro.filter(v => v.vai_tro === 'thanh_vien').reduce((s, v) => s + (Number(v.von_gop) || 0), 0)
+  const tongCp = d.vai_tro.filter(v => v.vai_tro === 'co_dong').reduce((s, v) => s + (Number(v.so_co_phan) || 0), 0)
+  return (
+    <div className="space-y-4">
+      {choPhep.map(k => {
+        const ds = d.vai_tro.filter(v => v.vai_tro === k)
+        if (!ds.length && ['thu_ky', 'giam_doc'].includes(k)) return null
+        return (
+          <div key={k} className="p-panel">
+            <div className="p-panel-h flex items-center justify-between gap-2">
+              <span>{VAI_TRO[k]}{k === 'thanh_vien' && vdl ? ` — đã góp ${fmt(tongTv)} / ${fmt(vdl)}` : ''}{k === 'co_dong' && vdl ? ` — ${fmt(tongCp)} cổ phần = ${fmt(tongCp * menh)} / ${fmt(vdl)}` : ''}</span>
+              {sua && <button className="p-btn p-btn-sm" onClick={() => setMo({ nguoi: { loai_giay_to: 'Căn cước công dân', quoc_tich: 'Việt Nam', dan_toc: 'Kinh' }, vai_tro: [{ vai_tro: k, thoi_han_gop: ['thanh_vien', 'co_dong'].includes(k) ? THOI_HAN_GOP : '' }] })}>+ Thêm</button>}
+            </div>
+            {!ds.length ? <div className="px-4 py-3 text-sm text-gray-400">Chưa có.</div> : (
+              <table className="p-tbl w-full"><tbody>
+                {ds.map(v => {
+                  const p = nguoi.find(n => n.nguoi?.id === v.person_id)
+                  return (
+                    <tr key={v.id} className={sua ? 'p-click' : ''} onClick={() => sua && p && setMo({ nguoi: p.nguoi, vai_tro: p.vai_tro })}>
+                      <td className="l"><b>{v.nguoi?.ho_ten || '(chưa có tên)'}</b>{v.chu_tich ? <span className="ml-2 text-xs px-1.5 rounded bg-amber-100">Chủ tịch</span> : null}
+                        {v.chuc_danh ? <span className="ml-2 text-xs text-gray-500">{v.chuc_danh}</span> : null}
+                        <div className="text-xs text-gray-500">{v.nguoi?.loai_giay_to || 'Giấy tờ'} {v.nguoi?.so_giay_to || '—'} · {noiDiaChiNgan(v.nguoi?.thuong_tru) || 'chưa có thường trú'}</div></td>
+                      <td className="r num whitespace-nowrap">{k === 'thanh_vien' ? fmt(v.von_gop) + ' đ' : k === 'co_dong' ? fmt(v.so_co_phan) + ' CP' : ''}</td>
+                      <td className="r text-xs text-gray-500 whitespace-nowrap">{(p?.vai_tro || []).filter(x => x.vai_tro !== k).map(x => VAI_TRO[x.vai_tro].split(' /')[0]).join(', ')}</td>
+                    </tr>
+                  )
+                })}
+              </tbody></table>
+            )}
+          </div>
+        )
+      })}
+      {sua && <div className="text-xs text-gray-500">Một người giữ nhiều vai trò (VD chủ sở hữu kiêm giám đốc, đại diện pháp luật): mở người đó và tích thêm vai trò — không nhập hai lần. Giám đốc trống = lấy người đại diện theo pháp luật.</div>}
+      {mo && <SuaNguoi mo={mo} choPhep={choPhep} goi={goi} onClose={() => setMo(null)} />}
+    </div>
+  )
+}
+
+function SuaNguoi({ mo, choPhep, goi, onClose }) {
+  const [p, setP] = useState(mo.nguoi)
+  const [vt, setVt] = useState(() => Object.fromEntries(mo.vai_tro.map(v => [v.vai_tro, { ...v }])))
+  const [dang, setDang] = useState(false)
+  const bat = (k, on) => setVt(o => { const n = { ...o }; if (on) n[k] = { vai_tro: k, thoi_han_gop: ['thanh_vien', 'co_dong'].includes(k) ? THOI_HAN_GOP : '' }; else delete n[k]; return n })
+  const setV = (k, f, v) => setVt(o => ({ ...o, [k]: { ...o[k], [f]: v } }))
+  const luu = async () => {
+    setDang(true)
+    const r = await goi({ action: 'nguoi', nguoi: p, vai_tro: Object.values(vt) }, 'Đã lưu ' + (p.ho_ten || 'người'))
+    setDang(false); if (r) onClose()
+  }
+  const bo = async () => {
+    if (!confirm(`Gỡ ${p.ho_ten || 'người này'} khỏi doanh nghiệp?`)) return
+    if (await goi({ action: 'bo_nguoi', person_id: p.id }, 'Đã gỡ')) onClose()
+  }
+  return (
+    <Modal wide title={p.id ? 'Sửa ' + (p.ho_ten || 'người') : 'Thêm người'} onClose={onClose}
+      footer={<>{p.id && <button className="p-btn mr-auto text-red-700" onClick={bo}>Gỡ khỏi doanh nghiệp</button>}
+        <button className={btnGhost} onClick={onClose}>Huỷ</button>
+        <button className={btnPrimary} disabled={dang || !p.ho_ten?.trim() || !Object.keys(vt).length} onClick={luu}>Lưu</button></>}>
+      <div className="space-y-4">
+        <div className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">📷 Đọc tự động từ ảnh CCCD: đang làm (giai đoạn 2b) — tạm nhập tay.</div>
+        <NguoiForm value={p} onChange={setP} />
+        <div className="border-t pt-3">
+          <div className="text-sm font-semibold mb-2">Vai trò trong doanh nghiệp</div>
+          <div className="space-y-2">
+            {choPhep.map(k => (
+              <div key={k} className="rounded-lg border border-gray-200 px-3 py-2">
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!vt[k]} onChange={e => bat(k, e.target.checked)} />{VAI_TRO[k]}</label>
+                {vt[k] && ['dai_dien', 'giam_doc'].includes(k) && (
+                  <Field label="Chức danh" className="mt-2"><input className={inputCls} list="pl-chuc-danh" value={vt[k].chuc_danh || ''} onChange={e => setV(k, 'chuc_danh', e.target.value)} placeholder="Giám đốc" />
+                    <datalist id="pl-chuc-danh">{CHUC_DANH.map(c => <option key={c} value={c} />)}</datalist></Field>
+                )}
+                {vt[k] && k === 'thanh_vien' && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                    <Field label="Vốn góp (đồng)"><NumInput value={vt[k].von_gop} onChange={v => setV(k, 'von_gop', v)} /></Field>
+                    <Field label="Thời hạn góp" className="md:col-span-2"><input className={inputCls} value={vt[k].thoi_han_gop || ''} onChange={e => setV(k, 'thoi_han_gop', e.target.value)} /></Field>
+                    <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!vt[k].chu_tich} onChange={e => setV(k, 'chu_tich', e.target.checked)} />Chủ tịch Hội đồng thành viên</label>
+                  </div>
+                )}
+                {vt[k] && k === 'co_dong' && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                    <Field label="Số cổ phần"><NumInput value={vt[k].so_co_phan} onChange={v => setV(k, 'so_co_phan', v)} /></Field>
+                    <Field label="Thời hạn góp" className="md:col-span-2"><input className={inputCls} value={vt[k].thoi_han_gop || ''} onChange={e => setV(k, 'thoi_han_gop', e.target.value)} /></Field>
+                    <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!vt[k].chu_tich} onChange={e => setV(k, 'chu_tich', e.target.checked)} />Chủ tịch Hội đồng quản trị</label>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── Ngành nghề ───────────────────────────────────────────────────────────────────────────────────────────
+const boDau = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase()
+let nhoVsic = null
+
+function Nganh({ d, sua, goi }) {
+  const dau = () => d.nganh.map(n => ({ ma: n.ma, ten: n.ten, chi_tiet: n.chi_tiet || '', chinh: !!n.chinh }))
+  const [ds, setDs] = useState(dau)
+  const [vsic, setVsic] = useState(nhoVsic || [])
+  const [tim, setTim] = useState('')
+  useEffect(() => setDs(dau()), [d]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (nhoVsic) return
+    api('/api/admin/phaply/danh-muc?loai=nganh').then(r => { if (r.ok) { nhoVsic = r.data.ds; setVsic(r.data.ds) } })
+  }, [])
+  const doi = JSON.stringify(ds) !== JSON.stringify(dau())
+  const goiYTim = useMemo(() => {
+    const q = boDau(tim.trim())
+    if (!q) return []
+    const co = new Set(ds.map(n => n.ma))
+    return vsic.filter(n => !co.has(n.ma) && (n.ma.startsWith(q) || boDau(n.ten).includes(q))).slice(0, 12)
+  }, [tim, vsic, ds])
+  const them = n => { setDs(o => [...o, { ma: n.ma, ten: n.ten, chi_tiet: '', chinh: !o.length }]); setTim('') }
+  const setN = (i, k, v) => setDs(o => o.map((n, j) => (j === i ? { ...n, [k]: v } : k === 'chinh' && v ? { ...n, chinh: false } : n)))
+  const doiCho = (i, buoc) => setDs(o => { const n = [...o], j = i + buoc; if (j < 0 || j >= n.length) return o; [n[i], n[j]] = [n[j], n[i]]; return n })
+  const maTay = /^\d{4}$/.test(tim.trim()) && !vsic.some(n => n.ma === tim.trim())
+  return (
+    <div className="p-panel">
+      <div className="p-panel-h">Ngành nghề kinh doanh ({ds.length})</div>
+      <div className="p-4 space-y-3">
+        {sua && (
+          <div className="relative">
+            <input className={inputCls} value={tim} onChange={e => setTim(e.target.value)} placeholder={vsic.length ? 'Gõ mã 4 số hoặc tên ngành để thêm (không cần dấu)…' : 'Danh mục ngành chưa nạp — gõ mã 4 số rồi Enter để thêm tay'}
+              onKeyDown={e => { if (e.key === 'Enter' && maTay) them({ ma: tim.trim(), ten: '' }) }} />
+            {goiYTim.length > 0 && (
+              <div className="absolute z-10 left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border max-h-72 overflow-y-auto">
+                {goiYTim.map(n => <button key={n.ma} className="block w-full text-left px-3 py-1.5 text-sm hover:bg-amber-50" onClick={() => them(n)}><b className="num">{n.ma}</b> {n.ten}</button>)}
+              </div>
+            )}
+            {maTay && <div className="text-xs text-gray-500 mt-1">Mã {tim.trim()} không có trong danh mục — Enter để thêm tay rồi gõ tên ngành.</div>}
+          </div>
+        )}
+        {!ds.length && <div className="text-sm text-gray-400">Chưa có ngành nào.</div>}
+        {ds.map((n, i) => (
+          <div key={n.ma + i} className={'rounded-lg border px-3 py-2 ' + (n.chinh ? 'border-amber-400 bg-amber-50/40' : 'border-gray-200')}>
+            <div className="flex items-start gap-2">
+              <span className="num text-sm font-bold w-12 pt-1.5">{n.ma}</span>
+              <div className="flex-1 space-y-1">
+                <input className={inputCls} value={n.ten} disabled={!sua} onChange={e => setN(i, 'ten', e.target.value)} placeholder="Tên ngành" />
+                <textarea rows={n.chi_tiet ? 2 : 1} className={inputCls} value={n.chi_tiet} disabled={!sua} onChange={e => setN(i, 'chi_tiet', e.target.value)} placeholder="Chi tiết (không bắt buộc): ghi rõ hoạt động, loại trừ…" />
+              </div>
+              <div className="flex flex-col items-end gap-1 text-xs whitespace-nowrap">
+                <label className="flex items-center gap-1"><input type="radio" checked={n.chinh} disabled={!sua} onChange={() => setN(i, 'chinh', true)} />Ngành chính</label>
+                {sua && <div className="flex gap-1">
+                  <button className="p-btn p-btn-sm" onClick={() => doiCho(i, -1)} disabled={!i} aria-label="Lên">↑</button>
+                  <button className="p-btn p-btn-sm" onClick={() => doiCho(i, 1)} disabled={i === ds.length - 1} aria-label="Xuống">↓</button>
+                  <button className="p-btn p-btn-sm text-red-700" onClick={() => setDs(o => o.filter((_, j) => j !== i))} aria-label="Xoá">×</button>
+                </div>}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {sua && <div className="px-4 pb-4 flex justify-end gap-2">
+        {doi && <button className={btnGhost} onClick={() => setDs(dau())}>Bỏ thay đổi</button>}
+        <button className={btnPrimary} disabled={!doi || ds.some(n => !n.ten.trim())} onClick={() => goi({ action: 'nganh', nganh: ds }, 'Đã lưu ngành nghề')}>Lưu ngành nghề</button>
+      </div>}
+    </div>
+  )
+}
+
+// ─── Còn thiếu & xuất Word ────────────────────────────────────────────────────────────────────────────────
+const TEN_DOT = { so: 'Hồ sơ thành lập — nộp Phòng ĐKKD', thue: 'Hồ sơ pháp lý ban đầu — sau khi có GPKD' }
+
+function XuatWord({ d, id, lh, toast }) {
+  const [dang, setDang] = useState(null)
+  if (!['1tv', '2tv', 'cp'].includes(lh)) return <div className="p-panel p-4 text-sm text-gray-500">Mẫu Word hiện chỉ có cho công ty TNHH 1TV, 2TV và cổ phần.</div>
+  const tai = async (dot, ma) => {
+    setDang(dot + (ma || ''))
+    try {
+      const r = await fetch(`/api/admin/phaply/ho-so/${id}/word?dot=${dot}${ma ? '&ma=' + ma : ''}`)
+      if (!r.ok) { const j = await r.json().catch(() => ({})); toast(j.error || 'Không xuất được', true); return }
+      const cd = r.headers.get('Content-Disposition') || ''
+      const ten = decodeURIComponent((cd.match(/filename\*=UTF-8''([^;]+)/) || [])[1] || (ma || dot) + (ma ? '.docx' : '.zip'))
+      const url = URL.createObjectURL(await r.blob())
+      const a = document.createElement('a'); a.href = url; a.download = ten; a.click()
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+    } finally { setDang(null) }
+  }
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {['so', 'thue'].map(dot => {
+        const thieu = d.thieu?.[dot] || []
+        const chan = thieu.filter(t => t.chan), nhac = thieu.filter(t => !t.chan)
+        return (
+          <div key={dot} className="p-panel">
+            <div className="p-panel-h flex items-center justify-between gap-2">
+              <span>{TEN_DOT[dot]}</span>
+              <button className={btnPrimary + ' p-btn-sm'} disabled={!!dang} onClick={() => tai(dot)}>{dang === dot ? 'Đang dựng…' : '⬇ Cả bộ (.zip)'}</button>
+            </div>
+            <div className="p-4 space-y-3">
+              {chan.length ? (
+                <div className="text-sm rounded-lg bg-amber-50 px-3 py-2 text-amber-900">
+                  <b>Còn thiếu ({chan.length}) — xuất vẫn được, chỗ thiếu in “…………” để viết tay:</b>
+                  <ul className="list-disc ml-5 mt-1">{chan.map(t => <li key={t.muc}><span className="text-gray-500">{t.nhom}:</span> {t.muc}</li>)}</ul>
+                </div>
+              ) : <div className="text-sm rounded-lg bg-green-50 px-3 py-2 text-green-800">✓ Đủ dữ liệu chính.</div>}
+              {nhac.length > 0 && <ul className="text-xs text-gray-500 list-disc ml-5">{nhac.map(t => <li key={t.muc}>{t.muc}</li>)}</ul>}
+              <table className="p-tbl w-full"><tbody>
+                {mauCuaBo(dot, lh).map(m => (
+                  <tr key={m.ma}>
+                    <td className="l num w-8">{String(m.thuTu).padStart(2, '0')}</td>
+                    <td className="l">{m.ten}<div className="text-xs text-gray-500">{m.nguoiKy[lh]}</div></td>
+                    <td className="r"><button className="p-btn p-btn-sm" disabled={!!dang} onClick={() => tai(dot, m.ma)}>{dang === dot + m.ma ? '…' : '.docx'}</button></td>
+                  </tr>
+                ))}
+              </tbody></table>
+            </div>
+          </div>
+        )
+      })}
+      <div className="lg:col-span-2 text-xs text-gray-500">
+        Người được ủy quyền (Giấy ủy quyền nộp Phòng ĐKKD) = nhân viên phụ trách hồ sơ, lấy từ <Link className="underline" href="/phaply/toi">Thông tin cá nhân pháp lý</Link> của người đó.
+        {!d.uy_quyen && <b className="text-amber-800"> Người phụ trách hồ sơ này chưa nhập thông tin cá nhân.</b>}
+      </div>
+    </div>
+  )
+}

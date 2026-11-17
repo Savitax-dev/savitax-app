@@ -1,6 +1,6 @@
 // Phân hệ Pháp lý — chuẩn bị DATABASE DEMO để thử trên máy (KHÔNG BAO GIỜ chạy vào production):
 //   node --env-file=.env.local scripts/phaply-chuan-bi-demo.mjs [--mau]
-//   1. chạy sql/56_phap_ly_ho_so.sql (chạy lại an toàn)   2. nạp checklist + lịch thu mặc định
+//   1. chạy sql/56 + sql/57 (chạy lại an toàn)   2. nạp checklist + lịch thu mặc định
 //   3. --mau: thêm vài hồ sơ GIẢ (tên, SĐT bịa) có phí / đợt / khoản thu để thử danh sách, công nợ, báo cáo
 // DB demo bị làm mới mỗi đêm 2h (truncate mọi bảng + nạp lại quyền từ ảnh chụp) → mỗi lần làm việc chạy lại script này.
 import fs from 'node:fs'
@@ -18,11 +18,11 @@ const { error: khongDemo } = await admin.from('demo_la_ban_demo').select('id').l
 if (khongDemo) throw new Error('Không thấy bảng demo_la_ban_demo — không phải database demo, từ chối')
 
 const sql = postgres(db, { ssl: 'require', max: 1, onnotice: () => {} })
-await sql.unsafe(fs.readFileSync('sql/56_phap_ly_ho_so.sql', 'utf8'))
+for (const f of ['sql/56_phap_ly_ho_so.sql', 'sql/57_phap_ly_phap_nhan.sql']) await sql.unsafe(fs.readFileSync(f, 'utf8'))
 await sql.unsafe("notify pgrst, 'reload schema'")   // PostgREST nhận bảng mới ngay
 await sql.end()
 await new Promise(r => setTimeout(r, 2500))
-console.log('✓ sql/56 đã chạy trên demo')
+console.log('✓ sql/56 + sql/57 đã chạy trên demo (danh mục: scripts/phaply-nap-danh-muc.mjs --ghi)')
 console.log('✓ mẫu mặc định:', await napMauMacDinh(admin))
 
 if (process.argv.includes('--mau')) {

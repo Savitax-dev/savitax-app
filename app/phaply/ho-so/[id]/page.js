@@ -1,6 +1,6 @@
 'use client'
-// Phân hệ Pháp lý — chi tiết một hồ sơ: thanh 10 bước, trạng thái chờ, giao người, đóng / mở lại; 4 tab Thông tin · Việc cần
-// làm · Công nợ · Lịch sử. Mọi quyền kiểm lại ở máy chủ (app/api/admin/phaply/ho-so/[id]/**) — ở đây chỉ ẩn nút cho gọn.
+// Phân hệ Pháp lý — chi tiết một hồ sơ: thanh 10 bước, trạng thái chờ, giao người, đóng / mở lại; tab Thông tin · Việc cần
+// làm · 4 tab pháp nhân (_phapNhan.js: Doanh nghiệp, Người & CCCD, Ngành nghề, Còn thiếu & xuất Word) · Công nợ · Lịch sử. Mọi quyền kiểm lại ở máy chủ (app/api/admin/phaply/ho-so/[id]/**) — ở đây chỉ ẩn nút cho gọn.
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -11,6 +11,7 @@ import { tachKhoanThu } from '@/lib/phaply/tien'
 import {
   Modal, Field, NumInput, inputCls, btnPrimary, btnGhost, useToast, api, fmt, fmtMoney, dmy, dmyTime, StatCard, BuocChip, ChoChip,
 } from '../../_ui'
+import PhapNhan, { TAB_PHAP_NHAN } from './_phapNhan'
 
 export default function HoSoPage() {
   const { id } = useParams()
@@ -45,7 +46,7 @@ export default function HoSoPage() {
   if (d.loi) return <AppShell><div className="pl-ui p-8 text-sm text-gray-600">{d.loi} · <Link className="underline" href="/phaply">Về danh sách</Link>{toastNode}</div></AppShell>
 
   const hs = d.ho_so, q = d.q || {}, sua = d.sua_duoc, daDong = hs.stage >= BUOC_DONG
-  const tabs = [['thong_tin', 'Thông tin'], ['viec', 'Việc cần làm'], ...(q.tien ? [['tien', 'Công nợ']] : []), ['lich_su', 'Lịch sử & ghi chú']]
+  const tabs = [['thong_tin', 'Thông tin'], ['viec', 'Việc cần làm'], ...TAB_PHAP_NHAN, ...(q.tien ? [['tien', 'Công nợ']] : []), ['lich_su', 'Lịch sử & ghi chú']]
 
   const chuyenBuoc = n => {
     if (!sua || daDong || n === hs.stage) return
@@ -109,6 +110,7 @@ export default function HoSoPage() {
 
           {tab === 'thong_tin' && <TabThongTin d={d} sua={sua && !daDong} q={q} lam={lam} />}
           {tab === 'viec' && <TabViec d={d} sua={sua && !daDong} id={id} load={load} toast={toast} />}
+          <PhapNhan id={id} tab={tab} sua={sua && !daDong} loaiHinh={hs.entity_type} toast={toast} taiLaiHoSo={load} />
           {tab === 'tien' && q.tien && <TabTien d={d} sua={sua && !daDong} q={q} id={id} load={load} toast={toast} setHoi={setHoi} />}
           {tab === 'lich_su' && <TabLichSu d={d} q={q} id={id} load={load} toast={toast} />}
 
@@ -175,7 +177,7 @@ function TabThongTin({ d, sua, q, lam }) {
         {doi && <button className={btnGhost} onClick={() => setF(dau())}>Bỏ thay đổi</button>}
         <button className={btnPrimary} disabled={!doi} onClick={luu}>Lưu thông tin</button>
       </div>}
-      <div className="px-4 pb-4 text-xs text-gray-500">Thông tin chủ sở hữu, thành viên, CCCD, ngành nghề, vốn… nhập ở giai đoạn 2 (đang làm).</div>
+      <div className="px-4 pb-4 text-xs text-gray-500">Địa chỉ, vốn, người (chủ sở hữu, thành viên, CCCD…), ngành nghề nhập ở các tab Doanh nghiệp · Người & CCCD · Ngành nghề.</div>
     </div>
   )
 }
