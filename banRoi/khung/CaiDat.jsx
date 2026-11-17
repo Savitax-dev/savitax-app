@@ -87,7 +87,7 @@ export default function CaiDat() {
             </div>
             <div className={the}>
               <h2 className="font-bold text-gray-800">Bản quyền</h2>
-              <p className="mt-1 rounded-xl bg-gray-50 p-3 text-sm text-gray-600">🔒 <b>Bản quyền © Savitax</b> — Soát xét báo cáo · Rủi ro thuế, phiên bản {PHIEN_BAN}. Đơn vị dùng app đổi được logo, tên, địa chỉ của mình; dòng bản quyền không đổi.</p>
+              <p className="mt-1 rounded-xl bg-gray-50 p-3 text-sm text-gray-600">🔒 <b>Bản quyền © Savitax</b> — Soát xét báo cáo · Rủi ro thuế · Hồ sơ chứng từ, phiên bản {PHIEN_BAN}. Đơn vị dùng app đổi được logo, tên, địa chỉ của mình; dòng bản quyền không đổi.</p>
             </div>
           </div>
         </div>

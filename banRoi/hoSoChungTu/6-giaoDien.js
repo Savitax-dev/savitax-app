@@ -527,7 +527,7 @@
     const cl = curClient(); const cm = DB.settings.clientMst;
     const R = DB.records.filter((r) => !cm || r.clientMst === cm || r.ban.mst === cm || r.mua.mst === cm);
     $("dashTitle").textContent = cl ? cl.ten : "Tổng quan hồ sơ – tất cả doanh nghiệp";
-    $("dashSub").textContent = cl ? `MST ${cl.mst} · ${LH().find((l) => l.id === cl.loaiHinh)?.ten || "Chưa chọn loại hình"}` : "Chọn doanh nghiệp đang làm ở góc trên để xem riêng và để app tự nhận diện hóa đơn bán ra / mua vào.";
+    $("dashSub").textContent = cl ? `MST ${cl.mst} · ${LH().find((l) => l.id === cl.loaiHinh)?.ten || "Chưa chọn loại hình"}` : "Chọn “Công ty đang làm” ở menu trái để xem riêng và để app tự nhận diện hóa đơn bán ra / mua vào.";
     const S2 = R.map((r) => ({ r, st: stats(r), K: C.compute(r) }));
     const du = S2.filter((x) => x.st.pct >= 100).length, thieu = S2.length - du;
     const ban = S2.filter((x) => x.r.chieu === "ban").reduce((a, x) => a + x.K.tong, 0), mua = S2.filter((x) => x.r.chieu === "mua").reduce((a, x) => a + x.K.tong, 0);

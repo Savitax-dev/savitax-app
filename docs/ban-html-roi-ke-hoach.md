@@ -8,7 +8,7 @@ Lập 07/11/2026. Các quyết định của anh trong ngày:
 - **Bản quyền Savitax**, khách được đổi logo + tên công ty mình.
 - KHÔNG thêm nút "Xuất cho bản rời" trong app chính.
 
-ĐANG LÀM — GĐ 0–4 xong 17/11/2026, còn GĐ 5 đóng gói (xem "Tiến độ" ở mục Thứ tự làm).
+GĐ 0–5 xong 17/11/2026 — bộ giao khách dựng bằng `node scripts/dong-goi-ban-roi.mjs` (xem "Tiến độ" ở mục Thứ tự làm).
 
 **Demo giao diện + cấu trúc chạy (08/11/2026)**: `docs/mockup-ban-roi/Savitax-HoSo-demo.html` (bấm qua lại được, dữ liệu
 giả, không gọi mạng; Cài đặt có ô thử điều kiện chạy + nút thử trỏ thư mục chỉ đọc) và `docs/mockup-ban-roi/cau-truc-chay.html`.
@@ -167,7 +167,14 @@ Tổng ~6,5–7,5 ngày. Mỗi giai đoạn: thử ở máy → gửi anh file x
   thì khung dựng lại phân hệ. Ngày nghỉ mặc định gộp thêm Tết, Giỗ Tổ, nghỉ bù 2026–2027 (cũng đổi hạn nộp ở Soát xét). Tab 🧭
   Hướng dẫn trong phân hệ. Đã thử (localhost): hóa đơn mẫu, nạp XML + ZIP, xuất Word / Excel / PDF / phiếu kiểm tra, đồng bộ
   công ty, tải lại trang giữ dữ liệu, sao lưu → khôi phục. Chưa thử: hóa đơn PDF thật, lệnh In, mở bằng file://.
-- **Còn**: GĐ 5 đóng gói + hướng dẫn PDF + thử máy sạch; thử Tải Excel / Soát xét năm / Năm cũ trên dữ liệu thật.
+- **GĐ 5 xong (17/11/2026) — đóng gói**: `node scripts/dong-goi-ban-roi.mjs` dựng lại file HTML rồi ra `dist-ban-roi/Savitax-HoSo-v1.0/`
+  (HTML 5,5 MB · `Mau-danh-sach-cong-ty.xlsx` cùng nguồn `banRoi/mauCongTy.js` với nút File Excel mẫu · `HUONG-DAN.pdf` 8 trang in từ
+  `banRoi/huongDan/HUONG-DAN.html`) + `Savitax-HoSo-v1.0.zip` (~2,3 MB). Script là luôn bài **thử máy sạch**: Chrome / Edge headless hồ sơ
+  trắng, chặn mạng (`--host-resolver-rules`), mở qua file:// — khung tự kiểm phải đủ 4 ✅, 8 trang phải lên, console không lỗi, không thì
+  DỪNG. Ảnh trong hướng dẫn chụp tự động trên 3 công ty GIẢ (MST 9999…). Bài thử bắt được ngay một lỗi thật: dấu `"` lọt vào chuỗi JS
+  của Hồ sơ chứng từ → phân hệ không mở mà bản dựng vẫn OK; nay `dung-ban-roi` dịch thử từng file `banRoi/hoSoChungTu/*.js`.
+- **Còn** (cần anh / máy thật): mở bản ZIP trên một máy khác thật; thử hóa đơn PDF thật, lệnh In, Tải Excel / Soát xét năm / Năm cũ
+  trên dữ liệu thật.
 
 ## Bộ bàn giao
 

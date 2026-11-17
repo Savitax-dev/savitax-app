@@ -394,7 +394,11 @@ SQL `sql/40_phantich_xem_phi.sql` (đã chạy). **KHÔNG đưa vào bản clone
 
 Một file `dist-ban-roi/Savitax-HoSo.html` (~5,4 MB, gitignore) mở thẳng bằng Chrome / Edge, không máy chủ, không đăng nhập, để
 giao riêng cho đơn vị khác (bản quyền Savitax, khách đổi được logo). Dựng: `node scripts/dung-ban-roi.mjs`. Kế hoạch + tiến độ:
-`docs/ban-html-roi-ke-hoach.md`. GĐ 1 xong 15/11/2026.
+`docs/ban-html-roi-ke-hoach.md`. GĐ 0–5 xong 17/11/2026.
+
+- **Bộ giao khách**: `node scripts/dong-goi-ban-roi.mjs` → `dist-ban-roi/Savitax-HoSo-v<bản>/` (HTML + `Mau-danh-sach-cong-ty.xlsx` +
+  `HUONG-DAN.pdf`) + `.zip`. Kiêm bài thử máy sạch (Chrome headless hồ sơ trắng, chặn mạng, file://; lỗi là DỪNG) — chạy lại TRƯỚC mỗi lần
+  giao. Chữ hướng dẫn sửa ở `banRoi/huongDan/HUONG-DAN.html` (ảnh tự chụp, `{{ANH:tên}}`); file mẫu Excel ở `banRoi/mauCongTy.js`.
 
 - **Dùng NGUYÊN mã màn hình của app** (app/soatbaocao, app/ruirothue, components/phanTich, lib/…) — sửa app là bản rời sửa theo
   khi dựng lại. Lúc gói, esbuild thay: `next/navigation`, `next/link` → `banRoi/shim` (đường dẫn sau `#`); `@/lib/supabase` →

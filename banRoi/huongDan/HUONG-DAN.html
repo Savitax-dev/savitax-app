@@ -1,0 +1,211 @@
+<!doctype html>
+<!-- Nguồn của HUONG-DAN.pdf trong bộ giao khách. scripts/dong-goi-ban-roi.mjs thay {{PHIEN_BAN}}, {{NGAY}} và {{ANH:tên}}
+     (ảnh chụp tự động từ chính file bản rời, Chrome hồ sơ trắng) rồi in ra PDF khổ A4. Sửa chữ ở đây, đừng sửa file PDF. -->
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Savitax Hồ Sơ — Hướng dẫn sử dụng</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: #1f2937; font-size: 10.5pt; line-height: 1.5; margin: 0; }
+  h1, h2, h3 { color: #8B1A1A; line-height: 1.25; }
+  h2 { font-size: 16pt; margin: 0 0 8px; padding-bottom: 6px; border-bottom: 2px solid #C9A84C; break-after: avoid; }
+  h3 { font-size: 12pt; margin: 14px 0 4px; break-after: avoid; }
+  p { margin: 4px 0 6px; }
+  ul, ol { margin: 4px 0 8px; padding-left: 20px; }
+  li { margin: 2px 0; }
+  code, .tep { font-family: Consolas, monospace; font-size: 9.5pt; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; padding: 0 4px; }
+  .trang { break-before: page; }
+  .bia { height: 260mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .bia .tren { margin-top: 30mm; }
+  .bia .nhan { color: #C9A84C; font-weight: 700; letter-spacing: 2px; font-size: 11pt; }
+  .bia h1 { font-size: 34pt; margin: 6px 0 4px; }
+  .bia .phu { font-size: 14pt; color: #4b5563; }
+  .bia .ph { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18mm; }
+  .bia .ph div { border: 1px solid #e5e7eb; border-top: 4px solid #8B1A1A; border-radius: 10px; padding: 10px 12px; font-size: 10pt; color: #4b5563; }
+  .bia .ph b { display: block; color: #1f2937; font-size: 11.5pt; margin-bottom: 2px; }
+  .bia .duoi { font-size: 9.5pt; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 8px; }
+  .anh { margin: 8px 0 10px; break-inside: avoid; }
+  .anh img { width: 100%; border: 1px solid #d1d5db; border-radius: 6px; display: block; }
+  .anh .chu { font-size: 9pt; color: #6b7280; margin-top: 3px; text-align: center; font-style: italic; }
+  .chu-y { border-left: 4px solid #C9A84C; background: #fbf5e2; padding: 6px 10px; border-radius: 4px; margin: 8px 0; break-inside: avoid; }
+  .canh-bao { border-left: 4px solid #8B1A1A; background: #fdf1f1; padding: 6px 10px; border-radius: 4px; margin: 8px 0; break-inside: avoid; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 9.8pt; break-inside: avoid; }
+  th { background: #8B1A1A; color: #fff; text-align: left; padding: 5px 8px; font-weight: 600; }
+  td { border-bottom: 1px solid #e5e7eb; padding: 5px 8px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f9fafb; }
+  .muc { counter-reset: b; list-style: none; padding-left: 0; }
+  .muc > li { counter-increment: b; position: relative; padding-left: 30px; margin: 6px 0; }
+  .muc > li::before { content: counter(b); position: absolute; left: 0; top: 1px; width: 21px; height: 21px; border-radius: 50%;
+    background: #8B1A1A; color: #fff; font-weight: 700; font-size: 9.5pt; text-align: center; line-height: 21px; }
+</style>
+</head>
+<body>
+
+<section class="bia">
+  <div class="tren">
+    <div class="nhan">SAVITAX</div>
+    <h1>Savitax Hồ Sơ</h1>
+    <div class="phu">Hướng dẫn sử dụng · phiên bản {{PHIEN_BAN}}</div>
+    <div class="ph">
+      <div><b>🔎 Soát xét báo cáo</b>Đọc thư mục hồ sơ công ty: có / thiếu, soát từng kỳ tờ khai ↔ bảng kê ↔ hóa đơn, soát xét năm.</div>
+      <div><b>⚖️ Rủi ro thuế</b>39 tiêu chí theo tờ khai, quyết toán, BCTC: số liệu, chênh lệch, tỷ lệ, hồ sơ nên chuẩn bị.</div>
+      <div><b>📑 Hồ sơ chứng từ</b>Từ hóa đơn XML / PDF / ZIP lập bộ chứng từ theo nghiệp vụ, checklist đủ / thiếu, xuất Word / PDF / Excel.</div>
+    </div>
+    <p style="margin-top:14mm">Một file HTML chạy thẳng trên Chrome hoặc Edge của máy tính: <b>không cài đặt, không đăng nhập, không cần
+      mạng</b>. Dữ liệu nằm trong trình duyệt của chính máy đó, không gửi đi đâu.</p>
+  </div>
+  <div class="duoi">Bản quyền © Savitax. Đơn vị sử dụng được đổi logo, tên, địa chỉ của mình ở Cài đặt; dòng bản quyền không đổi.
+    · Tài liệu lập ngày {{NGAY}}.</div>
+</section>
+
+<section class="trang">
+  <h2>1. Mở chương trình</h2>
+  <h3>Bộ file nhận được</h3>
+  <table>
+    <tr><th style="width:38%">File</th><th>Dùng để</th></tr>
+    <tr><td><span class="tep">Savitax-HoSo-v{{PHIEN_BAN}}.html</span></td><td>Chương trình. Toàn bộ thư viện, phông chữ, logo đã nằm sẵn trong file này.</td></tr>
+    <tr><td><span class="tep">Mau-danh-sach-cong-ty.xlsx</span></td><td>File mẫu để nhập nhiều công ty một lần (mục 2).</td></tr>
+    <tr><td><span class="tep">HUONG-DAN.pdf</span></td><td>Tài liệu này.</td></tr>
+  </table>
+  <h3>Cách mở</h3>
+  <ol class="muc">
+    <li>Chép cả thư mục vào máy, ví dụ <code>D:\Savitax-HoSo</code>. Không để trong thư mục Tải xuống tạm hoặc trong file ZIP.</li>
+    <li>Bấm đúp vào <span class="tep">Savitax-HoSo-v{{PHIEN_BAN}}.html</span>. Nếu máy mở bằng trình duyệt khác: chuột phải → <b>Open with</b> →
+      <b>Google Chrome</b> hoặc <b>Microsoft Edge</b>.</li>
+    <li>Ở trang <b>Tổng quan</b>, khung <b>“Máy này chạy được không”</b> phải có đủ 4 dấu ✅. Có dấu ❌ ở dòng “Trỏ thư mục” là đang mở
+      bằng trình duyệt không hỗ trợ (Firefox, Safari, điện thoại) → mở lại bằng Chrome / Edge trên máy tính.</li>
+    <li>Nên ghim tab hoặc tạo dấu trang để lần sau mở nhanh.</li>
+  </ol>
+  <div class="anh"><img src="{{ANH:tongquan}}"><div class="chu">Trang Tổng quan: các bước bắt đầu, lối vào 3 phân hệ, khung tự kiểm máy.</div></div>
+  <div class="chu-y"><b>Dữ liệu lưu ở đâu?</b> Danh sách công ty, cài đặt, hồ sơ chứng từ, quyền đọc thư mục lưu trong trình duyệt của máy
+    đang dùng. Chuyển sang máy khác hoặc trình duyệt khác thì phải Sao lưu → Khôi phục (mục 6). Chỉ nút 🔍 tra MST dùng mạng, và chỉ gửi
+    mã số thuế.</div>
+</section>
+
+<section class="trang">
+  <h2>2. Danh sách công ty</h2>
+  <p>Danh sách dùng chung cho cả 3 phân hệ. Ô <b>Công ty đang làm</b> ở đầu menu trái chọn công ty cho mọi màn hình.</p>
+  <h3>Thêm công ty</h3>
+  <ul>
+    <li><b>Từng công ty:</b> bấm <b>＋ Thêm công ty</b>, gõ MST rồi bấm 🔍 để tự điền tên, địa chỉ (cần mạng), chọn kỳ khai Quý / Tháng,
+      đánh dấu nếu là hộ kinh doanh.</li>
+    <li><b>Cả danh sách:</b> mở <span class="tep">Mau-danh-sach-cong-ty.xlsx</span>, điền mỗi công ty một dòng (giữ nguyên hàng tiêu đề), rồi
+      bấm <b>📥 Nhập từ Excel</b>. Nút <b>📤 Xuất Excel</b> lưu lại danh sách đang có.</li>
+  </ul>
+  <h3>Trỏ thư mục công ty</h3>
+  <p>Soát xét báo cáo và Rủi ro thuế đọc hồ sơ ngay trong thư mục của công ty trên ổ chung. Bấm <b>Trỏ thư mục</b> ở dòng công ty → chọn
+    thư mục <b>GỐC</b> của công ty (thư mục có <code>2. HỒ SƠ KẾ TOÁN</code>) → Chrome hỏi quyền <b>xem</b> file → bấm Cho phép.</p>
+  <ul>
+    <li>Chương trình <b>chỉ đọc</b>: không ghi, không đổi tên, không xoá file nào trong thư mục.</li>
+    <li>Lần mở sau, Chrome có thể hỏi lại quyền một lần → bấm Cho phép.</li>
+    <li>Năm cũ nằm ở thư mục khác thì trỏ thêm ở nút <b>＋ Năm cũ</b> trong phân hệ Soát xét.</li>
+  </ul>
+  <div class="anh"><img src="{{ANH:congty}}"><div class="chu">Danh sách công ty (dữ liệu minh họa).</div></div>
+</section>
+
+<section class="trang">
+  <h2>3. Soát xét báo cáo</h2>
+  <p>Chọn công ty ở menu trái → mở <b>🔎 Soát xét báo cáo</b>. Các tab:</p>
+  <table>
+    <tr><th style="width:26%">Tab</th><th>Xem gì</th></tr>
+    <tr><td>🏢 Công ty của tôi</td><td>Các công ty và thư mục đã trỏ.</td></tr>
+    <tr><td>🗂️ Hồ sơ dữ liệu</td><td>Chương trình tìm thấy gì trong thư mục: tờ khai, bảng kê, hóa đơn, BCTC, sổ sách… có / thiếu theo từng mục.</td></tr>
+    <tr><td>🧾 Soát kỳ</td><td>Từng tháng / quý: tờ khai ↔ bảng kê kèm tờ khai ↔ bảng kê cổng hóa đơn điện tử, hạn nộp của kỳ.</td></tr>
+    <tr><td>📊 Soát xét năm</td><td>BCTC ↔ cân đối phát sinh ↔ sổ sách ↔ tờ khai ↔ quyết toán cả năm, chỉ số tài chính.</td></tr>
+    <tr><td>📘 Quy ước lưu hồ sơ</td><td>Thư mục nào lưu gì, đặt tên file thế nào để chương trình đọc đúng.</td></tr>
+    <tr><td>🧭 Hướng dẫn</td><td>Cách dùng từng bước + nút <b>tải cây thư mục mẫu SVT.MB09</b> (file ZIP chỉ có thư mục rỗng).</td></tr>
+  </table>
+  <div class="chu-y"><b>Xếp hồ sơ đúng cây thư mục là điều kiện để soát đúng.</b> Tải cây mẫu ở tab Hướng dẫn, giải nén vào thư mục công
+    ty, đổi <code>NĂM TÀI CHÍNH</code> thành <code>Năm 2026</code>. Công ty khai THÁNG thì đổi thư mục hóa đơn <code>QUÝ n</code> thành
+    <code>THÁNG 01 … 12</code>.</div>
+  <ul>
+    <li>Lần đầu đọc một công ty có thể mất vài chục giây (nhiều file PDF). Các lần sau dùng bộ nhớ đệm nên nhanh hơn. Chuyển tab không đọc
+      lại; muốn đọc lại sau khi thêm file thì bấm <b>↻ Tải lại thư mục</b>.</li>
+    <li>Hạn nộp tính theo ngày nghỉ lễ ở Cài đặt (thứ Bảy, Chủ nhật, ngày lễ thì lùi sang ngày làm việc kế tiếp).</li>
+    <li>Chương trình chỉ báo số liệu, chênh lệch, tỷ lệ — không chấm điểm, không xếp loại.</li>
+  </ul>
+  <div class="anh"><img src="{{ANH:soat}}"><div class="chu">Tab 🧭 Hướng dẫn của Soát xét báo cáo, có nút tải cây thư mục mẫu.</div></div>
+</section>
+
+<section class="trang">
+  <h2>4. Rủi ro thuế</h2>
+  <p>Dùng chung thư mục đã trỏ với Soát xét báo cáo — không phải trỏ lại.</p>
+  <table>
+    <tr><th style="width:26%">Tab</th><th>Xem gì</th></tr>
+    <tr><td>🗂️ Hồ sơ đã đọc</td><td>Tờ khai, quyết toán, BCTC tìm thấy trong thư mục và các số tự tìm được.</td></tr>
+    <tr><td>📋 Bảng 39 tiêu chí</td><td>Số liệu, chênh lệch, tỷ lệ của từng tiêu chí. Có nút tải Excel.</td></tr>
+    <tr><td>🔍 Chi tiết tiêu chí</td><td>Nguồn số, nguyên nhân thường gặp, hồ sơ nên chuẩn bị, căn cứ.</td></tr>
+    <tr><td>📈 Nhiều năm</td><td>Số liệu và chênh lệch qua các năm (cần trỏ thêm năm cũ).</td></tr>
+    <tr><td>🧭 Hướng dẫn</td><td>Hồ sơ cần có và cách đọc kết quả.</td></tr>
+  </table>
+  <p>Tiêu chí thiếu số liệu nghĩa là thư mục chưa có file nguồn (thường là tờ khai XML, quyết toán, BCTC) — xem tab Hồ sơ đã đọc để biết
+    file nào chưa tìm thấy.</p>
+
+</section>
+
+<section class="trang">
+  <h2>5. Hồ sơ chứng từ</h2>
+  <p>Lập bộ chứng từ từ hóa đơn — <b>không cần trỏ thư mục</b>. Công ty ở Danh sách công ty tự là khách hàng; chọn ở menu trái là chọn
+    khách hàng đang làm.</p>
+  <ol class="muc">
+    <li><b>Lập hồ sơ từ hóa đơn:</b> kéo thả file hóa đơn XML (tốt nhất), PDF có lớp chữ hoặc ZIP tải từ cổng tra cứu. Tải nhiều file một lúc
+      được. Không có file thì nhập tay.</li>
+    <li>Chương trình tự nhận bán ra / mua vào theo MST công ty đang làm, đoán nghiệp vụ (hàng hóa, dịch vụ, xây dựng…) kèm lý do — kiểm
+      lại và sửa nếu sai.</li>
+    <li>Chương trình dựng sẵn bộ chứng từ: hợp đồng, đơn hàng, biên bản giao nhận, phiếu nhập / xuất… điền sẵn bên mua, bên bán, ngày, số.</li>
+    <li>Xem <b>checklist</b> đủ / thiếu và các cảnh báo (thanh toán từ 5 triệu, ngày giao khác ngày hóa đơn, lệch tổng tiền, MST sai…).</li>
+    <li>Xuất Word, PDF, Excel, phiếu kiểm tra hồ sơ, hoặc ZIP nhiều hồ sơ.</li>
+    <li>Hồ sơ lưu vào <b>Sổ hồ sơ</b> để tìm lại. Mẫu chứng từ sửa được ở tab Mẫu chứng từ (soạn trực tiếp hoặc nhập mẫu Word).</li>
+  </ol>
+  <p>Chi tiết từng bước và chỗ lưu file theo cây SVT.MB09 xem tab <b>🧭 Hướng dẫn</b> trong phân hệ.</p>
+  <div class="anh"><img src="{{ANH:chungtu}}"><div class="chu">Tổng quan Hồ sơ chứng từ (hóa đơn minh họa có sẵn trong chương trình).</div></div>
+</section>
+
+<section class="trang">
+  <h2>6. Cài đặt, sao lưu, chuyển máy</h2>
+  <ul>
+    <li><b>Thương hiệu đơn vị:</b> chọn logo (PNG / JPG), tên, MST, địa chỉ → <b>Lưu thương hiệu</b>. Logo hiện ở góc trên menu và trên phiếu
+      kiểm tra hồ sơ chứng từ. Để trống là Savitax.</li>
+    <li><b>Ngày nghỉ lễ:</b> có sẵn ngày lễ, Tết, nghỉ bù 2026–2027. Mỗi đầu năm thêm ngày nghỉ năm mới (ngày âm lịch, nghỉ bù đổi theo năm)
+      — dùng để tính hạn nộp và lùi ngày chứng từ.</li>
+    <li><b>Sao lưu (JSON):</b> lưu danh sách công ty, cài đặt và toàn bộ hồ sơ chứng từ ra một file. Nên sao lưu mỗi tuần và trước khi dọn
+      trình duyệt.</li>
+    <li><b>Khôi phục:</b> chọn file sao lưu → thay dữ liệu đang có bằng dữ liệu trong file.</li>
+  </ul>
+  <div class="anh"><img src="{{ANH:caidat}}"><div class="chu">Cài đặt: thương hiệu, ngày nghỉ lễ, sao lưu / khôi phục.</div></div>
+  <h3>Chuyển sang máy khác</h3>
+  <ol class="muc">
+    <li>Máy cũ: Cài đặt → Sao lưu (JSON).</li>
+    <li>Máy mới: chép thư mục chương trình, mở bằng Chrome / Edge → Cài đặt → Khôi phục → chọn file sao lưu.</li>
+    <li>Trỏ lại thư mục từng công ty (quyền đọc thư mục không chuyển được giữa các máy).</li>
+  </ol>
+  <h3>Cập nhật bản mới</h3>
+  <p>Sao lưu trước, rồi thay file HTML cũ bằng file mới (mở trên cùng máy, cùng trình duyệt). Dữ liệu vẫn còn vì nằm trong trình duyệt,
+    không nằm trong file HTML.</p>
+  <div class="canh-bao"><b>Xoá dữ liệu duyệt web (cookie và dữ liệu trang web) là mất dữ liệu của chương trình.</b> Chế độ ẩn danh không
+    giữ lại gì sau khi đóng cửa sổ. Luôn giữ một file sao lưu mới nhất.</div>
+</section>
+
+<section class="trang">
+  <h2>7. Câu hỏi thường gặp</h2>
+  <table>
+    <tr><th style="width:36%">Gặp</th><th>Làm</th></tr>
+    <tr><td>Khung “Máy này chạy được không” có ❌</td><td>Mở bằng Chrome hoặc Edge bản mới trên máy tính. Không mở file ngay trong ZIP, Zalo
+      hoặc trình xem file của email.</td></tr>
+    <tr><td>Bấm Trỏ thư mục không thấy gì / báo không có quyền</td><td>Chọn đúng thư mục gốc của công ty và bấm Cho phép khi Chrome hỏi. Ổ mạng
+      (Google Drive cho máy tính) phải đang chạy.</td></tr>
+    <tr><td>Chương trình báo thiếu file mà thư mục có</td><td>File nằm sai thư mục hoặc sai tên — xem tab Quy ước lưu hồ sơ; sau khi chuyển file
+      bấm ↻ Tải lại thư mục.</td></tr>
+    <tr><td>Đọc lâu lần đầu</td><td>Bình thường với thư mục nhiều PDF. Lần sau nhanh hơn nhờ bộ nhớ đệm trên máy.</td></tr>
+    <tr><td>Hóa đơn PDF không đọc được số</td><td>PDF ảnh scan không có lớp chữ → dùng file XML của hóa đơn.</td></tr>
+    <tr><td>🔍 tra MST không ra</td><td>Cần mạng. Không có mạng thì gõ tay tên, địa chỉ.</td></tr>
+    <tr><td>Mất danh sách công ty sau khi dọn máy</td><td>Cài đặt → Khôi phục từ file sao lưu gần nhất.</td></tr>
+  </table>
+  <div class="chu-y">Chương trình không đăng nhập, không có máy chủ: Savitax không xem được dữ liệu của đơn vị sử dụng. Cần hỗ trợ, gửi
+    ảnh chụp màn hình và mô tả cho Savitax — đừng gửi file hồ sơ của khách hàng nếu không cần.</div>
+</section>
+
+</body>
+</html>

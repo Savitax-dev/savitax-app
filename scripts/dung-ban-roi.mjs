@@ -109,6 +109,13 @@ const bocCssHsct = {
     })
   },
 }
+// Mã JS thuần của Hồ sơ chứng từ chạy bằng new Function lúc mở trang — esbuild chỉ gói nó dạng CHỮ nên không bắt lỗi cú pháp.
+// Thử dịch ở đây (17/11/2026: một dấu " lọt vào chuỗi làm phân hệ không mở được mà bản dựng vẫn báo OK).
+for (const f of fs.readdirSync(path.join(GOC, 'banRoi/hoSoChungTu')).filter(f => f.endsWith('.js'))) {
+  try { new Function(fs.readFileSync(path.join(GOC, 'banRoi/hoSoChungTu', f), 'utf8')) } catch (e) {
+    console.error(`DỪNG: banRoi/hoSoChungTu/${f} lỗi cú pháp — ${e.message}`); process.exit(1)
+  }
+}
 const nguonHsct = path.join(GOC, 'banRoi/hoSoChungTu/kieu.css')
 const cssHsct = (await postcss([bocCssHsct]).process(fs.readFileSync(nguonHsct, 'utf8'), { from: nguonHsct })).css
   .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\n\s*\n/g, '\n')

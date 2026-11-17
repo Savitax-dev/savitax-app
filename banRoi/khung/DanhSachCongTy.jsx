@@ -5,13 +5,13 @@ import { useKho, luuCongTy, xoaCongTy, kiemCongTy, chuanMst, datCaiDat, layKho }
 import { traMst } from './traMst'
 import { coHoTro, chonThuMucChinh, layThuMucChinh } from '@/lib/phanTich/khoMay'
 import { soExcelMoi, themSheetMang, taiVeExcel } from '@/lib/excelDep'
+import { COT, DO_RONG, HANG_MAU } from '../mauCongTy'
 import { diToi } from '../shim/dieuHuong'
 
 // Bản rời không có phí dịch vụ (anh bỏ tab Tăng trưởng & phí + ô Phí / tháng 15/11/2026)
 const TRONG = { maKH: '', ten: '', mst: '', dc: '', kyKhai: 'quy', laHkd: false, batDau: '' }
 const MAU_TRA = { ok: 'bg-emerald-50 text-emerald-700', ngung: 'bg-red-50 text-red-700', khong_co: 'bg-red-50 text-red-700', trung: 'bg-amber-50 text-amber-800', loi: 'bg-amber-50 text-amber-800', '': 'bg-gray-50 text-gray-500' }
 
-const COT = ['Mã KH', 'Tên công ty', 'MST', 'Kỳ khai (Quý / Tháng)', 'Hộ kinh doanh (x)', 'Địa chỉ','Bắt đầu hợp đồng (dd/mm/yyyy)']
 const boDau = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toUpperCase().trim()
 const ngaySangIso = v => {
   if (v == null || v === '') return null
@@ -117,14 +117,13 @@ export default function DanhSachCongTy() {
 
   const taiMau = async () => {
     const wb = await soExcelMoi()
-    themSheetMang(wb, 'Danh sách công ty', [COT, ['HONGDUC', 'CÔNG TY TNHH MẪU HỒNG ĐỨC', '9999000011', 'Quý', '', 'Số 1 Đường Mẫu, TP. Mẫu', '01/01/2026']],
-      { doRong: [12, 42, 14, 14, 12, 40, 16] })
+    themSheetMang(wb, 'Danh sách công ty', [COT, ...HANG_MAU], { doRong: DO_RONG })
     await taiVeExcel(wb, 'Mau-danh-sach-cong-ty.xlsx')
   }
   const xuat = async () => {
     const wb = await soExcelMoi()
     themSheetMang(wb, 'Danh sách công ty', [COT, ...congTy.map(c => [c.maKH, c.ten, c.mst, c.kyKhai === 'thang' ? 'Tháng' : 'Quý', c.laHkd ? 'x' : '', c.dc || '', isoSangNgay(c.batDau)])],
-      { doRong: [12, 42, 14, 14, 12, 40, 16] })
+      { doRong: DO_RONG })
     await taiVeExcel(wb, 'Danh-sach-cong-ty.xlsx')
   }
   const nhap = async file => {
