@@ -45,6 +45,16 @@ async function napDanhMuc(admin) {
   return { tinh, xa }
 }
 
+// TẠM — chỉ demo, để đo tốc độ đọc (17/11/2026), gỡ sau khi đo
+const MO_HINH_THU = ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5']
+function thuMoHinh(request) {
+  if (!LA_DEMO) return {}
+  const q = new URL(request.url).searchParams
+  const model = MO_HINH_THU.includes(q.get('thu_model')) ? q.get('thu_model') : undefined
+  const effort = ['low', 'medium', 'high'].includes(q.get('thu_effort')) ? q.get('thu_effort') : undefined
+  return { model, effort }
+}
+
 export async function POST(request, { params }) {
   const auth = await requirePhapLy()
   if (!auth.ok) return loi(auth.status, auth.error)
@@ -70,7 +80,7 @@ export async function POST(request, { params }) {
   // như cũ; đọc lỗi thì ảnh đã lưu vẫn còn — giữ nguyên luật "đọc lỗi không mất ảnh".
   const t0 = Date.now()
   const docP = coKhoaDoc()
-    ? docAnhCccd(anh.map(a => ({ mat: a.mat, mime: a.mime, base64: a.buf.toString('base64') })))
+    ? docAnhCccd(anh.map(a => ({ mat: a.mat, mime: a.mime, base64: a.buf.toString('base64') })), thuMoHinh(request))
       .then(d => ({ d, ms: Date.now() - t0 }), e => ({ e, ms: Date.now() - t0 }))
     : null
   const dmP = docP ? napDanhMuc(admin).catch(() => ({ tinh: [], xa: [] })) : null
