@@ -100,6 +100,23 @@ try {
   const chanSo = pn.data.thieu.so.filter(t => t.chan).map(t => t.muc)
   kiem('đợt nộp sở chỉ còn thiếu người được ủy quyền (giám đốc demo chưa nhập thông tin cá nhân)', chanSo.every(m => /ủy quyền/.test(m)), chanSo.join(' | '))
 
+  // Ảnh CCCD: chỉ nhận đường dẫn trong thư mục của CHÍNH hồ sơ; bản demo không nhận ảnh
+  {
+    const fd = new FormData()
+    fd.append('truoc', new Blob([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')], { type: 'image/png' }), 'gia.png')
+    const r = await fetch(GOC + `/api/admin/phaply/ho-so/${id}/cccd`, { method: 'POST', headers: { cookie: ckGd }, body: fd })
+    const j = await r.json().catch(() => ({}))
+    if (r.status === 403) kiem('bản demo từ chối nhận ảnh CCCD', /demo/i.test(j.error || ''), JSON.stringify(j))
+    else kiem('tải ảnh CCCD lưu vào thư mục hồ sơ', r.status === 200 && j.duong_dan?.truoc?.startsWith(id + '/'), JSON.stringify(j))
+    const pid = a.data.id
+    await L(P, 'PATCH', { action: 'nguoi', nguoi: { id: pid, ...ng('Thử Văn Một', 'Nam', '079090000901'), cccd_front_path: 'hoso-khac/x-truoc.jpg', cccd_back_path: `${id}/abc-sau.jpg` },
+      vai_tro: [{ vai_tro: 'dai_dien', chuc_danh: 'Giám đốc' }, { vai_tro: 'thanh_vien', von_gop: 600000000, thoi_han_gop: '90 ngày' }] })
+    const { data: pp } = await admin.from('legal_people').select('cccd_front_path, cccd_back_path').eq('id', pid).single()
+    kiem('không gắn được ảnh của hồ sơ khác, gắn được ảnh của hồ sơ này', !pp.cccd_front_path && pp.cccd_back_path === `${id}/abc-sau.jpg`, JSON.stringify(pp))
+    kiem('xem ảnh ngoài thư mục hồ sơ → 400', (await L(`/api/admin/phaply/ho-so/${id}/cccd?path=${encodeURIComponent('hoso-khac/x.jpg')}`)).status === 400)
+    // trả lại chủ tịch cho Thử Thị Hai (lần lưu trên bỏ dấu chủ tịch của người Một — đúng ý, kiểm phía dưới không phụ thuộc)
+  }
+
   // Xuất Word
   const z = await B(`/api/admin/phaply/ho-so/${id}/word?dot=so`)
   kiem('xuất cả bộ .zip', z.status === 200 && /\.zip/.test(z.cd), z.status + ' ' + z.buf.toString().slice(0, 200))

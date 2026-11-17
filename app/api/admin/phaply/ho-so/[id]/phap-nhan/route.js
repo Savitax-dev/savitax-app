@@ -73,6 +73,14 @@ export async function PATCH(request, { params }) {
 
     if (b.action === 'nguoi') {
       const f = locCotNguoi(b.nguoi)
+      // ảnh CCCD vừa tải (route cccd) — chỉ nhận đường dẫn nằm trong thư mục của CHÍNH hồ sơ này; 'an' = người không có quyền xem
+      // ảnh gửi lại giá trị che → bỏ qua, giữ ảnh cũ
+      for (const k of ['cccd_front_path', 'cccd_back_path']) {
+        const v = b.nguoi?.[k]
+        if (v === null) f[k] = null
+        else if (typeof v === 'string' && v.startsWith(id + '/') && !v.includes('..')) f[k] = v
+      }
+      if (b.nguoi?.cccd_doc && typeof b.nguoi.cccd_doc === 'object') f.cccd_doc = b.nguoi.cccd_doc
       const vaiTro = (b.vai_tro || []).map(locVaiTro).filter(Boolean)
       if (!vaiTro.length) return loi(400, 'Chọn ít nhất một vai trò cho người này')
       let pid = b.nguoi?.id || null

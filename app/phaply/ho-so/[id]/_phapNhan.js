@@ -35,7 +35,7 @@ export default function PhapNhan({ id, tab, sua, loaiHinh, toast, taiLaiHoSo }) 
     <div className="space-y-4">
       {tab !== 'word' && <ThieuGon thieu={d.thieu} />}
       {tab === 'doanh_nghiep' && <DoanhNghiep d={d} lh={lh} sua={coSua} goi={goi} />}
-      {tab === 'nguoi' && <Nguoi d={d} lh={lh} sua={coSua} goi={goi} />}
+      {tab === 'nguoi' && <Nguoi d={d} lh={lh} sua={coSua} goi={goi} id={id} toast={toast} />}
       {tab === 'nganh' && <Nganh d={d} sua={coSua} goi={goi} />}
       {tab === 'word' && <XuatWord d={d} id={id} lh={lh} toast={toast} />}
     </div>
@@ -167,7 +167,7 @@ function DoanhNghiep({ d, lh, sua, goi }) {
 }
 
 // ─── Người & CCCD ─────────────────────────────────────────────────────────────────────────────────────────
-function Nguoi({ d, lh, sua, goi }) {
+function Nguoi({ d, lh, sua, goi, id, toast }) {
   const [mo, setMo] = useState(null)   // { nguoi, vai_tro: [] } đang sửa
   // gom vai trò theo người
   const nguoi = useMemo(() => {
@@ -213,12 +213,13 @@ function Nguoi({ d, lh, sua, goi }) {
         )
       })}
       {sua && <div className="text-xs text-gray-500">Một người giữ nhiều vai trò (VD chủ sở hữu kiêm giám đốc, đại diện pháp luật): mở người đó và tích thêm vai trò — không nhập hai lần. Giám đốc trống = lấy người đại diện theo pháp luật.</div>}
-      {mo && <SuaNguoi mo={mo} choPhep={choPhep} goi={goi} onClose={() => setMo(null)} />}
+      {mo && <SuaNguoi mo={mo} choPhep={choPhep} goi={goi} id={id} toast={toast} onClose={() => setMo(null)} />}
     </div>
   )
 }
 
-function SuaNguoi({ mo, choPhep, goi, onClose }) {
+function SuaNguoi({ mo, choPhep, goi, id, toast, onClose }) {
+  const [canhBao, setCanhBao] = useState([])
   const [p, setP] = useState(mo.nguoi)
   const [vt, setVt] = useState(() => Object.fromEntries(mo.vai_tro.map(v => [v.vai_tro, { ...v }])))
   const [dang, setDang] = useState(false)
@@ -239,8 +240,8 @@ function SuaNguoi({ mo, choPhep, goi, onClose }) {
         <button className={btnGhost} onClick={onClose}>Huỷ</button>
         <button className={btnPrimary} disabled={dang || !p.ho_ten?.trim() || !Object.keys(vt).length} onClick={luu}>Lưu</button></>}>
       <div className="space-y-4">
-        <div className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">📷 Đọc tự động từ ảnh CCCD: đang làm (giai đoạn 2b) — tạm nhập tay.</div>
-        <NguoiForm value={p} onChange={setP} />
+        <TaiCccd caseId={id} p={p} setP={setP} toast={toast} canhBao={canhBao} setCanhBao={setCanhBao} />
+        <NguoiForm value={p} onChange={setP} noiBat={new Set(canhBao.map(c => c.truong))} />
         <div className="border-t pt-3">
           <div className="text-sm font-semibold mb-2">Vai trò trong doanh nghiệp</div>
           <div className="space-y-2">
@@ -434,6 +435,85 @@ function XuatWord({ d, id, lh, toast }) {
         Người được ủy quyền (Giấy ủy quyền nộp Phòng ĐKKD) = nhân viên phụ trách hồ sơ, lấy từ <Link className="underline" href="/phaply/toi">Thông tin cá nhân pháp lý</Link> của người đó.
         {!d.uy_quyen && <b className="text-amber-800"> Người phụ trách hồ sơ này chưa nhập thông tin cá nhân.</b>}
       </div>
+    </div>
+  )
+}
+
+// ─── Ảnh CCCD: chọn 2 mặt → thu nhỏ ở máy → lưu kho riêng tư → Claude đọc → điền form + cảnh báo kiểm chéo ───────────────
+const LA_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === '1'
+
+// Ảnh điện thoại 3–8 MB; Vercel nhận tối đa 4,5 MB mỗi lượt gửi → thu về cạnh dài 1800px, JPEG 0,88 (~300–600 KB, vẫn đọc rõ chữ)
+async function thuNho(file) {
+  const bmp = await createImageBitmap(file)
+  const tl = Math.min(1, 1800 / Math.max(bmp.width, bmp.height))
+  const c = document.createElement('canvas')
+  c.width = Math.round(bmp.width * tl); c.height = Math.round(bmp.height * tl)
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height)
+  return new Promise(r => c.toBlob(r, 'image/jpeg', 0.88))
+}
+
+function TaiCccd({ caseId, p, setP, toast, canhBao, setCanhBao }) {
+  const [anh, setAnh] = useState({})      // { truoc: { blob, url }, sau: … }
+  const [dang, setDang] = useState(false)
+  const [loiDoc, setLoiDoc] = useState('')
+  useEffect(() => () => Object.values(anh).forEach(a => URL.revokeObjectURL(a.url)), [anh])
+  const chon = async (mat, file) => {
+    if (!file) return
+    try {
+      const blob = await thuNho(file)
+      setAnh(o => ({ ...o, [mat]: { blob, url: URL.createObjectURL(blob) } }))
+    } catch { toast('Không mở được ảnh này — chọn ảnh JPG / PNG', true) }
+  }
+  const doc = async () => {
+    setDang(true); setLoiDoc('')
+    const fd = new FormData()
+    for (const mat of ['truoc', 'sau']) if (anh[mat]) fd.append(mat, anh[mat].blob, mat + '.jpg')
+    try {
+      const r = await fetch(`/api/admin/phaply/ho-so/${caseId}/cccd`, { method: 'POST', body: fd })
+      const j = await r.json().catch(() => ({}))
+      if (!r.ok) { toast(j.error || 'Không tải được ảnh', true); return }
+      setP(o => ({
+        ...o, ...(j.nguoi || {}),
+        cccd_front_path: j.duong_dan?.truoc || o.cccd_front_path, cccd_back_path: j.duong_dan?.sau || o.cccd_back_path,
+        ...(j.cccd_doc ? { cccd_doc: j.cccd_doc } : {}),
+      }))
+      setCanhBao(j.canh_bao || [])
+      setLoiDoc(j.loi_doc || '')
+      setAnh({})
+      if (!j.loi_doc) toast(j.canh_bao?.length ? `Đã đọc — ${j.canh_bao.length} chỗ cần đối chiếu (tô vàng)` : 'Đã đọc CCCD — kiểm lại rồi bấm Lưu')
+    } catch { toast('Mất kết nối — thử lại', true) } finally { setDang(false) }
+  }
+  const xemGoc = async path => {
+    const r = await api(`/api/admin/phaply/ho-so/${caseId}/cccd?path=${encodeURIComponent(path)}`)
+    if (!r.ok) return toast(r.data.error || 'Không mở được ảnh', true)
+    window.open(r.data.url, '_blank', 'noopener')
+  }
+  if (LA_DEMO) return <div className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">📷 Bản demo không nhận ảnh CCCD (tài khoản demo dùng chung) — nhập tay để thử. Đọc CCCD tự động chạy trên app thật.</div>
+  const o = (mat, ten, path) => (
+    <div className="flex-1 min-w-[150px]">
+      <div className="text-xs font-medium text-gray-600 mb-1">{ten}</div>
+      <label className="block cursor-pointer rounded-lg border-2 border-dashed border-gray-300 hover:border-amber-400 h-28 overflow-hidden bg-gray-50">
+        {anh[mat] ? <img src={anh[mat].url} alt={ten} className="w-full h-full object-contain" />
+          : <span className="flex h-full items-center justify-center text-xs text-gray-400 text-center px-2">{path ? '✓ Đã lưu ảnh — bấm để chọn ảnh khác' : 'Bấm chọn / chụp ảnh'}</span>}
+        <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { chon(mat, e.target.files?.[0]); e.target.value = '' }} />
+      </label>
+      {path && path !== 'an' && <button type="button" className="text-xs underline text-gray-600 mt-1" onClick={() => xemGoc(path)}>Xem ảnh gốc đã lưu</button>}
+    </div>
+  )
+  return (
+    <div className="rounded-lg border border-gray-200 p-3 space-y-2">
+      <div className="text-sm font-semibold">📷 Ảnh CCCD — đọc tự động</div>
+      <div className="flex gap-3 flex-wrap">{o('truoc', 'Mặt trước', p.cccd_front_path)}{o('sau', 'Mặt sau', p.cccd_back_path)}</div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <button type="button" className={btnPrimary + ' p-btn-sm'} disabled={dang || (!anh.truoc && !anh.sau)} onClick={doc}>{dang ? 'Đang đọc… (10–30 giây)' : 'Tải lên & đọc CCCD'}</button>
+        <span className="text-xs text-gray-500">Nên chụp cả 2 mặt: mặt sau có mã MRZ để kiểm chéo số, ngày sinh, giới tính.</span>
+      </div>
+      {loiDoc && <div className="text-xs rounded bg-amber-50 text-amber-900 px-2 py-1.5">{loiDoc}</div>}
+      {canhBao.length > 0 && (
+        <ul className="text-xs rounded bg-amber-50 text-amber-900 px-2 py-1.5 list-disc pl-5 space-y-0.5">
+          {canhBao.map((c, i) => <li key={i}>{c.muc}</li>)}
+        </ul>
+      )}
     </div>
   )
 }

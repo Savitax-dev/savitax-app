@@ -70,13 +70,14 @@ export function DiaChiChon({ value, onChange, disabled, nhan = 'Địa chỉ' })
 const dinhNgay = s => { const d = s.replace(/\D/g, '').slice(0, 8); return [d.slice(0, 2), d.slice(2, 4), d.slice(4)].filter(Boolean).join('/') }
 
 // value: dòng legal_people (hoặc một phần) · onChange(nguoiMoi)
-export function NguoiForm({ value, onChange, disabled }) {
+// noiBat: Set khoá trường cần tô nổi (đọc CCCD lệch khi kiểm chéo)
+export function NguoiForm({ value, onChange, disabled, noiBat }) {
   const p = value || {}
   const set = (k, v) => onChange({ ...p, [k]: v })
   const canCuoc = !p.loai_giay_to || /căn cước/i.test(p.loai_giay_to)
   const o = (lb, k, them = {}) => (
     <Field label={lb} className={them.cls}>
-      <input className={inputCls + (them.so ? ' num' : '')} value={p[k] || ''} disabled={disabled} placeholder={them.ph}
+      <input className={inputCls + (them.so ? ' num' : '') + (noiBat?.has(k) ? ' !border-amber-500 !bg-amber-50' : '')} value={p[k] || ''} disabled={disabled} placeholder={them.ph}
         onChange={e => set(k, them.ngay ? dinhNgay(e.target.value) : e.target.value)} />
     </Field>
   )
@@ -85,7 +86,7 @@ export function NguoiForm({ value, onChange, disabled }) {
     <div className="space-y-3">
       <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
         {o('Họ và tên', 'ho_ten', { cls: 'col-span-2 md:col-span-3' })}
-        <Field label="Giới tính"><select className={inputCls} value={p.gioi_tinh || ''} disabled={disabled} onChange={e => set('gioi_tinh', e.target.value)}>
+        <Field label="Giới tính"><select className={inputCls + (noiBat?.has('gioi_tinh') ? ' !border-amber-500 !bg-amber-50' : '')} value={p.gioi_tinh || ''} disabled={disabled} onChange={e => set('gioi_tinh', e.target.value)}>
           <option value="">—</option><option>Nam</option><option>Nữ</option></select></Field>
         {o('Ngày sinh', 'ngay_sinh', { so: true, ngay: true, ph: 'dd/mm/yyyy' })}
         {o('Dân tộc', 'dan_toc', { ph: 'Kinh' })}
@@ -105,7 +106,9 @@ export function NguoiForm({ value, onChange, disabled }) {
         {o('Email', 'email', { cls: 'col-span-1 md:col-span-2' })}
       </div>
       {canCuoc && !p.noi_cap && !disabled && <button type="button" className="text-xs underline text-gray-600" onClick={() => set('noi_cap', NOI_CAP_CCCD)}>Điền nơi cấp căn cước: {NOI_CAP_CCCD}</button>}
-      <DiaChiChon nhan="Thường trú" value={p.thuong_tru} disabled={disabled} onChange={v => set('thuong_tru', v)} />
+      <div className={noiBat?.has('thuong_tru') ? 'rounded-lg ring-2 ring-amber-400 p-2 bg-amber-50/40' : ''}>
+        <DiaChiChon nhan="Thường trú" value={p.thuong_tru} disabled={disabled} onChange={v => set('thuong_tru', v)} />
+      </div>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={!lienLacRieng} disabled={disabled}
           onChange={e => set('lien_lac', e.target.checked ? {} : { ...(p.thuong_tru || {}) })} />
