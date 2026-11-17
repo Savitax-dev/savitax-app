@@ -8,5 +8,5 @@ export const metadata = { title: 'Hướng dẫn — Phân hệ Pháp lý — Ap
 
 export default function TrangHuongDanPhapLy() {
   return <TrangTaiLieu file="huong-dan-phan-he-phap-ly.md" bieuTuong="⚖️" nhan="Dành cho phòng Pháp lý"
-    dau={<div className="pl-ui px-4 md:px-8 pt-5"><ThanhPhapLy dang="/phaply/huong-dan" /></div>} />
+    dau={<div className="pl-ui pl-gon mb-4"><ThanhPhapLy dang="/phaply/huong-dan" /></div>} />
 }

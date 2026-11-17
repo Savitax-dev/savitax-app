@@ -23,6 +23,8 @@
   background: var(--pl-canvas);
   min-height: 100vh;
 }
+/* Khối nhỏ dùng kiểu Pháp lý nằm TRONG trang khác (VD thanh tab ở trang Hướng dẫn): không kéo cao cả màn hình, không nền */
+.pl-ui.pl-gon { min-height: 0; background: transparent; }
 .pl-ui .num {
   font-family: var(--font-pl-mono), ui-monospace, Consolas, monospace;
   font-variant-numeric: tabular-nums;
@@ -38,7 +40,7 @@
   padding: 16px 20px;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;      /* nút "+ Tiếp nhận hồ sơ" canh giữa khung (anh nhắc 17/11/2026) */
   gap: 12px;
   flex-wrap: wrap;
 }
