@@ -1,0 +1,66 @@
+// Biên bản họp Hội đồng thành viên — bổ nhiệm Giám đốc (công ty TNHH hai thành viên trở lên). Theo bản phòng nộp 09/2026.
+// Pháp lý chốt 17/11/2026: câu bổ nhiệm không ghi "là thành viên góp vốn" (Giám đốc có thể thuê ngoài).
+// Danh sách dự họp lặp theo thành viên; số phiếu = phần vốn góp ÷ quy ước (duLieu.js).
+::cot 45/55
+#cb {ten_cty}
+#c --------------------
+#l Số: 01/BBH-HĐTV
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+#ci …………….., ngày……/……/………
+::
+~
+# BIÊN BẢN HỌP CỦA HỘI ĐỒNG THÀNH VIÊN
+#cb Về việc: Bổ nhiệm chức danh {gd_chuc_danh}
+~
+#l **{ten_cty}**[>60]Mã số doanh nghiệp: {ma_dn}
+#l Địa chỉ trụ sở chính: {dia_chi_tru_so}
+Tiến hành họp Hội đồng thành viên về việc: Bổ nhiệm chức danh {gd_chuc_danh}
+#l - Thời gian bắt đầu: vào lúc … giờ … phút, ngày … tháng … năm………
+#l - Địa điểm họp: {dia_chi_tru_so}
+#li Quy ước: {quy_uoc_phieu} đồng tương đương 1 phiếu biểu quyết
+#l - Thành phần tham dự:
+{#thanh_vien}
+#l {stt}. {danh_xung}: **{ho_ten}** - {vai_tro}
+#l Sở hữu phần vốn góp {von_gop} đồng, chiếm {ty_le} vốn điều lệ.
+{/thanh_vien}
+#l - Thư ký cuộc họp: {tk_danh_xung} {tk_ho_ten}
+- {ct_danh_xung} {ct_ho_ten} - chủ tịch Hội đồng thành viên tuyên bố việc triệu tập họp Hội đồng thành viên, điều kiện, thể thức tiến hành họp Hội đồng thành viên phù hợp theo quy định của Luật Doanh nghiệp, Điều lệ công ty; số thành viên dự họp đạt 100% vốn điều lệ đủ điều kiện tiến hành họp Hội đồng thành viên.
+#lb A. Nội dung cuộc họp:
+Hội đồng thành viên lấy ý kiến của các thành viên dự họp về việc bổ nhiệm {gd_danh_xung} **{gd_ho_ten}** giữ chức vụ {gd_chuc_danh} Công ty:
+#l - Căn cước công dân số: {gd_so_giay_to}[>55]- Ngày cấp: {gd_ngay_cap}
+#l - Nơi cấp: {gd_noi_cap}
+#l - Thường trú: {gd_dia_chi_thuong_tru}
+#lb B. Ý kiến phát biểu của các thành viên dự họp:
+#l Phương thức biểu quyết: bỏ phiếu kín
+Hoàn toàn đồng ý về việc bổ nhiệm chức danh {gd_chuc_danh} tại mục A nêu trên.
+#lb C. Biểu quyết:
+#l - Tổng số phiếu biểu quyết hợp lệ: {tong_phieu} phiếu.
+#l - Tổng số phiếu biểu quyết không hợp lệ: 0 phiếu
+- Tổng số phiếu tán thành: {tong_phieu}/{tong_phieu} phiếu đạt tỷ lệ 100% trên tổng số phiếu biểu quyết của thành viên dự họp.
+#l - Tổng số phiếu không tán thành: 0 phiếu
+#l - Tổng số phiếu không có ý kiến: 0 phiếu
+#lb D. Hội đồng thành viên quyết định:
+#l - Thông qua việc biểu quyết tại mục A nêu trên với 100% tổng số phiếu biểu quyết tán thành.
+#l - Giao cho {gd_danh_xung} **{gd_ho_ten}** tiến hành các thủ tục cần thiết theo quy định của pháp luật.
+#l Cuộc họp kết thúc vào lúc … giờ … phút cùng ngày.
+~
+::cot 50/50
+#cb Thư ký cuộc họp
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {tk_ho_ten}
+||
+#cb Chủ tọa cuộc họp
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {ct_ho_ten}
+::

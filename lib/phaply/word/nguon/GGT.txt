@@ -1,0 +1,45 @@
+// Giấy giới thiệu (hồ sơ pháp lý ban đầu) — dùng chung 1TV / 2TV / CP. Theo bản 2TV (đã ghi "Kính gửi" = Thuế cơ sở);
+// người được giới thiệu, nơi cử đến, việc làm: để chấm cho viết tay như bản gốc.
+// Pháp lý chốt 17/11/2026: "Kính gửi" mặc định để chấm cho viết tay; hồ sơ bật dien_thue_san thì in sẵn.
+::cot 45/55
+#cb {ten_cty}
+#c --------------------
+#l Số: ….../GGT
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+#ci …………….., ngày……/……/………
+::
+~
+# GIẤY GIỚI THIỆU
+#c Kính gửi: {#dien_thue_san}{co_quan_thue}{/dien_thue_san}{^dien_thue_san}………………………………………………………………………………………………………………………{/dien_thue_san}
+~
+#b {ten_cty}
+#l Trân trọng giới thiệu:
+#l Ông (bà): [...]
+#l Chức vụ: [...]
+#l Được cử đến: [...]
+#l Để: [...]
+#l [...]
+#l [...]
+#l [...]
+#l [...]
+Đề nghị Quý cơ quan tạo điều kiện để ông (bà) có tên ở trên hoàn thành nhiệm vụ.
+#l Giấy này có giá trị đến hết ngày [..60]./.
+~
+::cot 45/55
+#lb12 Nơi nhận:
+#l12 - Như trên;
+#l12 - Lưu VT.
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#cb {dd_chuc_danh}
+#ci (Ký, đóng dấu và ghi rõ họ tên)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

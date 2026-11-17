@@ -1,0 +1,200 @@
+// Mẫu số 3 — Giấy đề nghị đăng ký doanh nghiệp, Công ty TNHH hai thành viên trở lên (TT 121/2026/TT-BTC, Phụ lục I).
+// Chép theo bản phòng pháp lý đã nộp 09/2026 (bộ 2TV, Mẫu số 3). Cùng khung với MAU2;
+// khác: không có mục Chủ sở hữu / Tài sản góp vốn, mục 7 "Thành viên công ty" gửi kèm Mẫu số 6, đánh số mục lùi 1.
+// Phần chỉ kê khai trong trường hợp đặc biệt giữ nguyên chữ + chỗ chấm như bản PDF.
+// Mẹo "{x}{^x}[...]{/x}" = có dữ liệu thì in, trống thì in dòng chấm.
+@co 12
+@le 15/15/20/12
+@so-trang
+#ci Mẫu số 3
+#ci (Ban hành kèm theo Thông tư số 121/2026/TT-BTC
+#ci ngày 21 tháng 08 năm 2026 của Bộ Tài chính)
+~
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+~
+#ri …......, ngày……/…../…..
+~
+# GIẤY ĐỀ NGHỊ ĐĂNG KÝ DOANH NGHIỆP
+# CÔNG TY TRÁCH NHIỆM HỮU HẠN HAI THÀNH VIÊN TRỞ LÊN
+#c Kính gửi: {phong_dkkd}
+~
+#l Tôi là (ghi họ tên bằng chữ in hoa): {dd_ho_ten}
+#l Ngày, tháng, năm sinh: {dd_ngay_sinh}
+#l Giới tính: {dd_gioi_tinh}
+#l Số định danh cá nhân: {dd_so_giay_to}
+Địa chỉ liên lạc *(chỉ kê khai nếu người đăng ký doanh nghiệp là người đại diện theo pháp luật)*:
+#l Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {dd_ll_so_nha}
+#l Xã/Phường/Đặc khu: {dd_ll_xa}
+#l Tỉnh/Thành phố trực thuộc trung ương: {dd_ll_tinh}
+#l Quốc gia: {dd_ll_quoc_gia}
+#l Điện thoại (nếu có): {dd_dien_thoai}
+#l Thư điện tử (nếu có): {dd_email}
+*Trường hợp không có số định danh cá nhân hoặc việc kết nối giữa Cơ sở dữ liệu quốc gia về đăng ký doanh nghiệp với Cơ sở dữ liệu quốc gia về dân cư bị gián đoạn thì đề nghị kê khai các thông tin cá nhân dưới đây:*
+#l Dân tộc:[..45] Quốc tịch:[...]
+Số Hộ chiếu (*đối với cá nhân Việt Nam không có số định danh cá nhân*)/Số Hộ chiếu nước ngoài hoặc giấy tờ có giá trị thay thế hộ chiếu nước ngoài (*đối với cá nhân là người nước ngoài*):
+#l Ngày cấp: [..45] Nơi cấp: [...]
+#l Nơi thường trú:[...]
+#l Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: …………[...]
+#l Xã/Phường/Đặc khu: [...]
+#l Tỉnh/Thành phố trực thuộc trung ương: [...]
+#l Quốc gia: [...]
+~
+#cb Đăng ký công ty trách nhiệm hữu hạn hai thành viên trở lên do tôi
+#cb là người đại diện theo pháp luật với nội dung sau:
+~
+#b 1. Tình trạng thành lập (đánh dấu X vào ô thích hợp):
+#l Thành lập mới[>85][X]
+#l Thành lập trên cơ sở tách doanh nghiệp[>85][ ]
+#l Thành lập trên cơ sở chia doanh nghiệp[>85][ ]
+#l Thành lập trên cơ sở hợp nhất doanh nghiệp[>85][ ]
+#l Thành lập trên cơ sở chuyển đổi loại hình doanh nghiệp[>85][ ]
+#l Thành lập trên cơ sở chuyển đổi từ hộ kinh doanh[>85][ ]
+#l Thành lập trên cơ sở chuyển đổi từ cơ sở bảo trợ xã hội/quỹ xã hội/quỹ từ thiện[>85][ ]
+**- Lý do chuyển đổi loại hình doanh nghiệp:** *(Quyết định của …/Thành viên không góp vốn/Tiếp nhận thành viên/cổ đông mới/…)*
+#l [...]
+**- Thông tin về các doanh nghiệp bị chia, bị tách, bị hợp nhất, được chuyển đổi** *(phải kê khai trong trường hợp thành lập công ty trên cơ sở chia, tách, hợp nhất, chuyển đổi loại hình doanh nghiệp):*
+#l Tên doanh nghiệp (ghi bằng chữ in hoa):[...]
+#l Mã số doanh nghiệp/Mã số thuế: [...]
+Đề nghị Quý Cơ quan thực hiện chấm dứt tồn tại đối với doanh nghiệp bị chia, bị hợp nhất và các chi nhánh/văn phòng đại diện/địa điểm kinh doanh của doanh nghiệp bị chia, bị hợp nhất.
+**- Thông tin về hộ kinh doanh được chuyển đổi** *(phải kê khai trong trường hợp thành lập công ty trên cơ sở chuyển đổi từ hộ kinh doanh):*
+#l Tên hộ kinh doanh (ghi bằng chữ in hoa): [...]
+#l Mã số hộ kinh doanh/Mã số đăng ký hộ kinh doanh/Mã số thuế:[...]
+*Trường hợp không khai thác được thông tin về hộ kinh doanh được chuyển đổi từ Cơ sở dữ liệu về đăng ký hộ kinh doanh hoặc thông tin khai thác được về hộ kinh doanh được chuyển đổi từ Cơ sở dữ liệu về đăng ký hộ kinh doanh không đầy đủ, không chính xác thì kê khai thêm các nội dung sau:*
+#l Địa chỉ trụ sở hộ kinh doanh: [...]
+#l Tên chủ hộ kinh doanh: [...]
+Loại giấy tờ pháp lý của cá nhân *(kê khai theo giấy tờ pháp lý của cá nhân được ghi trên Giấy chứng nhận đăng ký thuế của hộ kinh doanh):*
+#t [ ]  Chứng minh nhân dân[>45][ ]  Căn cước công dân
+#t [ ]  Hộ chiếu[>45][ ]  Loại khác (ghi rõ):
+Số giấy tờ pháp lý của cá nhân *(kê khai theo giấy tờ pháp lý của cá nhân được ghi trên Giấy chứng nhận đăng ký thuế của hộ kinh doanh):*
+#l Ngày cấp: [..45] Ngày hết hạn (nếu có): [...]
+#l Nơi cấp: [...]
+**- Thông tin về cơ sở bảo trợ xã hội/quỹ xã hội/quỹ từ thiện được chuyển đổi** *(phải kê khai trong trường hợp thành lập doanh nghiệp xã hội trên cơ sở chuyển đổi từ cơ sở bảo trợ xã hội/quỹ xã hội/quỹ từ thiện):*
+#l Tên cơ sở bảo trợ xã hội/quỹ xã hội/quỹ từ thiện (ghi bằng chữ in hoa): [...]
+Số Giấy chứng nhận đăng ký thành lập (Đối với cơ sở bảo trợ xã hội)/Số Giấy phép thành lập và công nhận điều lệ quỹ (Đối với quỹ xã hội/quỹ từ thiện):…….......Ngày cấp:….................Nơi cấp:…[...]
+#l Mã số thuế của cơ sở bảo trợ xã hội/quỹ xã hội/quỹ từ thiện (chỉ kê khai mã số thuế 10 số):
+#l Địa chỉ trụ sở chính: [...]
+#l Tên người đại diện cơ sở bảo trợ xã hội/quỹ xã hội/quỹ từ thiện:
+Loại giấy tờ pháp lý của cá nhân (kê khai theo giấy tờ pháp lý của cá nhân được ghi trên Giấy chứng nhận đăng ký thuế của cơ sở bảo trợ xã hội/quỹ xã hội/quỹ từ thiện):
+#t [ ]  Chứng minh nhân dân[>45][ ]  Căn cước công dân
+#t [ ]  Hộ chiếu[>45][ ]  Loại khác (ghi rõ):
+Số giấy tờ pháp lý của cá nhân (kê khai theo giấy tờ pháp lý của cá nhân được ghi trên Giấy chứng nhận đăng ký thuế của cơ sở bảo trợ xã hội/quỹ xã hội/quỹ từ thiện):
+#l Ngày cấp: [...]
+#l Nơi cấp: [...]
+#l Ngày hết hạn (nếu có): [...]
+#l **- Doanh nghiệp thực hiện dự án đầu tư được đăng ký đầu tư theo thủ tục đầu tư đặc biệt**[>92][ ]
+[ ]  **Doanh nghiệp xã hội** (*Đánh dấu X vào ô vuông nếu là doanh nghiệp xã hội và kèm theo hồ sơ phải có Cam kết thực hiện mục tiêu xã hội, môi trường*)
+[ ]  **Công ty chứng khoán/Công ty quản lý quỹ đầu tư chứng khoán/Công ty đầu tư chứng khoán:** (*Đánh dấu X nếu là Công ty chứng khoán/Công ty quản lý quỹ đầu tư chứng khoán/Công ty đầu tư chứng khoán và kê khai thêm các thông tin sau đây*)
+#l Giấy phép thành lập và hoạt động số: … do Uỷ ban Chứng khoán Nhà nước cấp ngày: …./…./….. (*nếu có*)
+#b 2. Tên công ty:
+#l Tên công ty viết bằng tiếng Việt (*ghi bằng chữ in hoa*):
+#l {ten_cty}
+#l Tên công ty viết bằng tiếng nước ngoài (nếu có):
+#l {ten_cty_nn}{^ten_cty_nn}[...]{/ten_cty_nn}
+#l Tên công ty viết tắt (nếu có):
+#l {ten_cty_viet_tat}{^ten_cty_viet_tat}[...]{/ten_cty_viet_tat}
+#b 3. Địa chỉ trụ sở chính:
+#l Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {tru_so_so_nha}
+#l Xã/Phường/Đặc khu: {tru_so_xa}
+#l Tỉnh/Thành phố trực thuộc trung ương: {tru_so_tinh}
+#l Điện thoại: {cty_dien_thoai}
+#l Thư điện tử (nếu có): {cty_email}
+- Doanh nghiệp nằm trong (*Doanh nghiệp phải đánh dấu X vào ô vuông tương ứng với khu công nghệ cao nếu nộp hồ sơ tới Ban quản lý khu công nghệ cao*):
+#t Khu công nghiệp[>38][ ]
+#t Khu chế xuất[>38][ ]
+#t Khu kinh tế[>38][ ]
+#t Khu công nghệ cao[>38][ ]
+- Doanh nghiệp có Giấy chứng nhận quyền sử dụng đất tại đảo và xã, phường, thị trấn biên giới; xã, phường, thị trấn ven biển; khu vực khác có ảnh hưởng đến quốc phòng, an ninh:
+#t Có  [ ][>30]Không  [X]
+~
+#lk **4. Ngành, nghề kinh doanh** *(ghi tên và mã theo ngành cấp 4 trong Hệ thống ngành kinh tế của Việt Nam):*
+::bang vien 8^ 62< 16^ 14^
+STT | Tên ngành | Mã Ngành | Ngành chính
+---
+{#nganh}{stt} | {ten} | {ma} | **{chinh}**{/nganh}
+::
+~
+#b 5. Vốn điều lệ :
+#l Vốn điều lệ (bằng số, VNĐ): {von_dieu_le} đồng
+#l Vốn điều lệ (bằng chữ, VNĐ): {von_dieu_le_chu}
+#l Giá trị tương đương theo đơn vị tiền nước ngoài (nếu có, ghi bằng số, loại ngoại tệ): Không
+Có hiển thị thông tin về giá trị tương đương theo đơn vị tiền tệ nước ngoài trên Giấy chứng nhận đăng ký doanh nghiệp hay không?
+#t Có  [ ][>30]Không  [X]
+#bk 6. Nguồn vốn điều lệ:
+::bang vien 33< 42> 25^
+Loại nguồn vốn | Số tiền // #ci (bằng số; VNĐ và giá trị tương đương theo đơn vị tiền nước ngoài, nếu có) | Tỷ lệ (%)
+---
+Vốn ngân sách nhà nước | #r | #c
+Vốn tư nhân | {nv_tu_nhan} | {nv_tu_nhan_tl}
+Vốn nước ngoài | #r | #c
+Vốn khác | #r | #c
+**Tổng cộng** | **{nv_tong}** | **{nv_tong_tl}**
+::
+~
+**7. Thành viên công ty:** (kê khai theo Mẫu số 6 Phụ lục I ban hành kèm theo Thông tư này) Gửi kèm.
+- Thông tin về Giấy chứng nhận đăng ký đầu tư (chỉ kê khai nếu thành viên là nhà đầu tư nước ngoài được cấp Giấy chứng nhận đăng ký đầu tư theo quy định của pháp luật – nếu có):
+#l Mã số dự án: [...]
+#l Ngày cấp: [..45] Cơ quan cấp: [...]
+#b 8. Người đại diện theo pháp luật:
+#l Họ, chữ đệm và tên (ghi bằng chữ in hoa): {dd_ho_ten}
+#l Ngày, tháng, năm sinh: {dd_ngay_sinh}
+#l Giới tính: {dd_gioi_tinh}
+#l Số định danh cá nhân: {dd_so_giay_to}
+#l Chức danh: {dd_chuc_danh}
+#l Địa chỉ liên lạc:
+#l Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {dd_ll_so_nha}
+#l Xã/Phường/Đặc khu: {dd_ll_xa}
+#l Tỉnh/Thành phố trực thuộc trung ương: {dd_ll_tinh}
+#l Quốc gia: {dd_ll_quoc_gia}
+#l Điện thoại: {dd_dien_thoai}
+#l Thư điện tử (nếu có): {dd_email}
+*Trường hợp không có số định danh cá nhân hoặc việc kết nối giữa Cơ sở dữ liệu quốc gia về đăng ký doanh nghiệp với Cơ sở dữ liệu quốc gia về dân cư bị gián đoạn thì đề nghị kê khai các thông tin cá nhân dưới đây:*
+#l Dân tộc:[..45] Quốc tịch:[...]
+Số Hộ chiếu (*đối với cá nhân Việt Nam không có số định danh cá nhân*)/Số Hộ chiếu nước ngoài hoặc giấy tờ có giá trị thay thế hộ chiếu nước ngoài (*đối với cá nhân là người nước ngoài*):
+#l Ngày cấp: [..45] Nơi cấp: [...]
+#l Nơi thường trú:[...]
+#l Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: …………[...]
+#l Xã/Phường/Đặc khu: [...]
+#l Tỉnh/Thành phố trực thuộc trung ương: [...]
+#l Quốc gia: [...]
+#bk 9. Thông tin đăng ký thuế:
+::bang vien 10^ 90<
+STT | Các chỉ tiêu thông tin đăng ký thuế
+---
+9.1 | Thông tin về Giám đốc (nếu có): // Họ, chữ đệm và tên Giám đốc: {gd_ho_ten} // Ngày, tháng, năm sinh: {gd_ngay_sinh} // Giới tính: {gd_gioi_tinh} // Số định danh cá nhân: {gd_so_giay_to} // Điện thoại: {gd_dien_thoai}
+9.2 | Thông tin về Kế toán trưởng/Phụ trách kế toán (nếu có): // Họ, chữ đệm và tên Kế toán trưởng/Phụ trách kế toán: {kt_ho_ten}{^kt_ho_ten}[...]{/kt_ho_ten} // Ngày, tháng, năm sinh: {kt_ngay_sinh}{^kt_ngay_sinh}[...]{/kt_ngay_sinh} // Giới tính: {kt_gioi_tinh}{^kt_gioi_tinh}[...]{/kt_gioi_tinh} // Số định danh cá nhân: {kt_so_giay_to}{^kt_so_giay_to}[...]{/kt_so_giay_to} // Điện thoại: {kt_dien_thoai}{^kt_dien_thoai}[...]{/kt_dien_thoai}
+9.3 | Địa chỉ nhận thông báo thuế (chỉ kê khai nếu địa chỉ nhận thông báo thuế khác địa chỉ trụ sở chính): // Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: [...] // Xã/Phường/Đặc khu: [...] // Tỉnh/Thành phố trực thuộc trung ương: [...] // Điện thoại (nếu có):[...] // Fax (nếu có):[...] // Thư điện tử (nếu có):[...]
+9.4 | Ngày bắt đầu hoạt động (trường hợp doanh nghiệp dự kiến bắt đầu hoạt động kể từ ngày được cấp Giấy chứng nhận đăng ký doanh nghiệp thì không cần kê khai nội dung này): {ngay_bat_dau_hd}{^ngay_bat_dau_hd}…../…../…….{/ngay_bat_dau_hd}
+9.5 | Hình thức hạch toán (Đánh dấu X vào một trong hai ô “Hạch toán độc lập” hoặc “Hạch toán phụ thuộc”. Trường hợp chọn ô “Hạch toán độc lập” mà thuộc đối tượng phải lập và gửi báo cáo tài chính hợp nhất cho cơ quan có thẩm quyền theo quy định thì chọn thêm ô “Có báo cáo tài chính hợp nhất”): // Hạch toán độc lập[>25][x:hach_toan_doc_lap][>53]Có báo cáo tài chính hợp nhất[>88][x:bctc_hop_nhat] // Hạch toán phụ thuộc[>25][x:hach_toan_phu_thuoc]
+9.6 | Năm tài chính: // Áp dụng từ ngày: {nam_tc_tu} đến ngày {nam_tc_den}
+9.7 | Tổng số lao động (*dự kiến*): {so_lao_dong}
+9.8 | Có hoạt động theo dự án BOT/BTO/BT/BOO, BLT, BTL, O&M không? // Có[>10][x:bot_co][>25]Không[>38][x:bot_khong]
+9.9 | Phương pháp tính thuế GTGT (chọn 1 trong 4 phương pháp): // Khấu trừ[>35][x:gtgt_khau_tru] // Trực tiếp trên GTGT[>35][x:gtgt_truc_tiep_gtgt] // Trực tiếp trên doanh số[>35][x:gtgt_truc_tiep_doanh_so] // Không phải nộp thuế GTGT[>35][x:gtgt_khong_nop]
+::
+~
+#b 10. Thông tin về việc đóng bảo hiểm xã hội:
+#l Phương thức đóng bảo hiểm xã hội (*chọn 1 trong 3 phương thức*):
+#l Hàng tháng[>17][x:bhxh_hang_thang][>30]03 tháng một lần[>52][x:bhxh_3_thang][>68]06 tháng một lần[>90][x:bhxh_6_thang]
+#b *Lưu ý:*
+- Doanh nghiệp đăng ký ngành, nghề kinh doanh chính là nông nghiệp, lâm nghiệp, ngư nghiệp, diêm nghiệp và trả lương theo sản phẩm, theo khoán: có thể lựa chọn 1 trong 3 phương thức đóng bảo hiểm xã hội: hàng tháng, 03 tháng một lần, 06 tháng một lần.
+- Doanh nghiệp đăng ký ngành, nghề kinh doanh chính khác: đánh dấu vào phương thức đóng bảo hiểm xã hội hàng tháng.
+#b 11. Thông tin về chủ sở hữu hưởng lợi của doanh nghiệp:
+Doanh nghiệp kê khai thông tin về chủ sở hữu hưởng lợi của doanh nghiệp theo Mẫu số 10 ban hành kèm theo Thông tư này.
+Trường hợp hồ sơ đăng ký doanh nghiệp hợp lệ, đề nghị Quý Cơ quan đăng công bố nội dung đăng ký doanh nghiệp trên Cổng thông tin quốc gia về đăng ký doanh nghiệp.
+#lk Tôi cam kết:
+#lk - Là người có đầy đủ quyền và nghĩa vụ thực hiện thủ tục đăng ký doanh nghiệp theo quy định của pháp luật và Điều lệ công ty;
+#lk - Trụ sở chính thuộc quyền sử dụng hợp pháp của công ty và được sử dụng đúng mục đích theo quy định của pháp luật;
+#lk - Chịu trách nhiệm trước pháp luật về tính hợp pháp, chính xác và trung thực của nội dung đăng ký doanh nghiệp trên.
+::cot 45/55
+~
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT CỦA
+#cb CÔNG TY
+#ci (Ký và ghi họ tên)
+~
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

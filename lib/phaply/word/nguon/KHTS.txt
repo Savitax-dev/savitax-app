@@ -1,0 +1,32 @@
+// Đăng ký phương pháp khấu hao tài sản cố định (hồ sơ pháp lý ban đầu) — dùng chung 1TV / 2TV / CP.
+// Pháp lý chốt 17/11/2026: "Kính gửi" + MST mặc định để chấm cho viết tay; hồ sơ bật dien_thue_san thì in sẵn.
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập – Tự do – Hạnh phúc
+#c --------------------------------
+#ri …………….., ngày……/……/………
+~
+#cb13 ĐĂNG KÝ PHƯƠNG PHÁP KHẤU HAO
+#cb13 TÀI SẢN CỐ ĐỊNH
+~
+#c Kính gửi: {#dien_thue_san}{co_quan_thue}{/dien_thue_san}{^dien_thue_san}………………………………………………………………………………………………………………………{/dien_thue_san}
+~
+#l \* Doanh nghiệp: **{ten_cty}**
+#l \* Mã số thuế: {#dien_thue_san}{ma_dn}{/dien_thue_san}{^dien_thue_san}[...]{/dien_thue_san}
+#l \* Địa chỉ: {dia_chi_tru_so}
+#t Thực hiện theo quy định tại Thông tư số 45/2013/TT-BTC do Bộ Tài Chính ban hành ngày 25/04/2013 Hướng dẫn chế độ quản lý, sử dụng và trích khấu hao cho toàn bộ tài sản cố định (TSCĐ).
+#t Nay, chúng tôi xin đăng ký phương pháp trích khấu hao TSCĐ là {pp_khau_hao}.
+#t Trân trọng kính chào.
+~
+::cot 45/55
+~
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#cb {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

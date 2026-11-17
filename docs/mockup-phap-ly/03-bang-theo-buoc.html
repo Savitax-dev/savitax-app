@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>03 · Bảng theo bước</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Bảng theo bước: 10 bước gộp thành 5 cột giai đoạn (mỗi cột 2 bước) để đọc được trên một màn hình;
+// thẻ ghi rõ bước cụ thể. Kéo thẻ sang cột khác để chuyển bước — app ghi nhật ký ai chuyển, lúc nào.
+const GD = [
+  ['Nhận & thu thập', ['tiep_nhan', 'thu_thap'], '#64748B'],
+  ['Báo giá & soạn', ['bao_gia', 'soan'], '#1D4ED8'],
+  ['Ký & nộp', ['trinh_ky', 'nop'], DO],
+  ['Kết quả & thuế', ['ket_qua', 'thue'], '#0E7490'],
+  ['Bàn giao & đóng', ['ban_giao', 'dong'], '#047857'],
+]
+const the = h => { const [tt, mt] = THU_TUC[h.tt], i = BUOC.findIndex(b => b[0] === h.buoc)
+  return `<div class="bg-white rounded-lg border border-gray-200 shadow-sm p-3 mb-2.5" style="border-left:4px solid ${h.con < 0 && h.buoc !== 'dong' ? '#B42318' : '#E5E7EB'}">
+    <div class="flex items-center gap-2"><span class="font-mono text-[11px] text-gray-500">${h.ma}</span>
+      <span class="text-[11px] font-semibold rounded px-1.5 py-0.5 bg-gray-100 text-gray-700">${i + 1}. ${tenBuoc(h.buoc)}</span><span class="ml-auto">${avatar(h.nv)}</span></div>
+    <p class="text-[13px] font-semibold text-gray-900 leading-snug mt-1.5">${h.kh}</p>
+    <div class="flex flex-wrap gap-1 mt-2">${chip(tt, mt)}${chip(LOAI[h.loai])}${h.cho ? chip(CHO[h.cho][0], CHO[h.cho][1]) : ''}</div>
+    <div class="flex items-center mt-2 pt-2 border-t border-gray-100 text-[11.5px]">
+      <span class="${h.con < 0 && h.buoc !== 'dong' ? 'text-red-700 font-bold' : 'text-gray-500'}">⏱ hạn ${h.han}${h.con < 0 && h.buoc !== 'dong' ? ' · trễ ' + (-h.con) + ' ngày' : ''}</span>
+      <span class="ml-auto tabular-nums ${h.daThu >= h.phi + h.thuHo ? 'text-emerald-700' : 'text-amber-700'}">💰 ${tien(h.daThu)}/${tien(h.phi + h.thuHo)}</span></div></div>` }
+
+trang({ dangMo: 'hoso', icon: '📂', tieuDe: 'Hồ sơ pháp lý · theo bước', phu: 'Kéo thẻ để chuyển bước. Viền đỏ = trễ hạn nội bộ. Lọc giống màn Danh sách.',
+  hanhDong: `<div class="flex rounded-lg border border-gray-300 overflow-hidden text-sm bg-white"><span class="px-3 py-1.5 text-gray-600">☰ Danh sách</span><span class="px-3 py-1.5 text-white font-semibold" style="background:${DO}">▦ Theo bước</span></div>${nut('＋ Tiếp nhận', 'chinh')}`,
+  noiDung: `
+  <div class="grid grid-cols-5 gap-3">
+    ${GD.map(([t, ks, mau]) => { const ds = HO_SO.filter(h => ks.includes(h.buoc))
+      return `<div class="rounded-xl bg-[#ECEEF2] p-2 min-h-[820px]">
+        <div class="rounded-lg px-3 py-2 mb-2.5 text-white flex items-center" style="background:${mau}">
+          <div><p class="text-[13px] font-bold">${t}</p><p class="text-[11px] opacity-85">${ks.map(k => (BUOC.findIndex(b => b[0] === k) + 1) + '. ' + tenBuoc(k)).join(' · ')}</p></div>
+          <span class="ml-auto text-[12px] font-bold bg-white/25 rounded-full px-2">${ds.length}</span></div>
+        ${ds.map(the).join('') || '<p class="text-[12px] text-gray-400 text-center mt-8">trống</p>'}</div>` }).join('')}
+  </div>` })
+</script></body></html>

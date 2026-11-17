@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Mockup · Phân hệ Phòng Pháp lý</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body class="bg-[#F5F6F8]"><script>
+const nhom = [
+  ['Tổng quan & danh sách', [
+    ['01-tong-quan.html', '🏛️', 'Tổng quan pháp lý', 'Việc cần xử lý hôm nay, hồ sơ dồn ở bước nào, doanh số & công nợ theo chuyên viên.'],
+    ['02-danh-sach-ho-so.html', '📂', 'Danh sách hồ sơ', 'Lọc theo thủ tục, loại hình, bước, chuyên viên; hạn nội bộ tô màu; thanh đã thu/phải thu.'],
+    ['03-bang-theo-buoc.html', '▦', 'Bảng theo bước', '10 cột theo vòng đời hồ sơ — kéo thẻ để chuyển bước.'],
+    ['04-tiep-nhan.html', '🗂️', 'Tiếp nhận hồ sơ', 'Chọn thủ tục → loại hình → khách → phụ trách → phí. App liệt kê sẵn bộ giấy tờ & thứ khách cần chuẩn bị.'],
+  ]],
+  ['Chi tiết một hồ sơ', [
+    ['05-ho-so-thong-tin.html', '📋', 'Thông tin', 'Nhập một lần cho mọi giấy tờ; địa chỉ chọn theo phường/xã mới; cơ quan thuế gợi ý; "còn thiếu gì".'],
+    ['06-ho-so-nguoi-cccd.html', '👥', 'Người & CCCD', 'Up 2 mặt CCCD → tự điền → kiểm chéo số CCCD, ngày sinh, giới tính, MRZ; vai trò & vốn góp.'],
+    ['07-ho-so-nganh-nghe.html', '🏷️', 'Ngành nghề', 'Tìm mã ngành từ danh mục 6.470 dòng, ngành chính, bộ ngành mẫu, xem trước cách in.'],
+    ['08-ho-so-soan-xuat.html', '📄', 'Soạn & Xuất', 'Bộ giấy tờ theo ma trận; mỗi tờ Word + PDF; phiên bản; tải bản sửa tay; .zip; bộ trình ký 1 PDF.'],
+    ['09-ho-so-trinh-ky-nop.html', '✍️', 'Trình ký & Nộp', 'Ai ký, ký đâu, đã ký/scan; gói nộp trực tuyến; các lần nộp & thông báo bổ sung; kết quả.'],
+    ['10-ho-so-cong-no.html', '💰', 'Công nợ', 'Phí dịch vụ / thu hộ; lịch thu theo đợt; sổ thu; doanh số theo ngày thu; khách trả thiếu.'],
+    ['11-ho-so-ban-giao-dong.html', '📦', 'Bàn giao & Đóng', 'Biên bản bàn giao, điều kiện đóng, cây lưu trữ Drive 1→8, lịch xoá ảnh CCCD 24 tháng.'],
+    ['16-ban-in.html', '🖨️', 'Bản in', 'ĐNTT theo đợt (tách VAT / thu hộ) và trang bìa bộ trình ký.'],
+  ]],
+  ['Báo cáo', [
+    ['12-bao-cao-doanh-so-cong-no.html', '💹', 'Doanh số & công nợ', 'Tồn đầu kỳ + đến hạn − đã thu = chuyển kỳ sau (tách DV/TH); doanh số theo chuyên viên, thủ tục.'],
+    ['13-bao-cao-theo-ho-so.html', '📊', 'Theo hồ sơ', 'Từng hồ sơ trong kỳ: thời gian xử lý, đúng/trễ hạn, tiền tách DV/TH, còn nợ.'],
+  ]],
+  ['Quản trị (Trưởng phòng)', [
+    ['14-mau-ma-tran.html', '🧮', 'Ma trận & mẫu Word', 'Thủ tục × loại hình → giấy tờ; phiên bản mẫu, ngày hiệu lực, người duyệt bản in.'],
+    ['15-danh-muc.html', '🗃️', 'Danh mục', 'Mã ngành dạng cây; phường/xã → cơ quan thuế; nguồn từng danh mục & trạng thái duyệt.'],
+  ]],
+]
+const st = document.createElement('style'); st.textContent = CSS_CHUNG; document.head.appendChild(st)
+document.body.innerHTML = `<div class="max-w-[1180px] mx-auto px-6 py-8" style="font-family:Arial;width:1180px">
+  <div class="flex items-center gap-4 mb-2">
+    <div class="w-12 h-12 rounded-xl bg-white shadow flex items-center justify-center p-1"><img src="../../public/logo-savitax.png" class="w-full h-full object-contain"></div>
+    <div><h1 class="text-2xl font-bold text-gray-900">Phân hệ Phòng Pháp lý — mockup giao diện</h1>
+      <p class="text-sm text-gray-600">app.savitax.vn · /phaply · phân khu "PHÁP LÝ" dưới HCNS – BHXH · dữ liệu giả lập · 31/10/2026</p></div></div>
+  <p class="text-[13px] text-gray-600 mb-5">Kế hoạch chi tiết: <span class="font-mono">docs/phan-he-phap-ly-ke-hoach.md</span>. Các màn dùng đúng khung app hiện tại (menu đỏ đô, bảng dòng liền xen màu, tab chia đều). Anh góp ý trực tiếp theo số màn (VD "màn 06: …").</p>
+
+  <div class="khung p-4 mb-6"><p class="text-[13px] font-bold text-gray-800 mb-2">Vòng đời một hồ sơ</p>${thanhBuoc('soan')}
+    <p class="text-[11.5px] text-gray-500 mt-2">Khớp cây thư mục 1 → 8 phòng đang dùng. Trạng thái chờ (khách / Sở / Thuế / cần bổ sung) tách riêng khỏi bước.</p></div>
+
+  ${nhom.map(([t, ds]) => `<h2 class="text-[15px] font-bold text-gray-800 mb-2 mt-5 border-l-4 pl-2" style="border-color:${DO}">${t}</h2>
+    <div class="grid grid-cols-2 gap-3">${ds.map(([f, ic, ten, mt]) => `<a href="${f}" class="khung px-4 py-3 flex gap-3 hover:shadow-md transition-shadow no-underline">
+      <span class="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style="background:#FBEDED">${ic}</span>
+      <div><p class="text-[14px] font-bold text-gray-900"><span class="font-mono text-[12px] text-gray-400 mr-1">${f.slice(0, 2)}</span>${ten}</p><p class="text-[12.5px] text-gray-600 mt-0.5">${mt}</p></div></a>`).join('')}</div>`).join('')}
+</div>`
+cheDoIn(1180)
+</script></body></html>

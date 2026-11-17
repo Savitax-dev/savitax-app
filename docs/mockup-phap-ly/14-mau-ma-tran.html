@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>14 · Mẫu & danh mục · Ma trận giấy tờ</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Ma trận (nạp từ sheet "Ma trận" phòng đang dùng): thủ tục × loại hình → giấy tờ nào phải soạn.
+// Trưởng phòng tick để đổi, không cần sửa code. ● bắt buộc · ○ tuỳ chọn (chuyên viên tự tick khi xuất).
+const cot = [['TLM', '1TV'], ['TLM', '2TV'], ['TLM', 'CP'], ['TLM', 'HKD'], ['TLM', 'CN/VPĐD'], ['Đổi ĐC', '1TV'], ['Đổi ĐC', '2TV'], ['Tăng vốn', '2TV'], ['Tạm ngưng', 'Mọi loại'], ['Giải thể', '1TV']]
+const B = '●', T = '○', _ = ''
+const hang = [
+  ['Giấy ủy quyền nộp hồ sơ (UQ)', 'Sở', [B, B, B, B, B, B, B, B, B, B]],
+  ['Điều lệ công ty', 'Sở', [B, B, B, _, _, T, T, B, _, _]],
+  ['Biên bản họp HĐTV', 'Sở', [_, _, _, _, _, _, B, B, B, _]],
+  ['Biên bản họp ĐHĐCĐ / HĐQT', 'Sở', [_, _, T, _, _, _, _, _, _, _]],
+  ['Quyết định chủ sở hữu', 'Sở', [_, _, _, _, _, B, _, _, B, B]],
+  ['Nghị quyết HĐTV', 'Sở', [_, _, _, _, _, _, B, B, B, _]],
+  ['Sổ đăng ký cổ đông', 'Lưu', [_, _, B, _, _, _, _, _, _, _]],
+  ['Mẫu số 2 — Đề nghị ĐKDN TNHH 1TV', 'Sở', [B, _, _, _, _, _, _, _, _, _]],
+  ['Mẫu số 3 — Đề nghị ĐKDN TNHH 2TV', 'Sở', [_, B, _, _, _, _, _, _, _, _]],
+  ['Mẫu số 4 — Đề nghị ĐKDN Cổ phần', 'Sở', [_, _, B, _, _, _, _, _, _, _]],
+  ['Mẫu số 6 — Danh sách thành viên', 'Sở', [_, B, _, _, _, _, T, B, _, _]],
+  ['Mẫu số 7 — Danh sách cổ đông sáng lập', 'Sở', [_, _, B, _, _, _, _, _, _, _]],
+  ['Mẫu số 10 — Chủ sở hữu hưởng lợi', 'Sở', [B, B, B, _, _, _, _, _, _, _]],
+  ['Mẫu số 17 — Thông báo lập CN/VPĐD/ĐĐKD', 'Sở', [_, _, _, _, B, _, _, _, _, _]],
+  ['Thông báo thay đổi nội dung ĐKDN', 'Sở', [_, _, _, _, _, B, B, B, _, _]],
+  ['Thông báo tạm ngừng kinh doanh', 'Sở', [_, _, _, _, _, _, _, _, B, _]],
+  ['Thông báo giải thể', 'Sở', [_, _, _, _, _, _, _, _, _, B]],
+  ['Giấy ủy quyền thuế · 08-MST · ĐK hóa đơn', 'Thuế', [B, B, B, T, T, T, T, _, _, B]],
+  ['Biên bản bàn giao', 'Khách', [B, B, B, B, B, B, B, B, B, B]],
+]
+const mau = [
+  ['Mẫu số 2 — Đề nghị ĐKDN TNHH 1TV', 'v1.2', '01/07/2025', 'NĐ 168/2025', 'Phan Mỹ Linh', 'la', 'Đã duyệt'],
+  ['Điều lệ TNHH 1TV — chủ sở hữu cá nhân', 'v1.0', '01/07/2025', 'Luật DN sửa đổi', 'Phan Mỹ Linh', 'la', 'Đã duyệt'],
+  ['Mẫu số 3 — Đề nghị ĐKDN TNHH 2TV', 'v1.0', '01/07/2025', 'NĐ 168/2025', '—', 'cam', 'Chờ duyệt bản in'],
+  ['Biên bản họp HĐTV — tăng vốn', 'v0.9', '—', '—', '—', 'xam', 'Đang chuyển từ Excel'],
+]
+
+trang({ dangMo: 'mau', icon: '🧩', tieuDe: 'Mẫu & danh mục', phu: 'Chỉ Trưởng phòng Pháp lý (quyền manage_phaply_template). Sửa ở đây là áp cho hồ sơ mới; hồ sơ đã xuất giữ đúng phiên bản mẫu lúc xuất.',
+  noiDung: `
+  ${tabDeu([['🧮', 'Ma trận giấy tờ'], ['📝', 'Mẫu Word'], ['✅', 'Checklist & hạn'], ['💳', 'Lịch thu mẫu'], ['🗃️', 'Danh mục']], 'Ma trận giấy tờ')}
+  <div class="khung p-3 mb-4"><div class="overflow-auto">
+    <table class="bang"><thead>
+      <tr><th class="sticky left-0 z-20 min-w-[290px]">Giấy tờ</th><th>Nộp</th>${cot.map(([a, b]) => `<th class="text-center leading-tight">${a}<br><span class="font-normal opacity-80">${b}</span></th>`).join('')}</tr></thead>
+    <tbody>${hang.map(([t, n, v]) => `<tr><td class="sticky left-0 z-10 font-medium text-[12.5px]">${t}</td><td>${chip(n, n === 'Sở' ? 'xanh' : n === 'Thuế' ? 'ngoc' : n === 'Khách' ? 'cam' : 'xam')}</td>
+      ${v.map(x => `<td class="text-center text-[15px] ${x === B ? '' : 'text-gray-400'}" style="${x === B ? `color:${DO}` : ''}">${x || '<span class="text-gray-200">·</span>'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+    <p class="text-[11.5px] text-gray-500 mt-2 px-1"><b style="color:${DO}">●</b> bắt buộc &nbsp; ○ tuỳ chọn &nbsp;·&nbsp; bấm ô để đổi · ${nut('＋ Thêm thủ tục / loại hình', 'phu', 'text-xs py-0.5 ml-2')} ${nut('＋ Thêm giấy tờ', 'phu', 'text-xs py-0.5')} · nạp lần đầu từ sheet "Ma trận" của phòng, chuyên viên pháp lý rà lại trước khi dùng</p></div>
+
+  <div class="khung"><div class="khung-dau"><h2>Mẫu Word · phiên bản & duyệt</h2><span class="ml-auto">${nut('⤒ Tải mẫu Word chuẩn của phòng', 'phu', 'text-xs py-1')}</span></div>
+    <div class="p-3"><table class="bang"><thead><tr><th>Mẫu</th><th>Phiên bản</th><th>Hiệu lực từ</th><th>Căn cứ</th><th>Người duyệt bản in</th><th>Trạng thái</th><th>Kiểm tự động</th></tr></thead><tbody>
+      ${mau.map(([t, v, hl, cc, d, m, tt]) => `<tr><td class="font-semibold text-[13px]">${t}</td><td class="font-mono">${v}</td><td>${hl}</td><td class="text-[12.5px]">${cc}</td><td>${d}</td><td>${chip(tt, m)}</td>
+        <td class="text-[12px] ${m === 'la' ? 'text-emerald-700' : 'text-gray-400'}">${m === 'la' ? '✓ khớp chữ với Excel mẫu · PDF khớp bố cục' : '—'}</td></tr>`).join('')}</tbody></table>
+      <p class="text-[11.5px] text-gray-500 mt-2">Mẫu chỉ hiện cho chuyên viên khi <b>Đã duyệt</b>. Văn bản mới thay mẫu (VD nghị định sửa đổi) → thêm phiên bản mới có ngày hiệu lực, không ghi đè bản cũ.</p></div></div>` })
+</script></body></html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Bìa · Phân hệ Phòng Pháp lý</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Trang bìa bản trình bày PDF: mục tiêu, vòng đời hồ sơ, 10 quyết định anh đã chốt 31/10/2026.
+const quyetDinh = [
+  ['Doanh số', 'Tính khi THU ĐƯỢC tiền — thu theo đợt, thu phần nào tính phần đó vào tháng thu'],
+  ['Phí hồ sơ', 'Tách phí dịch vụ (doanh số) và thu hộ (lệ phí, dấu, chữ ký số — không doanh số)'],
+  ['Menu', 'Phân khu riêng "PHÁP LÝ", ngay dưới HCNS – BHXH'],
+  ['CCCD', 'Đọc bằng Claude; ảnh tự xoá 24 tháng sau khi đóng hồ sơ'],
+  ['Danh mục', 'Cơ quan thuế + phường/xã: em tìm nguồn chính thống, anh duyệt rồi mới nạp'],
+  ['Mẫu Word', 'Chuyên viên pháp lý duyệt bản em chuyển, hoặc gửi mẫu chuẩn'],
+  ['Lưu trữ', 'Drive, giữ cây 8 thư mục 1 → 8'],
+  ['Hạn xử lý', 'Lịch nội bộ trước (bỏ chủ nhật); hạn của cơ quan làm sau'],
+  ['Lương', 'Chưa đưa doanh số pháp lý vào thưởng'],
+  ['Đầu ra', 'Word + PDF; PDF đổi trên VPS của Savitax'],
+]
+const st = document.createElement('style'); st.textContent = CSS_CHUNG; document.head.appendChild(st)
+document.body.innerHTML = `<div style="width:1440px;font-family:Arial,Helvetica,sans-serif;background:#fff">
+  <div style="background:linear-gradient(120deg,${DO},#5E1010);color:#fff;padding:56px 72px 48px;position:relative;overflow:hidden">
+    <div style="position:absolute;right:-80px;top:-80px;width:360px;height:360px;border-radius:50%;background:rgba(201,168,76,.13)"></div>
+    <div class="flex items-center gap-4"><div class="w-16 h-16 rounded-xl bg-white flex items-center justify-center p-1.5"><img src="../../public/logo-savitax.png" class="w-full h-full object-contain"></div>
+      <div><p style="font-size:15px;letter-spacing:.14em;color:#F3D9A0">SAVITAX · APP.SAVITAX.VN</p><p style="font-size:14px;opacity:.85">Bản trình bày giao diện — dữ liệu giả lập</p></div></div>
+    <p style="font-size:46px;font-weight:700;margin-top:34px;line-height:1.15">Phân hệ Phòng Pháp lý</p>
+    <p style="font-size:19px;opacity:.92;margin-top:10px;max-width:900px">Quản lý trọn vòng đời pháp lý của doanh nghiệp — thành lập, thay đổi, tạm ngưng, hoạt động lại, giải thể —
+      từ tiếp nhận, đọc CCCD, soạn bộ hồ sơ Word / PDF, trình ký, nộp Sở, công nợ đến bàn giao và lưu trữ.</p>
+    <div class="flex gap-3 mt-6" style="font-size:13px">${['16 màn hình', '2 vai trò: chuyên viên · trưởng phòng', 'Báo cáo tháng / quý / năm', 'Bản trình bày 01/11/2026'].map(x => `<span style="border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:5px 14px">${x}</span>`).join('')}</div></div>
+  <div style="height:5px;background:linear-gradient(90deg,${DO},${VANG},${DO})"></div>
+
+  <div style="padding:34px 72px 46px">
+    <p class="text-[18px] font-bold text-gray-900 mb-3" style="border-left:5px solid ${DO};padding-left:10px">Vòng đời một hồ sơ</p>
+    ${thanhBuoc('soan')}
+    <p class="text-[13px] text-gray-500 mt-2">Khớp cây thư mục 1 → 8 phòng đang dùng. Trạng thái chờ (khách / Sở / Thuế / cần bổ sung) tách riêng khỏi bước.</p>
+
+    <p class="text-[18px] font-bold text-gray-900 mb-3 mt-8" style="border-left:5px solid ${DO};padding-left:10px">Quyết định anh đã chốt (31/10/2026)</p>
+    <div class="grid grid-cols-2 gap-x-6 gap-y-2">${quyetDinh.map(([k, v], i) => `<div class="flex gap-3 items-start rounded-lg border border-gray-200 px-4 py-2.5">
+      <span class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[13px] font-bold" style="background:${DO}">${i + 1}</span>
+      <div><p class="text-[14px] font-bold text-gray-900">${k}</p><p class="text-[13.5px] text-gray-700">${v}</p></div></div>`).join('')}</div>
+
+    <div class="grid grid-cols-3 gap-4 mt-8">
+      <div class="rounded-xl p-4" style="background:#FBEDED"><p class="font-bold text-[15px]" style="color:${DO}">Trạng thái</p><p class="text-[13.5px] text-gray-800 mt-1">Mới có kế hoạch + mockup. <b>Chưa viết code, chưa đụng dữ liệu, chưa đưa lên app.</b></p></div>
+      <div class="rounded-xl p-4 bg-amber-50"><p class="font-bold text-[15px] text-amber-900">Nguyên tắc triển khai</p><p class="text-[13.5px] text-gray-800 mt-1">Làm và hoàn thiện toàn bộ trên máy local; chỉ đưa lên app.savitax.vn khi anh duyệt.</p></div>
+      <div class="rounded-xl p-4 bg-blue-50"><p class="font-bold text-[15px] text-blue-900">Cách góp ý</p><p class="text-[13.5px] text-gray-800 mt-1">Ghi theo số màn, VD "Màn 06: …". Kế hoạch chi tiết: docs/phan-he-phap-ly-ke-hoach.md</p></div>
+    </div>
+  </div></div>`
+cheDoIn(1440)
+</script></body></html>

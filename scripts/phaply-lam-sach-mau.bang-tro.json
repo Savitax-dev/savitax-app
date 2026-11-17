@@ -1,0 +1,20 @@
+{
+  "GT_1TV": {
+    "2|ThôngTin!B11": "ThôngTin!B10",
+    "3|ThôngTin!B17": "ThôngTin!B19", "3|ThôngTin!B18": "ThôngTin!B20", "3|ThôngTin!B19": "ThôngTin!B21", "3|ThôngTin!B20": "ThôngTin!B22", "3|ThôngTin!B21": "ThôngTin!B23",
+    "1|ThôngTin!B23": "ThôngTin!B19", "1|ThôngTin!B24": "ThôngTin!B20", "1|ThôngTin!B25": "ThôngTin!B21", "1|ThôngTin!B26": "ThôngTin!B22", "1|ThôngTin!B27": "ThôngTin!B23",
+    "1|ThôngTin!B9": "ThôngTin!B10"
+  },
+  "GT_2TV": {
+    "2|ThôngTin!B17": "ThôngTin!B19", "2|ThôngTin!B18": "ThôngTin!B20", "2|ThôngTin!B19": "ThôngTin!B21", "2|ThôngTin!B20": "ThôngTin!B22", "2|ThôngTin!B21": "ThôngTin!B23",
+    "1|ThôngTin!B26": "ThôngTin!B27"
+  },
+  "GT_VPDD_2TV": {
+    "1|ThôngTin!B1": "ThôngTin!B1", "1|ThôngTin!B6": "ThôngTin!B8", "1|ThôngTin!B9": "ThôngTin!B8", "1|ThôngTin!B10": "ThôngTin!B9", "1|ThôngTin!B24": "ThôngTin!B29",
+    "2|ThôngTin!B10": "ThôngTin!B9", "2|ThôngTin!B24": "ThôngTin!B29",
+    "3|ThôngTin!B10": "ThôngTin!B9"
+  },
+  "GT_VPDD_CP": {},
+  "CAPLAI_GPKD_1TV": { "1|Thông tin!C10": "ThôngTin!B18" },
+  "KP_MST_1TV": { "1|ThôngTin!B10": "ThôngTin!B11" }
+}

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>16 · Bản in · ĐNTT & bìa bộ trình ký</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Hai bản in sinh ra từ hồ sơ: (1) ĐNTT theo đợt — cùng mẫu phiếu SVT.MB13 phòng nghiệp vụ đang dùng,
+// tách phí dịch vụ (chịu VAT) và thu hộ; (2) trang bìa của file PDF "bộ trình ký" — in kèm để khách ký đúng chỗ.
+const trangA4 = (noi) => `<div class="bg-white shadow-lg mx-auto" style="width:520px;min-height:735px;padding:30px 34px;font-family:'Times New Roman',serif;font-size:11.5px;line-height:1.5;color:#111">${noi}</div>`
+const td = 'border border-gray-500 px-1.5 py-1'
+
+const dntt = trangA4(`
+  <div class="flex justify-between items-start"><div><p class="font-bold text-[13px]" style="color:#003087;font-family:Arial">CÔNG TY CỔ PHẦN TƯ VẤN THUẾ SAVITAX</p>
+    <p class="text-[9.5px] text-gray-600" style="font-family:Arial">ĐẠI LÝ THUẾ – THÀNH LẬP DOANH NGHIỆP · www.savitax.vn</p></div>
+    <p class="text-[9.5px] text-right" style="font-family:Arial"><b>SVT.MB13</b><br>Ngày: 24/10/2026</p></div>
+  <hr class="my-2 border-t-2" style="border-color:#003087">
+  <p class="text-center font-bold text-[14px] mt-2">PHIẾU ĐỀ NGHỊ THANH TOÁN PHÍ DỊCH VỤ</p>
+  <p class="text-center font-bold" style="color:#003087">Hồ sơ PL-2610-07 · Đợt 1 — khi nhận hồ sơ</p>
+  <p class="mt-2"><b>Kính gửi:</b> Bà NGUYỄN THỊ MAI HƯƠNG — CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ AN PHÚ LỘC (đang thành lập)</p>
+  <table class="w-full mt-2 border-collapse text-[11px]">
+    <tr style="background:#003087;color:#fff"><td class="${td} text-center">Mã</td><td class="${td}">Diễn giải</td><td class="${td} text-right">Số tiền</td></tr>
+    <tr style="background:#F1F8E9"><td class="${td} text-center font-bold">B</td><td class="${td} font-bold">Phí dịch vụ (chịu VAT 8%)</td><td class="${td} text-right font-bold">1.850.000</td></tr>
+    <tr><td class="${td} text-center">B1</td><td class="${td}">Phí dịch vụ thành lập công ty TNHH 1TV — đợt 1/2 (chưa VAT)</td><td class="${td} text-right">1.712.963</td></tr>
+    <tr><td class="${td} text-center text-gray-500">VAT</td><td class="${td} italic text-gray-600">Thuế GTGT 8%</td><td class="${td} text-right text-gray-600">137.037</td></tr>
+    <tr style="background:#FFF8E1"><td class="${td} text-center font-bold">C</td><td class="${td} font-bold">Thu hộ (không chịu VAT)</td><td class="${td} text-right font-bold">2.150.000</td></tr>
+    <tr><td class="${td} text-center">C1</td><td class="${td}">Lệ phí đăng ký doanh nghiệp</td><td class="${td} text-right">50.000</td></tr>
+    <tr><td class="${td} text-center">C2</td><td class="${td}">Khắc dấu tròn công ty</td><td class="${td} text-right">450.000</td></tr>
+    <tr><td class="${td} text-center">C3</td><td class="${td}">Chữ ký số 1 năm</td><td class="${td} text-right">1.650.000</td></tr>
+    <tr style="background:#FCE4EC"><td class="${td} text-center font-bold">B+C</td><td class="${td} font-bold">Tổng đề nghị thanh toán đợt này</td><td class="${td} text-right font-bold" style="color:#c62828">4.000.000</td></tr></table>
+  <p class="mt-2">Đợt 2 (khi có kết quả): <b>1.850.000</b> — sẽ gửi phiếu riêng.</p>
+  <div class="flex items-center gap-5 mt-4">
+    <div class="text-center"><div class="w-[96px] h-[96px] border border-gray-400 flex items-center justify-center text-[10px] text-gray-500" style="font-family:Arial">QR VietQR<br>4.000.000</div>
+      <p class="text-[9.5px] mt-1" style="font-family:Arial">ND: PL261007_ThanhToan_D1</p></div>
+    <div class="flex-1 text-center"><p class="font-bold">Người đề nghị</p><div class="h-12"></div><p class="font-bold">Đỗ Hoài An</p></div></div>`)
+
+const ky = [['Giấy đề nghị ĐKDN (Mẫu số 2)', 4, 1, 'Người đại diện PL', 'trang 4 — ô "Người đại diện theo pháp luật"'],
+  ['Điều lệ công ty TNHH 1TV', 18, 1, 'Chủ sở hữu', 'ký nháy góc phải mỗi trang + ký cuối trang 18'],
+  ['Kê khai chủ sở hữu hưởng lợi (Mẫu số 10)', 1, 1, 'Người đại diện PL', 'cuối trang'],
+  ['Giấy ủy quyền nộp hồ sơ', 1, 1, 'Người đại diện PL + Đỗ Hoài An', '2 ô ký cuối trang']]
+const bia = trangA4(`
+  <div class="flex justify-between text-[10px]" style="font-family:Arial"><span><b>SAVITAX</b> · Phòng Pháp lý</span><span>PL-2610-07 · in 31/10/2026</span></div>
+  <p class="text-center font-bold text-[15px] mt-6">BỘ HỒ SƠ TRÌNH KÝ</p>
+  <p class="text-center font-bold text-[13px]">CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ AN PHÚ LỘC</p>
+  <p class="text-center">Thành lập mới · Công ty TNHH một thành viên · Hồ sơ nộp Phòng ĐKKD — bước 1</p>
+  <table class="w-full mt-4 border-collapse text-[11px]">
+    <tr class="bg-gray-200"><td class="${td} text-center font-bold">STT</td><td class="${td} font-bold">Giấy tờ</td><td class="${td} text-center font-bold">Số trang</td><td class="${td} text-center font-bold">Số bản</td><td class="${td} font-bold">Người ký · vị trí</td><td class="${td} text-center font-bold">Đã ký</td></tr>
+    ${ky.map(([t, p, b, n, v], i) => `<tr><td class="${td} text-center">${i + 1}</td><td class="${td}">${t}</td><td class="${td} text-center">${p}</td><td class="${td} text-center">${b}</td><td class="${td}"><b>${n}</b><br><span class="text-[10px]">${v}</span></td><td class="${td} text-center text-[14px]">☐</td></tr>`).join('')}</table>
+  <div class="mt-4 border border-gray-500 p-2.5">
+    <p class="font-bold">Lưu ý khi ký</p>
+    <p>– Ký bằng bút mực xanh, ghi rõ họ tên đúng như CCCD: <b>NGUYỄN THỊ MAI HƯƠNG</b>.</p>
+    <p>– Công ty <b>chưa có con dấu</b>: không đóng dấu vào bộ hồ sơ này.</p>
+    <p>– Không sửa, tẩy xoá trên giấy tờ; sai thông tin xin báo lại để in bản mới.</p></div>
+  <p class="mt-4">Chuyên viên phụ trách: <b>Đỗ Hoài An</b> · ĐT: 09xx xxx xxx</p>
+  <p class="text-[10px] text-gray-500 mt-8" style="font-family:Arial">Các trang sau: 4 giấy tờ đúng thứ tự trên — tổng 24 trang. App gộp thành 1 file PDF để in một lần.</p>`)
+
+trang({ dangMo: 'hoso', icon: '🖨️', tieuDe: 'Bản in sinh ra từ hồ sơ', phu: 'Trái: ĐNTT theo đợt (mẫu SVT.MB13 hiện có, thêm khối thu hộ). Phải: trang bìa của file PDF "bộ trình ký".',
+  hanhDong: `${nut('⬇ PDF')}${nut('W Word')}`,
+  noiDung: `<div class="grid grid-cols-2 gap-6 bg-[#E6E8EC] rounded-2xl p-6">
+    <div><p class="text-[12px] font-semibold text-gray-600 mb-2 text-center">ĐNTT · đợt 1 · tách phí dịch vụ (VAT) và thu hộ</p>${dntt}</div>
+    <div><p class="text-[12px] font-semibold text-gray-600 mb-2 text-center">Bộ trình ký · trang bìa (trang 1/25)</p>${bia}</div></div>` })
+</script></body></html>

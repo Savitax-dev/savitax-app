@@ -1,0 +1,52 @@
+// Mẫu số 6 — Danh sách thành viên công ty TNHH hai thành viên trở lên. Theo bản phòng pháp lý đã nộp 17/09/2026
+// (bản PDF ghi "Thông tư số 68/2025/TT-BTC" — giữ nguyên). Khổ ngang, 14 cột; cột 13 thành viên ký, Giám đốc ký cuối.
+// Ô cột 5 bản gốc kẻ 6 ô nhỏ; ở đây là 6 đoạn trong MỘT ô — giữ mỗi thành viên một dòng bảng không tách trang (cột ký).
+// Phần II (thành viên là tổ chức) để trống như bản gốc.
+@ngang
+@co 10
+@le 15/15/15/15
+#cb Mẫu số 6
+#ci (Ban hành kèm theo Thông tư số 68/2025/TT-BTC ngày 01 tháng 7 năm 2025 của Bộ trưởng Bộ Tài chính)
+#cb13 DANH SÁCH THÀNH VIÊN CÔNG TY TRÁCH NHIỆM HỮU HẠN HAI THÀNH VIÊN TRỞ LÊN
+#cb {ten_cty}
+#b I. Thành viên là cá nhân
+::bang vien 31^ 67^ 64^ 34^ 100^ 32^ 33^ 66^ 99> 30^ 35^ 65^ 65^ 34^ co=9
+#c STT | #c Tên thành viên | #c Ngày, tháng, năm sinh đối với thành viên là cá nhân | #c Giới tính | #c Loại giấy tờ, số, ngày cấp, cơ quan cấp Giấy tờ pháp lý của cá nhân | #c Quốc tịch | #c Dân tộc | #c Địa chỉ liên lạc | #c Vốn góp | << | << | #c Thời hạn góp vốn | #c Chữ ký của thành viên | #c Ghi chú
+^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | #c Phần vốn góp *(bằng số; VNĐ và giá trị tương đương theo đơn vị tiền nước ngoài: bằng số, loại ngoại tệ, nếu có)* | #c Tỷ lệ (%) | #c Loại tài sản, số lượng, giá trị tài sản góp vốn | ^^ | ^^ | ^^
+#c 1 | #c 2 | #c 3 | #c 4 | #c 5 | #c 6 | #c 7 | #c 8 | #c 9 | #c 10 | #c 11 | #c 12 | #c 13 | #c 14
+---
+{#thanh_vien}{stt} | {ho_ten} | {ngay_sinh} | {gioi_tinh} | {giay_to_ngan} số: // {so_giay_to} // Ngày cấp: // {ngay_cap} // Nơi cấp // {noi_cap} | {qt_bang} | {dt_bang} | {dia_chi_lien_lac} | {von_gop} | {ty_le} | {loai_tai_san} | {thoi_han_gop} | #c | {/thanh_vien}
+::
+~
+#bk II. Thành viên là tổ chức
+~
+#bk 1. Thông tin thành viên
+::bang vien 31^ 67^ 98^ 100^ 162^ 68^ 65^ 65^ 99^ co=9
+#c STT | #c Tên thành viên | #c Số, ngày cấp, nơi cấp Giấy chứng nhận đăng ký doanh nghiệp; Quyết định thành lập hoặc giấy tờ có giá trị pháp lý tương đương | #c Địa chỉ trụ sở chính | #c Vốn góp | << | << | #c Thời hạn góp vốn | #c Ghi chú (nếu có)
+^^ | ^^ | ^^ | ^^ | #c Phần vốn góp *(bằng số; VNĐ và giá trị tương đương theo đơn vị tiền nước ngoài: bằng số, loại ngoại tệ, nếu có)* | #c Tỷ lệ (%) | #c Loại tài sản, số lượng, giá trị tài sản góp vốn | ^^ | ^^
+#c 1 | #c 2 | #c 3 | #c 4 | #c 5 | #c 6 | #c 7 | #c 8 | #c 9
+---
+#c | #c | #c | #c | #c | #c | #c | #c | #c
+::
+~
+#bk 2. Thông tin người đại diện theo pháp luật/ủy quyền của thành viên
+::bang vien 31^ 67^ 64^ 34^ 33^ 67^ 32^ 33^ 66^ 99^ 30^ 100^ 65^ 34^ co=9
+#c STT | #c Tên thành viên | #c Tên người đại diện theo pháp luật/người đại diện theo uỷ quyền | #c Ngày, tháng, năm sinh | #c Giới tính | #c Số, ngày cấp, cơ quan cấp Giấy tờ pháp lý của cá nhân | #c Quốc tịch | #c Dân tộc | #c Địa chỉ liên lạc | #c Vốn được ủy quyền | << | << | #c Chữ ký của người đại diện theo pháp luật/người đại diện theo uỷ quyền¹² | #c Ghi chú (nếu có)
+^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | #c Tổng giá trị vốn được đại diện (bằng số; VNĐ và giá trị tương đương theo đơn vị tiền nước ngoài, nếu có) | #c Tỷ lệ (%) | #c Thời điểm đại diện phần vốn | ^^ | ^^
+#c 1 | #c 2 | #c 3 | #c 4 | #c 5 | #c 6 | #c 7 | #c 8 | #c 9 | #c 10 | #c 11 | #c 12 | #c 13 | #c 14
+---
+#c | #c | #c | #c | #c | #c | #c | #c | #c | #c | #c | #c | #c | #c
+::
+~
+::cot 55/45
+~
+||
+#cb ……, ngày……tháng……năm……
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#ci (Ký và ghi họ tên)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

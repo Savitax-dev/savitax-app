@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>07 · Hồ sơ · Ngành nghề</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Chọn mã ngành từ danh mục (nạp từ sheet MaNganh 6.470 dòng có sẵn của phòng), không gõ tay.
+// Ô tìm có ▾ bung danh sách thả xuống; chọn "bộ ngành mẫu" để thêm cả bộ một lần.
+const h = HO_SO[0]
+const daChon = [
+  ['4649', 'Bán buôn đồ dùng khác cho gia đình', 'Chi tiết: bán buôn đồ gia dụng, hàng gốm sứ, thủy tinh', true],
+  ['4659', 'Bán buôn máy móc, thiết bị và phụ tùng máy khác', '', false],
+  ['4669', 'Bán buôn chuyên doanh khác chưa được phân vào đâu', 'Chi tiết: bán buôn hóa chất (trừ loại sử dụng trong nông nghiệp)', false],
+  ['4690', 'Bán buôn tổng hợp', '', false],
+  ['4759', 'Bán lẻ đồ điện gia dụng, giường, tủ, bàn, ghế… trong các cửa hàng chuyên doanh', '', false],
+  ['4791', 'Bán lẻ theo yêu cầu đặt hàng qua bưu điện hoặc internet', '', false],
+  ['5229', 'Hoạt động dịch vụ hỗ trợ khác liên quan đến vận tải', 'Chi tiết: dịch vụ giao nhận hàng hóa', false],
+  ['8299', 'Hoạt động dịch vụ hỗ trợ kinh doanh khác còn lại chưa được phân vào đâu', 'Chi tiết: xuất nhập khẩu các mặt hàng công ty kinh doanh', false],
+]
+const goiY = [
+  ['4651', 'Bán buôn máy vi tính, thiết bị ngoại vi và phần mềm'], ['4652', 'Bán buôn thiết bị và linh kiện điện tử, viễn thông'],
+  ['4659', 'Bán buôn máy móc, thiết bị và phụ tùng máy khác', true], ['4741', 'Bán lẻ máy vi tính, thiết bị ngoại vi, phần mềm… trong cửa hàng chuyên doanh'],
+  ['4742', 'Bán lẻ thiết bị nghe nhìn trong các cửa hàng chuyên doanh'],
+]
+const bo = [['🛒', 'Thương mại tổng hợp', 14], ['💻', 'Công nghệ thông tin', 11], ['🏗️', 'Xây dựng & nội thất', 16], ['🍜', 'Ăn uống (F&B)', 9], ['🚚', 'Vận tải & logistics', 10], ['📦', 'Thương mại điện tử', 8]]
+
+trang({ dangMo: 'hoso', icon: '📂', tieuDe: 'Chi tiết hồ sơ', noiDung: `
+  ${dauHoSo(h)}
+  ${tabDeu(TAB_HO_SO, 'Ngành nghề')}
+  <div class="grid grid-cols-[1fr_380px] gap-4">
+    <div class="khung"><div class="khung-dau"><h2>Ngành nghề đăng ký · ${daChon.length} ngành</h2>
+        <span class="ml-auto">${chip('Có đúng 1 ngành chính ✓', 'la')}</span></div>
+      <div class="p-4">
+        <div class="relative mb-3">
+          <div class="o flex items-center gap-2" style="border-color:${DO};box-shadow:0 0 0 3px #8B1A1A1a"><span>🔍</span><span>bán buôn máy</span><span class="ml-auto text-gray-400">▾</span></div>
+          <div class="absolute left-0 right-0 mt-1 z-10 bg-white rounded-lg border border-gray-200 shadow-lg">
+            ${goiY.map(([m, t, co]) => `<div class="flex items-center gap-3 px-3 py-1.5 border-b border-gray-100 text-[13px] ${co ? 'bg-gray-50 text-gray-400' : ''}"><span class="font-mono font-semibold w-12" style="color:${co ? '#9CA3AF' : DO}">${m}</span><span>${t}</span>${co ? '<span class="ml-auto text-[11px]">đã chọn</span>' : '<span class="ml-auto text-[11px] text-gray-400">↵ thêm</span>'}</div>`).join('')}
+            <div class="px-3 py-1.5 text-[11.5px] text-gray-500">Tìm theo mã hoặc từ khoá · 6.470 dòng danh mục (cấp 1 → cấp 5)</div></div>
+          <div style="height:178px"></div>
+        </div>
+        <table class="bang"><thead><tr><th class="w-8">#</th><th class="w-16">Mã</th><th>Tên ngành (và ghi chú chi tiết in vào hồ sơ)</th><th class="w-24 text-center">Ngành chính</th><th class="w-10"></th></tr></thead><tbody>
+          ${daChon.map(([m, t, ct, chinh], i) => `<tr><td class="text-gray-400">⋮⋮ ${i + 1}</td><td class="font-mono font-semibold">${m}</td>
+            <td><p class="text-[13px]">${t}</p>${ct ? `<p class="text-[12px] text-gray-600 mt-0.5">${ct}</p>` : `<p class="text-[11.5px] text-gray-400 mt-0.5">＋ thêm chi tiết</p>`}</td>
+            <td class="text-center">${chinh ? `<span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-semibold text-white" style="background:${DO}">● Chính</span>` : '<span class="text-gray-300">○</span>'}</td><td class="text-gray-400 text-center">✕</td></tr>`).join('')}
+        </tbody></table>
+        <p class="text-[11.5px] text-gray-500 mt-2">Kéo ⋮⋮ để đổi thứ tự in. Ngành có điều kiện (VD 4669 hóa chất) app gắn nhắc "ngành kinh doanh có điều kiện — kiểm tra giấy phép con".</p></div></div>
+
+    <div class="space-y-4">
+      <div class="khung"><div class="khung-dau"><h2>Bộ ngành mẫu</h2><span class="ml-auto text-xs text-gray-500">thêm cả bộ một lần</span></div>
+        <div class="p-3 grid grid-cols-2 gap-2">${bo.map(([ic, t, n]) => `<div class="rounded-lg border border-gray-200 px-3 py-2"><p class="text-[13px] font-semibold">${ic} ${t}</p><p class="text-[11.5px] text-gray-500">${n} ngành</p></div>`).join('')}</div>
+        <p class="px-4 pb-3 text-[11.5px] text-gray-500">Trưởng phòng sửa bộ mẫu ở <b>Mẫu & danh mục</b>.</p></div>
+      <div class="khung"><div class="khung-dau"><h2>Lấy từ hồ sơ cũ</h2></div>
+        <div class="p-3 text-[13px] space-y-2">
+          <div class="rounded-lg border border-gray-200 px-3 py-2"><p class="font-semibold">Sao chép từ doanh nghiệp khác</p><p class="text-[11.5px] text-gray-500">VD công ty mẹ, khách cùng ngành đã làm</p></div>
+          <div class="rounded-lg border border-gray-200 px-3 py-2"><p class="font-semibold">Dán danh sách mã từ khách gửi</p><p class="text-[11.5px] text-gray-500">"4649, 4659, 4690…" → app tự tra tên ngành chuẩn</p></div></div></div>
+      <div class="khung p-4 text-[12.5px]"><p class="font-semibold text-gray-800 mb-1">Xem trước cách in vào Mẫu số 2</p>
+        <table class="w-full border border-gray-400 text-[11.5px]"><tr class="bg-gray-100"><td class="border border-gray-400 px-1 text-center">STT</td><td class="border border-gray-400 px-1">Tên ngành</td><td class="border border-gray-400 px-1 text-center">Mã ngành</td></tr>
+          <tr><td class="border border-gray-400 px-1 text-center">1</td><td class="border border-gray-400 px-1">Bán buôn đồ dùng khác cho gia đình<br><i>Chi tiết: bán buôn đồ gia dụng…</i></td><td class="border border-gray-400 px-1 text-center">4649<br>(chính)</td></tr>
+          <tr><td class="border border-gray-400 px-1 text-center">2</td><td class="border border-gray-400 px-1">Bán buôn máy móc, thiết bị…</td><td class="border border-gray-400 px-1 text-center">4659</td></tr></table></div>
+    </div>
+  </div>` })
+</script></body></html>

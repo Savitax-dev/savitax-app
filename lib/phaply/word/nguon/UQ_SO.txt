@@ -1,0 +1,45 @@
+// Giấy ủy quyền nộp hồ sơ đăng ký doanh nghiệp tại Phòng ĐKKD — dùng chung 1TV / 2TV / CP.
+// Theo bản phòng pháp lý đã nộp (09–10/2026). Pháp lý chốt 17/11/2026: gộp 1 mẫu, KHÔNG có địa chỉ người ủy quyền,
+// câu nộp hồ sơ đổi theo loại hình (công ty TNHH / công ty cổ phần).
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+#ri …………….., ngày……/……/………
+~
+# GIẤY ỦY QUYỀN
+~
+#l {dd_danh_xung}: **{dd_ho_ten}**
+#l Số định danh cá nhân: {dd_so_giay_to}[>55]Ngày cấp: {dd_ngay_cap}
+#l Nơi cấp: {dd_noi_cap}
+#l Số điện thoại: {dd_dien_thoai}
+Bằng giấy này, chúng tôi ủy quyền cho:
+#l {uq_danh_xung}: **{uq_ho_ten}**
+#l Số định danh cá nhân: {uq_so_giay_to}[>55]Ngày cấp: {uq_ngay_cap}
+#l Nơi cấp: {uq_noi_cap}
+#l Số điện thoại: {uq_dien_thoai}
+#l Địa chỉ liên lạc: {uq_dia_chi_lien_lac}
+Để thực hiện thay chúng tôi với các nội dung như sau:
+- Thay mặt người đại diện theo pháp luật liên hệ {phong_dkkd} để:
++ Nộp hồ sơ thành lập mới công ty {#la_cp}cổ phần{/la_cp}{^la_cp}TNHH{/la_cp}, nhận thông báo sửa đổi, bổ sung hồ sơ, rút hồ sơ;
++ Nhận kết quả, ký nhận Giấy chứng nhận đăng ký doanh nghiệp.
+- Chúng tôi xin chịu trách nhiệm trước pháp luật về mọi cam kết do Bên được ủy quyền nhân danh chúng tôi thực hiện trong phạm vi ủy quyền nêu trên.
+- Chúng tôi công nhận đã hiểu rõ quyền, nghĩa vụ và lợi ích hợp pháp của mình và hậu quả pháp lý của việc ủy quyền.
+- Thời hạn ủy quyền: kể từ ngày ký cho đến khi bên được ủy quyền hoàn thành các thủ tục nêu trên./.
+~
+::cot 50/50
+#cb NGƯỜI ĐƯỢC ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {uq_ho_ten}
+||
+#cb NGƯỜI ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

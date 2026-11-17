@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>12 · Báo cáo · Doanh số & công nợ</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Doanh số = phí dịch vụ THU ĐƯỢC trong kỳ (anh chốt 31/10). Công nợ = dòng tiền: tồn đầu kỳ + đợt
+// đến hạn − đã thu = chuyển kỳ sau, tách Dịch vụ / Thu hộ. Bất biến: chuyển kỳ sau T(n) = tồn đầu T(n+1).
+const M = 1000000, tr = v => (v / M).toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' tr'
+const thang = [ // [tháng, tồnDV, tồnTH, psDV, psTH, thuDV, thuTH]
+  ['T7/2026', 2.0, 0.5, 14.0, 6.0, 12.5, 5.8], ['T8/2026', 3.5, 0.7, 16.4, 7.2, 15.9, 7.6], ['T9/2026', 4.0, 0.3, 19.8, 8.5, 18.1, 8.1],
+].map(r => [r[0], ...r.slice(1).map(x => x * M)])
+const nv = [['tam', 2, 2, 4.2, 0.3], ['an', 9, 7, 15.1, 2.1], ['linh', 10, 8, 16.3, 2.6], ['duy', 7, 6, 10.9, 1.4]]
+const tt = [['tlm', 14, 24.6], ['td_dc', 8, 12.4, 'Thay đổi (các loại)'], ['tam_ngung', 3, 4.5], ['giai_the', 2, 4.0], ['cap_lai', 1, 1.0, 'Khác']]
+
+const theDong = (nhan, dv, th, mau, dau = '') => { const hx = HEX[mau]
+  return `<div class="khung overflow-hidden" style="border-color:${hx}40"><div class="h-1" style="background:${hx}"></div>
+    <div class="px-4 py-2.5"><p class="text-[12px] font-semibold text-gray-600">${dau}${nhan}</p><p class="text-[24px] font-bold tabular-nums" style="color:${hx}">${tien(dv + th)}</p>
+    <div class="mt-1 grid grid-cols-2 text-[11.5px]"><span class="text-blue-800">DV ${tien(dv)}</span><span class="text-amber-800 text-right">TH ${tien(th)}</span></div></div></div>` }
+
+trang({ dangMo: 'baocao', icon: '📊', tieuDe: 'Báo cáo pháp lý', phu: 'Quý 3/2026 · cả phòng · DV = phí dịch vụ (doanh số) · TH = thu hộ (không doanh số)',
+  hanhDong: `<div class="flex rounded-lg border border-gray-300 overflow-hidden text-sm bg-white"><span class="px-3 py-1.5 text-gray-600">Tháng</span><span class="px-3 py-1.5 text-white font-semibold" style="background:${DO}">Quý</span><span class="px-3 py-1.5 text-gray-600">Năm</span></div>
+    <div class="khung px-3 py-1.5 text-sm font-semibold">Quý 3/2026 ▾</div><div class="khung px-3 py-1.5 text-sm">Cả phòng ▾</div>${nut('⬇ Excel')}`,
+  noiDung: `
+  ${tabDeu([['💹', 'Doanh số & công nợ'], ['📋', 'Theo hồ sơ'], ['👥', 'Theo chuyên viên'], ['⏳', 'Hồ sơ treo']], 'Doanh số & công nợ')}
+
+  <div class="grid grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] items-center gap-2 mb-4">
+    ${theDong('Tồn đầu kỳ', 2.0 * M, 0.5 * M, 'xam')}<span class="text-2xl text-gray-400 font-bold">+</span>
+    ${theDong('Đến hạn trong kỳ', 50.2 * M, 21.7 * M, 'tim')}<span class="text-2xl text-gray-400 font-bold">−</span>
+    ${theDong('Đã thu trong kỳ', 46.5 * M, 21.5 * M, 'la')}<span class="text-2xl text-gray-400 font-bold">=</span>
+    ${theDong('Chuyển kỳ sau', 5.7 * M, 0.7 * M, 'cam')}
+  </div>
+
+  <div class="grid grid-cols-3 gap-3 mb-4">
+    ${oTong(tien(46.5 * M), 'Doanh số quý (DV đã thu, gồm VAT)', 'xanh', 'trước VAT ' + tien(46.5 * M / 1.08) + ' · quý trước 39.800.000 (+16,8%)')}
+    ${oTong('28 / 23', 'Hồ sơ mới / hoàn thành', 'ngoc', '5 hồ sơ chuyển sang quý sau')}
+    ${oTong('82%', 'Hoàn thành đúng hạn nội bộ', 'la', '19/23 hồ sơ đóng trong hạn')}
+  </div>
+
+  <div class="grid grid-cols-[1.35fr_1fr] gap-4">
+    <div class="khung"><div class="khung-dau"><h2>Dòng tiền theo tháng</h2><span class="ml-auto">${chip('Chuyển kỳ sau tháng trước = tồn đầu tháng sau ✓', 'la')}</span></div>
+      <div class="p-3"><table class="bang"><thead><tr><th>Kỳ</th><th>Loại</th><th class="so">Tồn đầu kỳ</th><th class="so">Đến hạn</th><th class="so">Đã thu</th><th class="so">Chuyển kỳ sau</th></tr></thead><tbody>
+        ${thang.map(([t, tdv, tth, pdv, pth, udv, uth]) => `
+          <tr><td rowspan="2" class="font-semibold">${t}</td><td>${chip('Dịch vụ', 'xanh')}</td><td class="so">${tien(tdv)}</td><td class="so">${tien(pdv)}</td><td class="so font-semibold">${tien(udv)}</td><td class="so">${tien(tdv + pdv - udv)}</td></tr>
+          <tr><td>${chip('Thu hộ', 'cam')}</td><td class="so">${tien(tth)}</td><td class="so">${tien(pth)}</td><td class="so">${tien(uth)}</td><td class="so">${tien(tth + pth - uth)}</td></tr>`).join('')}
+        <tr class="tong"><td>Quý 3</td><td>Cộng</td><td class="so">2.500.000</td><td class="so">71.900.000</td><td class="so">68.000.000</td><td class="so">6.400.000</td></tr></tbody></table></div></div>
+
+    <div class="space-y-4">
+      <div class="khung"><div class="khung-dau"><h2>Theo chuyên viên</h2></div>
+        <div class="p-3"><table class="bang"><thead><tr><th>Chuyên viên</th><th class="so">Mới</th><th class="so">Xong</th><th class="so">Doanh số</th><th class="so">Còn phải thu</th></tr></thead><tbody>
+          ${nv.map(([k, moi, xong, ds, no]) => `<tr><td>${nguoi(k)}</td><td class="so">${moi}</td><td class="so">${xong}</td><td class="so font-semibold">${tien(ds * M)}</td><td class="so">${tien(no * M)}</td></tr>`).join('')}
+          <tr class="tong"><td>Cả phòng</td><td class="so">28</td><td class="so">23</td><td class="so">46.500.000</td><td class="so">6.400.000</td></tr></tbody></table></div></div>
+      <div class="khung"><div class="khung-dau"><h2>Theo thủ tục</h2></div>
+        <div class="p-4 space-y-2">${tt.map(([k, n, ds, ten]) => `<div class="flex items-center gap-3"><span class="w-36 text-[12.5px]">${ten || THU_TUC[k][0]} <span class="text-gray-400">(${n})</span></span>
+          <div class="flex-1 h-4 bg-gray-100 rounded"><div class="h-full rounded" style="width:${ds / 24.6 * 100}%;background:${HEX[THU_TUC[k][1]]}"></div></div><span class="w-24 text-right text-[12.5px] font-semibold tabular-nums">${tien(ds * M)}</span></div>`).join('')}</div></div>
+    </div>
+  </div>` })
+</script></body></html>

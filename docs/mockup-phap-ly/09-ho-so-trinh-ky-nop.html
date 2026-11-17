@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>09 · Hồ sơ · Trình ký & Nộp</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Hồ sơ đổi địa chỉ (2TV) đang "Cần bổ sung": trái = in/ký/scan từng tờ (lấy từ file Hướng dẫn in ký);
+// phải = các lần nộp, thông báo sửa đổi bổ sung, kết quả. Một hồ sơ có thể nộp nhiều vòng.
+const h = HO_SO[2]
+const ky = [
+  ['Thông báo thay đổi nội dung ĐKDN', 2, 'Người đại diện PL', 'ký cuối trang 3', true, true],
+  ['Nghị quyết Hội đồng thành viên', 2, 'Chủ tịch HĐTV', 'ký + đóng dấu', true, true],
+  ['Biên bản họp Hội đồng thành viên', 2, 'Chủ tọa + thư ký + 2 thành viên', 'ký từng trang', true, false],
+  ['Giấy ủy quyền nộp hồ sơ', 1, 'Người đại diện PL', 'ký + đóng dấu', true, true],
+  ['Hợp đồng thuê trụ sở (khách cấp)', 1, '—', 'bản sao', true, true],
+]
+const vong = [
+  ['xanh', '28/10 · Nộp lần 1', 'Trực tuyến · mã hồ sơ 2610xxxx · hẹn trả 31/10', 'Đỗ Hoài An'],
+  ['do', '30/10 · Thông báo sửa đổi, bổ sung', '"Địa chỉ trụ sở ghi theo đơn vị hành chính cũ (Quận 3). Đề nghị ghi theo phường mới." — hạn nội bộ trả lời 31/10', 'Sở'],
+  ['cam', '31/10 · Đang sửa', 'Đã sửa địa chỉ ở tab Thông tin → xuất lại Thông báo thay đổi v3 → gửi khách ký lại 1 tờ', 'Đỗ Hoài An'],
+]
+
+trang({ dangMo: 'hoso', icon: '📂', tieuDe: 'Chi tiết hồ sơ', noiDung: `
+  ${dauHoSo(h, `${nut('🧾 ĐNTT')}${nut('＋ Ghi lần nộp')}${nut('Chuyển bước ▸', 'chinh')}`)}
+  ${tabDeu(TAB_HO_SO, 'Trình ký & Nộp')}
+  <div class="grid grid-cols-[1.2fr_1fr] gap-4">
+    <div class="space-y-4">
+      <div class="khung"><div class="khung-dau"><h2>In & trình ký</h2><span class="text-xs text-gray-500">theo "Hướng dẫn in ký — Thay đổi"</span>
+        <span class="ml-auto">${nut('🖨️ In bộ trình ký (PDF)', 'phu', 'text-xs py-1')}</span></div>
+        <div class="p-3"><table class="bang"><thead><tr><th>Giấy tờ</th><th class="so">Số bản</th><th>Ai ký</th><th>Cách ký</th><th class="text-center">Đã ký</th><th class="text-center">Scan</th></tr></thead><tbody>
+          ${ky.map(([t, b, ai, cach, daKy, scan]) => `<tr><td class="font-semibold text-[13px]">${t}</td><td class="so">${b}</td><td class="text-[12.5px]">${ai}</td><td class="text-[12.5px] text-gray-600">${cach}</td>
+            <td class="text-center">${daKy ? '<span class="text-emerald-700 font-bold">✓</span>' : '☐'}</td>
+            <td class="text-center">${scan ? '<span class="text-emerald-700 text-[12px] font-semibold">✓ PDF</span>' : '<span class="text-[12px] px-1.5 py-0.5 rounded border border-amber-300 bg-amber-50 text-amber-800">⤒ tải</span>'}</td></tr>`).join('')}
+        </tbody></table></div></div>
+
+      <div class="khung"><div class="khung-dau"><h2>Gói nộp trực tuyến</h2><span class="ml-auto">${chip('4/5 tệp scan', 'cam')}</span></div>
+        <div class="p-4 text-[13px] space-y-2">
+          <p class="text-gray-600">App ghép các bản scan đã ký theo đúng thứ tự, đặt tên từng tệp theo giấy tờ và kiểm dung lượng trước khi nộp lên cổng.</p>
+          <div class="grid grid-cols-5 gap-2">${['01_ThongBao_ThayDoi.pdf', '02_NghiQuyet_HDTV.pdf', '03_BienBan_HDTV.pdf', '04_UyQuyen.pdf', '05_HopDong_ThueNha.pdf'].map((f, i) => `<div class="rounded-lg border ${i === 2 ? 'border-dashed border-amber-400 bg-amber-50' : 'border-gray-200 bg-white'} px-2 py-2 text-center"><p class="text-xl">${i === 2 ? '⏳' : '📄'}</p><p class="text-[10.5px] font-mono break-all">${f}</p><p class="text-[10.5px] text-gray-500">${i === 2 ? 'chờ scan' : ['412', '388', '', '205', '1.180'][i] + ' KB'}</p></div>`).join('')}</div>
+          <div class="flex gap-2 pt-1">${nut('⬇ Tải gói nộp (.zip)')}${nut('☁️ Lưu vào Drive: 6. SCAN')}</div></div></div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="khung"><div class="khung-dau"><h2>Nộp & thông báo của Sở</h2><span class="ml-auto">${chip('Cần bổ sung', 'do')}</span></div>
+        <div class="p-4"><div class="relative pl-5">
+          <div class="absolute left-[7px] top-1 bottom-1 w-0.5 bg-gray-200"></div>
+          ${vong.map(([m, t, nd, ai]) => `<div class="relative mb-4"><span class="absolute -left-5 top-1 w-3.5 h-3.5 rounded-full border-2 border-white ${CHAM[m]}" style="box-shadow:0 0 0 1px #D1D5DB"></span>
+            <p class="text-[13px] font-bold text-gray-900">${t}</p><p class="text-[12.5px] text-gray-700 mt-0.5">${nd}</p><p class="text-[11.5px] text-gray-400 mt-0.5">${ai}</p></div>`).join('')}
+          <div class="relative"><span class="absolute -left-5 top-1 w-3.5 h-3.5 rounded-full border-2 border-dashed border-gray-400 bg-white"></span>
+            <p class="text-[13px] font-semibold text-gray-400">Nộp lần 2 — chưa nộp</p></div></div>
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <div><span class="nhan">Kênh nộp</span><div class="o">Trực tuyến (cổng ĐKKD) ▾</div></div>
+            <div><span class="nhan">Mã hồ sơ / biên nhận</span><div class="o font-mono">2610xxxx</div></div></div></div></div>
+
+      <div class="khung"><div class="khung-dau"><h2>Kết quả</h2><span class="text-xs text-gray-500">nhập khi có — app tự cập nhật thông tin doanh nghiệp</span></div>
+        <div class="p-4 grid grid-cols-2 gap-3">
+          <div><span class="nhan">Loại kết quả</span><div class="o">Giấy xác nhận thay đổi ▾</div></div>
+          <div><span class="nhan">Ngày cấp</span><div class="o text-gray-400">dd/mm/yyyy</div></div>
+          <div><span class="nhan">Mã số doanh nghiệp</span><div class="o khoa">0318 xxx 456 (đã có)</div></div>
+          <div><span class="nhan">Bản kết quả</span><div class="o text-gray-400">⤒ tải PDF kết quả</div></div>
+          <p class="col-span-2 text-[11.5px] text-gray-500">Lưu xong: địa chỉ mới thành địa chỉ chính thức của doanh nghiệp trong app; tự gợi ý lập hồ sơ thuế nếu đổi cơ quan thuế quản lý.</p></div></div>
+    </div>
+  </div>` })
+</script></body></html>

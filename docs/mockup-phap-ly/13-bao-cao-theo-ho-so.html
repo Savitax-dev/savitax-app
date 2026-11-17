@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>13 · Báo cáo · Theo hồ sơ</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Một dòng một hồ sơ trong kỳ: tiến độ, thời gian xử lý, đúng/trễ hạn, tiền tách DV / thu hộ. Bảng cuộn
+// trong khung, tiêu đề + cột mã/doanh nghiệp cố định (anh không chịu thanh kéo ngang ở cuối bảng).
+const dongXong = [
+  ['PL-2609-09', 'CÔNG TY TNHH CƠ KHÍ PHÚ THỊNH', 'tlm', 'cn', 'tam', '18/09', '29/09', 9, true, 2500000, 150000, 2500000, 150000],
+  ['PL-2609-07', 'CÔNG TY TNHH SẢN XUẤT BAO BÌ HOÀNG LONG', 'tlm', '2tv', 'linh', '12/09', '26/09', 13, false, 4500000, 2250000, 4500000, 2250000],
+  ['PL-2609-05', 'CÔNG TY CỔ PHẦN DỊCH VỤ DU LỊCH BIỂN XANH', 'td_von', 'cp', 'an', '08/09', '18/09', 9, true, 3000000, 100000, 3000000, 100000],
+  ['PL-2609-03', 'CÔNG TY TNHH TƯ VẤN KIẾN TRÚC ĐẤT VIỆT', 'tam_ngung', '1tv', 'duy', '04/09', '12/09', 7, true, 1500000, 0, 1500000, 0],
+  ['PL-2609-01', 'CÔNG TY TNHH THƯƠNG MẠI KIM NGÂN', 'giai_the', '1tv', 'an', '01/09', '—', null, null, 8000000, 0, 6000000, 0],
+]
+const dangLam = HO_SO.filter(h => h.buoc !== 'dong').slice(0, 7).map(h => [h.ma, h.kh, h.tt, h.loai, h.nv, h.nhan, '—', null, h.con >= 0 ? null : false, h.phi, h.thuHo, Math.max(0, h.daThu - h.thuHo), Math.min(h.daThu, h.thuHo), h.buoc])
+
+const dong = ([ma, kh, t, l, nv, nhan, xong, ngay, dung, pdv, pth, tdv, tth, buoc]) => { const no = pdv + pth - tdv - tth
+  return `<tr><td class="font-mono text-[11.5px] font-semibold sticky left-0 z-10 w-[96px] min-w-[96px] whitespace-nowrap">${ma}</td><td class="sticky left-[96px] z-10 min-w-[260px]"><span class="text-[12.5px] font-semibold">${kh}</span></td>
+  <td>${chip(THU_TUC[t][0], THU_TUC[t][1])}</td><td>${LOAI[l]}</td><td>${nguoi(nv)}</td><td>${nhan}</td><td>${xong}</td>
+  <td class="so">${ngay ?? '<span class="text-gray-300">—</span>'}</td>
+  <td>${dung === true ? chip('Đúng hạn', 'la') : dung === false ? chip('Trễ', 'do') : buoc ? chip(tenBuoc(buoc), 'xam') : chip('Đang làm', 'xam')}</td>
+  <td class="so">${tien(pdv)}</td><td class="so">${tien(pth)}</td><td class="so text-blue-800 font-semibold">${tien(tdv)}</td><td class="so text-amber-800">${tien(tth)}</td><td class="so ${no > 0 ? 'text-red-700 font-bold' : 'text-emerald-700'}">${tien(no)}</td></tr>` }
+
+trang({ dangMo: 'baocao', icon: '📊', tieuDe: 'Báo cáo pháp lý', phu: 'Tháng 9 – 10/2026 · mọi hồ sơ có phát sinh trong kỳ (nhận, xử lý hoặc thu tiền)',
+  hanhDong: `<div class="flex rounded-lg border border-gray-300 overflow-hidden text-sm bg-white"><span class="px-3 py-1.5 text-white font-semibold" style="background:${DO}">Tháng</span><span class="px-3 py-1.5 text-gray-600">Quý</span><span class="px-3 py-1.5 text-gray-600">Năm</span></div>
+    <div class="khung px-3 py-1.5 text-sm font-semibold">T9 → T10/2026 ▾</div>${nut('⬇ Excel')}`,
+  noiDung: `
+  ${tabDeu([['💹', 'Doanh số & công nợ'], ['📋', 'Theo hồ sơ'], ['👥', 'Theo chuyên viên'], ['⏳', 'Hồ sơ treo']], 'Theo hồ sơ')}
+  <div class="khung p-3"><div class="overflow-auto" style="max-height:690px">
+    <table class="bang" style="min-width:1480px"><thead><tr>
+      <th class="sticky left-0 z-20 w-[96px] min-w-[96px]">Mã</th><th class="sticky left-[96px] z-20">Doanh nghiệp</th><th>Thủ tục</th><th>Loại</th><th>Phụ trách</th><th>Nhận</th><th>Đóng</th><th class="so">Ngày xử lý</th><th>Kết quả</th>
+      <th class="so">Phí DV</th><th class="so">Thu hộ</th><th class="so">Đã thu DV</th><th class="so">Đã thu TH</th><th class="so">Còn nợ</th></tr></thead>
+    <tbody><tr class="nhom"><td colspan="14">Đã hoàn thành · ${dongXong.length}</td></tr>${dongXong.map(dong).join('')}
+      <tr class="nhom"><td colspan="14">Đang xử lý · ${dangLam.length}</td></tr>${dangLam.map(dong).join('')}
+      ${(() => { const all = [...dongXong, ...dangLam], c = i => all.reduce((s, r) => s + r[i], 0)
+        return `<tr class="tong"><td colspan="9">Cộng · ${all.length} hồ sơ</td><td class="so">${tien(c(9))}</td><td class="so">${tien(c(10))}</td><td class="so">${tien(c(11))}</td><td class="so">${tien(c(12))}</td><td class="so">${tien(c(9) + c(10) - c(11) - c(12))}</td></tr>` })()}</tbody></table></div>
+    <p class="text-[11.5px] text-gray-500 mt-2 px-1">"Ngày xử lý" đếm từ ngày nhận tới ngày có kết quả (ngày lịch, bỏ chủ nhật). Excel xuất ra giữ nguyên màu, khung và cố định tiêu đề như trên màn hình.</p></div>` })
+</script></body></html>

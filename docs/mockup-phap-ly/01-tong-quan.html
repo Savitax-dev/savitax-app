@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>01 · Tổng quan pháp lý</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Màn đầu tiên trưởng phòng mở mỗi sáng: việc nào kẹt, hồ sơ nào trễ, tiền tháng này.
+const theoBuoc = BUOC.map(([k, t]) => [t, HO_SO.filter(h => h.buoc === k).length])
+const maxB = Math.max(...theoBuoc.map(x => x[1]))
+
+const viecHomNay = [
+  ['do', 'Trả lời thông báo bổ sung', 'PL-2610-05 · KỸ THUẬT BẢO TÍN', 'Sở yêu cầu sửa địa chỉ trụ sở theo đơn vị hành chính mới — hạn nội bộ đã qua 1 ngày', 'an'],
+  ['do', 'Hồ sơ trễ hạn nội bộ', 'PL-2610-04 · TIỆM BÁNH HẠNH NGUYÊN', 'Đã có kết quả từ 27/10, chưa bàn giao cho khách', 'duy'],
+  ['cam', 'Khách chưa ký', 'PL-2610-03 · GIẢI PHÁP SỐ NAM VIỆT', 'Gửi bộ trình ký 29/10 — 3/5 tờ chưa ký, nhắc lần 2', 'linh'],
+  ['cam', 'Đợt thu đến hạn', 'PL-2610-06 · MINH KHANG', 'Đợt 2 (khi có kết quả) 900.000 thu hộ + 0 dịch vụ — đến hạn khi Sở trả kết quả', 'linh'],
+  ['xanh', 'Thiếu ảnh CCCD mặt sau', 'PL-2609-12 · THỰC PHẨM SẠCH LÂM VIÊN', 'Thành viên Trần Văn Lực mới có mặt trước', 'linh'],
+  ['xanh', 'Hồ sơ mới chưa phân công', 'PL-2609-10 · GIÁO DỤC TRÍ VIỆT', 'Nhận 31/10 qua Phòng Kinh doanh (báo giá 311026-02)', null],
+]
+
+const nvTong = [
+  ['tam', 0, 0, 2650000, 0], ['an', 4, 1, 5300000, 4600000], ['linh', 3, 0, 6600000, 4300000], ['duy', 3, 2, 3400000, 100000],
+]
+
+trang({ dangMo: 'tongquan', icon: '🏛️', tieuDe: 'Tổng quan pháp lý', phu: 'Tháng 10/2026 · cả phòng (Trưởng phòng thấy toàn bộ, chuyên viên chỉ thấy hồ sơ mình)',
+  hanhDong: `<div class="khung px-3 py-1.5 text-sm font-semibold text-gray-700">Tháng 10/2026 ▾</div>${nut('＋ Tiếp nhận hồ sơ', 'chinh')}`,
+  noiDung: `
+  <div class="grid grid-cols-6 gap-3 mb-4">
+    ${oTong('10', 'Hồ sơ đang xử lý', 'xanh', '3 mới trong tuần')}
+    ${oTong('4', 'Đang chờ khách', 'cam', 'chưa gửi đủ thông tin / chưa ký')}
+    ${oTong('2', 'Chờ cơ quan', 'ngoc', '1 Sở · 1 Thuế')}
+    ${oTong('3', 'Trễ hạn nội bộ', 'do', '1 cần bổ sung hồ sơ')}
+    ${oTong('18,0 tr', 'Doanh số tháng (đã thu)', 'la', 'phí dịch vụ · gồm VAT')}
+    ${oTong('9,0 tr', 'Còn phải thu đến hạn', 'tim', 'dịch vụ 6,5 tr · thu hộ 2,5 tr')}
+  </div>
+
+  <div class="grid grid-cols-[1.35fr_1fr] gap-4 mb-4">
+    <div class="khung">
+      <div class="khung-dau"><h2>Việc cần xử lý hôm nay</h2><span class="ml-auto text-xs text-gray-500">sắp theo mức độ</span></div>
+      <div>${viecHomNay.map(([m, t, hs, mt, nv]) => `
+        <div class="flex items-start gap-3 px-4 py-2.5 border-b border-gray-100 last:border-0">
+          <span class="mt-1 w-2.5 h-2.5 rounded-full flex-shrink-0 ${CHAM[m]}"></span>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2"><p class="text-sm font-semibold text-gray-900">${t}</p><span class="text-xs text-gray-500 truncate">${hs}</span></div>
+            <p class="text-[12.5px] text-gray-600 mt-0.5">${mt}</p></div>
+          <div class="flex-shrink-0">${nv ? nguoi(nv) : nut('Phân công', 'phu', 'text-xs py-1')}</div></div>`).join('')}</div></div>
+
+    <div class="khung">
+      <div class="khung-dau"><h2>Hồ sơ đang ở bước nào</h2><span class="ml-auto text-xs text-gray-500">${HO_SO.length} hồ sơ</span></div>
+      <div class="px-4 py-3 space-y-2">${theoBuoc.map(([t, n], i) => `
+        <div class="flex items-center gap-3"><span class="w-28 text-[12.5px] text-gray-700">${i + 1}. ${t}</span>
+          <div class="flex-1 h-5 rounded bg-gray-100 overflow-hidden"><div class="h-full rounded" style="width:${n ? Math.max(6, n / maxB * 100) : 0}%;background:${i < 3 ? '#93A5C4' : i < 7 ? DO : '#047857'}"></div></div>
+          <span class="w-6 text-right text-sm font-bold tabular-nums">${n}</span></div>`).join('')}</div></div>
+  </div>
+
+  <div class="khung">
+    <div class="khung-dau"><h2>Theo chuyên viên · tháng 10/2026</h2><span class="ml-auto text-xs text-gray-500">Doanh số = phí dịch vụ đã thu trong tháng (anh chốt 31/10)</span></div>
+    <div class="p-3"><table class="bang"><thead><tr><th>Chuyên viên</th><th class="so">Đang xử lý</th><th class="so">Trễ hạn</th><th class="so">Doanh số đã thu</th><th class="so">Trước VAT (÷1,08)</th><th class="so">Còn phải thu</th><th>Tỷ trọng doanh số</th></tr></thead>
+    <tbody>${nvTong.map(([k, dang, tre, ds, no]) => `<tr><td>${nguoi(k)} <span class="text-xs text-gray-400">${NV[k].vt}</span></td><td class="so">${dang}</td><td class="so ${tre ? 'text-red-700 font-bold' : ''}">${tre}</td><td class="so font-semibold">${tien(ds)}</td><td class="so text-gray-600">${tien(ds / 1.08)}</td><td class="so">${tien(no)}</td>
+      <td><div class="h-2 bg-gray-100 rounded-full w-40"><div class="h-full rounded-full" style="width:${ds / 18000000 * 100}%;background:${DO}"></div></div></td></tr>`).join('')}
+      <tr class="tong"><td>Cả phòng</td><td class="so">${nvTong.reduce((s, r) => s + r[1], 0)}</td><td class="so">${nvTong.reduce((s, r) => s + r[2], 0)}</td><td class="so">${tien(nvTong.reduce((s, r) => s + r[3], 0))}</td><td class="so">${tien(nvTong.reduce((s, r) => s + r[3], 0) / 1.08)}</td><td class="so">${tien(nvTong.reduce((s, r) => s + r[4], 0))}</td><td></td></tr></tbody></table></div></div>` })
+</script></body></html>

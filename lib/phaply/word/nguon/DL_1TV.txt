@@ -1,0 +1,191 @@
+// Điều lệ công ty TNHH một thành viên (chủ sở hữu là cá nhân, mô hình Chủ tịch công ty + Giám đốc).
+// Chép theo bản phòng pháp lý đã nộp 09/2026 (1_1TV\1_HS_TLM\2_DLCT.pdf, 10 trang) — chữ cố định theo bản PDF;
+// lỗi chính tả của bản gốc đã sửa 06/11/2026 (anh duyệt), thêm dòng "Chương I" bị thiếu.
+// Chức danh Giám đốc / Tổng giám đốc đi theo {chuc_danh_gd} (quy tắc phòng: chức danh nào thì bỏ hẳn cụm kia).
+// Bản 1TV không có "thời điểm góp vốn" (quy tắc phòng).
+@co 12
+@so-trang
+@le 18/18/22/18
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#cb15 ĐIỀU LỆ
+#cb13 {ten_cty}
+#l {csh_danh_xung}: {csh_ho_ten}
+#l Sinh ngày: {csh_ngay_sinh}
+#l Loại giấy tờ pháp lý: {csh_loai_giay_to}
+#l Số giấy tờ pháp lý: {csh_so_giay_to}[>56]Ngày cấp: {csh_ngay_cap}
+#l Nơi cấp: {csh_noi_cap}
+Là Chủ sở hữu của {ten_cty} với Điều lệ được thông qua theo quy định của Luật Doanh nghiệp số 59/2020/QH14 được Quốc Hội nước Cộng hòa Xã hội Chủ nghĩa Việt Nam thông qua ngày 17/6/2020, gồm các điều, khoản của Điều lệ này như sau:
+#cb Chương I
+#cb ĐIỀU KHOẢN CHUNG
+#b Điều 1. Tư cách pháp nhân, phạm vi trách nhiệm
+1. Công ty là một pháp nhân độc lập và có tư cách pháp nhân theo Luật pháp Việt Nam. Tất cả hoạt động của Công ty được điều chỉnh bởi Luật pháp Việt Nam và theo các quy định tại Giấy chứng nhận đăng ký doanh nghiệp, Điều lệ này và bất kỳ giấy phép hoặc cấp phép của Cơ quan Nhà nước, cần thiết cho hoạt động kinh doanh của Công ty.
+2. Chủ sở hữu chịu trách nhiệm về các khoản nợ và các nghĩa vụ tài sản khác của doanh nghiệp trong phạm vi số vốn điều lệ của doanh nghiệp.
+3. Thời hạn hoạt động của công ty là: 50 năm kể từ ngày được cơ quan đăng ký kinh doanh cấp Giấy chứng nhận đăng ký doanh nghiệp. Công ty có thể chấm dứt hoạt động trước thời hạn hoặc kéo dài thêm thời gian hoạt động theo quyết định của Chủ sở hữu hoặc theo quy định của pháp luật.
+#b Điều 2. Tên Doanh nghiệp
+Tên công ty viết bằng tiếng Việt (ghi bằng chữ in hoa): {ten_cty}
+#b Điều 3. Trụ sở chính
+Địa chỉ trụ sở chính: {dia_chi_tru_so}
+#l Điện thoại: {cty_dien_thoai}[>47]Thư điện tử: {cty_email}
+#b Điều 4. Ngành, nghề kinh doanh
+1. Ngành nghề kinh doanh của Công ty đăng ký là:
+::bang vien 9^ 71< 10^ 10^
+#cb STT | #cb Tên ngành | #cb Mã ngành | #cb Ngành chính
+{#nganh}{stt} | {ten} | {ma} | {chinh}{/nganh}
+::
+2. Trong quá trình hoạt động, Công ty có thể thay đổi ngành nghề kinh doanh theo quy định của pháp luật, sau khi được Chủ sở hữu tán thành, thông báo và được cơ quan đăng ký kinh doanh đồng ý bổ sung vào hồ sơ đăng ký doanh nghiệp và được đăng tải trên hệ thống ĐKKD quốc gia dangkykinhdoanh.gov.vn. (Trừ trường hợp có văn bản của cơ quan đăng ký kinh doanh từ chối bổ sung vào hồ sơ đăng ký doanh nghiệp)
+3. Công ty phải đáp ứng đủ điều kiện kinh doanh khi kinh doanh ngành, nghề đầu tư kinh doanh có điều kiện theo quy định của Pháp luật và bảo đảm duy trì đủ điều kiện đầu tư kinh doanh đó trong suốt quá trình hoạt động kinh doanh.
+#b Điều 5. Người đại diện theo pháp luật
+1. Người đại diện theo pháp luật của doanh nghiệp là cá nhân đại diện cho doanh nghiệp thực hiện các quyền và nghĩa vụ phát sinh từ giao dịch của doanh nghiệp, đại diện cho doanh nghiệp với tư cách nguyên đơn, bị đơn, người có quyền lợi, nghĩa vụ liên quan trước Trọng tài, Tòa án và các quyền và nghĩa vụ khác theo quy định của pháp luật.
+2. Số lượng người đại diện theo pháp luật: Công ty có 01 người là người đại diện theo pháp luật, chức danh: {dd_chuc_danh}
+#l Họ và tên người đại diện theo pháp luật: {dd_ho_ten}
+#l Sinh ngày: {dd_ngay_sinh}[>47]Giới tính: {dd_gioi_tinh}
+#l Dân tộc: {dd_dan_toc}[>47]Quốc tịch: {dd_quoc_tich}
+#l Loại giấy tờ pháp lý: {dd_loai_giay_to}
+#l Số giấy tờ pháp lý: {dd_so_giay_to}[>47]Ngày cấp: {dd_ngay_cap}
+#l Nơi cấp: {dd_noi_cap}
+#l Địa chỉ thường trú: {dd_dia_chi_thuong_tru}
+#l Địa chỉ liên lạc: {dd_dia_chi_lien_lac}
+3. Công ty luôn có ít nhất một người đại diện theo pháp luật cư trú tại Việt Nam. Trường hợp chỉ có một người đại diện theo pháp luật thì người đó phải cư trú ở Việt Nam và phải ủy quyền bằng văn bản cho người khác thực hiện quyền và nghĩa vụ của người đại diện theo pháp luật khi xuất cảnh khỏi Việt Nam. Trường hợp này, người đại diện theo pháp luật vẫn phải chịu trách nhiệm về việc thực hiện quyền và nghĩa vụ đã ủy quyền.
+4. Trường hợp hết thời hạn ủy quyền theo khoản 3 Điều này mà người đại diện theo pháp luật của công ty chưa trở lại Việt Nam và không có ủy quyền khác thì thực hiện theo quy định sau đây:
+a) Người được ủy quyền vẫn tiếp tục thực hiện các quyền và nghĩa vụ của người đại diện theo pháp luật của công ty trong phạm vi đã được ủy quyền cho đến khi người đại diện theo pháp luật của công ty trở lại làm việc tại Công ty;
+b) Người được ủy quyền vẫn tiếp tục thực hiện các quyền và nghĩa vụ của người đại diện theo pháp luật của công ty trong phạm vi đã được ủy quyền cho đến khi người đại diện theo pháp luật của công ty trở lại làm việc tại công ty hoặc cho đến khi Chủ sở hữu công ty, quyết định cử người khác làm người đại diện theo pháp luật của Công ty;
+5. Người đại diện theo pháp luật vắng mặt tại Việt Nam quá 30 ngày mà không ủy quyền cho người khác thực hiện các quyền và nghĩa vụ của người đại diện theo pháp luật của doanh nghiệp hoặc bị chết, mất tích, tạm giam, kết án tù, bị hạn chế hoặc mất năng lực hành vi dân sự thì chủ sở hữu công ty cử người khác làm người đại diện theo pháp luật của công ty.
+6. Trong một số trường hợp đặc biệt, Tòa án có thẩm quyền có quyền chỉ định người đại diện theo pháp luật trong quá trình tố tụng tại Tòa án.
+#cb Chương II
+#cb VỐN VÀ CHỦ SỞ HỮU CÔNG TY
+#b Điều 6. Vốn điều lệ, chủ sở hữu công ty
+1. Vốn điều lệ của công ty là: {von_dieu_le} đồng
+Vốn điều lệ (bằng chữ; VNĐ): {von_dieu_le_chu}
+trong đó bao gồm:
+#l - Tiền Việt Nam: {ts_dong_vn} đồng[>47]Ghi bằng chữ: {von_dieu_le_chu}
+- Ngoại tệ tự do chuyển đổi: Không
+- Vàng: Không
+- Tài sản khác: Không
+2. Thông tin về chủ sở hữu công ty:
+#l Họ và tên: {csh_ho_ten}
+#l Giới tính: {csh_gioi_tinh}[>47]Sinh ngày: {csh_ngay_sinh}
+#l Dân tộc: {csh_dan_toc}[>47]Quốc tịch: {csh_quoc_tich}
+#l Loại giấy tờ pháp lý: {csh_loai_giay_to}
+#l Số giấy tờ pháp lý: {csh_so_giay_to}[>47]Ngày cấp: {csh_ngay_cap}
+#l Nơi cấp: {csh_noi_cap}
+#l Địa chỉ thường trú: {csh_dia_chi_thuong_tru}
+#l Địa chỉ liên lạc: {csh_dia_chi_lien_lac}
+#b Điều 7. Góp vốn thành lập công ty
+1. Vốn điều lệ của Công ty trách nhiệm hữu hạn một thành viên khi đăng ký thành lập doanh nghiệp là tổng giá trị tài sản do Chủ sở hữu công ty cam kết góp và ghi trong Điều lệ công ty.
+2. Chủ sở hữu công ty phải góp vốn cho công ty đủ và đúng loại tài sản đã cam kết khi đăng ký thành lập doanh nghiệp trong thời hạn 90 ngày kể từ ngày được cấp Giấy chứng nhận đăng ký doanh nghiệp, không kể thời gian vận chuyển, nhập khẩu tài sản góp vốn, thực hiện thủ tục hành chính để chuyển quyền sở hữu tài sản. Trong thời hạn này, chủ sở hữu công ty có các quyền và nghĩa vụ tương ứng với phần vốn góp đã cam kết.
+3. Trường hợp không góp đủ vốn điều lệ trong thời hạn quy định tại khoản 2 Điều này, chủ sở hữu công ty phải đăng ký thay đổi vốn điều lệ bằng giá trị số vốn đã góp trong thời hạn 30 ngày kể từ ngày cuối cùng phải góp đủ vốn điều lệ. Trường hợp này, chủ sở hữu phải chịu trách nhiệm tương ứng với phần vốn góp đã cam kết đối với các nghĩa vụ tài chính của công ty phát sinh trong thời gian trước ngày cuối cùng công ty đăng ký thay đổi vốn điều lệ theo quy định tại khoản này.
+4. Chủ sở hữu công ty chịu trách nhiệm bằng toàn bộ tài sản của mình đối với các nghĩa vụ tài chính của công ty, thiệt hại xảy ra do không góp, không góp đủ, không góp đúng hạn vốn điều lệ theo quy định tại Điều này.
+#b Điều 8. Quyền và nghĩa vụ của chủ sở hữu công ty
+#b - Quyền của Chủ sở hữu công ty
+1. Quyết định nội dung Điều lệ công ty, sửa đổi, bổ sung Điều lệ công ty;
+2. Quyết định tăng vốn điều lệ của công ty; chuyển nhượng một phần hoặc toàn bộ vốn điều lệ của công ty cho tổ chức, cá nhân khác; quyết định phát hành trái phiếu;
+3. Quyết định thành lập công ty con, góp vốn vào công ty khác.
+4. Quyết định việc sử dụng lợi nhuận sau khi đã hoàn thành nghĩa vụ thuế và các nghĩa vụ tài chính khác của công ty;
+5. Quyết định tổ chức lại, giải thể và yêu cầu phá sản công ty;
+6. Thu hồi toàn bộ giá trị tài sản của công ty sau khi công ty hoàn thành giải thể hoặc phá sản;
+7. Quyết định đầu tư, kinh doanh và quản trị nội bộ công ty.
+#b - Nghĩa vụ của Chủ sở hữu Công ty
+1. Góp đủ và đúng hạn vốn Điều lệ công ty.
+2. Tuân thủ Điều lệ công ty.
+3. Phải xác định và tách biệt tài sản của chủ sở hữu công ty với tài sản của công ty. Chủ sở hữu công ty là cá nhân phải tách biệt chi tiêu của cá nhân và gia đình mình với chi tiêu của Chủ tịch công ty, {chuc_danh_gd}.
+4. Tuân thủ quy định của pháp luật về hợp đồng và quy định khác của pháp luật có liên quan trong việc mua, bán, vay, cho vay, thuê, cho thuê, hợp đồng, giao dịch khác giữa công ty và Chủ sở hữu công ty.
+5. Chủ sở hữu công ty chỉ được quyền rút vốn bằng cách chuyển nhượng một phần hoặc toàn bộ vốn điều lệ cho tổ chức hoặc cá nhân khác; trường hợp rút một phần hoặc toàn bộ vốn điều lệ đã góp ra khỏi công ty dưới hình thức khác thì chủ sở hữu công ty và cá nhân, tổ chức có liên quan phải liên đới chịu trách nhiệm về các khoản nợ và nghĩa vụ tài sản khác của công ty.
+6. Chủ sở hữu công ty không được rút lợi nhuận khi công ty không thanh toán đủ các khoản nợ và nghĩa vụ tài sản khác đến hạn.
+#cb Chương III
+#cb CƠ CẤU TỔ CHỨC QUẢN LÝ CÔNG TY
+#b Điều 9. Cơ cấu tổ chức quản lý
+1. Công ty có Chủ tịch công ty, {chuc_danh_gd}.
+2. Chủ sở hữu công ty là Chủ tịch công ty và có thể kiêm hoặc thuê người khác làm {chuc_danh_gd}.
+3. Quyền, nghĩa vụ của {chuc_danh_gd} được quy định tại Điều lệ công ty và hợp đồng lao động.
+#b Điều 10. Chủ tịch công ty
+1. Chủ tịch công ty nhân danh chủ sở hữu công ty thực hiện quyền và nghĩa vụ của chủ sở hữu công ty; nhân danh công ty thực hiện quyền và nghĩa vụ của công ty, trừ quyền và nghĩa vụ của {chuc_danh_gd}; chịu trách nhiệm trước pháp luật và chủ sở hữu công ty về việc thực hiện quyền và nghĩa vụ được giao theo quy định của Điều lệ công ty, Luật Doanh nghiệp và quy định khác của pháp luật có liên quan.
+2. Quyền, nghĩa vụ và chế độ làm việc của Chủ tịch công ty được thực hiện theo quy định tại Điều lệ công ty, Luật Doanh nghiệp và quy định khác của pháp luật có liên quan.
+3. Quyết định của Chủ tịch công ty về thực hiện quyền và nghĩa vụ của chủ sở hữu công ty có hiệu lực kể từ ngày được Chủ sở hữu công ty phê duyệt.
+#b Điều 11. {chuc_danh_gd}
+1. Chủ tịch công ty bổ nhiệm hoặc thuê {chuc_danh_gd} với nhiệm kỳ không quá 05 năm để điều hành hoạt động kinh doanh hằng ngày của công ty. {chuc_danh_gd} chịu trách nhiệm trước pháp luật và Chủ tịch công ty về việc thực hiện quyền và nghĩa vụ của mình. Chủ tịch công ty có thể kiêm {chuc_danh_gd}.
+2. {chuc_danh_gd} có quyền và nghĩa vụ sau đây:
+a) Tổ chức thực hiện nghị quyết, quyết định của Chủ tịch công ty;
+b) Quyết định các vấn đề liên quan đến hoạt động kinh doanh hằng ngày của công ty;
+c) Tổ chức thực hiện kế hoạch kinh doanh và phương án đầu tư của công ty;
+d) Ban hành quy chế quản lý nội bộ của công ty;
+đ) Bổ nhiệm, miễn nhiệm, bãi nhiệm người quản lý công ty, trừ các chức danh thuộc thẩm quyền của Chủ tịch công ty;
+e) Ký hợp đồng nhân danh công ty, trừ trường hợp thuộc thẩm quyền của Chủ tịch công ty;
+g) Kiến nghị phương án cơ cấu tổ chức công ty;
+h) Trình báo cáo tài chính hằng năm lên Chủ tịch công ty;
+i) Kiến nghị phương án sử dụng lợi nhuận hoặc xử lý lỗ trong kinh doanh;
+k) Tuyển dụng lao động;
+l) Quyền và nghĩa vụ khác được quy định tại Điều lệ công ty và hợp đồng lao động.
+3. {chuc_danh_gd} phải có tiêu chuẩn và điều kiện sau đây:
+a) Không thuộc đối tượng quy định tại khoản 2 Điều 17 của Luật Doanh nghiệp;
+b) Có trình độ chuyên môn, kinh nghiệm trong quản trị kinh doanh của công ty.
+#b Điều 12. Tiền lương, thù lao, thưởng và lợi ích khác của người quản lý công ty
+1. Người quản lý công ty được hưởng tiền lương, thù lao, thưởng và lợi ích khác theo kết quả và hiệu quả kinh doanh của công ty.
+2. Chủ sở hữu công ty quyết định mức tiền lương, thù lao, thưởng và lợi ích khác của Chủ tịch công ty. Thù lao, tiền lương và lợi ích khác của người quản lý công ty được tính vào chi phí kinh doanh theo quy định của pháp luật về thuế thu nhập doanh nghiệp, pháp luật có liên quan và được thể hiện thành mục riêng trong báo cáo tài chính hằng năm của công ty.
+#b Điều 13. Nguyên tắc giải quyết tranh chấp nội bộ
+1. Các tranh chấp nội bộ giữa Công ty liên quan đến thành lập, hoạt động, giải thể Công ty trước hết phải được giải quyết thông qua thương lượng, hoà giải.
+2. Trường hợp giải quyết tranh chấp nội bộ theo phương thức thương lượng, hòa giải không đạt được kết quả thì bất kỳ bên nào cũng có quyền đưa tranh chấp ra Tòa án có thẩm quyền để giải quyết.
+#b Điều 14. Thể thức thông qua quyết định của công ty
+1. Thể lệ, cách thức:
+- Quyết định Công ty ban hành phải căn cứ vào quyền, nghĩa vụ và trách nhiệm của người đại diện pháp luật, {chuc_danh_gd} và người quản lý khác Công ty được Chủ sở hữu phân công hoặc trong các hợp đồng lao động đã được ký kết, Quyết định ban hành phải tuân theo;
+- Không được trái với Điều lệ Công ty, Luật doanh nghiệp 2020 và pháp luật liên quan;
+- Người quản lý đưa ra quyết định các vấn đề liên quan đến công việc kinh doanh hằng ngày của công ty nội dung các Quyết định phải được các phòng, ban, bộ phận thuộc thẩm quyền quản lý của mình đề xuất bằng văn bản. Quyết định ban hành bằng văn bản và có hiệu lực khi có họ tên và chữ ký của người quản lý theo đúng thẩm quyền được phân công.
+2. Hình thức: các Quyết định Công ty ban hành bằng văn bản và phải được {chuc_danh_gd} (người quản lý thay mặt {chuc_danh_gd}) Công ty thông qua (phải có họ, tên và chữ ký của người quản lý):
+a) Quyết định các vấn đề liên quan đến hoạt động kinh doanh hằng ngày của công ty;
+b) Các Quyết định liên quan tổ chức thực hiện kế hoạch kinh doanh và phương án đầu tư của công ty;
+c) Các Quyết định liên quan việc ban hành quy chế quản lý nội bộ của công ty;
+d) Các Quyết định liên quan việc bổ nhiệm, miễn nhiệm, bãi nhiệm các chức danh quản lý trong công ty (trừ các chức danh thuộc thẩm quyền Chủ sở hữu quyết định).
+#cb Chương IV
+#cb NĂM TÀI CHÍNH PHÂN PHỐI LỢI NHUẬN
+#b Điều 15. Năm tài chính
+Năm tài chính của Công ty bắt đầu từ ngày đầu tiên của tháng 1 (một) hàng năm và kết thúc vào ngày thứ 31 của tháng 12.
+Năm tài chính đầu tiên bắt đầu từ ngày cấp Giấy chứng nhận đăng ký doanh nghiệp và kết thúc vào ngày thứ 31 của tháng 12 ngay sau ngày cấp Giấy chứng nhận đăng ký doanh nghiệp đó.
+#b Điều 16. Phân phối lợi nhuận, lập quỹ, nguyên tắc xử lý lỗ trong kinh doanh
+1. Sau khi đã hoàn thành nghĩa vụ nộp thuế và các nghĩa vụ tài chính khác theo quy định của pháp luật, đã thanh toán đủ (hoặc đã dành phần thanh toán đủ) các khoản nợ và nghĩa vụ tài sản khác đã đến hạn phải trả công ty lập các loại quỹ theo quy định của pháp luật.
+2. Các vấn đề khác liên quan đến phân phối lợi nhuận được thực hiện theo quy định của pháp luật.
+3. Trường hợp quyết toán năm tài chính bị lỗ, Chủ tịch công ty được quyết định theo các hướng sau:
+a) Trích quỹ dự trữ để bù;
+b) Chuyển sang năm sau để trừ vào lợi nhuận của năm tài chính sau trước khi phân phối lợi nhuận.
+#cb Chương V
+#cb THÀNH LẬP, TỔ CHỨC LẠI, GIẢI THỂ
+#b Điều 17. Thành lập, tổ chức lại
+Công ty được thành lập sau khi Bản Điều lệ này được Chủ sở hữu thông qua và được Cơ quan đăng ký kinh doanh cấp Giấy chứng nhận đăng ký doanh nghiệp.
+Mọi chi phí liên quan đến việc thành lập Công ty đều được ghi vào mục chi phí của Công ty và được tính hoàn giảm vào chi phí của năm tài chính đầu tiên.
+Việc tổ chức lại doanh nghiệp (chia, tách, hợp nhất, sáp nhập hoặc chuyển đổi loại hình doanh nghiệp) công ty thực hiện quy định của Luật Doanh nghiệp.
+#b Điều 18. Các trường hợp và điều kiện giải thể doanh nghiệp
+1. Công ty bị giải thể trong các trường hợp sau đây:
+a) Kết thúc thời hạn hoạt động đã ghi trong Điều lệ công ty mà không có quyết định gia hạn;
+b) Theo nghị quyết, quyết định của Chủ sở hữu;
+c) Bị thu hồi Giấy chứng nhận đăng ký doanh nghiệp, trừ trường hợp Luật Quản lý thuế có quy định khác.
+2. Công ty chỉ được giải thể khi bảo đảm thanh toán hết các khoản nợ và nghĩa vụ tài sản khác và doanh nghiệp không trong quá trình giải quyết tranh chấp tại Tòa án hoặc cơ quan trọng tài. Người quản lý có liên quan và doanh nghiệp quy định tại điểm c khoản 1 Điều này cùng liên đới chịu trách nhiệm về các khoản nợ của doanh nghiệp.
+3. Thủ tục thanh lý tài sản
+- Chủ sở hữu quyết định thành lập hội đồng thanh lý tài sản;
+- Kiểm tra, đánh giá chất lượng và giá trị còn lại của tài sản;
+- Bán tài sản hoặc hủy tài sản
+#b Điều 19. Trình tự, thủ tục giải thể doanh nghiệp và thanh lý tài sản
+1. Chủ sở hữu yêu cầu người quản lý Công ty:
+- Tiến hành thanh toán hết các khoản nợ.
+- Xử lý các nghĩa vụ phát sinh từ hợp đồng lao động;
+- Hoàn tất việc thanh toán hết tất cả các chế độ cho người lao động;
+Sau khi thực hiện xong 03 nội dung trên thì Chủ sở hữu mới thông qua quyết định giải thể doanh nghiệp.
+2. Trong thời hạn 02 ngày làm việc kể từ ngày thông qua quyết định giải thể thì phải gửi bản chính hoặc bản sao (tùy theo đối tượng) Quyết định này đến Cơ quan đăng ký kinh doanh, cơ quan thuế, người lao động trong doanh nghiệp, các đối tác (nếu có nhu cầu).
+3. Người đại diện theo pháp luật của doanh nghiệp nộp hồ sơ giải thể doanh nghiệp cho Cơ quan đăng ký kinh doanh sớm nhất có thể ngay sau khi có kết quả nộp Quyết định giải thể cho Cơ quan đăng ký kinh doanh (nhưng không được quá 05 ngày làm việc kể từ ngày thanh toán hết các khoản nợ của doanh nghiệp).
+#cb Chương VI
+#cb ĐIỀU KHOẢN THI HÀNH
+#b Điều 20. Hiệu lực của Điều lệ
+Điều lệ này có hiệu lực kể từ ngày được cơ quan đăng ký kinh doanh cấp Giấy chứng nhận đăng ký doanh nghiệp.
+#b Điều 21. Thể thức sửa đổi bổ sung các điều khoản của Điều lệ
+1. Những vấn đề liên quan đến hoạt động của Công ty không được nêu trong Bản Điều lệ này sẽ do Luật doanh nghiệp và các văn bản pháp luật liên quan khác điều chỉnh.
+2. Trong trường hợp điều lệ này có điều khoản trái pháp luật hoặc dẫn đến việc thi hành trái pháp luật, thì điều khoản đó không được thi hành và sẽ được Chủ sở hữu công ty xem xét sửa đổi.
+3. Chủ sở hữu quyết định việc sửa đổi, bổ sung điều lệ; sau khi Chủ sở hữu ký, ban hành Quyết định sửa đổi Điều lệ thì trong vòng 01 ngày bản Điều lệ được sửa đổi, bổ sung là Văn bản giấy phải được Chủ sở hữu ký và ghi rõ họ, tên, lúc đó bản Điều lệ được sửa đổi, bổ sung mới có hiệu lực.
+#b Điều 22. Điều khoản cuối cùng
+Bản điều lệ này đã được chủ sở hữu công ty xem xét từng chương, từng điều và ký tên.
+Bản điều lệ này gồm 6 chương 22 điều, được lập thành 03 bản có giá trị như nhau: 01 bản đăng ký tại cơ quan đăng ký kinh doanh, 01 bản lưu trữ tại trụ sở công ty, Chủ sở hữu giữ 01 bản.
+Mọi sự sao chép, trích lục phải được ký xác nhận của Chủ sở hữu công ty.
+#ri ……………………., ngày. ..... tháng ...... năm ..........
+#c Họ, tên, chữ ký của Chủ sở hữu công ty
+~
+~
+~
+~
+#cb {csh_ho_ten}

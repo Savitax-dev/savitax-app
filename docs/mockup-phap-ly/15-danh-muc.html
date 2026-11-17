@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>15 · Mẫu & danh mục · Danh mục</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Danh mục để nhân viên CHỌN thay vì gõ: mã ngành (nạp từ sheet MaNganh), cơ quan thuế + gán theo phường,
+// phường/xã hiện hành, Phòng ĐKKD. Nguồn cơ quan thuế + phường/xã: em tìm, anh duyệt rồi mới nạp (chốt 31/10).
+const nguon = [
+  ['Mã ngành kinh tế', '6.470 dòng · 5 cấp', 'Sheet "MaNganh" của phòng (TLM_CHINHANH_1TV.xlsx)', 'la', 'Sẵn sàng nạp'],
+  ['Tỉnh / phường – xã', '34 tỉnh · ~3.300 xã/phường', 'Nguồn chính thống — em tìm, đưa anh duyệt', 'cam', 'Chờ anh duyệt nguồn'],
+  ['Cơ quan thuế', 'Thuế tỉnh + Thuế cơ sở + mã', 'Nguồn chính thống — em tìm, đưa anh duyệt', 'cam', 'Chờ anh duyệt nguồn'],
+  ['Gán phường/xã → cơ quan thuế', 'theo địa bàn quản lý', 'Từ danh mục cơ quan thuế', 'xam', 'Sau khi có 2 danh mục trên'],
+  ['Phòng Đăng ký kinh doanh', '34 tỉnh', 'Nhập tay một lần', 'xam', 'Chưa nạp'],
+]
+const cay = [
+  [0, 'G', 'BÁN BUÔN VÀ BÁN LẺ; SỬA CHỮA Ô TÔ, MÔ TÔ, XE MÁY…'], [1, '46', 'Bán buôn (trừ ô tô, mô tô, xe máy và xe có động cơ khác)'],
+  [2, '464', 'Bán buôn đồ dùng gia đình'], [3, '4649', 'Bán buôn đồ dùng khác cho gia đình', true],
+  [4, '46491', 'Bán buôn vali, cặp, túi, ví, hàng da và giả da khác'], [4, '46492', 'Bán buôn dược phẩm và dụng cụ y tế'], [4, '46493', 'Bán buôn nước hoa, hàng mỹ phẩm và chế phẩm vệ sinh'],
+  [2, '465', 'Bán buôn máy móc, thiết bị và phụ tùng máy'], [3, '4651', 'Bán buôn máy vi tính, thiết bị ngoại vi và phần mềm'], [3, '4659', 'Bán buôn máy móc, thiết bị và phụ tùng máy khác', true],
+]
+const gan = [
+  ['Phường Nhiêu Lộc', 'TP. Hồ Chí Minh', 'Thuế cơ sở 3 TP. Hồ Chí Minh', '79xxx'], ['Phường Tân Định', 'TP. Hồ Chí Minh', 'Thuế cơ sở 1 TP. Hồ Chí Minh', '79xxx'],
+  ['Phường Bình Lợi Trung', 'TP. Hồ Chí Minh', 'Thuế cơ sở 7 TP. Hồ Chí Minh', '79xxx'], ['Xã Phước An', 'Đồng Nai', 'Thuế cơ sở … Đồng Nai', '75xxx'],
+]
+
+trang({ dangMo: 'mau', icon: '🧩', tieuDe: 'Mẫu & danh mục', phu: 'Mọi danh sách chọn trong hồ sơ lấy từ đây. Cơ quan đổi tên / gộp địa bàn → sửa ở đây, không phải sửa code.',
+  noiDung: `
+  ${tabDeu([['🧮', 'Ma trận giấy tờ'], ['📝', 'Mẫu Word'], ['✅', 'Checklist & hạn'], ['💳', 'Lịch thu mẫu'], ['🗃️', 'Danh mục']], 'Danh mục')}
+  <div class="khung mb-4"><div class="khung-dau"><h2>Nguồn danh mục</h2><span class="ml-auto text-xs text-gray-500">mỗi danh mục ghi rõ nguồn + ngày nạp</span></div>
+    <div class="p-3"><table class="bang"><thead><tr><th>Danh mục</th><th>Quy mô</th><th>Nguồn</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+      ${nguon.map(([t, q, n, m, tt]) => `<tr><td class="font-semibold">${t}</td><td>${q}</td><td class="text-[12.5px]">${n}</td><td>${chip(tt, m)}</td><td>${m === 'cam' ? nut('Xem bản đề xuất', 'phu', 'text-xs py-0.5') : ''}</td></tr>`).join('')}</tbody></table></div></div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <div class="khung"><div class="khung-dau"><h2>Mã ngành · dạng cây</h2><span class="ml-auto"><div class="o text-gray-400 text-xs py-1 w-56">🔍 mã hoặc từ khoá…</div></span></div>
+      <div class="p-3 text-[12.5px]">${cay.map(([c, m, t, dung]) => `<div class="flex items-center gap-2 py-1 border-b border-gray-100" style="padding-left:${c * 16}px">
+        <span class="text-gray-400 w-3">${c < 4 ? '▾' : ''}</span><span class="font-mono font-semibold w-12" style="color:${c === 3 ? DO : '#475569'}">${m}</span><span class="${c < 2 ? 'font-semibold' : ''}">${t}</span>${dung ? `<span class="ml-auto">${chip('đang dùng ở 23 hồ sơ', 'xanh')}</span>` : ''}</div>`).join('')}
+        <p class="text-[11.5px] text-gray-500 mt-2">Hồ sơ đăng ký theo <b>mã cấp 4</b>; cấp 5 hiện để tra nghĩa. Ngành có điều kiện được gắn cờ để nhắc giấy phép con.</p></div></div>
+
+    <div class="khung"><div class="khung-dau"><h2>Phường/xã → cơ quan thuế quản lý</h2>${chip('dữ liệu minh hoạ — chờ duyệt nguồn', 'cam')}</div>
+      <div class="p-3"><table class="bang"><thead><tr><th>Phường / xã</th><th>Tỉnh</th><th>Cơ quan thuế</th><th>Mã</th></tr></thead><tbody>
+        ${gan.map(([p, t, c, m]) => `<tr><td>${p}</td><td>${t}</td><td>${c}</td><td class="font-mono">${m}</td></tr>`).join('')}</tbody></table>
+        <p class="text-[11.5px] text-gray-500 mt-2">Khi chuyên viên chọn phường của trụ sở, app <b>gợi ý</b> cơ quan thuế (ô vàng — cần xác nhận), điền vào UQ thuế, 08-MST, ĐK hóa đơn.</p></div></div>
+  </div>` })
+</script></body></html>

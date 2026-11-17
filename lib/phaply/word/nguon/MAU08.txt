@@ -1,0 +1,50 @@
+// Mẫu số 08-MST — Tờ khai điều chỉnh, bổ sung thông tin đăng ký thuế (TT 90/2026/TT-BTC) — 2TV / CP.
+// Theo bản CP phòng pháp lý đã nộp (3_CP\2_TRINHKY_HSPLBD\5_Mẫu 08.pdf). Bản 2TV (cùng ghi TT 90/2026) khác câu chữ ở
+// mục 4 ("Thông tin đại lý thuế", "Hợp đồng đại lý thuế"), dòng chứng chỉ ("Chứng chỉ hành nghề số") và dòng ký
+// ("(Ký, ghi họ tên và đóng dấu)") — chờ chuyên viên pháp lý chốt. Ô "Doanh nghiệp, hợp tác xã" đánh dấu sẵn.
+@co 13
+@le 20/15/25/15
+#c Mẫu số: **08-MST**
+#c (Kèm theo Thông tư số 90/2026/TT-BTC ngày 30/6/2026 của Bộ trưởng Bộ Tài chính)
+~
+#cb CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc Lập – Tự Do – Hạnh Phúc
+#c --------------------------------
+~
+#cb14 TỜ KHAI
+#cb14 ĐIỀU CHỈNH, BỔ SUNG THÔNG TIN ĐĂNG KÝ THUẾ
+::bang khong-vien 6^ 20< 6^ 12< 6^ 18< 6^ 12< 6^ 8<
+#c16 [X] | Doanh nghiệp, hợp tác xã | #c16 [ ] | Tổ chức | #c16 [ ] | Hộ kinh doanh, cá nhân kinh doanh | #c16 [ ] | Cá nhân | #c16 [ ] | Khác
+::
+#l 1. Tên người nộp thuế: {ten_cty}
+#l 2. Mã số thuế: {ma_dn}
+3. Địa chỉ trụ sở chính: {dia_chi_tru_so}
+#l 4. Thông tin tổ chức, cá nhân cung cấp dịch vụ làm thủ tục về thuế (nếu có):
+#l 4a. Tên: …[...]
+#l 4b. Mã số thuế: …[...]
+#l 4c. Hợp đồng dịch vụ làm thủ tục về thuế: số…… ngày….
+~
+#l Đăng ký bổ sung, thay đổi các chỉ tiêu đăng ký thuế như sau:
+::bang vien 30< 35^ 35^
+#cb Chỉ tiêu // #cb (1) | #cb Thông tin đăng ký cũ // #cb (2) | #cb Thông tin đăng ký mới // #cb (3)
+---
+I- Điều chỉnh, bổ sung thông tin trên tờ khai đăng ký thuế: | #c // #c // #c // #c // #c | #c
+II- Điều chỉnh, bổ sung thông tin bảng kê kèm theo tờ khai đăng ký thuế: | #c // #c // #c // #c // #c | #c
+::
+~
+Người nộp thuế cam đoan những thông tin kê khai trên là hoàn toàn chính xác và chịu trách nhiệm trước pháp luật về những thông tin đã khai./.
+::cot 50/50
+#cb NGƯỜI TRỰC TIẾP THỰC HIỆN
+#cb DỊCH VỤ LÀM THỦ TỤC VỀ THUẾ
+#l Họ và tên: ………..
+#l Chứng chỉ nghiệp vụ chuyên môn về thuế số:
+||
+#ci …., ngày….tháng..... năm….
+#cb NGƯỜI NỘP THUẾ hoặc ĐẠI DIỆN HỢP PHÁP CỦA NGƯỜI NỘP THUẾ
+#ci Ký, ghi họ tên và đóng dấu (nếu có)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

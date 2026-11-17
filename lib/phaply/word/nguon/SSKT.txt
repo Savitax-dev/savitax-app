@@ -1,0 +1,44 @@
+// Đăng ký mở sổ sách kế toán trên máy vi tính (hồ sơ pháp lý ban đầu) — dùng chung 1TV / 2TV / CP.
+// Theo bản 2TV (Thông tư 99/2025 + kỳ kế toán + niên độ đầu tiên). Bản CP còn ghi TT 200/2014 — đã báo pháp lý xem.
+// Pháp lý chốt 17/11/2026: "Kính gửi" + MST mặc định để chấm cho viết tay; hồ sơ bật dien_thue_san thì in sẵn.
+@gian 60
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập – Tự do – Hạnh phúc
+#c --------------------------------
+#ri …………….., ngày.....tháng....năm.......
+~
+#cb13 ĐĂNG KÝ
+#cb13 MỞ SỔ SÁCH KẾ TOÁN TRÊN MÁY VI TÍNH
+~
+#c Kính gửi: {#dien_thue_san}{co_quan_thue}{/dien_thue_san}{^dien_thue_san}………………………………………………………………………………………………………………………{/dien_thue_san}
+~
+#l \* Doanh nghiệp: **{ten_cty}**
+#l \* Mã số thuế: {#dien_thue_san}{ma_dn}{/dien_thue_san}{^dien_thue_san}[...]{/dien_thue_san}
+#l \* Địa chỉ: {dia_chi_tru_so}
+#l \* Hình thức kế toán: {so_hinh_thuc}
+#l - Hình thức nhập xuất: {so_pp_xuat_kho}
+#l - Phương pháp kê khai: {so_pp_hang_ton}
+- Các tài khoản sử dụng: {so_tt_tai_khoan}
+#l - Các loại hóa đơn sử dụng: {so_loai_hoa_don}
+#l \* Niên độ kế toán (Năm tài chính) {nam_tc_tu} đến {nam_tc_den} hàng năm
+#l \* Niên độ kế toán đầu tiên:
+#l Từ ngày: {so_nien_do_dau_tu}
+#l Đến ngày: {so_nien_do_dau_den}
+#l - Kỳ kế toán chọn:
+#l + Tháng [x:ky_thang][>30]+ Quý [x:ky_quy][>60]+ Năm [x:ky_nam]
+#l \* Tên chương trình. Sử dụng phần mềm ứng dụng: {so_phan_mem}
+#l \* Mã khoá chương trình, các chức năng chính của chương trình: {so_ma_khoa}
+#t Chúng tôi xin cam đoan số liệu đưa vào chương trình đúng, đủ, kịp thời các nghiệp vụ kinh tế phát sinh. Đảm bảo chương trình cung cấp đầy đủ các báo biểu và sổ sách kế toán theo đúng chế độ kế toán quy định.
+~
+::cot 45/55
+~
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#cb {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+#cb {dd_ho_ten}
+::

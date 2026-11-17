@@ -1,0 +1,41 @@
+// Quyết định bổ nhiệm Giám đốc — công ty TNHH một thành viên (Chủ sở hữu ký). Theo bản phòng nộp 10/2026.
+::cot 45/55
+#cb {ten_cty}
+#c --------------------
+#l Số: 01/QĐ-CSH
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập – Tự do – Hạnh phúc
+#c --------------------
+#ci ………….., ngày ….. tháng ….. năm ………
+::
+~
+# QUYẾT ĐỊNH
+#cb V/v: Bổ nhiệm chức danh {gd_chuc_danh}
+~
+#cb CHỦ SỞ HỮU
+~
+- Căn cứ Luật Doanh nghiệp số 59/2020/QH14 được Quốc hội thông qua ngày 17 tháng 06 năm 2020; Luật sửa đổi bổ sung một số điều của Luật Doanh nghiệp ngày 17/06/2025;
+- Căn cứ Điều lệ {ten_cty};
+~
+#cb QUYẾT ĐỊNH
+~
+#l **Điều 1.** {gd_danh_xung} **{gd_ho_ten}** là người giữ chức vụ {gd_chuc_danh}.
+#l - Thẻ Căn cước công dân số: {gd_so_giay_to}
+#l - Ngày cấp: {gd_ngay_cap}
+#l - Nơi cấp: {gd_noi_cap}
+#l - Thường trú: {gd_dia_chi_thuong_tru}
+**Điều 2.** {gd_danh_xung} **{gd_ho_ten}** thực hiện điều hành hoạt động kinh doanh hằng ngày của công ty, chịu trách nhiệm trước các thành viên về việc thực hiện các quyền và nhiệm vụ của mình theo quy định tại Luật Doanh nghiệp 2020 và thực hiện các Quyền và nghĩa vụ khác theo quy định của pháp luật.
+**Điều 3.** {gd_danh_xung} **{gd_ho_ten}** và các phòng ban có trách nhiệm thi hành quyết định này kể từ ngày ký.
+~
+::cot 45/55
+~
+||
+#cb CHỦ SỞ HỮU
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {csh_ho_ten}
+::

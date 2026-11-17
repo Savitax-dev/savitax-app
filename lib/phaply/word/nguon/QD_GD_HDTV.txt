@@ -1,0 +1,48 @@
+// Quyết định bổ nhiệm Giám đốc — công ty TNHH hai thành viên trở lên (Chủ tịch HĐTV ký). Theo bản phòng nộp 09/2026.
+// ⚠ Bản gốc in tên GIÁM ĐỐC dưới chữ ký "Chủ tịch HĐTV" (trong khi Biên bản họp ghi chủ tịch là người khác) — mẫu này
+// in tên CHỦ TỊCH HĐTV ({ct_ho_ten}). Đã báo chuyên viên pháp lý xác nhận.
+::cot 45/55
+#cb {ten_cty}
+#c --------------------
+#l Số: 01/QĐ-HĐTV
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập – Tự do – Hạnh phúc
+#c --------------------
+#ci ………….., ngày ….. tháng ….. năm ………
+::
+~
+# QUYẾT ĐỊNH
+#cb V/v: Bổ nhiệm chức danh {gd_chuc_danh}
+~
+#cb HỘI ĐỒNG THÀNH VIÊN
+~
+- Căn cứ Luật Doanh nghiệp đã được Quốc hội thông qua ngày 17/06/2020; Luật sửa đổi bổ sung một số điều của Luật Doanh nghiệp 17/06/2025;
+- Căn cứ điều lệ Công ty ngày …./…./……. đã được thông qua;
+- Căn cứ Biên bản họp số …. ngày …./…./……. của Hội đồng thành viên về việc bổ nhiệm {gd_chuc_danh}.
+~
+#cb QUYẾT ĐỊNH
+~
+#lb Điều 1:
+#l {gd_danh_xung} **{gd_ho_ten}** là người giữ chức vụ {gd_chuc_danh}
+#l - Số căn cước công dân: {gd_so_giay_to}
+#l - Ngày cấp: {gd_ngay_cap}
+#l - Nơi cấp: {gd_noi_cap}
+#l - Thường trú: {gd_dia_chi_thuong_tru}
+#lb Điều 2:
+{gd_danh_xung} **{gd_ho_ten}** thực hiện điều hành hoạt động kinh doanh hằng ngày của công ty, chịu trách nhiệm trước các thành viên về việc thực hiện các quyền và nhiệm vụ của mình theo quy định tại Luật Doanh nghiệp 2020 và thực hiện các quyền và nghĩa vụ khác theo quy định của pháp luật.
+#lb Điều 3:
+{gd_danh_xung} **{gd_ho_ten}** và các phòng ban có trách nhiệm thi hành quyết định này kể từ ngày ký.
+~
+::cot 40/60
+~
+||
+#cb TM. HỘI ĐỒNG THÀNH VIÊN
+#cb CHỦ TỊCH HỘI ĐỒNG THÀNH VIÊN
+#ci (Ký, ghi rõ họ tên và đóng dấu)
+~
+~
+~
+~
+#cb {ct_ho_ten}
+::

@@ -1,0 +1,538 @@
+// Điều lệ công ty cổ phần — thành lập mới (CP). Theo bản phòng pháp lý đã nộp (10/2026, 32 trang, chữ 11).
+// Lời văn chép đúng bản PDF (lỗi chính tả gốc đã sửa 06/11/2026, anh duyệt); phần riêng của công ty là thẻ.
+// "Giám đốc" trong lời văn = {chuc_danh_gd} (đổi thành "Tổng giám đốc" khi hồ sơ ghi chức danh đó).
+// Phần thân Điều 7 → Điều 52 sinh từ chữ trích PDF (ghép dòng), đừng sửa tay lẻ tẻ mà quên đối chiếu bản gốc.
+@co 11
+@le 18/18/18/15
+@so-trang
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#cb ĐIỀU LỆ
+#cb {ten_cty}
+Chúng tôi, gồm những cổ đông sáng lập có tên như sau:
+::bang vien 6^ 19^ 15^ 8^ 26^ 26^
+#c STT | #c Tên cổ đông sáng lập | #c Giới tính | #c Quốc tịch | #c Địa chỉ thường trú đối với cổ đông sáng lập là cá nhân, hoặc địa chỉ trụ sở chính đối với cổ đông sáng lập tổ chức | #c Loại giấy tờ, số, ngày cấp, cơ quan cấp Giấy tờ pháp lý của cá nhân/tổ chức
+{#co_dong}{stt} | {ho_ten} | {gioi_tinh} | {quoc_tich} | {dia_chi_thuong_tru} | {loai_giay_to}: // {so_giay_to} // Ngày cấp: // {ngay_cap} // Nơi cấp: // {noi_cap}{/co_dong}
+::
+~
+Các cổ đông cùng đồng ý ký tên và chấp thuận thành lập với Điều lệ được các cổ đông công ty thông qua theo quy định của Luật Doanh nghiệp số 59/2020/QH14 được Quốc Hội nước Cộng hòa Xã hội Chủ nghĩa Việt Nam thông qua ngày 17/6/2020, gồm các điều, khoản của Điều lệ này như sau:
+~
+#cbk Chương I
+#cbk ĐIỀU KHOẢN CHUNG
+#bk Điều 1. Tư cách pháp nhân, phạm vi trách nhiệm
+1. Công ty là một pháp nhân độc lập và có tư cách pháp nhân theo Luật pháp Việt Nam. Tất cả hoạt động của Công ty được điều chỉnh bởi Luật pháp Việt Nam và theo các quy định tại Giấy chứng nhận đăng ký doanh nghiệp, Điều lệ này và bất kỳ giấy phép hoặc cấp phép của Cơ quan Nhà nước, cần thiết cho hoạt động kinh doanh của Công ty.
+2. Mỗi cổ đông chỉ chịu trách nhiệm về các khoản nợ và các nghĩa vụ tài sản khác của Công ty trong phạm vi số vốn đã góp vào Công ty.
+3. Thời hạn hoạt động của công ty là: 50 năm kể từ ngày được cơ quan đăng ký kinh doanh cấp Giấy chứng nhận đăng ký doanh nghiệp. Công ty có thể chấm dứt hoạt động trước thời hạn hoặc kéo dài thêm thời gian hoạt động theo quyết định của Đại hội đồng cổ đông hoặc theo quy định của pháp luật.
+#bk Điều 2. Tên Doanh nghiệp
+Tên công ty viết bằng tiếng Việt (*ghi bằng chữ in hoa* ):
+{ten_cty}
+Tên công ty viết bằng tiếng nước ngoài (*nếu có* ):
+{ten_cty_nn}
+Tên công ty viết tắt (*nếu có* ):
+{ten_cty_viet_tat}
+#bk Điều 3. Trụ sở chính và địa chỉ chi nhánh, văn phòng đại diện
+Địa chỉ trụ sở chính:
+{dia_chi_tru_so}
+Địa chỉ chi nhánh (*nếu có* ):
+Địa chỉ văn phòng đại diện (*nếu có* ):
+#bk Điều 4. Ngành, nghề kinh doanh
+::bang vien 6^ 61< 16^ 17^
+STT | Tên ngành | Mã Ngành | Ngành chính
+---
+{#nganh}{stt} | {ten} | {ma} | #cb {chinh}{/nganh}
+::
+#bk Điều 5. Người đại diện theo pháp luật
+1. Số lượng người đại diện theo pháp luật: Công ty có 01 người là người đại diện theo pháp luật, chức danh: {dd_chuc_danh}
+#l Họ và tên người đại diện theo pháp luật: {dd_ho_ten}
+#l Giới tính: {dd_gioi_tinh}[>40]Sinh ngày: {dd_ngay_sinh}
+#l Dân tộc: {dd_dan_toc}[>40]Quốc tịch: {dd_quoc_tich}
+#l Loại giấy tờ pháp lý: {dd_loai_giay_to}
+#l Số giấy tờ pháp lý: {dd_so_giay_to}[>52]Ngày cấp: {dd_ngay_cap}
+#l Nơi cấp: {dd_noi_cap}
+#l Địa chỉ thường trú: {dd_dia_chi_thuong_tru}
+#l Địa chỉ liên lạc: {dd_dia_chi_lien_lac}
+2. Quyền và nghĩa vụ của người đại diện theo pháp luật quy định cụ thể tại Điều 28 Điều lệ công ty.
+3. Trách nhiệm của người đại diện theo pháp luật của doanh nghiệp
+Người đại diện theo pháp luật của doanh nghiệp có trách nhiệm sau đây:
+a) Thực hiện quyền và nghĩa vụ được giao một cách trung thực, cẩn trọng, tốt nhất nhằm bảo đảm lợi ích hợp pháp của doanh nghiệp;
+b) Trung thành với lợi ích của doanh nghiệp; không lạm dụng địa vị, chức vụ và sử dụng thông tin, bí quyết, cơ hội kinh doanh, tài sản khác của doanh nghiệp để tư lợi hoặc phục vụ lợi ích của tổ chức, cá nhân khác;
+c) Thông báo kịp thời, đầy đủ, chính xác cho doanh nghiệp về doanh nghiệp mà mình, người có liên quan của mình làm chủ hoặc có cổ phần, phần vốn góp theo quy định của Luật Doanh nghiệp.
+Người đại diện theo pháp luật của doanh nghiệp chịu trách nhiệm cá nhân đối với thiệt hại cho doanh nghiệp do vi phạm trách nhiệm quy định tại khoản 3 Điều này.
+#cbk Chương II
+#cbk VỐN ĐIỀU LỆ, CỔ ĐÔNG SÁNG LẬP, QUYỀN VÀ NGHĨA VỤ
+#cbk CỦA CÁC CỔ ĐÔNG SÁNG LẬP
+#bk Điều 6. Vốn điều lệ, cổ phần của cổ đông sáng lập
+1. Vốn điều lệ của công ty cổ phần là tổng mệnh giá cổ phần các loại đã bán. Vốn điều lệ của công ty cổ phần khi đăng ký thành lập là tổng mệnh giá cổ phần các loại đã được đăng ký mua và được ghi trong Điều lệ công ty.
+Vốn điều lệ của công ty là: {von_dieu_le} đồng
+Vốn điều lệ (bằng chữ; VNĐ): {von_dieu_le_chu}
+trong đó bao gồm:
+- Tổng số cổ phần cổ đông sáng lập đăng ký mua: {tong_co_phan} cổ phần
+- Mệnh giá cổ phần: {menh_gia} đồng (Ghi bằng chữ: {menh_gia_chu})/01 cổ phần
+- Loại cổ phần: cổ phần phổ thông
+2. Cổ đông sáng lập, số cổ phần, giá trị cổ phần của từng cổ đông sáng lập, thời hạn góp vốn:
+::bang vien 6^ 11^ 9^ 15^ 8^ 17^ 8^ 8^ 9^ 9^
+#c STT | #c Tên cổ đông sáng lập | #c Vốn góp | << | << | << | << | << | << | #c Thời hạn góp
+^^ | ^^ | #c Tổng số cổ phần | << | #c Loại cổ phần | << | << | << | #c Loại tài sản, số lượng, giá trị tài sản góp vốn | ^^
+^^ | ^^ | #c Số lượng | #c Giá trị | #c Phổ thông | << | #c …....... | << | ^^ | ^^
+^^ | ^^ | ^^ | ^^ | #c Số lượng | #c Giá trị | #c Số lượng | #c Giá trị | ^^ | ^^
+{#co_dong}{stt} | {ho_ten} | {so_co_phan} | {gia_tri_co_phan} | {so_co_phan} | {gia_tri_co_phan} |  |  | {loai_tai_san} | {thoi_han_gop}{/co_dong}
+::
+#bk Điều 7. Thanh toán cổ phần đã đăng ký mua khi đăng ký thành lập doanh nghiệp
+1. Các cổ đông phải thanh toán đủ số cổ phần đã đăng ký mua trong thời hạn 90 ngày kể từ ngày được cấp Giấy chứng nhận đăng ký doanh nghiệp, trừ trường hợp Điều lệ công ty hoặc hợp đồng đăng ký mua cổ phần quy định một thời hạn khác ngắn hơn. Trường hợp cổ đông góp vốn bằng tài sản thì thời gian vận chuyển nhập khẩu, thực hiện thủ tục hành chính để chuyển quyền sở hữu tài sản đó không tính vào thời hạn góp vốn này. Hội đồng quản trị chịu trách nhiệm giám sát, đôn đốc cổ đông thanh toán đủ và đúng hạn các cổ phần đã đăng ký mua.
+2. Trong thời hạn từ ngày công ty được cấp Giấy chứng nhận đăng ký doanh nghiệp đến ngày cuối cùng phải thanh toán đủ số cổ phần đã đăng ký mua quy định tại khoản 1 Điều này, số phiếu biểu quyết của các cổ đông được tính theo số cổ phần phổ thông đã được đăng ký mua.
+3. Trường hợp sau thời hạn quy định tại khoản 1 Điều này, cổ đông chưa thanh toán hoặc chỉ thanh toán được một phần số cổ phần đã đăng ký mua thì thực hiện theo quy định sau đây:
+a) Cổ đông chưa thanh toán số cổ phần đã đăng ký mua đương nhiên không còn là cổ đông của công ty và không được chuyển nhượng quyền mua cổ phần đó cho người khác;
+b) Cổ đông chỉ thanh toán một phần số cổ phần đã đăng ký mua có quyền biểu quyết, nhận lợi tức và các quyền khác tương ứng với số cổ phần đã thanh toán; không được chuyển nhượng quyền mua số cổ phần chưa thanh toán cho người khác;
+c) Cổ phần chưa thanh toán được coi là cổ phần chưa bán và Hội đồng quản trị được quyền bán;
+d) Trong thời hạn 30 ngày kể từ ngày kết thúc thời hạn phải thanh toán đủ số cổ phần đã đăng ký mua theo quy định tại khoản 1 Điều này, công ty phải đăng ký điều chỉnh vốn điều lệ bằng mệnh giá số cổ phần đã được thanh toán đủ, trừ trường hợp số cổ phần chưa thanh toán đã được bán hết trong thời hạn này; đăng ký thay đổi cổ đông sáng lập
+4. Cổ đông chưa thanh toán hoặc chưa thanh toán đủ số cổ phần đã đăng ký mua phải chịu trách nhiệm tương ứng với tổng mệnh giá cổ phần đã đăng ký mua đối với các nghĩa vụ tài chính của công ty phát sinh trong thời hạn trước ngày công ty đăng ký điều chỉnh vốn điều lệ theo quy định tại điểm d khoản 3 Điều này. Thành viên Hội đồng quản trị, người đại diện theo pháp luật phải chịu trách nhiệm liên đới về các thiệt hại phát sinh do không thực hiện hoặc không thực hiện đúng quy định tại khoản 1 và điểm d khoản 3 Điều này.
+5. Trừ trường hợp quy định tại khoản 2 Điều này, người góp vốn trở thành cổ đông của công ty kể từ thời điểm đã thanh toán việc mua cổ phần và những thông tin về cổ đông quy định tại các điểm b, c, d và đ khoản 2 Điều 122 của Luật Doanh nghiệp được ghi vào sổ đăng ký cổ đông.
+#bk Điều 8. Quyền của Cổ đông phổ thông
+1. Cổ đông phổ thông có quyền sau đây:
+a) Tham dự, phát biểu trong cuộc họp Đại hội đồng cổ đông và thực hiện quyền biểu quyết trực tiếp hoặc thông qua người đại diện theo ủy quyền hoặc hình thức khác do Điều lệ công ty, pháp luật quy định. Mọi cổ phần phổ thông có một phiếu biểu quyết;
+b) Nhận cổ tức với mức theo quyết định của Đại hội đồng cổ đông;
+c) Ưu tiên mua cổ phần mới tương ứng với tỷ lệ sở hữu cổ phần phổ thông của từng cổ đông trong công ty;
+d) Tự do chuyển nhượng cổ phần của mình cho người khác, trừ trường hợp quy định tại khoản 3 Điều 120, khoản 1 Điều 127 của Luật Doanh nghiệp và quy định khác của pháp luật có liên quan;
+đ) Xem xét, tra cứu và trích lục thông tin về tên và địa chỉ liên lạc trong danh sách cổ đông có quyền biểu quyết; yêu cầu sửa đổi thông tin không chính xác của mình;
+e) Xem xét, tra cứu, trích lục hoặc sao chụp Điều lệ công ty, biên bản họp Đại hội đồng cổ đông và nghị quyết Đại hội đồng cổ đông;
+g) Khi công ty giải thể hoặc phá sản, được nhận một phần tài sản còn lại tương ứng với tỷ lệ sở hữu cổ phần tại công ty.
+2. Cổ đông hoặc nhóm cổ đông sở hữu từ 05% tổng số cổ phần phổ thông trở lên có quyền sau đây:
+a) Xem xét, tra cứu, trích lục sổ biên bản và nghị quyết, quyết định của Hội đồng quản trị, báo cáo tài chính giữa năm và hằng năm, báo cáo của Ban kiểm soát, hợp đồng, giao dịch phải thông qua Hội đồng quản trị và tài liệu khác, trừ tài liệu liên quan đến bí mật thương mại, bí mật kinh doanh của công ty;
+b) Yêu cầu triệu tập họp Đại hội đồng cổ đông trong trường hợp quy định tại khoản 3 Điều này;
+c) Yêu cầu Ban kiểm soát kiểm tra từng vấn đề cụ thể liên quan đến quản lý, điều hành hoạt động của công ty khi xét thấy cần thiết. Yêu cầu phải bằng văn bản và phải bao gồm các nội dung sau đây: họ, tên, địa chỉ liên lạc, quốc tịch, số giấy tờ pháp lý của cá nhân đối với cổ đông là cá nhân; tên, mã số doanh nghiệp hoặc số giấy tờ pháp lý của tổ chức, địa chỉ trụ sở chính đối với cổ đông là tổ chức; số lượng cổ phần và thời điểm đăng ký cổ phần của từng cổ đông, tổng số cổ phần của cả nhóm cổ đông và tỷ lệ sở hữu trong tổng số cổ phần của công ty; vấn đề cần kiểm tra, mục đích kiểm tra;
+d) Quyền khác theo quy định của Luật Doanh nghiệp và Điều lệ công ty.
+3. Cổ đông hoặc nhóm cổ đông quy định tại khoản 2 Điều này có quyền yêu cầu triệu tập họp Đại hội đồng cổ đông trong trường hợp sau đây:
+a) Hội đồng quản trị vi phạm nghiêm trọng quyền của cổ đông, nghĩa vụ của người quản lý hoặc ra quyết định vượt quá thẩm quyền được giao;
+b) Trường hợp khác theo quy định tại Điều lệ công ty.
+4. Yêu cầu triệu tập họp Đại hội đồng cổ đông quy định tại khoản 3 Điều này phải bằng văn bản và phải bao gồm các nội dung sau đây: họ, tên, địa chỉ liên lạc, quốc tịch, số giấy tờ pháp lý của cá nhân đối với cổ đông là cá nhân; tên, mã số doanh nghiệp hoặc số giấy tờ pháp lý của tổ chức, địa chỉ trụ sở chính đối với cổ đông là tổ chức; số lượng cổ phần và thời điểm đăng ký cổ phần của từng cổ đông, tổng số cổ phần của cả nhóm cổ đông và tỷ lệ sở hữu trong tổng số cổ phần của công ty, căn cứ và lý do yêu cầu triệu tập họp Đại hội đồng cổ đông. Kèm theo yêu cầu triệu tập họp phải có các tài liệu, chứng cứ về các vi phạm của Hội đồng quản trị, mức độ vi phạm hoặc về quyết định vượt quá thẩm quyền.
+5. Cổ đông hoặc nhóm cổ đông sở hữu từ 10% tổng số cổ phần phổ thông trở lên có quyền đề cử người vào Hội đồng quản trị, Ban kiểm soát. Việc đề cử người vào Hội đồng quản trị và Ban kiểm soát thực hiện như sau:
+a) Các cổ đông phổ thông hợp thành nhóm để đề cử người vào Hội đồng quản trị và Ban kiểm soát phải thông báo về việc hợp nhóm cho các cổ đông dự họp biết trước khi khai mạc Đại hội đồng cổ đông;
+b) Căn cứ số lượng thành viên Hội đồng quản trị và Ban kiểm soát, cổ đông hoặc nhóm cổ đông quy định tại khoản này được quyền đề cử một hoặc một số người theo quyết định của Đại hội đồng cổ đông làm ứng cử viên Hội đồng quản trị và Ban kiểm soát. Trường hợp số ứng cử viên được cổ đông hoặc nhóm cổ đông đề cử thấp hơn số ứng cử viên mà họ được quyền đề cử theo quyết định của Đại hội đồng cổ đông thì số ứng cử viên còn lại do Hội đồng quản trị, Ban kiểm soát và các cổ đông khác đề cử.
+6. Quyền khác theo quy định của Luật Doanh nghiệp và Điều lệ công ty.
+#bk Điều 9. Nghĩa vụ của cổ đông phổ thông
+1. Thanh toán đủ và đúng thời hạn số cổ phần cam kết mua.
+2. Không được rút vốn đã góp bằng cổ phần phổ thông ra khỏi công ty dưới mọi hình thức, trừ trường hợp được công ty hoặc người khác mua lại cổ phần. Trường hợp có cổ đông rút một phần hoặc toàn bộ vốn cổ phần đã góp trái với quy định tại khoản này thì cổ đông đó và người có lợi ích liên quan trong công ty phải cùng liên đới chịu trách nhiệm về các khoản nợ và nghĩa vụ tài sản khác của công ty trong phạm vi giá trị cổ phần đã bị rút và các thiệt hại xảy ra.
+3. Tuân thủ Điều lệ công ty và quy chế quản lý nội bộ của công ty.
+4. Chấp hành nghị quyết, quyết định của Đại hội đồng cổ đông, Hội đồng quản trị.
+5. Bảo mật các thông tin được công ty cung cấp theo quy định tại Điều lệ công ty và pháp luật; chỉ sử dụng thông tin được cung cấp để thực hiện và bảo vệ quyền và lợi ích hợp pháp của mình; nghiêm cấm phát tán hoặc sao, gửi thông tin được công ty cung cấp cho tổ chức, cá nhân khác.
+6. Nghĩa vụ khác theo quy định của Luật Doanh nghiệp và Điều lệ công ty.
+#bk Điều 10. Cổ phiếu
+1. Cổ phiếu là chứng chỉ do công ty cổ phần phát hành, bút toán ghi sổ hoặc dữ liệu điện tử xác nhận quyền sở hữu một hoặc một số cổ phần của công ty đó. Cổ phiếu phải bao gồm các nội dung chủ yếu sau đây:
+a) Tên, mã số doanh nghiệp, địa chỉ trụ sở chính của công ty;
+b) Số lượng cổ phần và loại cổ phần;
+c) Mệnh giá mỗi cổ phần và tổng mệnh giá số cổ phần ghi trên cổ phiếu;
+d) Họ, tên, địa chỉ liên lạc, quốc tịch, số giấy tờ pháp lý của cá nhân đối với cổ đông là cá nhân; tên, mã số doanh nghiệp hoặc số giấy tờ pháp lý của tổ chức, địa chỉ trụ sở chính đối với cổ đông là tổ chức;
+đ) Chữ ký của người đại diện theo pháp luật của công ty;
+e) Số đăng ký tại sổ đăng ký cổ đông của công ty và ngày phát hành cổ phiếu;
+g) Nội dung khác theo quy định tại các điều 116, 117 và 118 của Luật Doanh nghiệp đối với cổ phiếu của cổ phần ưu đãi.
+2. Trường hợp có sai sót trong nội dung và hình thức cổ phiếu do công ty phát hành thì quyền và lợi ích của người sở hữu cổ phiếu đó không bị ảnh hưởng. Người đại diện theo pháp luật của công ty chịu trách nhiệm về thiệt hại do những sai sót đó gây ra.
+3. Trường hợp cổ phiếu bị mất, bị hư hỏng hoặc bị hủy hoại dưới hình thức khác thì cổ đông được công ty cấp lại cổ phiếu theo đề nghị của cổ đông đó. Đề nghị của cổ đông phải bao gồm các nội dung sau đây:
+a) Thông tin về cổ phiếu đã bị mất, bị hư hỏng hoặc bị hủy hoại dưới hình thức khác;
+b) Cam kết chịu trách nhiệm về những tranh chấp phát sinh từ việc cấp lại cổ phiếu mới.
+#bk Điều 11. Sổ đăng ký cổ đông
+1. Công ty cổ phần phải lập và lưu giữ sổ đăng ký cổ đông từ khi được cấp Giấy chứng nhận đăng ký doanh nghiệp. Sổ đăng ký cổ đông có thể là văn bản giấy, tập dữ liệu điện tử ghi nhận thông tin về sở hữu cổ phần của các cổ đông công ty.
+2. Sổ đăng ký cổ đông phải bao gồm các nội dung chủ yếu sau đây:
+a) Tên, địa chỉ trụ sở chính của công ty;
+b) Tổng số cổ phần được quyền chào bán, loại cổ phần được quyền chào bán và số cổ phần được quyền chào bán của từng loại;
+c) Tổng số cổ phần đã bán của từng loại và giá trị vốn cổ phần đã góp;
+d) Họ, tên, địa chỉ liên lạc, quốc tịch, số giấy tờ pháp lý của cá nhân đối với cổ đông là cá nhân; tên, mã số doanh nghiệp hoặc số giấy tờ pháp lý của tổ chức, địa chỉ trụ sở chính đối với cổ đông là tổ chức;
+đ) Số lượng cổ phần từng loại của mỗi cổ đông, ngày đăng ký cổ phần.
+3. Sổ đăng ký cổ đông được lưu giữ tại trụ sở chính của công ty hoặc các tổ chức khác có chức năng lưu giữ sổ đăng ký cổ đông. Cổ đông có quyền kiểm tra, tra cứu, trích lục, sao chép tên và địa chỉ liên lạc của cổ đông công ty trong sổ đăng ký cổ đông.
+4. Trường hợp cổ đông thay đổi địa chỉ liên lạc thì phải thông báo kịp thời với công ty để cập nhật vào sổ đăng ký cổ đông. Công ty không chịu trách nhiệm về việc không liên lạc được với cổ đông do không được thông báo thay đổi địa chỉ liên lạc của cổ đông.
+5. Công ty phải cập nhật kịp thời thay đổi cổ đông trong sổ đăng ký cổ đông theo yêu cầu của cổ đông có liên quan theo quy định tại Điều lệ công ty.
+#bk Điều 12. Cổ phần phổ thông của cổ đông sáng lập
+1. Công ty cổ phần mới thành lập phải có ít nhất 03 cổ đông sáng lập. Công ty cổ phần được chuyển đổi từ doanh nghiệp nhà nước hoặc từ công ty trách nhiệm hữu hạn hoặc được chia, tách, hợp nhất, sáp nhập từ công ty cổ phần khác không nhất thiết phải có cổ đông sáng lập; trường hợp này, Điều lệ công ty trong hồ sơ đăng ký doanh nghiệp phải có chữ ký của người đại diện theo pháp luật hoặc các cổ đông phổ thông của công ty đó.
+2. Các cổ đông sáng lập phải cùng nhau đăng ký mua ít nhất 20% tổng số cổ phần phổ thông được quyền chào bán khi đăng ký thành lập doanh nghiệp.
+3. Trong thời hạn 03 năm kể từ ngày công ty được cấp Giấy chứng nhận đăng ký doanh nghiệp, cổ phần phổ thông của cổ đông sáng lập được tự do chuyển nhượng cho cổ đông sáng lập khác và chỉ được chuyển nhượng cho người không phải là cổ đông sáng lập nếu được sự chấp thuận của Đại hội đồng cổ đông. Trường hợp này, cổ đông sáng lập dự định chuyển nhượng cổ phần phổ thông thì không có quyền biểu quyết về việc chuyển nhượng cổ phần đó.
+4. Các hạn chế quy định tại khoản 3 Điều này không áp dụng đối với cổ phần phổ thông sau đây:
+a) Cổ phần mà cổ đông sáng lập có thêm sau khi đăng ký thành lập doanh nghiệp;
+b) Cổ phần đã được chuyển nhượng cho người khác không phải là cổ đông sáng lập.
+#bk Điều 13. Cổ phần ưu đãi biểu quyết của cổ đông sở hữu cổ phần ưu đãi biểu quyết
+1. Cổ phần ưu đãi biểu quyết là cổ phần phổ thông có nhiều hơn phiếu biểu quyết so với cổ phần phổ thông khác; số phiếu biểu quyết của một cổ phần ưu đãi biểu quyết do Điều lệ công ty quy định. Chỉ có tổ chức được Chính phủ ủy quyền và cổ đông sáng lập được quyền nắm giữ cổ phần ưu đãi biểu quyết. Ưu đãi biểu quyết của cổ đông sáng lập có hiệu lực trong 03 năm kể từ ngày công ty được cấp Giấy chứng nhận đăng ký doanh nghiệp. Quyền biểu quyết và thời hạn ưu đãi biểu quyết đối với cổ phần ưu đãi biểu quyết do tổ chức được Chính phủ ủy quyền nắm giữ được quy định tại Điều lệ công ty. Sau thời hạn ưu đãi biểu quyết, cổ phần ưu đãi biểu quyết chuyển đổi thành cổ phần phổ thông.
+2. Cổ đông sở hữu cổ phần ưu đãi biểu quyết có quyền sau đây:
+a) Biểu quyết về các vấn đề thuộc thẩm quyền của Đại hội đồng cổ đông với số phiếu biểu quyết theo quy định tại khoản 1 Điều này;
+b) Quyền khác như cổ đông phổ thông, trừ trường hợp quy định tại khoản 3 Điều này.
+3. Cổ đông sở hữu cổ phần ưu đãi biểu quyết không được chuyển nhượng cổ phần đó cho người khác, trừ trường hợp chuyển nhượng theo bản án, quyết định của Tòa án đã có hiệu lực pháp luật hoặc thừa kế.
+4. Chính phủ quy định chi tiết Điều này.
+#bk Điều 14. Cổ phần ưu đãi cổ tức và quyền của cổ đông sở hữu cổ phần ưu đãi cổ tức
+1. Cổ phần ưu đãi cổ tức là cổ phần được trả cổ tức với mức cao hơn so với mức cổ tức của cổ phần phổ thông hoặc mức ổn định hằng năm. Cổ tức được chia hằng năm gồm cổ tức cố định và cổ tức thưởng. Cổ tức cố định không phụ thuộc vào kết quả kinh doanh của công ty. Mức cổ tức cố định cụ thể và phương thức xác định cổ tức thưởng được ghi rõ trong cổ phiếu của cổ phần ưu đãi cổ tức.
+2. Cổ đông sở hữu cổ phần ưu đãi cổ tức có quyền sau đây:
+a) Nhận cổ tức theo quy định tại khoản 1 Điều này;
+b) Nhận phần tài sản còn lại tương ứng với tỷ lệ sở hữu cổ phần tại công ty sau khi công ty đã thanh toán hết các khoản nợ, cổ phần ưu đãi hoàn lại khi công ty giải thể hoặc phá sản;
+c) Quyền khác như cổ đông phổ thông, trừ trường hợp quy định tại khoản 3 Điều này.
+3. Cổ đông sở hữu cổ phần ưu đãi cổ tức không có quyền biểu quyết, dự họp Đại hội đồng cổ đông, đề cử người vào Hội đồng quản trị và Ban kiểm soát, trừ trường hợp quy định tại khoản 6 Điều 148 của Luật Doanh nghiệp.
+#bk Điều 15. Cổ phần ưu đãi hoàn lại và quyền của cổ đông sở hữu cổ phần ưu đãi hoàn lại
+1. Cổ phần ưu đãi hoàn lại là cổ phần được công ty hoàn lại vốn góp theo yêu cầu của người sở hữu hoặc theo các điều kiện được ghi tại cổ phiếu của cổ phần ưu đãi hoàn lại và Điều lệ công ty.
+2. Cổ đông sở hữu cổ phần ưu đãi hoàn lại có quyền như cổ đông phổ thông, trừ trường hợp quy định tại khoản 3 Điều này.
+3. Cổ đông sở hữu cổ phần ưu đãi hoàn lại không có quyền biểu quyết, dự họp Đại hội đồng cổ đông, đề cử người vào Hội đồng quản trị và Ban kiểm soát, trừ trường hợp quy định tại khoản 5 Điều 114 và khoản 6 Điều 148 của Luật Doanh nghiệp.
+#bk Điều 16. Chào bán cổ phần
+1. Chào bán cổ phần là việc công ty tăng thêm số lượng cổ phần, loại cổ phần được quyền chào bán để tăng vốn điều lệ.
+2. Chào bán cổ phần có thể thực hiện theo các hình thức sau đây:
+a) Chào bán cổ phần cho cổ đông hiện hữu;
+b) Chào bán cổ phần riêng lẻ;
+c) Chào bán cổ phần ra công chúng.
+3. Chào bán cổ phần ra công chúng, chào bán cổ phần của công ty đại chúng và tổ chức khác thực hiện theo quy định của pháp luật về chứng khoán.
+4. Công ty thực hiện đăng ký thay đổi vốn điều lệ trong thời hạn 10 ngày kể từ ngày hoàn thành đợt bán cổ phần.
+#bk Điều 17. Chuyển nhượng cổ phần
+1. Cổ phần được tự do chuyển nhượng, trừ trường hợp quy định tại khoản 3 Điều 120 của Luật Doanh nghiệp và Điều lệ công ty có quy định hạn chế chuyển nhượng cổ phần. Trường hợp Điều lệ công ty có quy định hạn chế về chuyển nhượng cổ phần thì các quy định này chỉ có hiệu lực khi được nêu rõ trong cổ phiếu của cổ phần tương ứng.
+2. Việc chuyển nhượng được thực hiện bằng hợp đồng hoặc giao dịch trên thị trường chứng khoán. Trường hợp chuyển nhượng bằng hợp đồng thì giấy tờ chuyển nhượng phải được bên chuyển nhượng và bên nhận chuyển nhượng hoặc người đại diện theo ủy quyền của họ ký. Trường hợp giao dịch trên thị trường chứng khoán thì trình tự, thủ tục chuyển nhượng được thực hiện theo quy định của pháp luật về chứng khoán.
+3. Trường hợp cổ đông là cá nhân chết thì người thừa kế theo di chúc hoặc theo pháp luật của cổ đông đó trở thành cổ đông của công ty.
+4. Trường hợp cổ đông là cá nhân chết mà không có người thừa kế, người thừa kế từ chối nhận thừa kế hoặc bị truất quyền thừa kế thì số cổ phần của cổ đông đó được giải quyết theo quy định của pháp luật về dân sự.
+5. Cổ đông có quyền tặng cho một phần hoặc toàn bộ cổ phần của mình tại công ty cho cá nhân, tổ chức khác; sử dụng cổ phần để trả nợ. Cá nhân, tổ chức được tặng cho hoặc nhận trả nợ bằng cổ phần sẽ trở thành cổ đông của công ty.
+6. Cá nhân, tổ chức nhận cổ phần trong các trường hợp quy định tại Điều này chỉ trở thành cổ đông công ty từ thời điểm các thông tin của họ quy định tại khoản 2 Điều 122 của Luật Doanh nghiệp được ghi đầy đủ vào sổ đăng ký cổ đông.
+7. Công ty phải đăng ký thay đổi cổ đông trong sổ đăng ký cổ đông theo yêu cầu của cổ đông có liên quan trong thời hạn 24 giờ kể từ khi nhận được yêu cầu theo quy định tại Điều lệ công ty.
+#bk Điều 18. Mua lại cổ phần theo yêu cầu của cổ đông
+1. Cổ đông đã biểu quyết không thông qua nghị quyết về việc tổ chức lại công ty hoặc thay đổi quyền, nghĩa vụ của cổ đông quy định tại Điều lệ công ty có quyền yêu cầu công ty mua lại cổ phần của mình. Yêu cầu phải bằng văn bản, trong đó nêu rõ tên, địa chỉ của cổ đông, số lượng cổ phần từng loại, giá dự định bán, lý do yêu cầu công ty mua lại. Yêu cầu phải được gửi đến công ty trong thời hạn 10 ngày kể từ ngày Đại hội đồng cổ đông thông qua nghị quyết về các vấn đề quy định tại khoản này.
+2. Công ty phải mua lại cổ phần theo yêu cầu của cổ đông quy định tại khoản 1 Điều này với giá thị trường hoặc giá được tính theo nguyên tắc quy định tại Điều lệ công ty trong thời hạn 90 ngày kể từ ngày nhận được yêu cầu. Trường hợp không thỏa thuận được về giá thì các bên có thể yêu cầu một tổ chức thẩm định giá định giá. Công ty giới thiệu ít nhất 03 tổ chức thẩm định giá để cổ đông lựa chọn và lựa chọn đó là quyết định cuối cùng.
+#bk Điều 19. Mua lại cổ phần theo quyết định của công ty
+Công ty có quyền mua lại không quá 30% tổng số cổ phần phổ thông đã bán, một phần hoặc toàn bộ cổ phần ưu đãi cổ tức đã bán theo quy định sau đây:
+1. Hội đồng quản trị có quyền quyết định mua lại không quá 10% tổng số cổ phần của từng loại đã bán trong thời hạn 12 tháng. Trường hợp khác, việc mua lại cổ phần do Đại hội đồng cổ đông quyết định;
+2. Hội đồng quản trị quyết định giá mua lại cổ phần. Đối với cổ phần phổ thông, giá mua lại không được cao hơn giá thị trường tại thời điểm mua lại, trừ trường hợp quy định tại khoản 3 Điều này. Đối với cổ phần loại khác, công ty và cổ đông có liên quan không có thỏa thuận khác thì giá mua lại không được thấp hơn giá thị trường;
+3. Công ty có thể mua lại cổ phần của từng cổ đông tương ứng với tỷ lệ sở hữu cổ phần của họ trong công ty theo trình tự, thủ tục sau đây:
+a) Quyết định mua lại cổ phần của công ty phải được thông báo bằng phương thức để bảo đảm đến được tất cả cổ đông trong thời hạn 30 ngày kể từ ngày quyết định đó được thông qua. Thông báo phải gồm tên, địa chỉ trụ sở chính của công ty, tổng số cổ phần và loại cổ phần được mua lại, giá mua lại hoặc nguyên tắc định giá mua lại, thủ tục và thời hạn thanh toán, thủ tục và thời hạn để cổ đông bán cổ phần của họ cho công ty;
+b) Cổ đông đồng ý bán lại cổ phần phải gửi văn bản đồng ý bán cổ phần của mình bằng phương thức để bảo đảm đến được công ty trong thời hạn 30 ngày kể từ ngày thông báo. Văn bản đồng ý bán cổ phần phải có họ, tên, địa chỉ liên lạc, số giấy tờ pháp lý của cá nhân đối với cổ đông là cá nhân; tên, mã số doanh nghiệp hoặc số giấy tờ pháp lý của tổ chức, địa chỉ trụ sở chính đối với cổ đông là tổ chức; số cổ phần sở hữu và số cổ phần đồng ý bán; phương thức thanh toán; chữ ký của cổ đông hoặc người đại diện theo pháp luật của cổ đông. Công ty chỉ mua lại cổ phần trong thời hạn nêu trên.
+#bk Điều 20. Điều kiện thanh toán và xử lý các cổ phần được mua lại
+1. Công ty chỉ được thanh toán cổ phần được mua lại cho cổ đông theo quy định tại Điều 18 và Điều 19 của Điều lệ này nếu ngay sau khi thanh toán hết số cổ phần được mua lại, công ty vẫn bảo đảm thanh toán đủ các khoản nợ và nghĩa vụ tài sản khác.
+2. Cổ phần được mua lại theo quy định tại Điều 18 và Điều 19 của Điều lệ này được coi là cổ phần chưa bán theo quy định tại khoản 4 Điều 112 của Luật Doanh nghiệp. Công ty phải đăng ký giảm vốn điều lệ tương ứng với tổng mệnh giá các cổ phần được công ty mua lại trong thời hạn 10 ngày kể từ ngày hoàn thành việc thanh toán mua lại cổ phần, trừ trường hợp pháp luật về chứng khoán có quy định khác.
+3. Cổ phiếu xác nhận quyền sở hữu cổ phần đã được mua lại phải được tiêu hủy ngay sau khi cổ phần tương ứng đã được thanh toán đủ. Chủ tịch Hội đồng quản trị và {chuc_danh_gd} phải liên đới chịu trách nhiệm về thiệt hại do không tiêu hủy hoặc chậm tiêu hủy cổ phiếu.
+4. Sau khi thanh toán hết số cổ phần được mua lại, nếu tổng giá trị tài sản được ghi trong sổ kế toán của công ty giảm hơn 10% thì công ty phải thông báo cho tất cả chủ nợ biết trong thời hạn 15 ngày kể từ ngày thanh toán hết số cổ phần được mua lại.
+#bk Điều 21. Trả cổ tức
+1. Cổ tức trả cho cổ phần ưu đãi được thực hiện theo điều kiện áp dụng riêng cho mỗi loại cổ phần ưu đãi.
+2. Cổ tức trả cho cổ phần phổ thông được xác định căn cứ vào số lợi nhuận ròng đã thực hiện và khoản chi trả cổ tức được trích từ nguồn lợi nhuận giữ lại của công ty. Công ty cổ phần chỉ được trả cổ tức của cổ phần phổ thông khi có đủ các điều kiện sau đây:
+a) Công ty đã hoàn thành nghĩa vụ thuế và các nghĩa vụ tài chính khác theo quy định của pháp luật;
+b) Đã trích lập các quỹ công ty và bù đắp lỗ trước đó theo quy định của pháp luật và Điều lệ công ty;
+c) Ngay sau khi trả hết số cổ tức, công ty vẫn bảo đảm thanh toán đủ các khoản nợ và nghĩa vụ tài sản khác đến hạn.
+3. Cổ tức có thể được chi trả bằng tiền mặt, bằng cổ phần của công ty hoặc bằng tài sản khác quy định tại Điều lệ công ty. Nếu chi trả bằng tiền mặt thì phải được thực hiện bằng Đồng Việt Nam và theo các phương thức thanh toán theo quy định của pháp luật.
+4. Cổ tức phải được thanh toán đầy đủ trong thời hạn 06 tháng kể từ ngày kết thúc họp Đại hội đồng cổ đông thường niên. Hội đồng quản trị lập danh sách cổ đông được nhận cổ tức, xác định mức cổ tức được trả đối với từng cổ phần, thời hạn và hình thức trả chậm nhất là 30 ngày trước mỗi lần trả cổ tức. Thông báo về trả cổ tức được gửi bằng phương thức để bảo đảm đến cổ đông theo địa chỉ đăng ký trong sổ đăng ký cổ đông chậm nhất là 15 ngày trước khi thực hiện trả cổ tức. Thông báo phải bao gồm các nội dung sau đây:
+a) Tên công ty và địa chỉ trụ sở chính của công ty;
+b) Họ, tên, địa chỉ liên lạc, quốc tịch, số giấy tờ pháp lý của cá nhân đối với cổ đông là cá nhân;
+c) Tên, mã số doanh nghiệp hoặc số giấy tờ pháp lý của tổ chức, địa chỉ trụ sở chính đối với cổ đông là tổ chức;
+d) Số lượng cổ phần từng loại của cổ đông; mức cổ tức đối với từng cổ phần và tổng số cổ tức mà cổ đông đó được nhận;
+đ) Thời điểm và phương thức trả cổ tức;
+e) Họ, tên, chữ ký của Chủ tịch Hội đồng quản trị và người đại diện theo pháp luật của công ty.
+5. Trường hợp cổ đông chuyển nhượng cổ phần của mình trong thời gian giữa thời điểm kết thúc lập danh sách cổ đông và thời điểm trả cổ tức thì người chuyển nhượng là người nhận cổ tức từ công ty.
+6. Trường hợp chi trả cổ tức bằng cổ phần, công ty không phải làm thủ tục chào bán cổ phần theo quy định tại các điều 123, 124 và 125 của Luật Doanh nghiệp. Công ty phải đăng ký tăng vốn điều lệ tương ứng với tổng mệnh giá các cổ phần dùng để chi trả cổ tức trong thời hạn 10 ngày kể từ ngày hoàn thành việc thanh toán cổ tức.
+#bk Điều 22. Thu hồi tiền thanh toán cổ phần được mua lại hoặc cổ tức
+Trường hợp việc thanh toán cổ phần được mua lại trái với quy định tại khoản 1 Điều 134 của Luật Doanh nghiệp hoặc trả cổ tức trái với quy định tại Điều 135 của Luật Doanh nghiệp, cổ đông phải hoàn trả cho công ty số tiền, tài sản khác đã nhận; trường hợp cổ đông không hoàn trả được cho công ty thì tất cả thành viên Hội đồng quản trị phải cùng liên đới chịu trách nhiệm về các khoản nợ và nghĩa vụ tài sản khác của công ty trong phạm vi giá trị số tiền, tài sản đã trả cho cổ đông mà chưa được hoàn lại.
+#cbk Chương III
+#cbk CƠ CẤU TỔ CHỨC, QUẢN TRỊ VÀ KIỂM SOÁT;
+#cbk THỂ THỨC THÔNG QUA QUYẾT ĐỊNH
+#bk Điều 23. Cơ cấu tổ chức quản lý và kiểm soát của công ty
+Cơ cấu tổ chức quản lý của Công ty gồm có:
+1. Đại hội đồng cổ đông;
+2. Hội đồng quản trị;
+3. Ban kiểm soát (nếu có);
+4. {chuc_danh_gd}.
+#bk Điều 24. Quyền và nghĩa vụ của Đại hội đồng cổ đông
+1 . Đại hội đồng cổ đông gồm tất cả cổ đông có quyền biểu quyết, là cơ quan quyết định cao nhất của công ty cổ phần.
+2. Đại hội đồng cổ đông có quyền và nghĩa vụ sau đây:
+a) Thông qua định hướng phát triển của công ty;
+b) Quyết định loại cổ phần và tổng số cổ phần của từng loại được quyền chào bán; quyết định mức cổ tức hằng năm của từng loại cổ phần;
+c) Bầu, miễn nhiệm, bãi nhiệm thành viên Hội đồng quản trị, Kiểm soát viên;
+d) Quyết định đầu tư hoặc bán số tài sản có giá trị từ 35% tổng giá trị tài sản trở lên được ghi trong báo cáo tài chính gần nhất của công ty;
+e) Thông qua báo cáo tài chính hằng năm;
+g) Quyết định mua lại trên 10% tổng số cổ phần đã bán của mỗi loại;
+h) Xem xét, xử lý vi phạm của thành viên Hội đồng quản trị, Kiểm soát viên gây thiệt hại cho công ty và cổ đông công ty;
+i) Quyết định tổ chức lại, giải thể công ty;
+k) Quyết định ngân sách hoặc tổng mức thù lao, thưởng và lợi ích khác cho Hội đồng quản trị, Ban kiểm soát;
+l) Phê duyệt quy chế quản trị nội bộ; quy chế hoạt động Hội đồng quản trị, Ban kiểm soát;
+m) Phê duyệt danh sách công ty kiểm toán độc lập; quyết định công ty kiểm toán độc lập thực hiện kiểm tra hoạt động của công ty, bãi miễn kiểm toán viên độc lập khi xét thấy cần thiết;
+n) Quyền và nghĩa vụ khác theo quy định của Luật Doanh nghiệp và Điều lệ công ty.
+#bk Điều 25. Hội đồng quản trị
+1. Hội đồng quản trị là cơ quan quản lý công ty, có toàn quyền nhân danh công ty để quyết định, thực hiện quyền và nghĩa vụ của công ty, trừ các quyền và nghĩa vụ thuộc thẩm quyền của Đại hội đồng cổ đông.
+2. Hội đồng quản trị có quyền và nghĩa vụ sau đây:
+a) Quyết định chiến lược, kế hoạch phát triển trung hạn và kế hoạch kinh doanh hằng năm của công ty;
+b) Kiến nghị loại cổ phần và tổng số cổ phần được quyền chào bán của từng loại;
+c) Quyết định bán cổ phần chưa bán trong phạm vi số cổ phần được quyền chào bán của từng loại; quyết định huy động thêm vốn theo hình thức khác;
+d) Quyết định giá bán cổ phần và trái phiếu của công ty;
+đ) Quyết định mua lại cổ phần theo quy định tại khoản 1, 2 Điều 19 của điều lệ này;
+e) Quyết định phương án đầu tư và dự án đầu tư trong thẩm quyền và giới hạn theo quy định của pháp luật;
+g) Quyết định giải pháp phát triển thị trường, tiếp thị và công nghệ;
+h) Thông qua hợp đồng mua, bán, vay, cho vay và hợp đồng, giao dịch khác có giá trị từ 35% tổng giá trị tài sản trở lên được ghi trong báo cáo tài chính gần nhất của công ty, giao dịch thuộc thẩm quyền quyết định của Đại hội đồng cổ đông theo quy định tại điểm d khoản 2 Điều 138, khoản 1 và khoản 3 Điều 167 của Luật Doanh nghiệp;
+i) Bầu, miễn nhiệm, bãi nhiệm Chủ tịch Hội đồng quản trị; bổ nhiệm, miễn nhiệm, ký kết hợp đồng, chấm dứt hợp đồng đối với {chuc_danh_gd}; quyết định tiền lương, thù lao, thưởng và lợi ích khác của những người quản lý đó; cử người đại diện theo ủy quyền tham gia Hội đồng thành viên hoặc Đại hội đồng cổ đông ở công ty khác, quyết định mức thù lao và quyền lợi khác của những người đó;
+k) Giám sát, chỉ đạo {chuc_danh_gd} và người quản lý khác trong điều hành công việc kinh doanh hằng ngày của công ty;
+l) Quyết định cơ cấu tổ chức, quy chế quản lý nội bộ của công ty, quyết định thành lập công ty con, chi nhánh, văn phòng đại diện và việc góp vốn, mua cổ phần của doanh nghiệp khác;
+m) Duyệt chương trình, nội dung tài liệu phục vụ họp Đại hội đồng cổ đông, triệu tập họp Đại hội đồng cổ đông hoặc lấy ý kiến để Đại hội đồng cổ đông thông qua nghị quyết;
+n) Trình báo cáo tài chính hằng năm lên Đại hội đồng cổ đông;
+o) Kiến nghị mức cổ tức được trả; quyết định thời hạn và thủ tục trả cổ tức hoặc xử lý lỗ phát sinh trong quá trình kinh doanh;
+p) Kiến nghị việc tổ chức lại, giải thể công ty; yêu cầu phá sản công ty;
+q) Quyền và nghĩa vụ khác theo quy định của Luật Doanh nghiệp và Điều lệ công ty.
+3. Hội đồng quản trị thông qua nghị quyết, quyết định bằng biểu quyết tại cuộc họp, lấy ý kiến bằng văn bản hoặc hình thức khác do Điều lệ công ty quy định. Mỗi thành viên Hội đồng quản trị có một phiếu biểu quyết.
+4. Trường hợp nghị quyết, quyết định do Hội đồng quản trị thông qua trái với quy định của pháp luật, nghị quyết Đại hội đồng cổ đông, Điều lệ công ty gây thiệt hại cho công ty thì các thành viên tán thành thông qua nghị quyết, quyết định đó phải cùng liên đới chịu trách nhiệm cá nhân về nghị quyết, quyết định đó và phải đền bù thiệt hại cho công ty; thành viên phản đối thông qua nghị quyết, quyết định nói trên được miễn trừ trách nhiệm. Trường hợp này, cổ đông của công ty có quyền yêu cầu Tòa án đình chỉ thực hiện hoặc hủy bỏ nghị quyết, quyết định nói trên.
+#bk Điều 26. Nhiệm kỳ và số lượng thành viên Hội đồng quản trị
+1. Hội đồng quản trị có từ 03 đến 11 thành viên.
+2. Nhiệm kỳ của thành viên Hội đồng quản trị không quá 05 năm và có thể được bầu lại với số nhiệm kỳ không hạn chế. Một cá nhân chỉ được bầu làm thành viên độc lập Hội đồng quản trị của một công ty không quá 02 nhiệm kỳ liên tục.
+3. Trường hợp tất cả thành viên Hội đồng quản trị cùng kết thúc nhiệm kỳ thì các thành viên đó tiếp tục là thành viên Hội đồng quản trị cho đến khi có thành viên mới được bầu thay thế và tiếp quản công việc.
+#bk Điều 27. Chủ tịch Hội đồng quản trị
+1. Chủ tịch Hội đồng quản trị do Hội đồng quản trị bầu, miễn nhiệm, bãi nhiệm trong số các thành viên Hội đồng quản trị.
+2. Chủ tịch Hội đồng quản trị công ty đại chúng và công ty cổ phần quy định tại điểm b khoản 1 Điều 88 của Luật Doanh nghiệp không được kiêm {chuc_danh_gd}.
+3. Chủ tịch Hội đồng quản trị có quyền và nghĩa vụ sau đây:
+a) Lập chương trình, kế hoạch hoạt động của Hội đồng quản trị;
+b) Chuẩn bị chương trình, nội dung, tài liệu phục vụ cuộc họp; triệu tập, chủ trì và làm chủ tọa cuộc họp Hội đồng quản trị;
+c) Tổ chức việc thông qua nghị quyết, quyết định của Hội đồng quản trị;
+d) Giám sát quá trình tổ chức thực hiện các nghị quyết, quyết định của Hội đồng quản trị;
+đ) Chủ tọa cuộc họp Đại hội đồng cổ đông;
+e) Quyền và nghĩa vụ khác theo quy định của Luật Doanh nghiệp và Điều lệ công ty (nếu có).
+4. Trường hợp Chủ tịch Hội đồng quản trị vắng mặt hoặc không thể thực hiện được nhiệm vụ của mình thì phải ủy quyền bằng văn bản cho một thành viên khác thực hiện quyền và nghĩa vụ của Chủ tịch Hội đồng quản trị. Trường hợp không có người được ủy quyền hoặc Chủ tịch Hội đồng quản trị chết, mất tích, bị tạm giam, đang chấp hành hình phạt tù, đang chấp hành biện pháp xử lý hành chính tại cơ sở cai nghiện bắt buộc, cơ sở giáo dục bắt buộc, trốn khỏi nơi cư trú, bị hạn chế hoặc mất năng lực hành vi dân sự, có khó khăn trong nhận thức, làm chủ hành vi, bị Tòa án cấm đảm nhiệm chức vụ, cấm hành nghề hoặc làm công việc nhất định thì các thành viên còn lại bầu một người trong số các thành viên giữ chức Chủ tịch Hội đồng quản trị theo nguyên tắc đa số thành viên còn lại tán thành cho đến khi có quyết định mới của Hội đồng quản trị.
+5. Khi xét thấy cần thiết, Hội đồng quản trị quyết định bổ nhiệm thư ký công ty. Thư ký công ty có quyền và nghĩa vụ sau đây:
+a) Hỗ trợ tổ chức triệu tập họp Đại hội đồng cổ đông, Hội đồng quản trị; ghi chép các biên bản họp;
+b) Hỗ trợ thành viên Hội đồng quản trị trong việc thực hiện quyền và nghĩa vụ được giao;
+c) Hỗ trợ Hội đồng quản trị trong áp dụng và thực hiện nguyên tắc quản trị công ty;
+d) Hỗ trợ công ty trong xây dựng quan hệ cổ đông và bảo vệ quyền, lợi ích hợp pháp của cổ đông; việc tuân thủ nghĩa vụ cung cấp thông tin, công khai hóa thông tin và thủ tục hành chính;
+đ) Quyền và nghĩa vụ khác theo quy định tại Điều lệ công ty (nếu có).
+#bk Điều 28. {chuc_danh_gd} công ty
+1. Hội đồng quản trị bổ nhiệm một thành viên Hội đồng quản trị hoặc thuê người khác làm {chuc_danh_gd}
+2. {chuc_danh_gd} là người điều hành công việc kinh doanh hằng ngày của công ty; chịu sự giám sát của Hội đồng quản trị; chịu trách nhiệm trước Hội đồng quản trị và trước pháp luật về việc thực hiện quyền, nghĩa vụ được giao. Nhiệm kỳ của {chuc_danh_gd} không quá 05 năm và có thể được bổ nhiệm lại với số nhiệm kỳ không hạn chế.
+3. {chuc_danh_gd} có quyền và nghĩa vụ sau đây:
+a) Quyết định các vấn đề liên quan đến công việc kinh doanh hằng ngày của công ty mà không thuộc thẩm quyền của Hội đồng quản trị;
+b) Tổ chức thực hiện các nghị quyết, quyết định của Hội đồng quản trị;
+c) Tổ chức thực hiện kế hoạch kinh doanh và phương án đầu tư của công ty;
+d) Kiến nghị phương án cơ cấu tổ chức, quy chế quản lý nội bộ của công ty;
+đ) Bổ nhiệm, miễn nhiệm, bãi nhiệm các chức danh quản lý trong công ty, trừ các chức danh thuộc thẩm quyền của Hội đồng quản trị;
+e) Quyết định tiền lương và lợi ích khác đối với người lao động trong công ty, kể cả người quản lý thuộc thẩm quyền bổ nhiệm của {chuc_danh_gd}
+g) Tuyển dụng lao động;
+h) Kiến nghị phương án trả cổ tức hoặc xử lý lỗ trong kinh doanh;
+i) Quyền và nghĩa vụ khác theo quy định của pháp luật, Điều lệ công ty và nghị quyết, quyết định của Hội đồng quản trị.
+4. {chuc_danh_gd} phải điều hành công việc kinh doanh hằng ngày của công ty theo đúng quy định của pháp luật, Điều lệ công ty, hợp đồng lao động ký với công ty và nghị quyết, quyết định của Hội đồng quản trị. Trường hợp điều hành trái với quy định tại khoản này mà gây thiệt hại cho công ty thì {chuc_danh_gd} phải chịu trách nhiệm trước pháp luật và phải bồi thường thiệt hại cho công ty.
+#bk Điều 29. Tiền lương, thù lao, thưởng và lợi ích khác của thành viên Hội đồng quản trị, {chuc_danh_gd}
+1. Công ty có quyền trả thù lao, thưởng cho thành viên Hội đồng quản trị, trả lương, thưởng cho {chuc_danh_gd} và người quản lý khác theo kết quả và hiệu quả kinh doanh.
+2. Tiền lương, thù lao, thưởng và lợi ích khác của thành viên Hội đồng quản trị, {chuc_danh_gd} được trả theo quy định sau đây:
+a) Thành viên Hội đồng quản trị được hưởng thù lao công việc và thưởng.
+Thù lao công việc được tính theo số ngày công cần thiết hoàn thành nhiệm vụ của thành viên Hội đồng quản trị và mức thù lao mỗi ngày. Hội đồng quản trị dự tính mức thù lao cho từng thành viên theo nguyên tắc nhất trí. Tổng mức thù lao và thưởng của Hội đồng quản trị do Đại hội đồng cổ đông quyết định tại cuộc họp thường niên;
+b) Thành viên Hội đồng quản trị được thanh toán chi phí ăn, ở, đi lại và chi phí hợp lý khác khi thực hiện nhiệm vụ được giao;
+c) {chuc_danh_gd} được trả lương và thưởng. Tiền lương và thưởng của {chuc_danh_gd} do Hội đồng quản trị quyết định.
+3. Thù lao của từng thành viên Hội đồng quản trị, tiền lương của {chuc_danh_gd} và người quản lý khác được tính vào chi phí kinh doanh của công ty theo quy định của pháp luật về thuế thu nhập doanh nghiệp, được thể hiện thành mục riêng trong báo cáo tài chính hằng năm của công ty và phải báo cáo Đại hội đồng cổ đông tại cuộc họp thường niên.
+#bk Điều 30. Cuộc họp Đại hội đồng cổ đông
+1. Đại hội đồng cổ đông họp thường niên mỗi năm một lần. Ngoài cuộc họp thường niên, Đại hội đồng cổ đông có thể họp bất thường. Địa điểm họp Đại hội đồng cổ đông được xác định là nơi chủ tọa tham dự họp và phải ở trên lãnh thổ Việt Nam.
+2. Đại hội đồng cổ đông phải họp thường niên trong thời hạn 04 tháng kể từ ngày kết thúc năm tài chính. Trừ trường hợp Điều lệ công ty có quy định khác, Hội đồng quản trị quyết định gia hạn họp Đại hội đồng cổ đông thường niên trong trường hợp cần thiết, nhưng không quá 06 tháng kể từ ngày kết thúc năm tài chính.
+3. Đại hội đồng cổ đông thường niên thảo luận và thông qua các vấn đề sau đây:
+a) Kế hoạch kinh doanh hằng năm của công ty;
+b) Báo cáo tài chính hằng năm;
+c) Báo cáo của Hội đồng quản trị về quản trị và kết quả hoạt động của Hội đồng quản trị và từng thành viên Hội đồng quản trị;
+d) Báo cáo của Ban kiểm soát về kết quả kinh doanh của công ty, kết quả hoạt động của Hội đồng quản trị, {chuc_danh_gd};
+đ) Báo cáo tự đánh giá kết quả hoạt động của Ban kiểm soát và Kiểm soát viên;
+e) Mức cổ tức đối với mỗi cổ phần của từng loại;
+g) Vấn đề khác thuộc thẩm quyền.
+#bk Điều 31. Triệu tập họp Đại hội đồng cổ đông
+1. Hội đồng quản trị triệu tập họp Đại hội đồng cổ đông thường niên và bất thường. Hội đồng quản trị triệu tập họp bất thường Đại hội đồng cổ đông trong trường hợp sau đây:
+a) Hội đồng quản trị xét thấy cần thiết vì lợi ích của công ty;
+b) Số lượng thành viên Hội đồng quản trị, Ban kiểm soát còn lại ít hơn số lượng thành viên tối thiểu theo quy định của pháp luật;
+c) Theo yêu cầu của cổ đông hoặc nhóm cổ đông quy định tại khoản 2 Điều 115 của Luật Doanh nghiệp;
+d) Theo yêu cầu của Ban kiểm soát;
+đ) Trường hợp khác theo quy định của pháp luật và Điều lệ công ty.
+2. Trừ trường hợp Điều lệ công ty có quy định khác, Hội đồng quản trị phải triệu tập họp Đại hội đồng cổ đông trong thời hạn 30 ngày kể từ ngày xảy ra trường hợp quy định tại điểm b khoản 1 Điều này hoặc nhận được yêu cầu triệu tập họp quy định tại điểm c và điểm d khoản 1 Điều này. Trường hợp Hội đồng quản trị không triệu tập họp Đại hội đồng cổ đông theo quy định thì Chủ tịch Hội đồng quản trị và các thành viên Hội đồng quản trị phải bồi thường thiệt hại phát sinh cho công ty.
+3. Trường hợp Hội đồng quản trị không triệu tập họp Đại hội đồng cổ đông theo quy định tại khoản 2 Điều này thì trong thời hạn 30 ngày tiếp theo, Ban kiểm soát thay thế Hội đồng quản trị triệu tập họp Đại hội đồng cổ đông theo quy định của Luật này. Trường hợp Ban kiểm soát không triệu tập họp Đại hội đồng cổ đông theo quy định thì Ban kiểm soát phải bồi thường thiệt hại phát sinh cho công ty.
+4. Trường hợp Ban kiểm soát không triệu tập họp Đại hội đồng cổ đông theo quy định tại khoản 3 Điều này thì cổ đông hoặc nhóm cổ đông theo quy định tại khoản 2 Điều 115 của Luật Doanh nghiệp có quyền đại diện công ty triệu tập họp Đại hội đồng cổ đông theo quy định của Luật Doanh nghiệp.
+5. Người triệu tập họp Đại hội đồng cổ đông phải thực hiện các công việc sau đây:
+a) Lập danh sách cổ đông có quyền dự họp;
+b) Cung cấp thông tin và giải quyết khiếu nại liên quan đến danh sách cổ đông;
+c) Lập chương trình và nội dung cuộc họp;
+d) Chuẩn bị tài liệu cho cuộc họp;
+đ) Dự thảo nghị quyết Đại hội đồng cổ đông theo nội dung dự kiến của cuộc họp; danh sách và thông tin chi tiết của các ứng cử viên trong trường hợp bầu thành viên Hội đồng quản trị, Kiểm soát viên;
+e) Xác định thời gian và địa điểm họp;
+g) Gửi thông báo mời họp đến từng cổ đông có quyền dự họp theo quy định của Luật Doanh nghiệp;
+h) Công việc khác phục vụ cuộc họp.
+6. Chi phí triệu tập và tiến hành họp Đại hội đồng cổ đông theo quy định tại các khoản 2, 3 và 4 Điều này sẽ được công ty hoàn lại.
+#bk Điều 32. Danh sách cổ đông có quyền dự họp Đại hội đồng cổ đông
+1. Danh sách cổ đông có quyền dự họp Đại hội đồng cổ đông được lập dựa trên sổ đăng ký cổ đông của công ty. Danh sách cổ đông có quyền dự họp Đại hội đồng cổ đông được lập không quá 10 ngày trước ngày gửi giấy mời họp Đại hội đồng cổ đông nếu Điều lệ công ty không quy định thời hạn ngắn hơn.
+2. Danh sách cổ đông có quyền dự họp Đại hội đồng cổ đông phải có họ, tên, địa chỉ liên lạc, quốc tịch, số giấy tờ pháp lý của cá nhân đối với cổ đông là cá nhân; tên, mã số doanh nghiệp hoặc số giấy tờ pháp lý của tổ chức, địa chỉ trụ sở chính đối với cổ đông là tổ chức; số lượng cổ phần từng loại, số và ngày đăng ký cổ đông của từng cổ đông.
+3. Cổ đông có quyền kiểm tra, tra cứu, trích lục, sao chép tên và địa chỉ liên lạc của cổ đông trong danh sách cổ đông có quyền dự họp Đại hội đồng cổ đông; yêu cầu sửa đổi thông tin sai lệch hoặc bổ sung thông tin cần thiết về mình trong danh sách cổ đông có quyền dự họp Đại hội đồng cổ đông. Người quản lý công ty phải cung cấp kịp thời thông tin trong sổ đăng ký cổ đông, sửa đổi, bổ sung thông tin sai lệch theo yêu cầu của cổ đông; chịu trách nhiệm bồi thường thiệt hại phát sinh do không cung cấp hoặc cung cấp không kịp thời, không chính xác thông tin sổ đăng ký cổ đông theo yêu cầu. Trình tự, thủ tục yêu cầu cung cấp thông tin trong sổ đăng ký cổ đông thực hiện theo quy định tại Điều lệ công ty.
+#bk Điều 33. Chương trình và nội dung họp Đại hội đồng cổ đông
+1. Người triệu tập họp Đại hội đồng cổ đông phải chuẩn bị chương trình, nội dung cuộc họp.
+2. Cổ đông hoặc nhóm cổ đông quy định tại khoản 2 Điều 115 của Luật Doanh nghiệp có quyền kiến nghị vấn đề đưa vào chương trình họp Đại hội đồng cổ đông. Kiến nghị phải bằng văn bản và được gửi đến công ty chậm nhất là 03 ngày làm việc trước ngày khai mạc, trừ trường hợp Điều lệ công ty có quy định thời hạn khác. Kiến nghị phải ghi rõ tên cổ đông, số lượng từng loại cổ phần của cổ đông, vấn đề kiến nghị đưa vào chương trình họp.
+3. Trường hợp người triệu tập họp Đại hội đồng cổ đông từ chối kiến nghị quy định tại khoản 2 Điều này thì chậm nhất là 02 ngày làm việc trước ngày khai mạc cuộc họp Đại hội đồng cổ đông phải trả lời bằng văn bản và nêu rõ lý do. Người triệu tập họp Đại hội đồng cổ đông chỉ được từ chối kiến nghị nếu thuộc một trong các trường hợp sau đây:
+a) Kiến nghị được gửi đến không đúng quy định tại khoản 2 Điều này;
+b) Vấn đề kiến nghị không thuộc thẩm quyền quyết định của Đại hội đồng cổ đông;
+c) Trường hợp khác theo quy định tại Điều lệ công ty (nếu có).
+4. Người triệu tập họp Đại hội đồng cổ đông phải chấp nhận và đưa kiến nghị quy định tại khoản 2 Điều này vào dự kiến chương trình và nội dung cuộc họp, trừ trường hợp quy định tại khoản 3 Điều này; kiến nghị được chính thức bổ sung vào chương trình và nội dung cuộc họp nếu được Đại hội đồng cổ đông chấp thuận.
+#bk Điều 34. Mời họp Đại hội đồng cổ đông
+1. Người triệu tập họp Đại hội đồng cổ đông phải gửi thông báo mời họp đến tất cả cổ đông trong danh sách cổ đông có quyền dự họp chậm nhất là 21 ngày trước ngày khai mạc nếu Điều lệ công ty không quy định thời hạn dài hơn. Thông báo mời họp phải có tên, địa chỉ trụ sở chính, mã số doanh nghiệp; tên, địa chỉ liên lạc của cổ đông, thời gian, địa điểm họp và những yêu cầu khác đối với người dự họp.
+2. Thông báo mời họp được gửi bằng phương thức để bảo đảm đến được địa chỉ liên lạc của cổ đông và đăng trên trang thông tin điện tử của công ty; trường hợp công ty xét thấy cần thiết thì đăng báo hằng ngày của trung ương hoặc địa phương theo quy định của Điều lệ công ty.
+3. Thông báo mời họp phải được gửi kèm theo các tài liệu sau đây:
+a) Chương trình họp, các tài liệu sử dụng trong cuộc họp và dự thảo nghị quyết đối với từng vấn đề trong chương trình họp;
+b) Phiếu biểu quyết.
+4. Trường hợp công ty có trang thông tin điện tử, việc gửi tài liệu họp kèm theo thông báo mời họp quy định tại khoản 3 Điều này có thể thay thế bằng việc đăng tải lên trang thông tin điện tử của công ty. Trường hợp này, thông báo mời họp phải ghi rõ nơi, cách thức tải tài liệu.
+#bk Điều 35. Điều kiện tiến hành họp Đại hội đồng cổ đông
+1. Cuộc họp Đại hội đồng cổ đông được tiến hành khi có số cổ đông dự họp đại diện trên 50% tổng số phiếu biểu quyết.
+2. Trường hợp cuộc họp lần thứ nhất không đủ điều kiện tiến hành theo quy định tại khoản 1 Điều này thì thông báo mời họp lần thứ hai phải được gửi trong thời hạn 30 ngày kể từ ngày dự định họp lần thứ nhất. Cuộc họp Đại hội đồng cổ đông lần thứ hai được tiến hành khi có số cổ đông dự họp đại diện từ 33% tổng số phiếu biểu quyết trở lên.
+3. Trường hợp cuộc họp lần thứ hai không đủ điều kiện tiến hành theo quy định tại khoản 2 Điều này thì thông báo mời họp lần thứ ba phải được gửi trong thời hạn 20 ngày kể từ ngày dự định họp lần thứ hai. Cuộc họp Đại hội đồng cổ đông lần thứ ba được tiến hành không phụ thuộc vào tổng số phiếu biểu quyết của các cổ đông dự họp.
+4. Chỉ có Đại hội đồng cổ đông mới có quyền quyết định thay đổi chương trình họp đã được gửi kèm theo thông báo mời họp theo quy định tại Điều 142 của Luật Doanh nghiệp.
+#bk Điều 36. Thể thức tiến hành họp và biểu quyết tại cuộc họp Đại hội đồng cổ đông
+Thể thức họp và biểu quyết tại cuộc họp Đại hội đồng cổ đông được tiến hành như sau:
+1. Trước khi khai mạc cuộc họp, phải tiến hành đăng ký cổ đông dự họp Đại hội đồng cổ đông;
+2. Việc bầu chủ tọa, thư ký và ban kiểm phiếu được quy định như sau:
+a) Chủ tịch Hội đồng quản trị làm chủ tọa hoặc ủy quyền cho thành viên Hội đồng quản trị khác làm chủ tọa cuộc họp Đại hội đồng cổ đông do Hội đồng quản trị triệu tập; trường hợp Chủ tịch vắng mặt hoặc tạm thời mất khả năng làm việc thì các thành viên Hội đồng quản trị còn lại bầu một người trong số họ làm chủ tọa cuộc họp theo nguyên tắc đa số; trường hợp không bầu được người làm chủ tọa thì Trưởng Ban kiểm soát điều hành để Đại hội đồng cổ đông bầu chủ tọa cuộc họp và người có số phiếu bầu cao nhất làm chủ tọa cuộc họp;
+b) Trừ trường hợp quy định tại điểm a khoản này, người ký tên triệu tập họp Đại hội đồng cổ đông điều hành để Đại hội đồng cổ đông bầu chủ tọa cuộc họp và người có số phiếu bầu cao nhất làm chủ tọa cuộc họp;
+c) Chủ tọa cử một hoặc một số người làm thư ký cuộc họp;
+d) Đại hội đồng cổ đông bầu một hoặc một số người vào ban kiểm phiếu theo đề nghị của chủ tọa cuộc họp;
+3. Chương trình và nội dung họp phải được Đại hội đồng cổ đông thông qua trong phiên khai mạc. Chương trình phải xác định thời gian đối với từng vấn đề trong nội dung chương trình họp;
+4. Chủ tọa có quyền thực hiện các biện pháp cần thiết và hợp lý để điều hành cuộc họp một cách có trật tự, đúng theo chương trình đã được thông qua và phản ánh được mong muốn của đa số người dự họp;
+5. Đại hội đồng cổ đông thảo luận và biểu quyết theo từng vấn đề trong nội dung chương trình. Việc biểu quyết được tiến hành bằng biểu quyết tán thành, không tán thành và không có ý kiến. Kết quả kiểm phiếu được chủ tọa công bố ngay trước khi bế mạc cuộc họp;
+6. Cổ đông hoặc người được ủy quyền dự họp đến sau khi cuộc họp đã khai mạc vẫn được đăng ký và có quyền tham gia biểu quyết ngay sau khi đăng ký; trong trường hợp này, hiệu lực của những nội dung đã được biểu quyết trước đó không thay đổi;
+7. Người triệu tập họp hoặc chủ tọa cuộc họp Đại Hội đồng cổ đông có quyền sau đây:
+a) Yêu cầu tất cả người dự họp chịu sự kiểm tra hoặc các biện pháp an ninh hợp pháp, hợp lý khác;
+b) Yêu cầu cơ quan có thẩm quyền duy trì trật tự cuộc họp; trục xuất những người không tuân thủ quyền điều hành của chủ tọa, cố ý gây rối trật tự, ngăn cản tiến triển bình thường của cuộc họp hoặc không tuân thủ các yêu cầu về kiểm tra an ninh ra khỏi cuộc họp Đại hội đồng cổ đông;
+8. Chủ tọa có quyền hoãn cuộc họp Đại hội đồng cổ đông đã có đủ số người đăng ký dự họp tối đa không quá 03 ngày làm việc kể từ ngày cuộc họp dự định khai mạc và chỉ được hoãn cuộc họp hoặc thay đổi địa điểm họp trong trường hợp sau đây:
+a) Địa điểm họp không có đủ chỗ ngồi thuận tiện cho tất cả người dự họp;
+b) Phương tiện thông tin tại địa điểm họp không bảo đảm cho cổ đông dự họp tham gia, thảo luận và biểu quyết;
+c) Có người dự họp cản trở, gây rối trật tự, có nguy cơ làm cho cuộc họp không được tiến hành một cách công bằng và hợp pháp;
+9. Trường hợp chủ tọa hoãn hoặc tạm dừng họp Đại hội đồng cổ đông trái với quy định tại khoản 8 Điều này, Đại hội đồng cổ đông bầu một người khác trong số những người dự họp để thay thế chủ tọa điều hành cuộc họp cho đến lúc kết thúc; tất cả nghị quyết được thông qua tại cuộc họp đó đều có hiệu lực thi hành.
+#bk Điều 37. Hình thức thông qua nghị quyết Đại hội đồng cổ đông
+1. Đại hội đồng cổ đông thông qua nghị quyết thuộc thẩm quyền bằng hình thức biểu quyết tại cuộc họp hoặc lấy ý kiến bằng văn bản.
+2. Nghị quyết Đại hội đồng cổ đông về các vấn đề sau đây phải được thông qua bằng hình thức biểu quyết tại cuộc họp Đại hội đồng cổ đông:
+a) Sửa đổi, bổ sung nội dung của Điều lệ công ty;
+b) Định hướng phát triển công ty;
+c) Loại cổ phần và tổng số cổ phần của từng loại;
+d) Bầu, miễn nhiệm, bãi nhiệm thành viên Hội đồng quản trị và Ban kiểm soát;
+đ) Quyết định đầu tư hoặc bán số tài sản có giá trị từ 35% tổng giá trị tài sản trở lên được ghi trong báo cáo tài chính gần nhất của công ty;
+e) Thông qua báo cáo tài chính hằng năm;
+g) Tổ chức lại, giải thể công ty.
+#bk Điều 38. Điều kiện để nghị quyết Đại hội đồng cổ đông được thông qua
+1. Nghị quyết về nội dung sau đây được thông qua nếu được số cổ đông đại diện từ 65% tổng số phiếu biểu quyết trở lên của tất cả cổ đông dự họp tán thành, trừ trường hợp quy định tại các khoản 3, 4 và 6 Điều này:
+a) Loại cổ phần và tổng số cổ phần của từng loại;
+b) Thay đổi ngành, nghề và lĩnh vực kinh doanh;
+c) Thay đổi cơ cấu tổ chức quản lý công ty;
+d) Dự án đầu tư hoặc bán tài sản có giá trị từ 35% tổng giá trị tài sản trở lên được ghi trong báo cáo tài chính gần nhất của công ty;
+đ) Tổ chức lại, giải thể công ty;
+e) Vấn đề khác do Điều lệ công ty quy định.
+2. Các nghị quyết được thông qua khi được số cổ đông sở hữu trên 50% tổng số phiếu biểu quyết của tất cả cổ đông dự họp tán thành, trừ trường hợp quy định tại các khoản 1, 3, 4 và 6 Điều này.
+3. Việc biểu quyết bầu thành viên Hội đồng quản trị và Ban kiểm soát phải thực hiện theo phương thức bầu dồn phiếu, theo đó mỗi cổ đông có tổng số phiếu biểu quyết tương ứng với tổng số cổ phần sở hữu nhân với số thành viên được bầu của Hội đồng quản trị hoặc Ban kiểm soát và cổ đông có quyền dồn hết hoặc một phần tổng số phiếu bầu của mình cho một hoặc một số ứng cử viên. Người trúng cử thành viên Hội đồng quản trị hoặc Kiểm soát viên được xác định theo số phiếu bầu tính từ cao xuống thấp, bắt đầu từ ứng cử viên có số phiếu bầu cao nhất cho đến khi đủ số thành viên quy định tại Điều lệ công ty. Trường hợp có từ 02 ứng cử viên trở lên đạt cùng số phiếu bầu như nhau cho thành viên cuối cùng của Hội đồng quản trị hoặc Ban kiểm soát thì sẽ tiến hành bầu lại trong số các ứng cử viên có số phiếu bầu ngang nhau.
+4. Trường hợp thông qua nghị quyết dưới hình thức lấy ý kiến bằng văn bản thì nghị quyết Đại hội đồng cổ đông được thông qua nếu được số cổ đông sở hữu trên 50% tổng số phiếu biểu quyết của tất cả cổ đông có quyền biểu quyết tán thành.
+5. Nghị quyết Đại hội đồng cổ đông phải được thông báo đến cổ đông có quyền dự họp Đại hội đồng cổ đông trong thời hạn 15 ngày kể từ ngày thông qua; trường hợp công ty có trang thông tin điện tử, việc gửi nghị quyết có thể thay thế bằng việc đăng tải lên trang thông tin điện tử của công ty.
+6. Nghị quyết Đại hội đồng cổ đông về nội dung làm thay đổi bất lợi quyền và nghĩa vụ của cổ đông sở hữu cổ phần ưu đãi chỉ được thông qua nếu được số cổ đông ưu đãi cùng loại dự họp sở hữu từ 75% tổng số cổ phần ưu đãi loại đó trở lên tán thành hoặc được các cổ đông ưu đãi cùng loại sở hữu từ 75% tổng số cổ phần ưu đãi loại đó trở lên tán thành trong trường hợp thông qua nghị quyết dưới hình thức lấy ý kiến bằng văn bản.
+#bk Điều 39. Thẩm quyền và thể thức lấy ý kiến cổ đông bằng văn bản để thông qua nghị quyết Đại hội đồng cổ đông
+Thẩm quyền và thể thức lấy ý kiến cổ đông bằng văn bản để thông qua nghị quyết Đại hội đồng cổ đông được thực hiện theo quy định sau đây:
+1. Hội đồng quản trị có quyền lấy ý kiến cổ đông bằng văn bản để thông qua nghị quyết Đại hội đồng cổ đông khi xét thấy cần thiết vì lợi ích của công ty, trừ trường hợp quy định tại khoản 2 Điều 147 của Luật Doanh nghiệp;
+2. Hội đồng quản trị chuẩn bị phiếu lấy ý kiến, dự thảo nghị quyết Đại hội đồng cổ đông, các tài liệu giải trình dự thảo nghị quyết và gửi đến tất cả cổ đông có quyền biểu quyết chậm nhất là 10 ngày trước thời hạn phải gửi lại phiếu lấy ý kiến. Việc lập danh sách cổ đông gửi phiếu lấy ý kiến thực hiện theo quy định tại khoản 1 và khoản 2 Điều 141 của Luật Doanh nghiệp. Yêu cầu và cách thức gửi phiếu lấy ý kiến và tài liệu kèm theo thực hiện theo quy định tại Điều 143 của Luật Doanh nghiệp;
+3. Phiếu lấy ý kiến phải bao gồm các nội dung chủ yếu sau đây:
+a) Tên, địa chỉ trụ sở chính, mã số doanh nghiệp;
+b) Mục đích lấy ý kiến;
+c) Họ, tên, địa chỉ liên lạc, quốc tịch, số giấy tờ pháp lý của cá nhân đối với cổ đông là cá nhân; tên, mã số doanh nghiệp hoặc số giấy tờ pháp lý của tổ chức, địa chỉ trụ sở chính đối với cổ đông là tổ chức hoặc họ, tên, địa chỉ liên lạc, quốc tịch, số giấy tờ pháp lý của cá nhân đối với đại diện của cổ đông là tổ chức; số lượng cổ phần của từng loại và số phiếu biểu quyết của cổ đông;
+d) Vấn đề cần lấy ý kiến để thông qua;
+đ) Phương án biểu quyết bao gồm tán thành, không tán thành và không có ý kiến;
+e) Thời hạn phải gửi về công ty phiếu lấy ý kiến đã được trả lời;
+g) Họ, tên, chữ ký của Chủ tịch Hội đồng quản trị;
+4. Cổ đông có thể gửi phiếu lấy ý kiến đã trả lời đến công ty bằng hình thức gửi thư, fax hoặc thư điện tử theo quy định sau đây:
+a) Trường hợp gửi thư, phiếu lấy ý kiến đã được trả lời phải có chữ ký của cổ đông là cá nhân, của người đại diện theo ủy quyền hoặc người đại diện theo pháp luật của cổ đông là tổ chức. Phiếu lấy ý kiến gửi về công ty phải được đựng trong phong bì dán kín và không ai được quyền mở trước khi kiểm phiếu;
+b) Trường hợp gửi fax hoặc thư điện tử, phiếu lấy ý kiến gửi về công ty phải được giữ bí mật đến thời điểm kiểm phiếu;
+c) Các phiếu lấy ý kiến gửi về công ty sau thời hạn đã xác định tại nội dung phiếu lấy ý kiến hoặc đã bị mở trong trường hợp gửi thư và bị tiết lộ trong trường hợp gửi fax, thư điện tử là không hợp lệ. Phiếu lấy ý kiến không được gửi về được coi là phiếu không tham gia biểu quyết;
+5. Hội đồng quản trị tổ chức kiểm phiếu và lập biên bản kiểm phiếu dưới sự chứng kiến, giám sát của Ban kiểm soát hoặc của cổ đông không nắm giữ chức vụ quản lý công ty. Biên bản kiểm phiếu phải bao gồm các nội dung chủ yếu sau đây:
+a) Tên, địa chỉ trụ sở chính, mã số doanh nghiệp;
+b) Mục đích và các vấn đề cần lấy ý kiến để thông qua nghị quyết;
+c) Số cổ đông với tổng số phiếu biểu quyết đã tham gia biểu quyết, trong đó phân biệt số phiếu biểu quyết hợp lệ và số phiếu biểu quyết không hợp lệ và phương thức gửi phiếu biểu quyết, kèm theo phụ lục danh sách cổ đông tham gia biểu quyết;
+d) Tổng số phiếu tán thành, không tán thành và không có ý kiến đối với từng vấn đề;
+đ) Vấn đề đã được thông qua và tỷ lệ biểu quyết thông qua tương ứng;
+e) Họ, tên, chữ ký của Chủ tịch Hội đồng quản trị, người giám sát kiểm phiếu và người kiểm phiếu.
+Các thành viên Hội đồng quản trị, người kiểm phiếu và người giám sát kiểm phiếu phải liên đới chịu trách nhiệm về tính trung thực, chính xác của biên bản kiểm phiếu; liên đới chịu trách nhiệm về các thiệt hại phát sinh từ các quyết định được thông qua do kiểm phiếu không trung thực, không chính xác;
+6. Biên bản kiểm phiếu và nghị quyết phải được gửi đến các cổ đông trong thời hạn 15 ngày kể từ ngày kết thúc kiểm phiếu. Trường hợp công ty có trang thông tin điện tử, việc gửi biên bản kiểm phiếu và nghị quyết có thể thay thế bằng việc đăng tải lên trang thông tin điện tử của công ty;
+7. Phiếu lấy ý kiến đã được trả lời, biên bản kiểm phiếu, nghị quyết đã được thông qua và tài liệu có liên quan gửi kèm theo phiếu lấy ý kiến được lưu giữ tại trụ sở chính của công ty;
+8. Nghị quyết được thông qua theo hình thức lấy ý kiến cổ đông bằng văn bản có giá trị như nghị quyết được thông qua tại cuộc họp Đại hội đồng cổ đông.
+#bk Điều 40. Trình báo cáo hằng năm
+1. Kết thúc năm tài chính, Hội đồng quản trị phải trình Đại hội đồng cổ đông báo cáo sau đây:
+a) Báo cáo kết quả kinh doanh của công ty;
+b) Báo cáo tài chính;
+c) Báo cáo đánh giá công tác quản lý, điều hành công ty;
+d) Báo cáo thẩm định của Ban kiểm soát.
+2. Đối với công ty cổ phần mà pháp luật yêu cầu phải kiểm toán thì báo cáo tài chính hằng năm của công ty cổ phần phải được kiểm toán trước khi trình Đại hội đồng cổ đông xem xét, thông qua.
+3. Báo cáo quy định tại các điểm a, b và c khoản 1 Điều này phải được gửi đến Ban kiểm soát để thẩm định chậm nhất là 30 ngày trước ngày khai mạc cuộc họp Đại hội đồng cổ đông thường niên nếu Điều lệ công ty không có quy định khác.
+4. Báo cáo quy định tại các khoản 1, 2 và 3 Điều này, báo cáo thẩm định của Ban kiểm soát và báo cáo kiểm toán phải được lưu giữ tại trụ sở chính của công ty chậm nhất là 10 ngày trước ngày khai mạc cuộc họp Đại hội đồng cổ đông thường niên nếu Điều lệ công ty không quy định thời hạn khác dài hơn. Cổ đông sở hữu cổ phần của công ty liên tục ít nhất 01 năm có quyền tự mình hoặc cùng với luật sư, kế toán viên, kiểm toán viên có chứng chỉ hành nghề trực tiếp xem xét báo cáo quy định tại Điều này.
+#bk Điều 41. Công khai thông tin công ty cổ phần
+1. Công ty cổ phần phải gửi báo cáo tài chính hằng năm đã được Đại hội đồng cổ đông thông qua đến cơ quan nhà nước có thẩm quyền theo quy định của pháp luật về kế toán và quy định khác của pháp luật có liên quan.
+2. Công ty cổ phần công bố trên trang thông tin điện tử của mình thông tin sau đây:
+a) Điều lệ công ty;
+b) Sơ yếu lý lịch, trình độ học vấn và kinh nghiệm nghề nghiệp của các thành viên Hội đồng quản trị, Kiểm soát viên, {chuc_danh_gd} công ty;
+c) Báo cáo tài chính hằng năm đã được Đại hội đồng cổ đông thông qua;
+d) Báo cáo đánh giá kết quả hoạt động hằng năm của Hội đồng quản trị và Ban kiểm soát.
+3. Công ty cổ phần không phải là công ty niêm yết phải thông báo cho Cơ quan đăng ký kinh doanh nơi công ty có trụ sở chính chậm nhất là 03 ngày làm việc sau khi có thông tin hoặc có thay đổi các thông tin về họ, tên, quốc tịch, số Hộ chiếu, địa chỉ liên lạc, số cổ phần và loại cổ phần của cổ đông là cá nhân nước ngoài; tên, mã số doanh nghiệp, địa chỉ trụ sở chính, số cổ phần và loại cổ phần của cổ đông là tổ chức nước ngoài và họ, tên, quốc tịch, số Hộ chiếu, địa chỉ liên lạc người đại diện theo ủy quyền của cổ đông là tổ chức nước ngoài.
+4. Công ty đại chúng thực hiện công bố, công khai thông tin theo quy định của pháp luật về chứng khoán. Công ty cổ phần theo quy định tại điểm b khoản 1 Điều 88 công bố, công khai thông tin theo quy định tại các điểm a, c, đ và g khoản 1 Điều 109 và Điều 110 của Luật Doanh nghiệp.
+#bk Điều 42. Chế độ lưu trữ tài liệu của Công ty
+1. Công ty phải lưu giữ các tài liệu sau đây:
+- Điều lệ công ty; quy chế quản lý nội bộ của công ty; sổ đăng ký cổ đông;
+- Văn bằng bảo hộ quyền sở hữu công nghiệp; giấy chứng nhận đăng ký chất lượng sản phẩm, hàng hóa, dịch vụ; các giấy phép và giấy chứng nhận khác;
+- Tài liệu, giấy tờ xác nhận quyền sở hữu tài sản của công ty;
+- Phiếu biểu quyết, biên bản kiểm phiếu, biên bản họp Hội đồng thành viên, Đại hội đồng cổ đông, Hội đồng quản trị; các quyết định của doanh nghiệp;
+- Bản cáo bạch để chào bán hoặc phát hành chứng khoán;
+- Báo cáo của Ban kiểm soát, kết luận của cơ quan thanh tra, kết luận của tổ chức kiểm toán;
+- Sổ kế toán, chứng từ kế toán, báo cáo tài chính hằng năm.
+2. Doanh nghiệp phải lưu giữ các tài liệu quy định tại khoản 1 Điều này tại trụ sở chính hoặc địa điểm khác được quy định trong Điều lệ công ty; thời hạn lưu giữ thực hiện theo quy định của pháp luật.
+#bk Điều 43. Quy định về dấu và Chế độ lưu trữ dấu của Công ty
+1. Dấu bao gồm dấu được làm tại cơ sở khắc dấu hoặc dấu dưới hình thức chữ ký số theo quy định của pháp luật về giao dịch điện tử.
+2. Doanh nghiệp quyết định loại dấu, số lượng, hình thức và nội dung dấu của doanh nghiệp, chi nhánh, văn phòng đại diện và đơn vị khác của doanh nghiệp.
+3. Việc quản lý và lưu giữ dấu thực hiện theo quy định của Điều lệ công ty hoặc quy chế do doanh nghiệp, chi nhánh, văn phòng đại diện hoặc đơn vị khác của doanh nghiệp có dấu ban hành. Doanh nghiệp sử dụng dấu trong các giao dịch theo quy định của pháp luật.
+#cbk Chương IV
+#cbk NĂM TÀI CHÍNH, PHÂN PHỐI LỢI NHUẬN
+#bk Điều 44. Năm tài chính
+Năm tài chính của Công ty bắt đầu từ ngày 01 tháng 01 và kết thúc vào cuối ngày 31 tháng 12 năm dương lịch.
+Năm tài chính đầu tiên bắt đầu từ ngày cấp Giấy chứng nhận đăng ký doanh nghiệp và kết thúc vào ngày thứ 31 của tháng 12 ngay sau ngày cấp Giấy chứng nhận đăng ký doanh nghiệp đó.
+#bk Điều 45. Nguyên tắc phân phối lợi nhuận sau thuế và xử lý lỗ trong kinh doanh
+1. Đại hội đồng cổ đông quyết định mức chi trả cổ tức và hình thức chi trả cổ tức hàng năm từ lợi nhuận được giữ lại của Công ty.
+2. Theo quy định của Luật Doanh nghiệp, Hội đồng quản trị có thể quyết định tạm ứng cổ tức giữa kỳ nếu xét thấy việc chi trả này phù hợp với khả năng sinh lời của công ty.
+3. Công ty không thanh toán lãi cho khoản tiền trả cổ tức hay khoản tiền chi trả liên quan tới một loại cổ phiếu.
+4. Hội đồng quản trị có thể đề nghị Đại hội đồng cổ đông thông qua việc thanh toán toàn bộ hoặc một phần cổ tức bằng cổ phiếu và Hội đồng quản trị là cơ quan thực thi quyết định này.
+5. Trường hợp cổ tức hay những khoản tiền khác liên quan tới một loại cổ phiếu được chi trả bằng tiền mặt, Công ty phải chi trả bằng tiền đồng Việt Nam. Việc chi trả có thể thực hiện trực tiếp hoặc thông qua các ngân hàng trên cơ sở các thông tin chi tiết về ngân hàng do cổ đông cung cấp. Trường hợp Công ty đã chuyển khoản theo đúng các thông tin chi tiết về ngân hàng do cổ đông cung cấp mà cổ đông đó không nhận được tiền, Công ty không phải chịu trách nhiệm về khoản tiền Công ty chuyển cho cổ đông thụ hưởng. Việc thanh toán cổ tức đối với các cổ phiếu niêm yết tại Sở giao dịch chứng khoán có thể được tiến hành thông qua công ty chứng khoán hoặc Trung tâm lưu ký chứng khoán Việt Nam.
+6. Căn cứ Luật Doanh nghiệp và pháp luật có liên quan, Hội đồng quản trị thông qua nghị quyết xác định một ngày cụ thể để chốt danh sách cổ đông. Căn cứ theo ngày đó, những người đăng ký với tư cách cổ đông hoặc người sở hữu các chứng khoán khác được quyền nhận cổ tức, lãi suất, phân phối lợi nhuận, nhận cổ phiếu, nhận thông báo hoặc tài liệu khác.
+7. Các vấn đề khác liên quan đến phân phối lợi nhuận được thực hiện theo quy định của pháp luật.
+8. Nguyên tắc xử lý lỗ trong kinh doanh: Trường hợp quyết toán năm tài chính bị lỗ, Đại hội đồng cổ đông công ty được quyết định theo các hướng sau:
+- Trích quỹ dự trữ để bù.
+- Chuyển sang năm sau để trừ vào lợi nhuận của năm tài chính sau trước khi phân phối lợi nhuận.
+#cbk Chương V
+#cbk NGUYÊN TẮC GIẢI QUYẾT TRANH CHẤP NỘI BỘ
+#bk Điều 46. Nguyên tắc giải quyết tranh chấp nội bộ
+1. Các tranh chấp nội bộ giữa Công ty với cổ đông của công ty, giữa các cổ đông của công ty với nhau liên quan đến thành lập, hoạt động, giải thể Công ty trước hết phải được giải quyết thông qua thương lượng, hoà giải.
+2. Trường hợp giải quyết tranh chấp nội bộ theo phương thức thương lượng, hòa giải không đạt được kết quả thì bất kỳ bên nào cũng có quyền đưa tranh chấp ra Tòa án có thẩm quyền để giải quyết.
+#cbk Chương VI
+#cbk THÀNH LẬP, TỔ CHỨC LẠI, GIẢI THỂ
+#bk Điều 47. Thành lập, tổ chức lại
+Công ty được thành lập sau khi được Cơ quan đăng ký kinh doanh cấp Giấy chứng nhận đăng ký doanh nghiệp.
+Mọi phí tổn liên hệ đến việc thành lập công ty đều được ghi vào mục chi phí của công ty và được tính hoàn giảm vào chi phí của năm tài chính đầu tiên.
+Việc tổ chức lại doanh nghiệp (chia, tách, hợp nhất, sáp nhập hoặc chuyển đổi loại hình doanh nghiệp) công ty thực hiện quy định của Luật Doanh nghiệp.
+#bk Điều 48. Các trường hợp và điều kiện giải thể doanh nghiệp
+1. Công ty bị giải thể trong các trường hợp sau đây:
+a) Kết thúc thời hạn hoạt động đã ghi trong Điều lệ công ty mà không có quyết định gia hạn;
+b) Theo nghị quyết, quyết định của Đại hội đồng cổ đông;
+c) Công ty không còn đủ số lượng cổ đông tối thiểu theo quy định của Luật doanh nghiệp trong thời hạn 06 tháng liên tục mà không làm thủ tục chuyển đổi loại hình doanh nghiệp;
+d) Bị thu hồi Giấy chứng nhận đăng ký doanh nghiệp, trừ trường hợp Luật Quản lý thuế có quy định khác.
+2. Công ty chỉ được giải thể khi bảo đảm thanh toán hết các khoản nợ và nghĩa vụ tài sản khác và doanh nghiệp không trong quá trình giải quyết tranh chấp tại Tòa án hoặc cơ quan trọng tài. Người quản lý có liên quan và doanh nghiệp quy định tại điểm c khoản 1 Điều này cùng liên đới chịu trách nhiệm về các khoản nợ của doanh nghiệp.
+#bk Điều 49. Trình tự, thủ tục giải thể doanh nghiệp
+Việc giải thể doanh nghiệp trong các trường hợp quy định tại các điểm a, b và c khoản 1 Điều 48 của Điều lệ này được thực hiện theo quy định sau đây:
+1. Thông qua nghị quyết, quyết định giải thể doanh nghiệp. Nghị quyết, quyết định giải thể doanh nghiệp phải bao gồm các nội dung chủ yếu sau đây:
+a) Tên, địa chỉ trụ sở chính của doanh nghiệp;
+b) Lý do giải thể;
+c) Thời hạn, thủ tục thanh lý hợp đồng và thanh toán các khoản nợ của doanh nghiệp;
+d) Phương án xử lý các nghĩa vụ phát sinh từ hợp đồng lao động;
+đ) Họ, tên, chữ ký của Chủ tịch Hội đồng quản trị;
+2. Hội đồng quản trị trực tiếp tổ chức thanh lý tài sản doanh nghiệp;
+3. Trong thời hạn 07 ngày làm việc kể từ ngày thông qua, nghị quyết, quyết định giải thể và biên bản họp phải được gửi đến Cơ quan đăng ký kinh doanh, cơ quan thuế, người lao động trong doanh nghiệp. Nghị quyết, quyết định giải thể phải được đăng trên cổng thông tin quốc gia về đăng ký doanh nghiệp và được niêm yết công khai tại trụ sở chính, chi nhánh, văn phòng đại diện của doanh nghiệp. Trường hợp doanh nghiệp còn nghĩa vụ tài chính chưa thanh toán thì phải gửi kèm theo nghị quyết, quyết định giải thể và phương án giải quyết nợ đến các chủ nợ, người có quyền, nghĩa vụ và lợi ích có liên quan. Phương án giải quyết nợ phải có tên, địa chỉ của chủ nợ; số nợ, thời hạn, địa điểm và phương thức thanh toán số nợ đó; cách thức và thời hạn giải quyết khiếu nại của chủ nợ;
+4. Các khoản nợ của doanh nghiệp được thanh toán theo thứ tự ưu tiên sau đây:
+a) Các khoản nợ lương, trợ cấp thôi việc, bảo hiểm xã hội, bảo hiểm y tế, bảo hiểm thất nghiệp theo quy định của pháp luật và các quyền lợi khác của người lao động theo thỏa ước lao động tập thể và hợp đồng lao động đã ký kết;
+b) Nợ thuế;
+c) Các khoản nợ khác;
+5. Sau khi đã thanh toán chi phí giải thể doanh nghiệp và các khoản nợ, phần còn lại chia cho chủ doanh nghiệp tư nhân, các thành viên, cổ đông hoặc chủ sở hữu công ty theo tỷ lệ sở hữu phần vốn góp, cổ phần;
+6. Người đại diện theo pháp luật của doanh nghiệp gửi hồ sơ giải thể doanh nghiệp cho Cơ quan đăng ký kinh doanh trong thời hạn 05 ngày làm việc kể từ ngày thanh toán hết các khoản nợ của doanh nghiệp.
+#cbk Chương VII
+#cbk HIỆU LỰC THỰC HIỆN
+#bk Điều 50. Hiệu lực của Điều lệ
+Điều lệ này có hiệu lực kể từ ngày được Cơ quan đăng ký kinh doanh cấp Giấy chứng nhận đăng ký doanh nghiệp.
+#bk Điều 51. Thể thức sửa đổi, bổ sung các điều, khoản của Điều lệ
+1. Những vấn đề liên quan đến hoạt động của Công ty không được nêu trong Bản Điều lệ này sẽ do Luật doanh nghiệp và các văn bản pháp luật liên quan khác điều chỉnh.
+2. Trong trường hợp Điều lệ này có điều khoản trái luật pháp hoặc dẫn đến việc thi hành trái luật pháp, thì điều khoản đó không được thi hành và sẽ được xem xét sửa đổi ngay trong kỳ họp gần nhất của Đại hội đồng cổ đông.
+3. Khi muốn bổ sung, sửa đổi nội dung Điều lệ này, Đại hội đồng cổ đông sẽ họp để thông qua quyết định nội dung thay đổi. Thể thức họp, thông qua nội dung sửa đổi theo quy định tại Luật Doanh nghiệp.
+#bk Điều 52. Điều khoản cuối cùng
+Bản điều lệ này đã được các cổ đông sáng lập xem xét từng chương từng điều và cùng ký tên chấp thuận.
+Bản điều lệ này gồm 7 chương, 52 điều, được lập thành {dl_so_ban_cp} ({dl_so_ban_cp_chu}) bản có giá trị như nhau: 01 (một) bản thực hiện thủ tục đăng ký doanh nghiệp tại cơ quan đăng ký kinh doanh, 01 (một) bản lưu trữ tại trụ sở công ty, {so_co_dong} ({so_co_dong_chu}) bản cho {so_co_dong} ({so_co_dong_chu}) cổ đông.
+Mọi sự sao chép, trích lục phải được ký xác nhận của thành viên Hội đồng quản trị công ty.
+~
+#rik …..........., ngày …....... tháng …....... năm.............
+#ck (Họ tên, chữ ký của tất cả các cổ đông sáng lập của công ty)
+// Chỗ ký: mỗi hàng 2 cổ đông (co_dong_ky), khoảng trống để ký phía trên tên. "[>]" ở đầu ô phải chỉ để ô không bắt đầu bằng " // ".
+::bang khong-vien 50^ 50^
+{#co_dong_ky} //  //  //  // #cb {ho_ten_1} | [>] //  //  //  // #cb {ho_ten_2}{/co_dong_ky}
+::
+~
+#cbk NGƯỜI ĐẠI DIỆN PHÁP LUẬT
+#cbk CỦA DOANH NGHIỆP
+#ck
+#ck
+#ck
+#ck
+#cb {dd_ho_ten}

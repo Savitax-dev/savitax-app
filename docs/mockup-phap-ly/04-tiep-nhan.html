@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>04 · Tiếp nhận hồ sơ</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Bước 1: chọn thủ tục → loại hình → khách → người phụ trách → lịch thu. Bên phải: app tự liệt kê
+// bộ giấy tờ sẽ phải soạn (đọc từ ma trận), để chuyên viên báo khách cần chuẩn bị gì ngay từ đầu.
+const nhomTT = [
+  ['Thành lập', [['tlm', '🏗️', 'Thành lập mới', 'Công ty, HKD, chi nhánh, VPĐD, ĐĐKD', true]]],
+  ['Thay đổi', [['td_dc', '📍', 'Đổi địa chỉ trụ sở'], ['td_von', '💹', 'Tăng / giảm vốn'], ['td_dd', '👤', 'Đổi người đại diện'], ['td_ten', '🏷️', 'Đổi tên'], ['td_tv', '👥', 'Đổi thành viên / cổ đông'], ['td_nganh', '🧾', 'Bổ sung ngành nghề'], ['cdlh', '🔄', 'Chuyển đổi loại hình']]],
+  ['Tạm ngưng · hoạt động lại', [['tam_ngung', '⏸️', 'Tạm ngưng kinh doanh'], ['hd_lai', '▶️', 'Hoạt động lại trước hạn'], ['mo_mst', '🔓', 'Mở lại mã số thuế']]],
+  ['Khác', [['giai_the', '🧯', 'Giải thể'], ['cap_lai', '📑', 'Cấp lại GPKD'], ['rut', '↩️', 'Rút hồ sơ'], ['khac', '📎', 'Thủ tục khác']]],
+]
+const theTT = ([k, ic, t, mt, chon]) => `<div class="rounded-lg border px-3 py-2 ${chon ? 'border-transparent text-white shadow' : 'border-gray-200 bg-white'}" ${chon ? `style="background:${DO}"` : ''}>
+  <p class="text-[13px] font-semibold">${ic} ${t}</p>${mt ? `<p class="text-[11px] ${chon ? 'text-red-100' : 'text-gray-500'}">${mt}</p>` : ''}</div>`
+const loaiHinh = [['1tv', 'TNHH 1 thành viên', true], ['2tv', 'TNHH 2 TV trở lên'], ['cp', 'Cổ phần'], ['hkd', 'Hộ kinh doanh'], ['cn', 'Chi nhánh'], ['vpdd', 'VP đại diện'], ['ddkd', 'Địa điểm KD']]
+const boGiayTo = [
+  ['Hồ sơ Sở – bước 1', [['Giấy đề nghị ĐKDN (Mẫu số 2)', 'Người đại diện PL'], ['Điều lệ công ty TNHH 1TV', 'Chủ sở hữu'], ['Kê khai chủ sở hữu hưởng lợi (Mẫu số 10)', 'Người đại diện PL'], ['Giấy ủy quyền nộp hồ sơ', 'Người đại diện PL'], ['Bản sao CCCD chủ sở hữu', '—']]],
+  ['Hồ sơ Thuế (sau khi có MST)', [['Giấy ủy quyền thuế', 'Giám đốc'], ['Mẫu 08-MST đăng ký thông tin', 'Giám đốc'], ['Đăng ký hình thức hóa đơn', 'Giám đốc'], ['Quyết định bổ nhiệm giám đốc / kế toán', 'Chủ sở hữu'], ['Đăng ký phương pháp khấu hao TSCĐ', 'Giám đốc']]],
+  ['Bàn giao', [['Biên bản bàn giao hồ sơ', 'Khách + chuyên viên']]],
+]
+
+trang({ dangMo: 'hoso', icon: '🗂️', tieuDe: 'Tiếp nhận hồ sơ mới', phu: 'Bước 1/10 — Tạo hồ sơ. Các bước sau làm trong trang chi tiết hồ sơ.',
+  hanhDong: `${nut('Huỷ')}${nut('Tạo hồ sơ & mở chi tiết ▸', 'chinh')}`,
+  noiDung: `
+  <div class="grid grid-cols-[1.45fr_1fr] gap-4">
+    <div class="space-y-4">
+      <div class="khung"><div class="khung-dau"><h2>1. Thủ tục</h2></div>
+        <div class="p-4 space-y-3">${nhomTT.map(([nh, ds]) => `<div><p class="text-[11.5px] font-semibold uppercase tracking-wide text-gray-500 mb-1.5">${nh}</p>
+          <div class="grid grid-cols-4 gap-2">${ds.map(theTT).join('')}</div></div>`).join('')}</div></div>
+
+      <div class="khung"><div class="khung-dau"><h2>2. Loại hình doanh nghiệp</h2></div>
+        <div class="p-4 flex flex-wrap gap-2">${loaiHinh.map(([k, t, c]) => `<span class="px-3 py-1.5 rounded-full text-[13px] border ${c ? 'text-white border-transparent font-semibold' : 'border-gray-300 bg-white text-gray-700'}" ${c ? `style="background:${DO}"` : ''}>${t}</span>`).join('')}</div></div>
+
+      <div class="khung"><div class="khung-dau"><h2>3. Khách hàng</h2><span class="ml-auto text-xs text-gray-500">Gõ tên / MST / SĐT — app dò trùng với khách kế toán, khách Kinh doanh và hồ sơ pháp lý cũ</span></div>
+        <div class="p-4 grid grid-cols-3 gap-3">
+          <div class="col-span-2"><span class="nhan">Tên dự kiến của công ty *</span><div class="o">CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ AN PHÚ LỘC</div>
+            <p class="text-[11.5px] text-amber-700 mt-1">⚠ Có 1 doanh nghiệp tên gần giống trên cổng (AN PHÚ LỘC VINA) — nhắc khách kiểm tra trùng tên trước khi nộp</p></div>
+          <div><span class="nhan">Nguồn</span><div class="o flex justify-between"><span>Phòng Kinh doanh · BG 241026-03</span><span class="text-gray-400">▾</span></div></div>
+          <div><span class="nhan">Người liên hệ</span><div class="o">Nguyễn Thị Mai Hương</div></div>
+          <div><span class="nhan">Điện thoại</span><div class="o">0909 1xx 234</div></div>
+          <div><span class="nhan">Email / Zalo</span><div class="o">anphuloc.contact@gmail.com</div></div>
+        </div></div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="khung"><div class="khung-dau"><h2>4. Phụ trách & hạn</h2></div>
+          <div class="p-4 grid grid-cols-2 gap-3">
+            <div class="col-span-2"><span class="nhan">Chuyên viên phụ trách</span><div class="o flex items-center justify-between">${nguoi('an')}<span class="text-gray-400">▾</span></div></div>
+            <div><span class="nhan">Ngày nhận hồ sơ</span><div class="o">24/10/2026</div></div>
+            <div><span class="nhan">Số ngày xử lý (nội bộ)</span><div class="o">10 ngày <span class="text-gray-400 text-xs">(mẫu TLM)</span></div></div>
+            <div class="col-span-2 rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-[12.5px]">Hạn nội bộ: <b>05/11/2026</b> — đếm ngày lịch, bỏ chủ nhật 26/10 và 02/11</div>
+          </div></div>
+        <div class="khung"><div class="khung-dau"><h2>5. Phí & lịch thu</h2></div>
+          <div class="p-4 space-y-2 text-[13px]">
+            <div class="flex"><span>Phí dịch vụ (gồm VAT)</span><b class="ml-auto tabular-nums">3.700.000</b></div>
+            <div class="flex"><span>Thu hộ: lệ phí + khắc dấu + chữ ký số</span><b class="ml-auto tabular-nums">2.150.000</b></div>
+            <div><span class="nhan mt-1">Lịch thu mẫu</span><div class="o flex justify-between"><span>2 đợt: nhận hồ sơ / có kết quả</span><span class="text-gray-400">▾</span></div></div>
+            <p class="text-[11.5px] text-gray-500">Chỉnh chi tiết từng đợt ở tab Công nợ.</p></div></div>
+      </div>
+    </div>
+
+    <div class="khung self-start sticky top-4">
+      <div class="khung-dau"><h2>Bộ giấy tờ sẽ phải soạn</h2><span class="ml-auto">${chip('Từ ma trận TLM × 1TV', 'xanh')}</span></div>
+      <div class="p-4 space-y-4">${boGiayTo.map(([nh, ds]) => `<div><p class="text-[12px] font-bold text-gray-800 mb-1.5">${nh}</p>
+        <table class="bang"><thead><tr><th>Giấy tờ</th><th>Ai ký</th></tr></thead><tbody>${ds.map(([g, k]) => `<tr><td>${g}</td><td class="text-gray-600 text-[12px]">${k}</td></tr>`).join('')}</tbody></table></div>`).join('')}
+        <div class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-[12.5px] text-blue-900">
+          <b>Khách cần chuẩn bị:</b> ảnh 2 mặt CCCD chủ sở hữu, địa chỉ trụ sở (kèm hợp đồng thuê nếu có), danh sách ngành nghề, vốn điều lệ, tài khoản ngân hàng (cho hồ sơ thuế).
+          <div class="mt-1.5">${nut('📋 Sao chép gửi Zalo khách', 'phu', 'text-xs py-1')}</div></div>
+      </div></div>
+  </div>` })
+</script></body></html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>08 · Hồ sơ · Soạn & Xuất</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script><script src="_khung.js"></script></head>
+<body><script>
+// Danh sách giấy tờ lấy từ ma trận (thủ tục × loại hình). Mỗi giấy tờ: Word (sửa được) + PDF (in/gửi).
+// Mỗi lần xuất là một phiên bản; tải lên bản đã sửa tay thì bản đó thành bản dùng để in, bản sinh vẫn giữ.
+const h = HO_SO[0]
+const nhom = [
+  ['Hồ sơ Sở — bước 1', 'nộp Phòng ĐKKD', [
+    ['Giấy đề nghị đăng ký doanh nghiệp', 'Mẫu số 2 · NĐ 168', 'v1.2', 'du', 'v2 · 31/10 09:40 · Đỗ Hoài An', 'sinh'],
+    ['Điều lệ công ty TNHH một thành viên', 'Điều lệ 1TV (CSH cá nhân)', 'v1.0', 'du', 'v3 · 31/10 10:05 · sửa tay', 'tay'],
+    ['Kê khai chủ sở hữu hưởng lợi', 'Mẫu số 10 · NĐ 168', 'v1.0', 'du', 'v2 · 31/10 09:40', 'sinh'],
+    ['Giấy ủy quyền nộp hồ sơ', 'UQ Sở', 'v1.1', 'du', 'v2 · 31/10 09:40', 'sinh'],
+  ]],
+  ['Hồ sơ Thuế', 'sau khi có MST (bước 8)', [
+    ['Giấy ủy quyền thuế', 'UQ Thuế', 'v1.0', 'cho', '—', ''],
+    ['Đăng ký thông tin (08-MST)', 'Mẫu 08-MST · TT86', 'v1.0', 'cho', '—', ''],
+    ['Đăng ký hình thức hóa đơn', 'ĐK hóa đơn', 'v1.0', 'cho', '—', ''],
+    ['Quyết định bổ nhiệm giám đốc', 'QĐ bổ nhiệm GĐ', 'v1.0', 'thieu', '—', ''],
+    ['Đăng ký phương pháp khấu hao TSCĐ', 'ĐK khấu hao', 'v1.0', 'cho', '—', ''],
+  ]],
+  ['Bàn giao', 'bước 9', [['Biên bản bàn giao hồ sơ', 'BBBG', 'v1.0', 'cho', '—', '']]],
+]
+const TT = { du: ['Đủ dữ liệu', 'la'], thieu: ['Thiếu 1 trường', 'do'], cho: ['Chưa tới bước', 'xam'] }
+const dong = ([ten, mau, pb, tt, file, nguon]) => `<tr>
+  <td class="w-8 text-center"><input type="checkbox" ${tt === 'du' ? 'checked' : ''} ${tt === 'cho' ? 'disabled' : ''}></td>
+  <td><p class="font-semibold text-[13px]">${ten}</p><p class="text-[11.5px] text-gray-500">${mau} · mẫu ${pb}</p></td>
+  <td>${chip(TT[tt][0], TT[tt][1])}</td>
+  <td class="text-[12.5px]">${file !== '—' ? `${file} ${nguon === 'tay' ? chip('bản sửa tay', 'cam') : ''}<div class="text-[11px] text-gray-400">${nguon === 'tay' ? 'dùng bản này để in · bản sinh v2 vẫn giữ' : '3 phiên bản ▾'}</div>` : '<span class="text-gray-300">chưa xuất</span>'}</td>
+  <td class="whitespace-nowrap">${tt === 'cho' ? '' : `<span class="inline-flex gap-1">
+    <span class="px-2 py-1 rounded-md border border-blue-300 bg-blue-50 text-blue-800 text-[12px] font-semibold">W Word</span>
+    <span class="px-2 py-1 rounded-md border border-red-300 bg-red-50 text-red-800 text-[12px] font-semibold">PDF</span>
+    <span class="px-2 py-1 rounded-md border border-gray-300 bg-white text-gray-700 text-[12px]">↻</span>
+    <span class="px-2 py-1 rounded-md border border-gray-300 bg-white text-gray-700 text-[12px]" title="Tải lên bản đã sửa tay">⤒</span></span>`}</td></tr>`
+
+trang({ dangMo: 'hoso', icon: '📂', tieuDe: 'Chi tiết hồ sơ', noiDung: `
+  ${dauHoSo(h)}
+  ${tabDeu(TAB_HO_SO, 'Soạn & Xuất')}
+  <div class="khung px-4 py-3 mb-4 flex items-center gap-3 flex-wrap">
+    <span class="text-[13px] font-semibold text-gray-700">Xuất bộ đã chọn:</span>
+    <label class="text-[13px]"><input type="checkbox" checked> Word</label><label class="text-[13px]"><input type="checkbox" checked> PDF</label>
+    ${nut('📦 Tải .zip (4 giấy tờ · 8 file)', 'chinh')}
+    ${nut('🖨️ Bộ trình ký — 1 file PDF để in')}
+    ${nut('☁️ Lưu vào Drive: 4. SOẠN HỒ SƠ')}
+    <span class="ml-auto text-[12px] text-gray-500">PDF đổi trên máy chủ Savitax (VPS) · không gửi ra bên ngoài</span></div>
+
+  <div class="grid grid-cols-[1fr_400px] gap-4">
+    <div class="space-y-4">${nhom.map(([t, g, ds]) => `<div class="khung"><div class="khung-dau"><h2>${t}</h2><span class="text-xs text-gray-500">${g}</span><span class="ml-auto text-xs text-gray-500">${ds.length} giấy tờ</span></div>
+      <div class="p-3"><table class="bang"><thead><tr><th></th><th>Giấy tờ</th><th>Dữ liệu</th><th>File đã xuất</th><th>Tải</th></tr></thead><tbody>${ds.map(dong).join('')}</tbody></table></div></div>`).join('')}</div>
+
+    <div class="khung self-start">
+      <div class="khung-dau"><h2>Xem trước · Giấy ủy quyền</h2><span class="ml-auto text-xs text-gray-500">v2 · PDF</span></div>
+      <div class="p-4 bg-gray-100">
+        <div class="bg-white shadow mx-auto px-7 py-6 text-[10.5px] leading-[1.55]" style="font-family:'Times New Roman',serif;width:340px;min-height:470px">
+          <p class="text-center font-bold">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p><p class="text-center font-bold underline">Độc lập - Tự do - Hạnh phúc</p>
+          <p class="text-right italic mt-1">TP. Hồ Chí Minh, ngày 31 tháng 10 năm 2026</p>
+          <p class="text-center font-bold mt-2 text-[12px]">GIẤY ỦY QUYỀN</p>
+          <p class="mt-2"><b>Bên ủy quyền:</b> Ông/Bà <mark class="bg-emerald-100">NGUYỄN THỊ MAI HƯƠNG</mark></p>
+          <p>Số CCCD: <mark class="bg-emerald-100">079192001234</mark> &nbsp;Ngày cấp: <mark class="bg-emerald-100">22/12/2021</mark></p>
+          <p>Nơi cấp: <mark class="bg-emerald-100">Cục Cảnh sát quản lý hành chính về trật tự xã hội</mark></p>
+          <p class="mt-1"><b>Bên được ủy quyền:</b> Ông/Bà <mark class="bg-emerald-100">ĐỖ HOÀI AN</mark></p>
+          <p>Địa chỉ liên lạc: <mark class="bg-emerald-100">16 Bình Lợi, Phường Bình Lợi Trung, TP. Hồ Chí Minh</mark></p>
+          <p class="mt-1">Để thực hiện thay chúng tôi các nội dung sau:</p>
+          <p>+ Nộp hồ sơ thành lập mới <mark class="bg-emerald-100">CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ AN PHÚ LỘC</mark>, nhận thông báo sửa đổi, bổ sung hồ sơ, rút hồ sơ.</p>
+          <p>+ Nhận kết quả, ký nhận Giấy chứng nhận đăng ký doanh nghiệp.</p>
+          <div class="grid grid-cols-2 text-center mt-5 font-bold"><p>BÊN ĐƯỢC ỦY QUYỀN</p><p>BÊN ỦY QUYỀN</p></div>
+          <div class="grid grid-cols-2 text-center mt-9 font-bold"><p>ĐỖ HOÀI AN</p><p>NGUYỄN THỊ MAI HƯƠNG</p></div></div>
+        <p class="text-[11.5px] text-gray-600 mt-3"><mark class="bg-emerald-100 px-1">ô xanh</mark> = lấy từ dữ liệu hồ sơ (chỉ hiện ở xem trước, file thật không tô màu).</p></div></div>
+  </div>` })
+</script></body></html>

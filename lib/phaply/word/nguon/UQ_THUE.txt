@@ -1,0 +1,45 @@
+// Giấy ủy quyền làm việc với cơ quan thuế (hồ sơ pháp lý ban đầu) — dùng chung 1TV / 2TV / CP.
+// Pháp lý chốt 17/11/2026: theo bản 1TV cho cả 3, thêm nội dung "- Nộp hồ sơ pháp lý ban đầu". Mã số doanh nghiệp +
+// cơ quan thuế mặc định để chấm cho viết tay; hồ sơ bật dien_thue_san (khách đòi điền đủ sau khi có GPKD) thì in sẵn.
+@gian 60
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+#ri …………….., ngày……/……/………
+~
+# GIẤY ỦY QUYỀN
+~
+#l Đơn vị ủy quyền: **{ten_cty}**
+#l Mã số doanh nghiệp: {#dien_thue_san}{ma_dn}{/dien_thue_san}{^dien_thue_san}[...]{/dien_thue_san}
+#l Trụ sở: {dia_chi_tru_so}
+#l Đại diện: **{dd_ho_ten}**[>60]Chức danh: {dd_chuc_danh}
+Bằng giấy này, chúng tôi ủy quyền cho:
+#l Ông/Bà: [...]
+#l CCCD số: [...]
+#l Ngày cấp: [..45] Nơi cấp: [...]
+#l Địa chỉ liên lạc: [...]
+Để thực hiện thay chúng tôi với các nội dung như sau:
+#l Được phép thay mặt người đại diện theo pháp luật liên hệ {#dien_thue_san}{co_quan_thue} để:{/dien_thue_san}{^dien_thue_san}[...]{/dien_thue_san}
+{^dien_thue_san}
+#l [..80] để:
+{/dien_thue_san}
+#l - Nộp hồ sơ pháp lý ban đầu
+#l [...]
+#l [...]
+- Chúng tôi xin chịu trách nhiệm trước pháp luật về mọi cam kết do Bên được ủy quyền nhân danh chúng tôi thực hiện trong phạm vi ủy quyền nêu trên.
+- Chúng tôi công nhận đã hiểu rõ quyền, nghĩa vụ và lợi ích hợp pháp của mình và hậu quả pháp lý của việc ủy quyền.
+- Thời hạn ủy quyền: kể từ ngày ký cho đến khi người được ủy quyền hoàn thành tất cả các thủ tục trên.
+~
+::cot 45/55
+#cb NGƯỜI ĐƯỢC ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên)
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#cb {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+#cb {dd_ho_ten}
+::
