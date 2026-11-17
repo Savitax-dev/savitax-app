@@ -124,7 +124,9 @@ export async function api(url, opts = {}) {
 
 // Thanh chuyển giữa các trang của phân hệ
 export function ThanhPhapLy({ dang }) {
-  const ds = [['/phaply', 'Hồ sơ pháp lý'], ['/phaply/bao-cao', 'Báo cáo'], ['/phaply/mau', 'Mẫu & checklist'], ['/phaply/toi', 'Thông tin cá nhân'], ['/phaply/huong-dan', '📖 Hướng dẫn']]
+  const ds = [['/phaply/thanh-lap', 'Thành lập'], ['/phaply/thay-doi', 'Thay đổi'], ['/phaply/tam-ngung', 'Tạm ngừng'], ['/phaply/giai-the', 'Giải thể'],
+    ['/phaply/khac', 'Khác'], ['/phaply', 'Tất cả'], ['/phaply/bao-cao', 'Báo cáo'], ['/phaply/mau', 'Mẫu & checklist'], ['/phaply/toi', 'Thông tin cá nhân'],
+    ['/phaply/huong-dan', '📖 Hướng dẫn']]
   return (
     <div className="flex gap-1.5 flex-wrap">
       {ds.map(([href, lb]) => <Link key={href} href={href} className={'p-chip' + (dang === href ? ' on' : '')}>{lb}</Link>)}

@@ -13,6 +13,8 @@ import {
 } from '../../_ui'
 import PhapNhan, { TAB_PHAP_NHAN } from './_phapNhan'
 import TabNop from './_nop'
+import ThongTinThuTuc from './_lichSu'
+import { NHOM, nhomCuaThuTuc } from '@/lib/phaply/nhom'
 
 export default function HoSoPage() {
   const { id } = useParams()
@@ -68,7 +70,7 @@ export default function HoSoPage() {
       <div className="pl-ui">
         <div className="px-4 md:px-8 py-5 space-y-4">
           <div className="p-topbar">
-            <Link href="/phaply" className="p-back"><span className="ar">‹</span>Danh sách hồ sơ</Link>
+            <Link href={NHOM[nhomCuaThuTuc(hs.procedure_code)].duong} className="p-back"><span className="ar">‹</span>{NHOM[nhomCuaThuTuc(hs.procedure_code)].ten}</Link>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="num text-sm text-gray-500">{hs.code}</span>
@@ -112,6 +114,7 @@ export default function HoSoPage() {
             {tabs.map(([k, lb]) => <button key={k} className={'p-chip' + (tab === k ? ' on' : '')} onClick={() => setTab(k)}>{lb}</button>)}
           </div>
 
+          {tab === 'thong_tin' && <ThongTinThuTuc d={d} sua={sua} lam={lam} setHoi={setHoi} />}
           {tab === 'thong_tin' && <TabThongTin d={d} sua={sua && !daDong} q={q} lam={lam} />}
           {tab === 'viec' && <TabViec d={d} sua={sua && !daDong} id={id} load={load} toast={toast} />}
           {tab === 'nop' && <TabNop id={id} sua={sua && !daDong} toast={toast} taiLaiHoSo={load} />}

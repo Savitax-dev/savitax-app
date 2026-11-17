@@ -414,8 +414,14 @@ export default function Sidebar({ onClose }) {
         {canViewPhapLy && (
           <div>
             <SectionLabel>Pháp lý</SectionLabel>
-            <NavItem href="/phaply"         icon="⚖️" label="Hồ sơ pháp lý"   pathname={pathname} onClose={onClose} />
-            <NavItem href="/phaply/bao-cao" icon="📈" label="Báo cáo pháp lý" pathname={pathname} onClose={onClose} />
+            {/* Mỗi nhóm thủ tục một trang (anh yêu cầu 17/11/2026) — danh sách nhóm ở lib/phaply/nhom.js */}
+            <NavItem href="/phaply/thanh-lap" icon="🏢" label="Thành lập mới"       pathname={pathname} onClose={onClose} />
+            <NavItem href="/phaply/thay-doi"  icon="✏️" label="Thay đổi đăng ký"    pathname={pathname} onClose={onClose} />
+            <NavItem href="/phaply/tam-ngung" icon="⏸️" label="Tạm ngừng / Hoạt động lại" pathname={pathname} onClose={onClose} />
+            <NavItem href="/phaply/giai-the"  icon="🔚" label="Giải thể / Chấm dứt"  pathname={pathname} onClose={onClose} />
+            <NavItem href="/phaply/khac"      icon="📎" label="Thủ tục khác"        pathname={pathname} onClose={onClose} />
+            <NavItem href="/phaply"           icon="⚖️" label="Tất cả hồ sơ"        pathname={pathname} onClose={onClose} />
+            <NavItem href="/phaply/bao-cao"   icon="📈" label="Báo cáo pháp lý"     pathname={pathname} onClose={onClose} />
             {canMauPhapLy && <NavItem href="/phaply/mau" icon="🗂️" label="Mẫu & checklist" pathname={pathname} onClose={onClose} />}
           </div>
         )}

@@ -4,6 +4,8 @@ import { docHoSoDayDu, ghiNhatKy, nhanVienPhapLy, tenNhanVien, COT_HO_SO, mauCua
 import { BUOC_DONG, CHO, LOAI_HINH, NGUON, THU_TUC, choLabel } from '@/lib/phaply/hoSo'
 import { docDieuKienDong } from '@/lib/phaply/banGiaoMayChu'
 import { thieuDieuKien } from '@/lib/phaply/banGiao'
+import { kiemTamNgung, locNoiDung, trangThaiTamNgung } from '@/lib/phaply/nhom'
+import { homNayVN, thuTucLabel } from '@/lib/phaply/hoSo'
 
 export async function GET(request, { params }) {
   const auth = await requirePhapLy()
@@ -22,6 +24,7 @@ export async function GET(request, { params }) {
     nhat_ky: d.nhat_ky.map(l => ({ ...l, ten_nguoi: ten(l.created_by) })),
     payments: d.payments.map(p => ({ ...p, ten_phu_trach: ten(p.staff_id), ten_nguoi_ghi: ten(p.created_by), ten_nguoi_xoa: ten(p.deleted_by) })),
     nhan_vien: await nhanVienPhapLy(auth.admin),
+    ...(await lichSuCongTy(auth, d.ho_so)),
     sua_duoc: suaDuoc(auth, d.ho_so), q: auth.q, toi: auth.caller.staffId,
   }
   return Response.json(anTien(auth, kq))
@@ -77,7 +80,37 @@ export async function PATCH(request, { params }) {
     }
 
     if (!suaDuoc(auth, hs)) return loi(403, 'Bạn chỉ sửa được hồ sơ mình phụ trách')
+
+    // Nhắc khách sắp hết hạn tạm ngừng — làm được cả khi hồ sơ tạm ngừng đã đóng (thời hạn vẫn đang chạy)
+    if (b.action === 'nhac_khach') {
+      if (hs.procedure_code !== 'tam_ngung') return loi(400, 'Chỉ hồ sơ tạm ngừng mới theo dõi nhắc khách')
+      const note = String(b.note || '').trim()
+      await capNhat({ nhac_khach_luc: new Date().toISOString(), nhac_khach_boi: caller.staffId, nhac_khach_ghi_chu: note || null })
+      await ghi('edit', null, null, 'Đã nhắc khách sắp hết hạn tạm ngừng' + (note ? ': ' + note : '')); return ok()
+    }
     if (hs.stage >= BUOC_DONG && b.action !== 'cho') return loi(409, 'Hồ sơ đã đóng — trưởng phòng mở lại trước khi sửa')
+
+    // Thời hạn tạm ngừng (tối đa 1 năm mỗi lần) / ngày hoạt động lại
+    if (b.action === 'tam_ngung') {
+      if (hs.procedure_code === 'tam_ngung') {
+        const l = kiemTamNgung(b.tu, b.den)
+        if (l) return loi(400, l)
+        await capNhat({ tam_ngung_tu: b.tu, tam_ngung_den: b.den })
+        await ghi('edit', null, null, `Thời hạn tạm ngừng ${b.tu} → ${b.den}`); return ok()
+      }
+      if (hs.procedure_code === 'hoat_dong_lai') {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(b.hoat_dong_lai_tu || '')) return loi(400, 'Nhập ngày hoạt động trở lại')
+        await capNhat({ hoat_dong_lai_tu: b.hoat_dong_lai_tu })
+        await ghi('edit', null, null, `Ngày hoạt động trở lại ${b.hoat_dong_lai_tu}`); return ok()
+      }
+      return loi(400, 'Thủ tục này không có thời hạn tạm ngừng')
+    }
+    // Nội dung thay đổi (hồ sơ Thay đổi đăng ký)
+    if (b.action === 'noi_dung') {
+      const ds = locNoiDung(b.ds)
+      await capNhat({ noi_dung_thay_doi: ds })
+      await ghi('edit', null, null, 'Nội dung thay đổi: ' + (ds.join(', ') || '(trống)')); return ok()
+    }
 
     if (b.action === 'sua') {
       const f = b.fields || {}, doi = {}, doiPn = {}
@@ -131,4 +164,21 @@ export async function PATCH(request, { params }) {
   } catch (e) {
     return loi(500, e.message)
   }
+}
+
+// Lịch sử pháp lý của CÙNG công ty (dùng chung pháp nhân — anh yêu cầu 17/11/2026 "lấy thông tin qua lại") + trạng thái tạm ngừng
+async function lichSuCongTy(auth, hs) {
+  const { admin } = auth
+  const ra = { lich_su: [], tam_ngung: null }
+  if (hs.entity_id) {
+    const { data } = await admin.from('legal_cases').select('id, code, procedure_code, stage, received_at, closed_at, assigned_to, case_goc_id, tam_ngung_tu, tam_ngung_den, is_deleted')
+      .eq('entity_id', hs.entity_id).eq('is_deleted', false).neq('id', hs.id).order('received_at', { ascending: false }).order('id')
+    // chỉ liệt kê hồ sơ người xem được — hồ sơ ngoài phạm vi hiện mã + thủ tục, không mở được
+    ra.lich_su = (data || []).map(c => ({ id: c.id, ma: c.code, thu_tuc: thuTucLabel(c.procedure_code), procedure_code: c.procedure_code, buoc: c.stage,
+      nhan: c.received_at, dong: c.closed_at, xem_duoc: xemDuoc(auth, c), la_tiep_theo: c.case_goc_id === hs.id, la_goc: c.id === hs.case_goc_id,
+      tam_ngung_tu: c.tam_ngung_tu, tam_ngung_den: c.tam_ngung_den }))
+  }
+  if (hs.procedure_code === 'tam_ngung' && hs.tam_ngung_tu && hs.tam_ngung_den)
+    ra.tam_ngung = trangThaiTamNgung({ tu: hs.tam_ngung_tu, den: hs.tam_ngung_den, daCoTiepTheo: ra.lich_su.some(c => c.la_tiep_theo) }, homNayVN())
+  return ra
 }
