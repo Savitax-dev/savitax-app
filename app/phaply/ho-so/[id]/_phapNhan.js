@@ -334,11 +334,11 @@ function Nganh({ d, sua, goi }) {
                 onMouseDown={e => { e.preventDefault(); setMo(m => !m) }}>▼</button>
             </div>
             {mo && vsic.length > 0 && (
-              <div className="absolute z-20 left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border">
+              <div className="mt-1 bg-white rounded-lg shadow-lg border">
                 <div className="px-3 py-1.5 text-xs text-gray-500 border-b">
                   {goiYTim.length ? `${goiYTim.length} ngành${tim.trim() ? ' khớp "' + tim.trim() + '"' : ''} — ↑↓ chọn, Enter thêm` : `Không có ngành nào khớp "${tim.trim()}"`}
                 </div>
-                <div className="max-h-80 overflow-y-auto">
+                <div className="max-h-[60vh] overflow-y-auto">
                   {goiYTim.map((n, i) => (
                     <button key={n.ma} id={'pl-vsic-' + i} type="button" onMouseDown={e => { e.preventDefault(); them(n) }} onMouseEnter={() => setChonIdx(i)}
                       className={'flex gap-2 w-full text-left px-3 py-1.5 text-sm ' + (n.daCo ? 'text-gray-400 cursor-default ' : '') + (i === chonIdx ? 'bg-amber-100' : 'hover:bg-amber-50')}>
