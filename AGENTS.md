@@ -465,6 +465,9 @@ toàn dữ liệu giả. Code **cố định một bản**: đẩy `main` không
 - Cấu trúc DB: `scripts/demo/dung-csdl.mjs` chạy các file `sql/` (+ ràng buộc production tạo tay không có file), `--so <defs>`
   so cột với production. Danh mục cấu hình (vai trò, quyền, checklist mẫu…) chụp từ production: `scripts/demo/chup-cau-hinh.mjs`
   → `lib/demo/cauHinh.js` — CHỈ bảng cấu hình, không khách / nhân viên / tiền.
+- **Phân hệ Pháp lý trên demo** (anh cho đưa lên 17/11/2026 để phòng pháp lý thử, production CHƯA có): ảnh chụp cấu hình không có
+  quyền Pháp lý nên `lib/demo/phapLy.js` (gọi cuối `datLaiDemo`) nạp lại 7 quyền + gán 2 vai trò pháp lý, checklist + lịch thu mặc
+  định và 4 hồ sơ GIẢ mỗi đêm. Bảng `legal_*` do `sql/56` tạo (dung-csdl chạy được); chưa có bảng thì bước này tự bỏ qua.
 - Tắt nối ra ngoài khi `DEMO_MODE`: cổng thuế (`lib/portalBridge.js`), webhook ngân hàng + mail, backup, Google Drive (không đặt
   biến môi trường), đổi mật khẩu / email tài khoản demo. Sửa sinh dữ liệu xong PHẢI chạy lại 4 bộ kiểm dòng tiền trên DB demo.
 - **Bộ hồ sơ mẫu** Soát xét / Rủi ro thuế: `scripts/demo/sinh-ho-so-mau.mjs` → `public/demo/ho-so-mau.zip` (nút tải ở
