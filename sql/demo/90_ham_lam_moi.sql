@@ -3,7 +3,7 @@
 --
 -- demo_la_ban_demo : bảng ĐÁNH DẤU — chỉ DB demo có. Hàm xoá dưới đây tự từ chối nếu không thấy bảng này,
 --                    nên kể cả lỡ tay tạo hàm ở nơi khác cũng không xoá được gì.
--- demo_xoa_sach()  : xoá sạch MỌI bảng public (trừ bảng đánh dấu) để nạp lại bộ dữ liệu mẫu mỗi đêm.
+-- demo_xoa_sach()  : xoá sạch MỌI bảng public (trừ bảng đánh dấu + danh mục tĩnh Pháp lý) để nạp lại bộ dữ liệu mẫu mỗi đêm.
 --                    Chỉ service_role gọi được (route /api/cron/demo-reset).
 
 create table if not exists demo_la_ban_demo (id int primary key, ghi_chu text);
@@ -19,7 +19,9 @@ begin
   end if;
   select string_agg(format('%I', table_name), ', ') into ds
     from information_schema.tables
-   where table_schema = 'public' and table_type = 'BASE TABLE' and table_name <> 'demo_la_ban_demo';
+   where table_schema = 'public' and table_type = 'BASE TABLE' and table_name <> 'demo_la_ban_demo'
+     -- danh mục tĩnh phân hệ Pháp lý (sql/57, dữ liệu công khai, nạp một lần bằng scripts/phaply-nap-danh-muc.mjs): giữ qua đêm
+     and table_name not in ('legal_places', 'legal_tax_offices', 'legal_place_tax', 'legal_registries', 'legal_vsic');
   if ds is not null then execute 'truncate table ' || ds || ' restart identity cascade'; end if;
 end $$;
 

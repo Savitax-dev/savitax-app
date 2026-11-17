@@ -481,6 +481,9 @@ toàn dữ liệu giả. Code **cố định một bản**: đẩy `main` không
 - **Phân hệ Pháp lý trên demo** (anh cho đưa lên 17/11/2026 để phòng pháp lý thử, production CHƯA có): ảnh chụp cấu hình không có
   quyền Pháp lý nên `lib/demo/phapLy.js` (gọi cuối `datLaiDemo`) nạp lại 7 quyền + gán 2 vai trò pháp lý, checklist + lịch thu mặc
   định và 4 hồ sơ GIẢ mỗi đêm. Bảng `legal_*` do `sql/56` tạo (dung-csdl chạy được); chưa có bảng thì bước này tự bỏ qua.
+  GĐ 2 (`sql/57`): hồ sơ mẫu đầu tiên (1TV) có sẵn doanh nghiệp + người + ngành, trưởng phòng có thông tin cá nhân → xuất Word thử được ngay.
+  **Danh mục tĩnh** (`legal_places`, `legal_tax_offices`, `legal_place_tax`, `legal_registries`, `legal_vsic`) nạp MỘT lần bằng
+  `scripts/phaply-nap-danh-muc.mjs --ghi` và `demo_xoa_sach()` (sql/demo/90) cố ý KHÔNG xoá chúng mỗi đêm.
 - Tắt nối ra ngoài khi `DEMO_MODE`: cổng thuế (`lib/portalBridge.js`), webhook ngân hàng + mail, backup, Google Drive (không đặt
   biến môi trường), đổi mật khẩu / email tài khoản demo. Sửa sinh dữ liệu xong PHẢI chạy lại 4 bộ kiểm dòng tiền trên DB demo.
 - **Bộ hồ sơ mẫu** Soát xét / Rủi ro thuế: `scripts/demo/sinh-ho-so-mau.mjs` → `public/demo/ho-so-mau.zip` (nút tải ở
