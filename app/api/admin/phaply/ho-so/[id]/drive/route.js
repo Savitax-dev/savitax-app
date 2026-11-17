@@ -1,7 +1,7 @@
 // Phân hệ Pháp lý — lưu hồ sơ lên Drive phòng pháp lý (anh duyệt 17/11/2026: lưu cả bộ Word lẫn ảnh CCCD).
 //   POST { noi_dung?: ['so','thue','cccd'] } → tạo / dùng lại thư mục hồ sơ + 8 thư mục con, ghi đè file cùng tên (không sinh "(1)").
 //   Bộ Word → 4. SOẠN HỒ SƠ/<bộ>/ · ảnh CCCD → 2. THU THẬP THÔNG TIN/CCCD/. Trả { url, so_file }.
-// ⚠ Ảnh CCCD trên Drive cũng phải xoá theo hạn lưu 24 tháng sau khi đóng hồ sơ (cron xoá ảnh — làm cùng phần xoá trong app).
+// Ảnh CCCD trên Drive GIỮ LÂU DÀI (anh dặn 17/11/2026) — cron 24 tháng chỉ xoá bản trong kho của app.
 import { requirePhapLy, xemDuoc, suaDuoc, loi } from '@/lib/phaply/quyen'
 import { COT_HO_SO, ghiNhatKy } from '@/lib/phaply/hoSoMayChu'
 import { dungBoWord, LOAI_CO_MAU, tenFile } from '@/lib/phaply/xuatBo'

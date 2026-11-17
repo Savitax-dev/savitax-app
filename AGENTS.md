@@ -438,8 +438,9 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
 - **Drive** (anh duyệt 17/11/2026, lưu CẢ ảnh CCCD): Shared drive "7. SAVITAX - PHÁP LÝ DENALI", gốc theo thủ tục ở biến môi trường
   (`PHAPLY_DRIVE_TLM` = thư mục "3. HỒ SƠ THÀNH LẬP", id `1GfnVapMRGmPKPaCooq4FLFXtxHOPshjt`, đã chia sẻ cho service account). Cây
   `<gốc>/<PL-… - TÊN CTY>/{8 thư mục THU_MUC ở lib/phaply/drive.js}`; id thư mục lưu `legal_cases.drive_folder_id`; ghi đè file cùng tên.
-  Demo KHÔNG đặt biến → không lưu Drive. Thử thật: `test-phaply-drive` (hồ sơ giả, bỏ thùng rác thư mục thử). ⏳ Cron xoá ảnh CCCD 24 tháng
-  sau đóng hồ sơ phải xoá CẢ bản trên Drive.
+  Demo KHÔNG đặt biến → không lưu Drive. Thử thật: `test-phaply-drive` (hồ sơ giả, bỏ thùng rác thư mục thử).
+- **Hạn lưu ảnh CCCD**: cron hằng ngày `api/cron/phaply-xoa-cccd` xoá ảnh trong kho `phaply-cccd` của hồ sơ đóng quá 24 tháng (pháp nhân còn hồ sơ
+  đang làm thì chưa xoá), giữ số liệu. **Bản trên Drive GIỮ NGUYÊN** (anh dặn 17/11/2026) — đừng thêm bước xoá Drive. Kiểm `test-phaply-han-luu [--that]`.
 
 ## Phân hệ Hóa đơn điện tử — ĐANG GÁC (13/10/2026)
 
