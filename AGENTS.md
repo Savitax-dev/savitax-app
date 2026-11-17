@@ -441,6 +441,11 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
   Demo KHÔNG đặt biến → không lưu Drive. Thử thật: `test-phaply-drive` (hồ sơ giả, bỏ thùng rác thư mục thử).
 - **Hạn lưu ảnh CCCD**: cron hằng ngày `api/cron/phaply-xoa-cccd` xoá ảnh trong kho `phaply-cccd` của hồ sơ đóng quá 24 tháng (pháp nhân còn hồ sơ
   đang làm thì chưa xoá), giữ số liệu. **Bản trên Drive GIỮ NGUYÊN** (anh dặn 17/11/2026) — đừng thêm bước xoá Drive. Kiểm `test-phaply-han-luu [--that]`.
+- **GĐ 4** (17/11/2026, `sql/58_phap_ly_nop_ket_qua.sql`), tab "Trình ký & nộp" (`app/phaply/ho-so/[id]/_nop.js`, route `ho-so/[id]/nop`, `/tep`):
+  trình ký từng tờ (`legal_case_signing`, mã mẫu theo danhMuc), mỗi LẦN nộp một dòng `legal_case_submissions` (nộp lại sau bổ sung = dòng mới)
+  → **trạng thái chờ của hồ sơ TỰ đặt theo lần nộp mới nhất** (`choTheoNop`: chờ → Chờ Sở/Thuế, bổ sung → Cần bổ sung, đạt → bỏ chờ);
+  kết quả GCN ghi mã số vào `legal_entities.tax_code` + ngày/nơi cấp; tệp scan (≤ 4 MB) tải THẲNG lên Drive đúng thư mục bước
+  (`legal_case_files` chỉ là chỉ mục; xoá = thùng rác Drive). Thư mục hồ sơ dùng chung `lib/phaply/driveMayChu.js`. Kiểm `test-phaply-nop [--that]`.
 
 ## Phân hệ Hóa đơn điện tử — ĐANG GÁC (13/10/2026)
 

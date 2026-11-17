@@ -6,7 +6,8 @@ import { requirePhapLy, xemDuoc, suaDuoc, loi } from '@/lib/phaply/quyen'
 import { COT_HO_SO, ghiNhatKy } from '@/lib/phaply/hoSoMayChu'
 import { dungBoWord, LOAI_CO_MAU, tenFile } from '@/lib/phaply/xuatBo'
 import { ensureFolder, uploadFile, DOCX_MIME } from '@/lib/googleDrive'
-import { coDrive, thuMucGoc, THU_MUC, THU_MUC_BO, THU_MUC_CCCD, linkThuMuc } from '@/lib/phaply/drive'
+import { coDrive, THU_MUC_BO, THU_MUC_CCCD, linkThuMuc } from '@/lib/phaply/drive'
+import { thuMucHoSo } from '@/lib/phaply/driveMayChu'
 import { VAI_TRO } from '@/lib/phaply/phapNhan'
 
 export const maxDuration = 60
@@ -25,16 +26,7 @@ export async function POST(request, { params }) {
   const noiDung = new Set(Array.isArray(b.noi_dung) && b.noi_dung.length ? b.noi_dung : ['so', 'thue', 'cccd'])
 
   try {
-    // thư mục hồ sơ: đã lưu id thì dùng lại (đổi tên công ty sau này không sinh thư mục mới)
-    let folderId = hs.drive_folder_id
-    if (!folderId) {
-      const { data: ent } = hs.entity_id ? await admin.from('legal_entities').select('name').eq('id', hs.entity_id).maybeSingle() : { data: null }
-      const f = await ensureFolder(tenFile(`${hs.code} - ${ent?.name || hs.contact_name || hs.title || ''}`), thuMucGoc(hs.procedure_code))
-      folderId = f.id
-      await admin.from('legal_cases').update({ drive_folder_id: folderId }).eq('id', id)
-    }
-    const con = {}
-    for (const [k, ten] of Object.entries(THU_MUC)) con[k] = (await ensureFolder(ten, folderId)).id   // tuần tự: song song sinh thư mục trùng tên
+    const { folderId, con } = await thuMucHoSo(admin, hs)
 
     let soFile = 0
     if (LOAI_CO_MAU.includes(hs.entity_type)) {

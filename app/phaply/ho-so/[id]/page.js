@@ -12,6 +12,7 @@ import {
   Modal, Field, NumInput, inputCls, btnPrimary, btnGhost, useToast, api, fmt, fmtMoney, dmy, dmyTime, StatCard, BuocChip, ChoChip,
 } from '../../_ui'
 import PhapNhan, { TAB_PHAP_NHAN } from './_phapNhan'
+import TabNop from './_nop'
 
 export default function HoSoPage() {
   const { id } = useParams()
@@ -46,7 +47,7 @@ export default function HoSoPage() {
   if (d.loi) return <AppShell><div className="pl-ui p-8 text-sm text-gray-600">{d.loi} · <Link className="underline" href="/phaply">Về danh sách</Link>{toastNode}</div></AppShell>
 
   const hs = d.ho_so, q = d.q || {}, sua = d.sua_duoc, daDong = hs.stage >= BUOC_DONG
-  const tabs = [['thong_tin', 'Thông tin'], ['viec', 'Việc cần làm'], ...TAB_PHAP_NHAN, ...(q.tien ? [['tien', 'Công nợ']] : []), ['lich_su', 'Lịch sử & ghi chú']]
+  const tabs = [['thong_tin', 'Thông tin'], ['viec', 'Việc cần làm'], ...TAB_PHAP_NHAN, ['nop', 'Trình ký & nộp'], ...(q.tien ? [['tien', 'Công nợ']] : []), ['lich_su', 'Lịch sử & ghi chú']]
 
   const chuyenBuoc = n => {
     if (!sua || daDong || n === hs.stage) return
@@ -110,6 +111,7 @@ export default function HoSoPage() {
 
           {tab === 'thong_tin' && <TabThongTin d={d} sua={sua && !daDong} q={q} lam={lam} />}
           {tab === 'viec' && <TabViec d={d} sua={sua && !daDong} id={id} load={load} toast={toast} />}
+          {tab === 'nop' && <TabNop id={id} sua={sua && !daDong} toast={toast} taiLaiHoSo={load} />}
           <PhapNhan id={id} tab={tab} sua={sua && !daDong} loaiHinh={hs.entity_type} toast={toast} taiLaiHoSo={load} />
           {tab === 'tien' && q.tien && <TabTien d={d} sua={sua && !daDong} q={q} id={id} load={load} toast={toast} setHoi={setHoi} />}
           {tab === 'lich_su' && <TabLichSu d={d} q={q} id={id} load={load} toast={toast} />}

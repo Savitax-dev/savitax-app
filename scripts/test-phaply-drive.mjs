@@ -88,6 +88,19 @@ try {
     let soDocx2 = 0
     for (const b of await con(tang1b.find(f => f.name === THU_MUC.soan).id)) soDocx2 += (await con(b.id)).length
     kiem('lưu lần 2 ghi đè, không sinh thư mục / file trùng', l2.status === 200 && tang1b.length === 8 && soDocx2 === soDocx, `${tang1b.length} thư mục, ${soDocx2} file`)
+
+    // Tệp scan (GĐ 4): tải PDF giả vào 5. TRÌNH KÝ → có trên Drive + chỉ mục → xoá → vào thùng rác
+    const fd = new FormData()
+    fd.append('file', new Blob([Buffer.from('%PDF-1.4\n% tep gia de thu\n')], { type: 'application/pdf' }), 'Ban ky thu.pdf')
+    fd.append('thu_muc', 'trinh_ky')
+    const t = await fetch(GOC + `/api/admin/phaply/ho-so/${id}/tep`, { method: 'POST', headers: { cookie: ck }, body: fd })
+    kiem('tải tệp scan lên Drive', t.status === 200, String(t.status) + ' ' + (await t.text()).slice(0, 200))
+    const tk = tang1b.find(f => f.name === THU_MUC.trinh_ky)
+    kiem('tệp nằm trong 5. TRÌNH KÝ', (await con(tk.id)).some(f => f.name === 'Ban ky thu.pdf'))
+    const { data: tep } = await admin.from('legal_case_files').select('id').eq('case_id', id)
+    kiem('ghi chỉ mục tệp', tep?.length === 1)
+    const x = await goi(`/api/admin/phaply/ho-so/${id}/tep?id=${tep?.[0]?.id}`, 'DELETE')
+    kiem('xoá tệp → bỏ thùng rác Drive + xoá chỉ mục', x.status === 200 && !(await con(tk.id)).length && !(await admin.from('legal_case_files').select('id').eq('case_id', id)).data.length)
   }
 } finally {
   if (folderId) { await trashFile(folderId); console.log('· đã bỏ thư mục thử trên Drive vào thùng rác') }

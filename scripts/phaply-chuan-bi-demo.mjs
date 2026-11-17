@@ -18,11 +18,11 @@ const { error: khongDemo } = await admin.from('demo_la_ban_demo').select('id').l
 if (khongDemo) throw new Error('Không thấy bảng demo_la_ban_demo — không phải database demo, từ chối')
 
 const sql = postgres(db, { ssl: 'require', max: 1, onnotice: () => {} })
-for (const f of ['sql/56_phap_ly_ho_so.sql', 'sql/57_phap_ly_phap_nhan.sql']) await sql.unsafe(fs.readFileSync(f, 'utf8'))
+for (const f of ['sql/56_phap_ly_ho_so.sql', 'sql/57_phap_ly_phap_nhan.sql', 'sql/58_phap_ly_nop_ket_qua.sql']) await sql.unsafe(fs.readFileSync(f, 'utf8'))
 await sql.unsafe("notify pgrst, 'reload schema'")   // PostgREST nhận bảng mới ngay
 await sql.end()
 await new Promise(r => setTimeout(r, 2500))
-console.log('✓ sql/56 + sql/57 đã chạy trên demo (danh mục: scripts/phaply-nap-danh-muc.mjs --ghi)')
+console.log('✓ sql/56 + 57 + 58 đã chạy trên demo (danh mục: scripts/phaply-nap-danh-muc.mjs --ghi)')
 console.log('✓ mẫu mặc định:', await napMauMacDinh(admin))
 
 if (process.argv.includes('--mau')) {
