@@ -2,7 +2,7 @@
 // Phân hệ Pháp lý — 4 tab dữ liệu pháp nhân của một hồ sơ: Doanh nghiệp · Người & CCCD · Ngành nghề · Còn thiếu & xuất Word.
 // Một lần tải /api/admin/phaply/ho-so/[id]/phap-nhan dùng chung cho cả 4 tab (component luôn gắn, tab khác thì ẩn).
 // Máy chủ kiểm lại quyền + lọc cột — ở đây chỉ ẩn nút cho gọn.
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Modal, Field, NumInput, inputCls, btnPrimary, btnGhost, api, fmt } from '../../_ui'
 import { NguoiForm, DiaChiChon, noiDiaChiNgan } from '../../_nguoi'
@@ -476,15 +476,28 @@ async function thuNho(file) {
 }
 
 function TaiCccd({ caseId, p, setP, toast, canhBao, setCanhBao }) {
+  // anh = ảnh vừa chọn, CHƯA tải lên · daLuu = ảnh đang hiện của bản đã lưu (giữ lại sau khi đọc để đối chiếu — anh yêu cầu 17/11/2026)
   const [anh, setAnh] = useState({})      // { truoc: { blob, url }, sau: … }
+  const [daLuu, setDaLuu] = useState({})  // { truoc: url, sau: url }
+  const [phong, setPhong] = useState(null) // ảnh đang phóng to
   const [dang, setDang] = useState(false)
   const [loiDoc, setLoiDoc] = useState('')
-  useEffect(() => () => Object.values(anh).forEach(a => URL.revokeObjectURL(a.url)), [anh])
+  const blobs = useRef([])
+  useEffect(() => () => blobs.current.forEach(u => URL.revokeObjectURL(u)), [])   // chỉ dọn khi đóng hộp
+  // mở lại người đã lưu: lấy link ký 5 phút để hiện ảnh (người không có quyền xem ảnh CCCD nhận 'an' → không hiện)
+  useEffect(() => {
+    for (const [mat, path] of [['truoc', p.cccd_front_path], ['sau', p.cccd_back_path]]) {
+      if (!path || path === 'an' || daLuu[mat]) continue
+      api(`/api/admin/phaply/ho-so/${caseId}/cccd?path=${encodeURIComponent(path)}`).then(r => r.ok && setDaLuu(o => ({ ...o, [mat]: r.data.url })))
+    }
+  }, [p.cccd_front_path, p.cccd_back_path]) // eslint-disable-line react-hooks/exhaustive-deps
   const chon = async (mat, file) => {
     if (!file) return
     try {
       const blob = await thuNho(file)
-      setAnh(o => ({ ...o, [mat]: { blob, url: URL.createObjectURL(blob) } }))
+      const url = URL.createObjectURL(blob)
+      blobs.current.push(url)
+      setAnh(o => ({ ...o, [mat]: { blob, url } }))
     } catch { toast('Không mở được ảnh này — chọn ảnh JPG / PNG', true) }
   }
   const doc = async () => {
@@ -502,40 +515,53 @@ function TaiCccd({ caseId, p, setP, toast, canhBao, setCanhBao }) {
       }))
       setCanhBao(j.canh_bao || [])
       setLoiDoc(j.loi_doc || '')
+      // giữ nguyên ảnh vừa tải để đối chiếu với các ô bên dưới
+      setDaLuu(o => ({ ...o, ...Object.fromEntries(Object.entries(anh).map(([m, a]) => [m, a.url])) }))
       setAnh({})
-      if (!j.loi_doc) toast(j.canh_bao?.length ? `Đã đọc — ${j.canh_bao.length} chỗ cần đối chiếu (tô vàng)` : 'Đã đọc CCCD — kiểm lại rồi bấm Lưu')
+      if (!j.loi_doc) toast(j.canh_bao?.length ? `Đã đọc — ${j.canh_bao.length} chỗ cần đối chiếu (tô vàng)` : 'Đã đọc CCCD — đối chiếu ảnh với các ô rồi bấm Lưu')
     } catch { toast('Mất kết nối — thử lại', true) } finally { setDang(false) }
   }
-  const xemGoc = async path => {
-    const r = await api(`/api/admin/phaply/ho-so/${caseId}/cccd?path=${encodeURIComponent(path)}`)
-    if (!r.ok) return toast(r.data.error || 'Không mở được ảnh', true)
-    window.open(r.data.url, '_blank', 'noopener')
+  const o = (mat, ten) => {
+    const url = anh[mat]?.url || daLuu[mat]
+    return (
+      <div className="flex-1 min-w-[220px]">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs font-medium text-gray-600">{ten}{anh[mat] ? <span className="ml-1 text-amber-700">· chưa tải lên</span> : daLuu[mat] ? <span className="ml-1 text-green-700">· đã lưu</span> : ''}</span>
+          <label className="text-xs underline text-gray-600 cursor-pointer">{url ? 'Chọn ảnh khác' : ''}
+            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { chon(mat, e.target.files?.[0]); e.target.value = '' }} /></label>
+        </div>
+        {url ? (
+          <button type="button" className="block w-full h-56 rounded-lg border border-gray-300 overflow-hidden bg-gray-50 cursor-zoom-in" onClick={() => setPhong(url)} title="Bấm để phóng to">
+            <img src={url} alt={ten} className="w-full h-full object-contain" />
+          </button>
+        ) : (
+          <label className="flex h-56 cursor-pointer rounded-lg border-2 border-dashed border-gray-300 hover:border-amber-400 bg-gray-50 items-center justify-center text-xs text-gray-400 text-center px-2">
+            Bấm chọn / chụp ảnh {ten.toLowerCase()}
+            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { chon(mat, e.target.files?.[0]); e.target.value = '' }} />
+          </label>
+        )}
+      </div>
+    )
   }
-  const o = (mat, ten, path) => (
-    <div className="flex-1 min-w-[150px]">
-      <div className="text-xs font-medium text-gray-600 mb-1">{ten}</div>
-      <label className="block cursor-pointer rounded-lg border-2 border-dashed border-gray-300 hover:border-amber-400 h-28 overflow-hidden bg-gray-50">
-        {anh[mat] ? <img src={anh[mat].url} alt={ten} className="w-full h-full object-contain" />
-          : <span className="flex h-full items-center justify-center text-xs text-gray-400 text-center px-2">{path ? '✓ Đã lưu ảnh — bấm để chọn ảnh khác' : 'Bấm chọn / chụp ảnh'}</span>}
-        <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { chon(mat, e.target.files?.[0]); e.target.value = '' }} />
-      </label>
-      {path && path !== 'an' && <button type="button" className="text-xs underline text-gray-600 mt-1" onClick={() => xemGoc(path)}>Xem ảnh gốc đã lưu</button>}
-    </div>
-  )
   return (
     <div className="rounded-lg border border-gray-200 p-3 space-y-2">
       <div className="text-sm font-semibold">📷 Ảnh CCCD — đọc tự động</div>
       {LA_DEMO && <div className="text-xs rounded bg-amber-50 text-amber-900 px-2 py-1.5">Bản demo: chỉ tài khoản phòng pháp lý tải được; mọi ảnh <b>tự xoá lúc 2h sáng</b>. Tài khoản demo dùng chung mật khẩu — chỉ dùng CCCD thử, đừng tải CCCD khách thật.</div>}
-      <div className="flex gap-3 flex-wrap">{o('truoc', 'Mặt trước', p.cccd_front_path)}{o('sau', 'Mặt sau', p.cccd_back_path)}</div>
+      <div className="flex gap-3 flex-wrap">{o('truoc', 'Mặt trước')}{o('sau', 'Mặt sau')}</div>
       <div className="flex items-center gap-2 flex-wrap">
         <button type="button" className={btnPrimary + ' p-btn-sm'} disabled={dang || (!anh.truoc && !anh.sau)} onClick={doc}>{dang ? 'Đang đọc… (10–30 giây)' : 'Tải lên & đọc CCCD'}</button>
-        <span className="text-xs text-gray-500">Nên chụp cả 2 mặt: mặt sau có mã MRZ để kiểm chéo số, ngày sinh, giới tính.</span>
+        <span className="text-xs text-gray-500">Nên chụp cả 2 mặt: mặt sau có mã MRZ để kiểm chéo số, ngày sinh, giới tính. Bấm vào ảnh để phóng to.</span>
       </div>
       {loiDoc && <div className="text-xs rounded bg-amber-50 text-amber-900 px-2 py-1.5">{loiDoc}</div>}
       {canhBao.length > 0 && (
         <ul className="text-xs rounded bg-amber-50 text-amber-900 px-2 py-1.5 list-disc pl-5 space-y-0.5">
           {canhBao.map((c, i) => <li key={i}>{c.muc}</li>)}
         </ul>
+      )}
+      {phong && (
+        <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setPhong(null)}>
+          <img src={phong} alt="Ảnh CCCD phóng to" className="max-w-full max-h-full object-contain rounded" />
+        </div>
       )}
     </div>
   )
