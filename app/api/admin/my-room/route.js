@@ -7,6 +7,7 @@ import { countsForMonth } from '@/lib/contractDates'
 import { dueFeeMonthsCount, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireLogin } from '@/lib/serverAuth'
 import { tinhDongTienPhong } from '@/lib/dongTienPhong'
+import { ngungConNoHienTai } from '@/lib/ngungConNo'
 import { loadHcnsFees } from '@/lib/hcnsPhiCongTy'
 import { docViPham, truViPham } from '@/lib/viPham'
 import { docCtyDacThu, tamBoQuaCongNo } from '@/lib/ctyDacThu'
@@ -81,17 +82,8 @@ export async function GET(request) {
           }
         } catch (_) { /* chưa chạy sql/25 */ }
       }
-      const [{ data: plans }, { data: logs }] = await Promise.all([
-        supabase.from('service_fees').select('client_id, year, month, amount').in('client_id', ids).eq('type', 'fee_plan'),
-        supabase.from('client_change_log').select('client_id, old_value, changed_at')
-          .in('client_id', ids).eq('entity', 'monthly_fee').eq('action', 'update'),
-      ])
-      const dt = await tinhDongTienPhong(supabase, {
-        clients: st, year, month: months[months.length - 1], feePlanRows: plans || [], changeLogRows: logs || [],
-        // 4 kỳ gần nhất: phí chưa thu mà chưa kịp chốt sổ chỉ có thể nằm ở 1–2 kỳ cuối trước khi ngưng.
-        lichSuTu: year * 12 + months[months.length - 1] - 4,
-      })
-      const no = new Map(dt.chuyenKySau.theoCty.map(x => [x.clientId, x]))
+      // Số còn phải thu TỚI HÔM NAY, không theo tháng đang xem (lib/ngungConNo.js — ca KARAOKE STAR 16/11/2026)
+      const no = new Map((await ngungConNoHienTai(supabase, st)).map(x => [x.clientId, x]))
       return st.filter(c => no.has(c.id)).map(c => ({
         ...c, ngungDv: true, conNo: no.get(c.id).total, conNoKetoan: no.get(c.id).ketoan, conNoDvk: no.get(c.id).dvk,
         tasks: [], taskTotal: 0, taskDone: 0,

@@ -6,6 +6,7 @@ import { docDvkOnly } from '@/lib/dvkOnly'
 import { feeCountsForMonth, resolveFeeForMonth } from '@/lib/feeDue'
 import { requireRoomAccess } from '@/lib/serverAuth'
 import { tinhDongTienPhong } from '@/lib/dongTienPhong'
+import { ngungConNoHienTai, kyHienTaiVN } from '@/lib/ngungConNo'
 import { loadHcnsFees } from '@/lib/hcnsPhiCongTy'
 import { docViPham, truViPham } from '@/lib/viPham'
 import { docCtyDacThu, tamBoQuaCongNo } from '@/lib/ctyDacThu'
@@ -384,6 +385,15 @@ export async function GET(request) {
     })
   } catch (e) {
     console.error('dongTienPhong:', e?.message || e)
+  }
+  // Khối "Đã ngưng dịch vụ — còn phải thu" lấy số dư TỚI HÔM NAY, không theo tháng đang xem (lib/ngungConNo.js,
+  // ca KARAOKE STAR 16/11/2026). Đang xem đúng tháng hiện tại thì số đã đúng, khỏi tính lại.
+  if (dongTien) {
+    const ht = kyHienTaiVN()
+    if (ht.year * 12 + ht.month !== year * 12 + month) {
+      try { dongTien.ngungConNo = await ngungConNoHienTai(supabase, ownedClients || []) }
+      catch (e) { console.error('ngungConNo:', e?.message || e) }
+    }
   }
 
   // hcnsInstalled: bản clone không chạy sql/06_hcns_module.sql -> false -> thẻ HCNS không
