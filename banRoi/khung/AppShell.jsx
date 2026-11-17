@@ -15,6 +15,7 @@ const laRuiRo = p => p.startsWith('/ruirothue')
 export function duongPhanHe(ma, cty) {
   if (ma === 'soat') return cty ? `/soatbaocao/ho-so?cty=${cty}` : '/soatbaocao'
   if (ma === 'ruiro') return cty ? `/ruirothue/phan-tich?cty=${cty}&xem=bang` : '/ruirothue'
+  if (ma === 'chungtu') return '/ho-so-chung-tu'   // công ty đang làm đi theo ô ở menu trái, không cần trên đường dẫn
   return '/'
 }
 
@@ -71,7 +72,7 @@ function Menu({ dong }) {
           </div>
           <div className="min-w-0">
             <p className="text-sm font-bold text-white tracking-wide uppercase truncate" title={tenDonVi}>{tenDonVi}</p>
-            <p className="text-xs text-red-200">Soát xét · Rủi ro thuế</p>
+            <p className="text-xs text-red-200">Soát xét · Rủi ro · Chứng từ</p>
           </div>
         </div>
         <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-100">
@@ -91,7 +92,7 @@ function Menu({ dong }) {
         <MucMenu href={duongPhanHe('soat', caiDat.ctyDangLam)} icon="🔎" nhan="Soát xét báo cáo" dangMo={laSoat(p)} />
         <MucMenu href={duongPhanHe('ruiro', caiDat.ctyDangLam)} icon="⚖️" nhan="Rủi ro thuế" dangMo={laRuiRo(p)} />
         <NhanKhu>Chứng từ</NhanKhu>
-        <MucMenu icon="📑" nhan="Hồ sơ chứng từ" khoa="Giai đoạn 4 — đang làm" />
+        <MucMenu href="/ho-so-chung-tu" icon="📑" nhan="Hồ sơ chứng từ" dangMo={p.startsWith('/ho-so-chung-tu')} />
         <NhanKhu>Hệ thống</NhanKhu>
         <MucMenu href="/cai-dat" icon="⚙️" nhan="Cài đặt" dangMo={p === '/cai-dat'} />
       </nav>

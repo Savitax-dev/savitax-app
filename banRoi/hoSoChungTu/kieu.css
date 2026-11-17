@@ -1,0 +1,267 @@
+/* Phân hệ Hồ sơ chứng từ (gốc: app V2.0.0) — Savitax bản rời. Lúc dựng (scripts/dung-ban-roi.mjs → bocCssHsct) mọi bộ chọn được
+   bọc dưới .hsct (:root / html / body → .hsct) để không đụng phần còn lại của app; khối giao diện tối bị bỏ (bản rời luôn sáng).
+   #printArea / #pdfInner tự mang class hsct (ở ngoài khung) nên bộ chọn bắt đầu bằng chúng giữ nguyên.
+   Màu theo app Savitax: đỏ đô #8B1A1A / #6B1212, vàng #C9A84C. Bố cục: bàn làm việc hai cột — trái phiếu nhập liệu, phải checklist + chứng từ A4. */
+:root {
+  --bg: #f9fafb; --panel: #ffffff; --panel2: #f9fafb; --ink: #1f2937; --muted: #6b7280; --line: #e5e7eb; --line2: #f0f1f3;
+  --brand: #8B1A1A; --brand-ink: #ffffff; --brand-deep: #6B1212; --brand-soft: #fdf1f1;
+  --hl: #C9A84C; --hl-soft: #fbf5e2; --hl-ink: #6b5310;
+  --ok: #1d8049; --ok-soft: #e3f4ea; --err: #c2382d; --err-soft: #fbe7e5; --warn: #a96400; --warn-soft: #fdf0dc;
+  --paper: #ffffff; --paper-ink: #111111; --shadow: 0 1px 2px rgba(15,35,56,.06), 0 4px 16px rgba(15,35,56,.06);
+  --ui: "Be Vietnam Pro", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --doc: "Times New Roman", Tinos, "Noto Serif", Times, serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0c151f; --panel: #132130; --panel2: #172839; --ink: #e3ebf4; --muted: #93a5b9; --line: #26394d; --line2: #1d2f41;
+  --brand: #4ea4ff; --brand-ink: #06192c; --brand-deep: #a9d2ff; --brand-soft: #14324f;
+  --hl: #f2b54b; --hl-soft: #3a2a0c; --hl-ink: #ffd88f;
+  --ok: #52c58a; --ok-soft: #12321f; --err: #ff7d70; --err-soft: #3b1714; --warn: #eba940; --warn-soft: #36260b;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0c151f; --panel: #132130; --panel2: #172839; --ink: #e3ebf4; --muted: #93a5b9; --line: #26394d; --line2: #1d2f41;
+  --brand: #4ea4ff; --brand-ink: #06192c; --brand-deep: #a9d2ff; --brand-soft: #14324f;
+  --hl: #f2b54b; --hl-soft: #3a2a0c; --hl-ink: #ffd88f;
+  --ok: #52c58a; --ok-soft: #12321f; --err: #ff7d70; --err-soft: #3b1714; --warn: #eba940; --warn-soft: #36260b;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25); color-scheme: dark }
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+html, body { background: var(--bg) }
+body { color: var(--ink); font: 14px/1.5 var(--ui); margin: 0 }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.25 }
+button, input, select, textarea { font: inherit; color: inherit }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px }
+.num { font-variant-numeric: tabular-nums }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand-deep) }
+
+/* ---- Thanh chức năng (bản rời: thay thanh thương hiệu gốc, dính trên cùng khung) ---- */
+.hsct > .nav { position: sticky; top: 0; z-index: 20; margin: 0; padding: 0 max(16px, env(safe-area-inset-left, 0px)); background: var(--panel); border-bottom: 1px solid var(--line); box-shadow: var(--shadow) }
+.nav button span { margin-right: 2px }
+@media (max-width: 767px) { .hsct > .nav { top: 57px } }
+/* ---- Thanh thương hiệu gốc (bản rời không dùng) ---- */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--panel); border-bottom: 1px solid var(--line); box-shadow: var(--shadow) }
+.top-in { max-width: 1480px; margin: 0 auto; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); display: grid; grid-template-columns: auto 1fr auto; gap: 8px 18px; align-items: center }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0 }
+.logo { width: 64px; height: 41px; background: #fff; border-radius: 8px; display: grid; place-items: center; border: 1px solid var(--line); flex: none; overflow: hidden }
+.logo img { width: 58px; height: auto; display: block }
+.brand h1 { font-size: 17px; font-weight: 700; letter-spacing: -.01em; color: var(--brand-deep) }
+.brand p { margin: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.clientbox { justify-self: end; display: flex; gap: 8px; align-items: center; min-width: 0; grid-column: 3 }
+.clientbox label { font-size: 12px; color: var(--muted); white-space: nowrap }
+.clientbox select { max-width: 320px; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel2); font-weight: 600 }
+.nav { grid-column: 1 / -1; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; margin-top: 4px }
+.nav button { border: 0; background: none; padding: 10px 14px 11px; font-weight: 600; font-size: 13.5px; color: var(--muted); border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap }
+.nav button:hover { color: var(--ink) }
+.nav button[aria-selected="true"] { color: var(--brand); border-bottom-color: var(--brand) }
+.nav .badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: var(--hl); color: #3a2400; font-size: 11px; line-height: 18px; text-align: center }
+@media (max-width: 760px) { .top-in { grid-template-columns: 1fr } .clientbox { grid-column: 1; justify-self: stretch } .clientbox select { max-width: none; flex: 1 } .brand p { display: none } }
+
+main { max-width: 1480px; margin: 0 auto; padding-block: 18px 60px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.view[hidden] { display: none }
+.vhead { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: end; justify-content: space-between; margin-bottom: 14px }
+.vhead h2 { font-size: 21px; font-weight: 700; letter-spacing: -.015em }
+.vhead p { margin: 3px 0 0; color: var(--muted); max-width: 72ch }
+
+/* ---- Khối giao diện chung ---- */
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0 }
+.card h3 { font-size: 14.5px; font-weight: 700 }
+.sec { display: grid; gap: 12px; min-width: 0 }
+.step { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; margin-bottom: 10px }
+.step .k { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brand) }
+.muted { color: var(--muted) }
+.small { font-size: 12.5px }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 10px }
+@media (max-width: 560px) { .grid2, .grid3 { grid-template-columns: 1fr } }
+.f { display: grid; gap: 3px; min-width: 0 }
+.f > span { font-size: 12px; color: var(--muted); font-weight: 500 }
+.f input, .f select, .f textarea, .inp { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel2); min-width: 0 }
+.f input:focus, .f select:focus, .f textarea:focus, .inp:focus { border-color: var(--brand); background: var(--panel); outline: none; box-shadow: 0 0 0 3px var(--brand-soft) }
+.f.need input { border-color: var(--hl); background: var(--hl-soft) }
+textarea { resize: vertical }
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--panel); padding: 7px 12px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; white-space: nowrap }
+.btn:hover { border-color: var(--brand); color: var(--brand) }
+.btn.pri { background: var(--brand); border-color: var(--brand); color: var(--brand-ink) }
+.btn.pri:hover { filter: brightness(1.08); color: var(--brand-ink) }
+.btn.ghost { border-color: transparent; background: none }
+.btn.dang:hover { border-color: var(--err); color: var(--err) }
+.btn.sm { padding: 4px 9px; font-size: 12px }
+.btn[disabled] { opacity: .5; pointer-events: none }
+.btn svg, .ic { width: 15px; height: 15px; flex: none }
+.chips { display: flex; flex-wrap: wrap; gap: 6px }
+.chip { border: 1px solid var(--line); background: var(--panel2); border-radius: 99px; padding: 4px 11px; font-size: 12.5px; font-weight: 600; cursor: pointer; color: var(--ink) }
+.chip:hover { border-color: var(--brand) }
+.chip[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); color: var(--brand-ink) }
+.chip.sug { border-style: dashed; border-color: var(--brand) }
+.pill { display: inline-flex; align-items: center; gap: 4px; border-radius: 99px; padding: 1px 9px; font-size: 11.5px; font-weight: 700; white-space: nowrap }
+.pill.ok { background: var(--ok-soft); color: var(--ok) } .pill.err { background: var(--err-soft); color: var(--err) } .pill.warn { background: var(--warn-soft); color: var(--warn) } .pill.info { background: var(--brand-soft); color: var(--brand) }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden }
+.seg button { border: 0; background: var(--panel); padding: 6px 12px; font-weight: 600; font-size: 13px; cursor: pointer; color: var(--muted) }
+.seg button + button { border-left: 1px solid var(--line) }
+.seg button[aria-pressed="true"] { background: var(--brand-deep); color: var(--panel) }
+.tblwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel) }
+table.t { width: 100%; border-collapse: collapse; font-size: 13px }
+table.t th { text-align: left; font-size: 11.5px; letter-spacing: .03em; text-transform: uppercase; color: var(--muted); font-weight: 700; background: var(--panel2); padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap }
+table.t td { padding: 7px 10px; border-bottom: 1px solid var(--line2); vertical-align: middle }
+table.t tr:last-child td { border-bottom: 0 }
+table.t tr.sel td { background: var(--brand-soft) }
+table.t .r { text-align: right } table.t .c { text-align: center }
+table.items input { width: 100%; border: 1px solid transparent; background: transparent; padding: 4px 5px; border-radius: 5px; min-width: 0 }
+table.items input:hover { border-color: var(--line) }
+table.items input:focus { border-color: var(--brand); background: var(--panel); outline: none }
+table.items td { padding: 2px 3px }
+.msg { padding: 9px 12px; border-radius: 8px; font-size: 13px; background: var(--brand-soft); color: var(--brand-deep) }
+.msg.err { background: var(--err-soft); color: var(--err) } .msg.ok { background: var(--ok-soft); color: var(--ok) } .msg.warn { background: var(--hl-soft); color: var(--hl-ink) }
+details > summary { cursor: pointer; font-weight: 700; font-size: 13.5px; list-style: none; display: flex; align-items: center; gap: 8px }
+details > summary::before { content: "▸"; color: var(--brand); transition: transform .15s }
+details[open] > summary::before { transform: rotate(90deg) }
+details > summary .muted { font-weight: 500; font-size: 12px }
+details .dbody { display: grid; gap: 8px; padding-top: 10px }
+.hr { height: 1px; background: var(--line2); margin: 4px 0 }
+
+/* ---- Lập hồ sơ ---- */
+.work { display: grid; grid-template-columns: minmax(0, 470px) minmax(0, 1fr); gap: 18px; align-items: start }
+@media (max-width: 1080px) { .work { grid-template-columns: minmax(0, 1fr) } }
+.drop { border: 2px dashed var(--line); border-radius: 10px; padding: 18px; text-align: center; background: var(--panel2); cursor: pointer; transition: border-color .15s, background .15s }
+.drop:hover, .drop.over { border-color: var(--brand); background: var(--brand-soft) }
+.drop b { color: var(--brand) }
+.queue { display: flex; gap: 6px; flex-wrap: wrap }
+.queue button { border: 1px solid var(--line); background: var(--panel2); border-radius: 7px; padding: 4px 9px; font-size: 12px; cursor: pointer; font-weight: 600 }
+.queue button[aria-current="true"] { border-color: var(--brand); background: var(--brand-soft); color: var(--brand) }
+.queue button .d { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; background: var(--hl) }
+.queue button .d.ok { background: var(--ok) }
+.ai { border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--panel2); display: grid; gap: 10px }
+.ai.unsure { border-color: var(--hl); background: var(--hl-soft) }
+.ai .q { font-weight: 700; color: var(--hl-ink); display: flex; gap: 6px; align-items: center }
+.ai ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 12.5px }
+.conf { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; width: 90px; display: inline-block; vertical-align: middle }
+.conf i { display: block; height: 100%; background: var(--brand) }
+.party { border: 1px solid var(--line2); border-radius: 8px; padding: 10px; display: grid; gap: 7px; background: var(--panel) }
+.party h4 { margin: 0; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center }
+.party h4 b { color: var(--brand) }
+.sumbox { display: grid; grid-template-columns: 1fr auto; gap: 2px 14px; font-size: 13px; padding: 8px 10px; background: var(--panel2); border-radius: 8px }
+.sumbox b { text-align: right }
+.sumbox .tot { font-size: 15px; color: var(--brand-deep) }
+.warns { display: grid; gap: 6px }
+.w { display: grid; grid-template-columns: auto 1fr; gap: 8px; padding: 8px 10px; border-radius: 8px; font-size: 12.8px; line-height: 1.45 }
+.w.err { background: var(--err-soft); color: var(--err) } .w.warn { background: var(--hl-soft); color: var(--hl-ink) } .w.info { background: var(--brand-soft); color: var(--brand-deep) }
+.w .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; margin-top: 6px }
+.banner { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 10px 12px; border-radius: 8px; background: var(--ok-soft); color: var(--ok); font-size: 13px; font-weight: 600 }
+
+.side { display: grid; gap: 14px; min-width: 0; position: sticky; top: 64px }
+@media (max-width: 1080px) { .side { position: static } }
+.ck-head { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center }
+.ring { --p: 0; width: 64px; height: 64px; border-radius: 50%; background: conic-gradient(var(--ringc, var(--brand)) calc(var(--p) * 1%), var(--line) 0); display: grid; place-items: center }
+.ring span { width: 50px; height: 50px; border-radius: 50%; background: var(--panel); display: grid; place-items: center; font-weight: 700; font-size: 14px }
+.setname { font-size: 16px; font-weight: 700; color: var(--brand-deep) }
+.cklist { display: grid; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden }
+.ck { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line2); background: var(--panel) }
+.ck:last-child { border-bottom: 0 }
+.ck .t { min-width: 0 }
+.ck .t b { font-weight: 600 }
+.ck .t .sub { font-size: 11.5px; color: var(--muted) }
+.ck.miss { background: color-mix(in srgb, var(--hl-soft) 70%, var(--panel)) }
+.ck .bb { color: var(--err); font-weight: 700; margin-left: 2px }
+.st { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden }
+.st button { border: 0; background: var(--panel); font-size: 11.5px; padding: 3px 7px; cursor: pointer; font-weight: 600; color: var(--muted) }
+.st button + button { border-left: 1px solid var(--line) }
+.st button[aria-pressed="true"].co { background: var(--ok); color: #fff }
+.st button[aria-pressed="true"].app { background: var(--brand); color: var(--brand-ink) }
+.st button[aria-pressed="true"].thieu { background: var(--hl); color: #3a2400 }
+.st button[aria-pressed="true"].na { background: var(--muted); color: var(--panel) }
+.dk { white-space: pre-line; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12.5px; background: var(--panel2); border-radius: 8px; padding: 10px 12px; border: 1px solid var(--line2) }
+.docbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between }
+.doctabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin }
+.doctabs button { border: 1px solid var(--line); background: var(--panel); border-radius: 7px; padding: 5px 10px; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; color: var(--muted) }
+.doctabs button[aria-selected="true"] { background: var(--brand-deep); border-color: var(--brand-deep); color: var(--panel) }
+.paperwrap { background: color-mix(in srgb, var(--line) 55%, var(--bg)); border-radius: 10px; padding: 18px; overflow: auto; max-height: 78vh }
+.a4 { background: var(--paper); color: var(--paper-ink); width: 210mm; max-width: 100%; margin: 0 auto 18px; padding: 20mm 20mm 20mm 30mm; box-shadow: 0 2px 10px rgba(0,0,0,.18); font: 13pt/1.38 var(--doc); min-height: 120mm }
+@media (max-width: 700px) { .a4 { padding: 10mm 8mm; font-size: 11pt } }
+.a4 p { margin: 0 0 2pt }
+.a4 table { width: 100%; border-collapse: collapse; margin: 2pt 0 4pt; table-layout: fixed }
+.a4 table.grid td { border: 1px solid #000; padding: 2pt 4pt; font-size: 12pt; vertical-align: middle; word-wrap: break-word }
+.a4 table.plain td { padding: 1pt 3pt; vertical-align: top }
+.a4 .blank { color: #9a9a9a }
+.a4 .pb { border-top: 1px dashed #bbb; margin: 10pt 0 }
+.a4 .doc-tag { font: 600 10px var(--ui); color: #6a7a8a; letter-spacing: .06em; text-transform: uppercase; margin: -12mm 0 8mm -20mm }
+.exp { display: flex; flex-wrap: wrap; gap: 6px }
+
+/* ---- Tổng quan ---- */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px }
+@media (max-width: 900px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 4px }
+.kpi .l { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700 }
+.kpi .v { font-size: 26px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums }
+.kpi .s { font-size: 12px; color: var(--muted) }
+.kpi.hl { border-color: var(--hl); background: var(--hl-soft) } .kpi.hl .v { color: var(--hl-ink) }
+.dash { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; margin-top: 14px }
+@media (max-width: 900px) { .dash { grid-template-columns: minmax(0, 1fr) } }
+.bars { display: grid; gap: 8px }
+.bar { display: grid; grid-template-columns: minmax(0, 170px) 1fr auto; gap: 10px; align-items: center; font-size: 13px }
+.bar .tr { height: 10px; background: var(--line2); border-radius: 5px; overflow: hidden }
+.bar .tr i { display: block; height: 100%; background: var(--brand); border-radius: 5px }
+.miss-item { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--line2); align-items: center }
+.miss-item:last-child { border-bottom: 0 }
+.miss-item .tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px }
+.feat { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px }
+.feat div { padding: 12px; border: 1px solid var(--line2); border-radius: 8px; background: var(--panel2); font-size: 13px }
+.feat b { display: block; color: var(--brand-deep); margin-bottom: 2px }
+.prog { height: 6px; border-radius: 3px; background: var(--line2); overflow: hidden; min-width: 70px }
+.prog i { display: block; height: 100%; background: var(--ok) }
+.prog.lo i { background: var(--hl) }
+
+/* ---- Trình sửa mẫu & bộ ---- */
+.ed { display: grid; grid-template-columns: minmax(0, 290px) minmax(0, 1fr); gap: 14px; align-items: start }
+@media (max-width: 900px) { .ed { grid-template-columns: minmax(0, 1fr) } }
+.lst { display: grid; gap: 2px; max-height: 70vh; overflow: auto; padding-right: 2px }
+.lst .g { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; padding: 10px 8px 4px }
+.lst button { text-align: left; border: 0; background: none; padding: 7px 9px; border-radius: 7px; cursor: pointer; display: grid; gap: 1px }
+.lst button:hover { background: var(--panel2) }
+.lst button[aria-current="true"] { background: var(--brand-soft); color: var(--brand-deep) }
+.lst button b { font-weight: 600; font-size: 13px } .lst button span { font-size: 11.5px; color: var(--muted) }
+.tb { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0; background: var(--panel2); align-items: center }
+.tb button { border: 1px solid transparent; background: none; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-weight: 700; font-size: 13px; min-width: 30px }
+.tb button:hover { border-color: var(--line); background: var(--panel) }
+.tb select { padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); font-size: 12.5px; max-width: 220px }
+.tb .sp { width: 1px; height: 20px; background: var(--line); margin: 0 3px }
+.editor { border: 1px solid var(--line); border-radius: 0 0 8px 8px; background: color-mix(in srgb, var(--line) 45%, var(--bg)); padding: 14px; max-height: 66vh; overflow: auto }
+.editor .a4 { margin: 0 auto; outline: none; min-height: 200mm }
+.a4 .ph { background: #dcebfb; color: #0b3d7a; border-radius: 3px; padding: 0 2px; font-family: var(--ui); font-size: .78em; font-weight: 600; white-space: nowrap }
+.htmlsrc { width: 100%; min-height: 50vh; font: 12px/1.5 ui-monospace, Consolas, monospace; border: 1px solid var(--line); border-radius: 0 0 8px 8px; padding: 10px; background: var(--panel) }
+.items-ed { display: grid; gap: 6px }
+.it-row { display: grid; grid-template-columns: 22px minmax(0, 2.2fr) minmax(0, 1.3fr) minmax(0, 1fr) 54px auto; gap: 6px; align-items: center; padding: 6px; border: 1px solid var(--line2); border-radius: 8px; background: var(--panel) }
+.it-row.drag { opacity: .45 } .it-row.over { border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand-soft) }
+.it-row .h { cursor: grab; color: var(--muted); text-align: center; user-select: none; font-size: 16px; line-height: 1 }
+.it-row input, .it-row select { padding: 5px 7px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel2); width: 100%; min-width: 0; font-size: 12.5px }
+.it-row label { display: flex; gap: 4px; align-items: center; font-size: 12px; justify-content: center }
+@media (max-width: 700px) { .it-row { grid-template-columns: 22px 1fr 1fr; } .it-row > :nth-child(n+4) { grid-column: span 1 } }
+
+/* ---- Hộp thoại & thông báo ---- */
+.modal { position: fixed; inset: 0; background: rgba(8,20,34,.45); display: grid; place-items: center; z-index: 50; padding: 16px }
+.modal .box { background: var(--panel); border-radius: 12px; padding: 20px; max-width: 460px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.3); display: grid; gap: 14px }
+.modal .box h3 { font-size: 16px }
+.toast { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 60; display: grid; gap: 8px; max-width: min(380px, calc(100vw - 32px)) }
+.toast div { background: var(--brand-deep); color: var(--panel); padding: 10px 14px; border-radius: 9px; font-size: 13px; font-weight: 500; box-shadow: var(--shadow); animation: tin .2s ease-out }
+.toast div.err { background: var(--err); color: #fff }
+@keyframes tin { from { transform: translateY(8px); opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important } }
+.busy { position: fixed; inset: 0; z-index: 55; background: rgba(8,20,34,.35); display: grid; place-items: center }
+.busy div { background: var(--panel); padding: 16px 22px; border-radius: 10px; font-weight: 600; box-shadow: var(--shadow) }
+#pdfStage { position: fixed; left: -10000px; top: 0; width: 210mm; background: #fff }
+#pdfInner { width: 210mm; background: #fff }
+#pdfInner .a4 { box-shadow: none; margin: 0; min-height: 0; padding: 18mm 18mm 18mm 26mm; width: 210mm; max-width: none; font-size: 13pt }
+.foot { max-width: 1480px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right, 0px)) 30px max(16px, env(safe-area-inset-left, 0px)); color: var(--muted); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px }
+@media print {
+  body > *:not(#printArea) { display: none !important }
+  #printArea { display: block !important }
+  #printArea .a4 { box-shadow: none; margin: 0; padding: 0; width: auto; page-break-after: always }
+  @page { size: A4; margin: 20mm 20mm 20mm 30mm }
+}
+#printArea { display: none }
+
+/* Bản rời: Tailwind (dùng cho phần còn lại của app) xoá kiểu danh sách mặc định — trả lại cho chứng từ và ô gợi ý */
+.a4 ul, .a4 ol { padding-left: 18pt; margin: 0 0 2pt }
+.a4 ul { list-style: disc } .a4 ol { list-style: decimal }
+.ai ul { list-style: disc }
+.vhead a, .card a, .small a { color: var(--brand); text-decoration: underline; text-underline-offset: 2px }

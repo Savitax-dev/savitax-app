@@ -20,7 +20,7 @@ export default function CaiDat() {
     const r = new FileReader(); r.onload = () => { datCaiDat({ logo: r.result }); setBao('Đã đổi logo.') }; r.readAsDataURL(f)
   }
   const saoLuu = async () => {
-    const blob = new Blob([JSON.stringify(taoSaoLuu(), null, 1)], { type: 'application/json' })
+    const blob = new Blob([JSON.stringify(await taoSaoLuu(), null, 1)], { type: 'application/json' })
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
     a.download = `Savitax-HoSo-sao-luu-${new Date().toISOString().slice(0, 10)}.json`
     document.body.appendChild(a); a.click(); a.remove()
@@ -31,7 +31,8 @@ export default function CaiDat() {
     if (!f) return
     try {
       const j = JSON.parse(await f.text())
-      if (!confirm(`Khôi phục ${j.congTy?.length ?? 0} công ty từ "${f.name}"? Danh sách và cài đặt hiện tại sẽ bị thay.`)) return
+      const hsct = j.hoSoChungTu ? ` và ${j.hoSoChungTu.records?.length ?? 0} hồ sơ chứng từ` : ''
+      if (!confirm(`Khôi phục ${j.congTy?.length ?? 0} công ty${hsct} từ "${f.name}"? Dữ liệu hiện tại trên máy này sẽ bị thay.`)) return
       await khoiPhuc(j); setBao('Đã khôi phục. Thư mục đã trỏ không đi theo file sao lưu — máy mới phải trỏ lại.')
     } catch (e) { setBao('Không khôi phục được: ' + (e?.message || e)) }
   }

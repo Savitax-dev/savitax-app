@@ -390,9 +390,9 @@ SQL `sql/40_phantich_xem_phi.sql` (đã chạy). **KHÔNG đưa vào bản clone
 - ⏳ Chưa làm: màn Hóa đơn (danh sách từng hóa đơn từ file XML/PDF/HTML), đọc BCTC PDF ở Soát xét năm, đọc ảnh scan, bảng
   lương DOEL quý 2 chỉ đọc ra 1/2 người (anh để sau), mẫu 05/KK theo TT89/2026.
 
-## Bản HTML chạy riêng trên máy (`banRoi/`) — Soát xét + Rủi ro thuế
+## Bản HTML chạy riêng trên máy (`banRoi/`) — Soát xét + Rủi ro thuế + Hồ sơ chứng từ
 
-Một file `dist-ban-roi/Savitax-HoSo.html` (~4,5 MB, gitignore) mở thẳng bằng Chrome / Edge, không máy chủ, không đăng nhập, để
+Một file `dist-ban-roi/Savitax-HoSo.html` (~5,4 MB, gitignore) mở thẳng bằng Chrome / Edge, không máy chủ, không đăng nhập, để
 giao riêng cho đơn vị khác (bản quyền Savitax, khách đổi được logo). Dựng: `node scripts/dung-ban-roi.mjs`. Kế hoạch + tiến độ:
 `docs/ban-html-roi-ke-hoach.md`. GĐ 1 xong 15/11/2026.
 
@@ -413,6 +413,13 @@ giao riêng cho đơn vị khác (bản quyền Savitax, khách đổi được 
   dừng báo lỗi → sửa danh sách cho khớp. Script dựng cũng dừng nếu file ra còn tên đơn vị nguồn cũ.
 - Tab 🧭 Hướng dẫn (Soát xét + Rủi ro) ở `banRoi/khung/HuongDan.jsx`; cây thư mục mẫu SVT.MB09 ở `banRoi/cayMau.json` (chỉ tên
   thư mục) — đổi cây ISO thì chép lại file này.
+- **Hồ sơ chứng từ** (GĐ 4, 17/11/2026): mã JS thuần chép từ app Hồ sơ chứng từ V2.0.0 ở `banRoi/hoSoChungTu/` (`0-duLieuMau` …
+  `6-giaoDien.js` + `kieu.css` + `trang.html`) — KHÔNG phải mã app Savitax, không viết lại React. `banRoi/khung/HoSoChungTu.jsx`
+  dựng khối DOM MỘT lần, gắn / tháo theo trang, chạy mã bằng `new Function` SAU khi gắn (mã tìm phần tử theo id). Cầu nối
+  `window.__hsct`: kho IndexedDB khoá `hoSoChungTu`, đơn vị + logo ở Cài đặt, ngày nghỉ chung, công ty bản rời = khách hàng
+  (`dongBoKhach`, `chonKhach`). CSS bọc dưới `.hsct` lúc dựng (`bocCssHsct` trong script dựng); `#printArea` (con của body) và
+  `#pdfInner` (html2pdf chép ra ngoài) tự mang class `hsct`. ⚠ Dữ liệu mẫu phải GIẢ (MST 9999…) — bản V2.0.0 gốc dùng hóa đơn
+  của doanh nghiệp thật. Khôi phục sao lưu chung tăng "thế hệ" → khung bỏ bản đang chạy, dựng lại (bản cũ không được ghi đè).
 
 ## Phân hệ Tiền lương (`/luong`)
 

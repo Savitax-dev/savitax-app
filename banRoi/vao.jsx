@@ -26,6 +26,7 @@ import SoatKy from '@/app/soatbaocao/soat-ky/page'
 import SoatNam from '@/app/soatbaocao/nam/page'
 import RuiRoCongTy from '@/app/ruirothue/page'
 import RuiRoPhanTich from '@/app/ruirothue/phan-tich/page'
+import HoSoChungTu from './khung/HoSoChungTu'   // phân hệ JS thuần (banRoi/hoSoChungTu), khung chỉ gắn vào
 import AppShell from './khung/AppShell'
 
 // pdf.js cần một "worker" ở file riêng — bản rời chỉ có một file, nên nhúng mã worker và dựng từ Blob. Gắn sẵn ở đây thì
@@ -50,6 +51,7 @@ const TUYEN = {
   '/ruirothue/huong-dan': HuongDanRuiRo,
   '/ruirothue': RuiRoCongTy,
   '/ruirothue/phan-tich': RuiRoPhanTich,
+  '/ho-so-chung-tu': HoSoChungTu,
 }
 
 function KhongCo() {

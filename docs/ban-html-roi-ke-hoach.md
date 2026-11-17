@@ -8,7 +8,7 @@ Lập 07/11/2026. Các quyết định của anh trong ngày:
 - **Bản quyền Savitax**, khách được đổi logo + tên công ty mình.
 - KHÔNG thêm nút "Xuất cho bản rời" trong app chính.
 
-ĐANG LÀM — GĐ 1 xong 15/11/2026 (xem "Tiến độ" ở mục Thứ tự làm).
+ĐANG LÀM — GĐ 0–4 xong 17/11/2026, còn GĐ 5 đóng gói (xem "Tiến độ" ở mục Thứ tự làm).
 
 **Demo giao diện + cấu trúc chạy (08/11/2026)**: `docs/mockup-ban-roi/Savitax-HoSo-demo.html` (bấm qua lại được, dữ liệu
 giả, không gọi mạng; Cài đặt có ô thử điều kiện chạy + nút thử trỏ thư mục chỉ đọc) và `docs/mockup-ban-roi/cau-truc-chay.html`.
@@ -157,7 +157,17 @@ Tổng ~6,5–7,5 ngày. Mỗi giai đoạn: thử ở máy → gửi anh file x
   câu chỉ-đúng-trong-app (phạm vi phòng / nhân viên, "dùng chung với Tờ khai") lúc đóng gói — `banRoi/vaChu.mjs`, mỗi câu phải
   khớp đúng 1 lần không thì dựng dừng; xin Chrome lưu dữ liệu lâu dài (`navigator.storage.persist`); esbuild `charset: utf8`
   (file 4,16 MB); script dựng tự dừng nếu file còn tên đơn vị nguồn cũ (khớp theo từ, từ khoá ở `~/.savitax-keys`).
-- **Còn**: GĐ 4 Hồ sơ chứng từ; GĐ 5 đóng gói + hướng dẫn PDF + thử máy sạch; thử Tải Excel / Soát xét năm / Năm cũ trên dữ liệu thật.
+- **GĐ 4 xong (17/11/2026) — Hồ sơ chứng từ**: mã app V2.0.0 tách ra `banRoi/hoSoChungTu/` (`0-duLieuMau` … `6-giaoDien.js`,
+  `kieu.css`, `trang.html`), giữ nguyên logic JS thuần, KHÔNG viết lại React. Khung `banRoi/khung/HoSoChungTu.jsx` dựng khối DOM
+  một lần, gắn / tháo khi chuyển trang (quay lại vẫn đúng màn đang làm), chạy mã bằng `new Function` sau khi gắn, nối qua
+  `window.__hsct` (kho IndexedDB khoá `hoSoChungTu` thay localStorage, logo + tên đơn vị ở Cài đặt, ngày nghỉ chung, danh sách
+  công ty = khách hàng, "Công ty đang làm" ở menu trái = khách hàng đang làm). CSS bọc dưới `.hsct` lúc dựng (bỏ giao diện tối),
+  màu đỏ đô / vàng Savitax. Đã bỏ: thanh thương hiệu, thông tin đơn vị nguồn, hóa đơn mẫu thật (thay dữ liệu GIẢ MST 9999…),
+  ô ngày nghỉ + nút sáng / tối riêng. html2pdf.js 0.10.1 nhúng sẵn (file 5,36 MB). Sao lưu chung gồm cả hồ sơ chứng từ, khôi phục
+  thì khung dựng lại phân hệ. Ngày nghỉ mặc định gộp thêm Tết, Giỗ Tổ, nghỉ bù 2026–2027 (cũng đổi hạn nộp ở Soát xét). Tab 🧭
+  Hướng dẫn trong phân hệ. Đã thử (localhost): hóa đơn mẫu, nạp XML + ZIP, xuất Word / Excel / PDF / phiếu kiểm tra, đồng bộ
+  công ty, tải lại trang giữ dữ liệu, sao lưu → khôi phục. Chưa thử: hóa đơn PDF thật, lệnh In, mở bằng file://.
+- **Còn**: GĐ 5 đóng gói + hướng dẫn PDF + thử máy sạch; thử Tải Excel / Soát xét năm / Năm cũ trên dữ liệu thật.
 
 ## Bộ bàn giao
 

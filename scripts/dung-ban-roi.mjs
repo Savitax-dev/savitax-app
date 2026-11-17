@@ -1,4 +1,4 @@
-// Dựng bản HTML chạy riêng trên máy "Savitax Hồ Sơ" (Soát xét báo cáo + Rủi ro thuế) thành MỘT file:
+// Dựng bản HTML chạy riêng trên máy "Savitax Hồ Sơ" (Soát xét báo cáo + Rủi ro thuế + Hồ sơ chứng từ) thành MỘT file:
 //   node scripts/dung-ban-roi.mjs            → dist-ban-roi/Savitax-HoSo.html
 //   node scripts/dung-ban-roi.mjs --kich-co  → in thêm các thư viện nặng nhất
 // Gói nguyên mã màn hình của app (không sửa app) + banRoi/ (khung, kho trên máy, bản thay Next.js / máy chủ). Thư viện,
@@ -88,6 +88,31 @@ if (kichCo) {
 const nguonCss = path.join(GOC, 'banRoi/kieu.css')
 const css = (await postcss([tailwind({ base: GOC, optimize: { minify: true } })]).process(fs.readFileSync(nguonCss, 'utf8'), { from: nguonCss })).css
 
+// CSS của phân hệ Hồ sơ chứng từ (JS thuần, banRoi/hoSoChungTu) viết cho một trang riêng: :root, body, *, h1… → bọc hết dưới
+// .hsct để không đụng phần còn lại; bỏ giao diện tối (bản rời luôn sáng). #printArea / #pdfInner nằm NGOÀI khung (con của
+// <body> / bản sao của html2pdf) nhưng tự mang class hsct, nên bộ chọn bắt đầu bằng chúng (và "body > …" của lệnh in) giữ nguyên.
+const bocCssHsct = {
+  postcssPlugin: 'boc-hsct',
+  Once(goc) {
+    goc.walkAtRules('media', at => { if (/prefers-color-scheme/.test(at.params)) at.remove() })
+    goc.walkRules(r => {
+      if (r.parent?.type === 'atrule' && /keyframes/i.test(r.parent.name)) return
+      if (r.selector.includes('data-theme')) { r.remove(); return }
+      const ds = r.selectors.flatMap(c => {
+        c = c.trim()
+        if (c === 'body::before') return []
+        if (/^(#printArea|#pdfInner|\.hsct|body\s*>)/.test(c)) return [c]
+        if (/^(:root|html|body)$/.test(c)) return ['.hsct']
+        return ['.hsct ' + c]
+      })
+      if (ds.length) r.selectors = [...new Set(ds)]; else r.remove()
+    })
+  },
+}
+const nguonHsct = path.join(GOC, 'banRoi/hoSoChungTu/kieu.css')
+const cssHsct = (await postcss([bocCssHsct]).process(fs.readFileSync(nguonHsct, 'utf8'), { from: nguonHsct })).css
+  .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\n\s*\n/g, '\n')
+
 const maJs = js.outputFiles[0].text.replace(/<\/(script)/gi, '<\\/$1')
 const html = `<!doctype html>
 <html lang="vi">
@@ -95,8 +120,9 @@ const html = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Savitax Hồ Sơ</title>
-<!-- Bản quyền © Savitax — Soát xét báo cáo · Rủi ro thuế. Phiên bản ${PHIEN_BAN}, dựng ${NGAY}. Chạy thẳng trên Chrome / Edge, không cần mạng. -->
+<!-- Bản quyền © Savitax — Soát xét báo cáo · Rủi ro thuế · Hồ sơ chứng từ. Phiên bản ${PHIEN_BAN}, dựng ${NGAY}. Chạy thẳng trên Chrome / Edge, không cần mạng. -->
 <style>${css}</style>
+<style>${cssHsct}</style>
 </head>
 <body>
 <div id="goc"><p style="font-family:Arial;padding:24px;color:#666">Đang mở Savitax Hồ Sơ…</p></div>
@@ -118,4 +144,4 @@ if (fs.existsSync(tepTuKhoa)) {
 fs.mkdirSync(RA, { recursive: true })
 const tep = path.join(RA, 'Savitax-HoSo.html')
 fs.writeFileSync(tep, html)
-console.log(`OK ${path.relative(GOC, tep)} — ${(html.length / 1024 / 1024).toFixed(2)} MB (JS ${(maJs.length / 1024).toFixed(0)} KB, CSS ${(css.length / 1024).toFixed(0)} KB) · phiên bản ${PHIEN_BAN}`)
+console.log(`OK ${path.relative(GOC, tep)} — ${(html.length / 1024 / 1024).toFixed(2)} MB (JS ${(maJs.length / 1024).toFixed(0)} KB, CSS ${((css.length + cssHsct.length) / 1024).toFixed(0)} KB) · phiên bản ${PHIEN_BAN}`)

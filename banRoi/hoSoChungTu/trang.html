@@ -1,0 +1,270 @@
+<!-- Savitax bản rời: phần thân của phân hệ Hồ sơ chứng từ (gốc: app Hồ sơ chứng từ V2.0.0). Thanh thương hiệu riêng đã bỏ —
+     khung bản rời (banRoi/khung/HoSoChungTu.jsx) lo menu, công ty đang làm, bản quyền. Ô chọn công ty giữ ẨN để mã gốc dùng. -->
+<select id="clientSel" hidden aria-hidden="true"></select>
+<nav class="nav" role="tablist" aria-label="Chức năng">
+  <button data-v="dash" aria-selected="true"><span>🏠</span> Tổng quan</button>
+  <button data-v="lap"><span>🧾</span> Lập hồ sơ từ hóa đơn</button>
+  <button data-v="so"><span>📒</span> Sổ hồ sơ<span class="badge" id="missBadge" hidden></span></button>
+  <button data-v="bo"><span>🧩</span> Bộ hồ sơ &amp; checklist</button>
+  <button data-v="mau"><span>📄</span> Mẫu chứng từ</button>
+  <button data-v="db"><span>📇</span> Danh bạ</button>
+  <button data-v="cai"><span>⚙️</span> Cài đặt</button>
+  <button data-v="hd"><span>🧭</span> Hướng dẫn</button>
+</nav>
+
+<main>
+  <!-- ============ TỔNG QUAN ============ -->
+  <section class="view" id="v-dash">
+    <div class="vhead"><div><h2 id="dashTitle">Tổng quan hồ sơ</h2><p id="dashSub" class="muted"></p></div>
+      <div class="row"><button class="btn pri" data-go="lap">+ Lập hồ sơ từ hóa đơn</button><button class="btn" data-go="so">Mở sổ hồ sơ</button></div></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="dash">
+      <div class="card"><div class="step"><h3>Hồ sơ cần bổ sung chứng từ bắt buộc</h3><span class="small muted" id="missCount"></span></div><div id="missList"></div></div>
+      <div class="sec">
+        <div class="card"><div class="step"><h3>Theo nghiệp vụ</h3></div><div class="bars" id="bars"></div></div>
+        <div class="card"><div class="step"><h3>Theo tháng hóa đơn</h3></div><div class="bars" id="barsM"></div></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px"><div class="step"><h3>App làm được gì</h3></div>
+      <div class="feat">
+        <div><b>Đọc hóa đơn tự động</b>File XML chuẩn Tổng cục Thuế, PDF có lớp chữ, file ZIP tải từ cổng tra cứu. Tải nhiều hóa đơn cùng lúc.</div>
+        <div><b>Tự nhận diện nghiệp vụ</b>Bán ra hay mua vào theo MST; hàng hóa, dịch vụ, xây dựng, TSCĐ, khuyến mại, điều chỉnh… kèm lý do và độ tin cậy.</div>
+        <div><b>Tự chạy bộ chứng từ</b>Hợp đồng, báo giá, đơn hàng, phiếu kho, biên bản… điền sẵn người mua, người bán, người giao nhận, ngày và số chứng từ.</div>
+        <div><b>Checklist theo loại hình</b>Mỗi bộ hồ sơ có danh mục chứng từ bắt buộc, gợi ý định khoản, cảnh báo rủi ro thuế.</div>
+        <div><b>Cảnh báo tuân thủ</b>Thanh toán từ 5 triệu, ngày giao khác ngày hóa đơn, lệch tổng tiền, MST sai, hợp đồng hết hạn.</div>
+        <div><b>Xuất & in hàng loạt</b>Word .docx chuẩn A4 Times New Roman, Excel .xlsx, PDF; gộp nhiều hồ sơ hoặc ZIP từng hồ sơ.</div>
+        <div><b>Tự sửa mẫu, tự thêm mẫu</b>Soạn trực tiếp, chèn biến, nhập mẫu từ file Word; sắp xếp lại chứng từ trong từng bộ.</div>
+        <div><b>Danh bạ tự học</b>Lưu bên bán, bên mua, người đại diện, người giao nhận; lần sau tự điền. Dùng lại hợp đồng nguyên tắc đã ký.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LẬP HỒ SƠ ============ -->
+  <section class="view" id="v-lap" hidden>
+    <div class="work">
+      <div class="sec">
+        <div class="card sec">
+          <div class="step"><span class="k">Bước 1 · Tải hóa đơn</span><button class="btn sm ghost" id="newBlank">Nhập tay từ đầu</button></div>
+          <label class="drop" id="drop" for="fileIn"><div><b>Chọn hoặc kéo thả hóa đơn vào đây</b></div><div class="small muted">XML hóa đơn điện tử · PDF có lớp chữ · ZIP tải từ cổng tra cứu · chọn được nhiều file</div></label>
+          <input type="file" id="fileIn" accept=".xml,.pdf,.zip" multiple hidden>
+          <div class="row"><button class="btn sm" id="useSample">Dùng hóa đơn mẫu số 37</button><span class="small muted" id="recLabel"></span></div>
+          <div class="queue" id="queue"></div>
+          <div id="readMsg" class="msg" hidden></div>
+        </div>
+
+        <div class="card sec">
+          <div class="step"><span class="k">Bước 2 · App nhận diện nghiệp vụ</span></div>
+          <div id="aiBox"></div>
+          <div class="grid2">
+            <label class="f"><span>Chiều hóa đơn</span><div class="seg" id="chieuSeg"><button data-c="ban">Bán ra</button><button data-c="mua">Mua vào</button></div></label>
+            <label class="f"><span>Bộ hồ sơ áp dụng</span><select id="setSel"></select></label>
+          </div>
+          <div class="f"><span>Lĩnh vực của hóa đơn</span><div class="chips" id="lvChips"></div></div>
+          <div id="hdBanner"></div>
+        </div>
+
+        <div class="card sec">
+          <div class="step"><span class="k">Bước 3 · Thông tin hóa đơn</span><span class="small muted" id="srcTag"></span></div>
+          <div class="grid3">
+            <label class="f"><span>Ký hiệu</span><input id="invKh" placeholder="1C26TSV"></label>
+            <label class="f"><span>Số hóa đơn</span><input id="invSo" inputmode="numeric"></label>
+            <label class="f"><span>Ngày hóa đơn</span><input id="invNgay" type="date"></label>
+          </div>
+          <div class="party" id="pBan"></div>
+          <div class="party" id="pMua"></div>
+          <div class="step" style="margin:4px 0 0"><span class="small muted">Hàng hóa, dịch vụ</span><div class="row"><button class="btn sm" id="pasteRows" title="Dán từ Excel: Tên | ĐVT | SL | Đơn giá">Dán từ Excel</button><button class="btn sm" id="addRow">+ Dòng</button></div></div>
+          <div class="tblwrap"><table class="t items"><thead><tr><th style="width:34%">Tên hàng hóa, dịch vụ</th><th>ĐVT</th><th class="r">SL</th><th class="r">Đơn giá</th><th class="r">Thành tiền</th><th class="r">TS</th><th></th></tr></thead><tbody id="itemsBody"></tbody></table></div>
+          <textarea id="pasteBox" class="inp" rows="3" placeholder="Dán bảng từ Excel (Tên | ĐVT | Số lượng | Đơn giá | Thành tiền | Thuế suất) rồi bấm Nhận dòng" hidden></textarea>
+          <div class="row" id="pasteAct" hidden><button class="btn sm pri" id="pasteGo">Nhận dòng</button><button class="btn sm ghost" id="pasteCancel">Hủy</button></div>
+          <div class="sumbox num" id="sumBox"></div>
+        </div>
+
+        <div class="card sec">
+          <div class="step"><span class="k">Bước 4 · Thông tin thêm cho bộ hồ sơ</span><span class="small muted">Không bắt buộc · điền đến đâu in đến đó</span></div>
+          <details id="dGn" open><summary>Giao nhận hàng hóa / dịch vụ <span class="muted">người giao, người nhận, liên hệ</span></summary><div class="dbody">
+            <div class="grid2">
+              <label class="f"><span>Ngày giao hàng / hoàn thành (trống = ngày HĐ)</span><input id="gn_ngay" type="date"></label>
+              <label class="f"><span>Địa điểm giao (trống = địa chỉ bên mua)</span><input id="gn_dia_diem"></label>
+              <label class="f"><span>Người giao hàng (bên bán)</span><input id="gn_nguoi_giao"></label>
+              <label class="f"><span>Chức vụ người giao</span><input id="gn_cv_giao"></label>
+              <label class="f"><span>SĐT người giao</span><input id="gn_sdt_giao" inputmode="tel"></label>
+              <label class="f"><span>CCCD người giao</span><input id="gn_cccd_giao" inputmode="numeric"></label>
+              <label class="f"><span>Người nhận hàng (bên mua)</span><input id="gn_nguoi_nhan"></label>
+              <label class="f"><span>Chức vụ người nhận</span><input id="gn_cv_nhan"></label>
+              <label class="f"><span>SĐT người nhận</span><input id="gn_sdt_nhan" inputmode="tel"></label>
+              <label class="f"><span>CCCD người nhận</span><input id="gn_cccd_nhan" inputmode="numeric"></label>
+              <label class="f"><span>Email liên hệ</span><input id="gn_email" type="email"></label>
+              <label class="f"><span>Phương tiện / biển số xe</span><div class="row" style="flex-wrap:nowrap"><input id="gn_phuong_tien" placeholder="Xe tải"><input id="gn_bien_so" placeholder="15C-123.45"></div></label>
+            </div></div></details>
+          <details id="dCt"><summary>Công trình xây dựng <span class="muted">tên, hạng mục, thời gian</span></summary><div class="dbody"><div class="grid2">
+            <label class="f" style="grid-column:1/-1"><span>Tên công trình</span><input id="ct_ten"></label>
+            <label class="f"><span>Hạng mục</span><input id="ct_hang_muc"></label>
+            <label class="f"><span>Địa điểm công trình</span><input id="ct_dia_diem"></label>
+            <label class="f"><span>Khởi công</span><input id="ct_tu_ngay" type="date"></label>
+            <label class="f"><span>Hoàn thành</span><input id="ct_den_ngay" type="date"></label>
+          </div></div></details>
+          <details id="dDc"><summary>Điều chỉnh / thay thế hóa đơn <span class="muted">lý do, nội dung sai – đúng</span></summary><div class="dbody">
+            <label class="f"><span>Lý do</span><input id="dc_ly_do" placeholder="Sai đơn giá, sai số lượng, sai tên hàng…"></label>
+            <label class="f"><span>Nội dung đã ghi trên hóa đơn (sai)</span><textarea id="dc_noi_dung_sai" rows="2"></textarea></label>
+            <label class="f"><span>Nội dung điều chỉnh lại (đúng)</span><textarea id="dc_noi_dung_dung" rows="2"></textarea></label>
+          </div></details>
+          <details id="dOpt"><summary>Hợp đồng &amp; thanh toán <span class="muted">V/v, hiệu lực, hạn thanh toán</span></summary><div class="dbody"><div class="grid2">
+            <label class="f" style="grid-column:1/-1"><span>Hợp đồng V/v (trống = theo lĩnh vực)</span><input id="o_vv" placeholder="Mua bán sơn và bột bả các loại"></label>
+            <label class="f" style="grid-column:1/-1"><span>Tóm tắt hàng hóa, dịch vụ</span><input id="o_noiDung"></label>
+            <label class="f"><span>Địa danh ghi ngày ký</span><input id="o_diaDanh" placeholder="Hải Phòng"></label>
+            <label class="f"><span>Hiệu lực hợp đồng đến</span><input id="o_hieuLuc" type="date"></label>
+            <label class="f"><span>Hạn thanh toán (ngày)</span><input id="o_hanTT" inputmode="numeric"></label>
+            <label class="f"><span>Hình thức thanh toán</span><input id="o_hinhThuc" placeholder="Chuyển khoản"></label>
+            <label class="f"><span>Bảo hành (tháng)</span><input id="o_baoHanh" inputmode="numeric"></label>
+            <label class="f"><span>Thời gian thực hiện</span><input id="o_thoiGian" placeholder="Từ … đến …"></label>
+            <label class="f" style="grid-column:1/-1"><span>Ghi chú in trên chứng từ</span><input id="o_ghiChu"></label>
+          </div></div></details>
+          <details id="dDates"><summary>Ngày &amp; số chứng từ <span class="muted">tự lùi theo ngày làm việc, sửa được</span></summary><div class="dbody"><div class="tblwrap"><table class="t"><thead><tr><th>Chứng từ</th><th class="c">Lùi (ngày LV)</th><th>Ngày</th><th>Số</th></tr></thead><tbody id="datesBody"></tbody></table></div></div></details>
+        </div>
+
+        <div class="card sec">
+          <div class="step"><span class="k">Kiểm tra tuân thủ</span><span class="small muted" id="wCount"></span></div>
+          <div class="warns" id="warns"></div>
+        </div>
+      </div>
+
+      <div class="side">
+        <div class="card sec">
+          <div class="ck-head"><div class="ring" id="ring"><span id="ringTxt">0%</span></div>
+            <div><div class="small muted" id="setGroup"></div><div class="setname" id="setName">Chưa chọn bộ hồ sơ</div><div class="small muted" id="ckStat"></div></div>
+            <div class="row" style="justify-content:flex-end"><button class="btn pri" id="saveRec">Lưu vào sổ</button></div></div>
+          <div class="cklist" id="ckList"></div>
+          <details><summary>Định khoản gợi ý &amp; lưu ý <span class="muted">theo bộ hồ sơ</span></summary><div class="dbody"><div class="dk" id="dkBox"></div><div class="small" id="luuY"></div></div></details>
+        </div>
+        <div class="card sec">
+          <div class="docbar"><h3>Chứng từ app lập sẵn</h3>
+            <div class="exp">
+              <button class="btn pri sm" data-exp="docx">Word</button><button class="btn sm" data-exp="pdf">PDF</button><button class="btn sm" data-exp="xlsx">Excel</button><button class="btn sm" data-exp="xls" data-only-local>XLS</button><button class="btn sm" data-exp="print" data-only-local>In</button><button class="btn sm" data-exp="ck">Phiếu kiểm tra</button>
+            </div></div>
+          <div class="doctabs" id="docTabs" role="tablist"></div>
+          <div class="paperwrap" id="paper"></div>
+          <div class="small muted" id="fileHint"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SỔ HỒ SƠ ============ -->
+  <section class="view" id="v-so" hidden>
+    <div class="vhead"><div><h2>Sổ hồ sơ</h2><p class="muted">Mỗi hóa đơn là một bộ hồ sơ. Chọn nhiều dòng để in hoặc xuất hàng loạt.</p></div>
+      <div class="row"><button class="btn" id="soXlsx">Xuất sổ Excel</button><button class="btn" id="soMiss">Danh sách chứng từ còn thiếu</button></div></div>
+    <div class="card sec">
+      <div class="row">
+        <input class="inp" id="soFind" placeholder="Tìm số HĐ, đối tác, MST…" style="max-width:260px">
+        <select class="inp" id="soMonth" style="max-width:150px"></select>
+        <select class="inp" id="soChieu" style="max-width:140px"><option value="">Mọi chiều</option><option value="ban">Bán ra</option><option value="mua">Mua vào</option></select>
+        <select class="inp" id="soSt" style="max-width:170px"><option value="">Mọi trạng thái</option><option value="du">Đủ chứng từ bắt buộc</option><option value="thieu">Còn thiếu</option></select>
+        <span class="small muted" id="soCount"></span>
+      </div>
+      <div class="row" id="soBatch"><span class="small"><b id="soSelN">0</b> hồ sơ đã chọn</span><button class="btn sm pri" data-bexp="docx">Word gộp 1 file</button><button class="btn sm" data-bexp="zip">ZIP từng hồ sơ (Word)</button><button class="btn sm" data-bexp="pdf">PDF gộp</button><button class="btn sm" data-bexp="xlsx">Excel</button><button class="btn sm" data-bexp="ck">Phiếu kiểm tra (gộp)</button><button class="btn sm dang" id="soDel">Xóa</button></div>
+      <div class="tblwrap"><table class="t"><thead><tr><th><input type="checkbox" id="soAll" aria-label="Chọn tất cả"></th><th>Ngày HĐ</th><th>Số HĐ</th><th>Chiều</th><th>Đối tác</th><th>Bộ hồ sơ</th><th class="r">Tổng tiền</th><th>Đủ chứng từ</th><th></th></tr></thead><tbody id="soBody"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ============ BỘ HỒ SƠ ============ -->
+  <section class="view" id="v-bo" hidden>
+    <div class="vhead"><div><h2>Bộ hồ sơ &amp; checklist</h2><p class="muted">Mỗi bộ là danh mục chứng từ cho một nghiệp vụ. Kéo thả để sắp xếp, gắn mẫu in, đánh dấu bắt buộc. Thay đổi áp dụng cho các hồ sơ lập mới.</p></div>
+      <div class="row"><div class="seg" id="boTab"><button data-t="sets" aria-pressed="true">Bộ hồ sơ</button><button data-t="lh">Theo loại hình DN</button></div></div></div>
+    <div id="boSets" class="ed">
+      <div class="card sec"><div class="row"><input class="inp" id="boFind" placeholder="Tìm bộ…"><select class="inp" id="boChieu"><option value="">Mọi chiều</option><option value="ban">Bán ra</option><option value="mua">Mua vào</option><option value="ca2">Cả hai</option><option value="khac">Không gắn hóa đơn</option></select></div>
+        <div class="row"><button class="btn sm pri" id="boNew">+ Bộ mới</button><button class="btn sm" id="boExport">Xuất JSON</button><label class="btn sm" for="boImportF">Nhập JSON</label><input type="file" id="boImportF" accept=".json" hidden></div>
+        <div class="lst" id="boList"></div></div>
+      <div class="card sec" id="boEdit"></div>
+    </div>
+    <div id="boLh" class="card sec" hidden></div>
+  </section>
+
+  <!-- ============ MẪU CHỨNG TỪ ============ -->
+  <section class="view" id="v-mau" hidden>
+    <div class="vhead"><div><h2>Mẫu chứng từ</h2><p class="muted">Sửa trực tiếp trên trang A4. Các ô xanh là biến app tự điền khi lập hồ sơ. Thêm mẫu mới từ file Word (.docx) hoặc soạn từ đầu.</p></div></div>
+    <div class="ed">
+      <div class="card sec"><input class="inp" id="mauFind" placeholder="Tìm mẫu…">
+        <div class="row"><button class="btn sm pri" id="mauNew">+ Mẫu trống</button><label class="btn sm" for="mauDocx">Nhập từ Word</label><input type="file" id="mauDocx" accept=".docx,.html,.htm,.txt" hidden></div>
+        <div class="row"><button class="btn sm" id="mauExport">Xuất JSON</button><label class="btn sm" for="mauImportF">Nhập JSON</label><input type="file" id="mauImportF" accept=".json" hidden></div>
+        <div class="lst" id="mauList"></div></div>
+      <div class="card sec" id="mauEdit"></div>
+    </div>
+  </section>
+
+  <!-- ============ DANH BẠ ============ -->
+  <section class="view" id="v-db" hidden>
+    <div class="vhead"><div><h2>Danh bạ doanh nghiệp</h2><p class="muted">Bên bán, bên mua và khách hàng đang làm kế toán. App tự thêm khi đọc hóa đơn; bổ sung người đại diện, tài khoản để chứng từ tự điền đủ.</p></div>
+      <div class="row"><label class="btn" for="dbImportF">Nhập từ Excel</label><input type="file" id="dbImportF" accept=".xlsx,.xls,.csv" hidden><button class="btn" id="dbExport">Xuất Excel</button><button class="btn pri" id="dbNew">+ Thêm</button></div></div>
+    <div class="ed">
+      <div class="card sec" id="dbForm"></div>
+      <div class="card sec"><input class="inp" id="dbFind" placeholder="Tìm tên, MST…"><div class="tblwrap"><table class="t"><thead><tr><th>MST</th><th>Tên đơn vị</th><th>Đại diện</th><th>Loại</th></tr></thead><tbody id="dbBody"></tbody></table></div></div>
+    </div>
+  </section>
+
+  <!-- ============ CÀI ĐẶT ============ -->
+  <section class="view" id="v-cai" hidden>
+    <div class="vhead"><div><h2>Cài đặt</h2><p class="muted">Dữ liệu lưu trong trình duyệt của máy này. Nút "Sao lưu (JSON)" ở <a href="#/cai-dat">Cài đặt chung</a> đã gồm cả phần hồ sơ chứng từ; nút bên dưới chỉ sao lưu / khôi phục riêng phần này (nhận cả file sao lưu của app Hồ sơ chứng từ bản cũ).</p></div></div>
+    <div class="dash" style="margin-top:0">
+      <div class="sec">
+        <div class="card sec"><h3>Số ngày làm việc lùi mặc định so với ngày giao hàng</h3><div class="small muted">Áp dụng khi tạo hồ sơ mới. Có thể sửa riêng từng hồ sơ ở Bước 4.</div><div class="tblwrap"><table class="t"><thead><tr><th>Chứng từ</th><th class="c">Lùi (ngày LV)</th></tr></thead><tbody id="luiBody"></tbody></table></div></div>
+        <div class="card sec"><h3>Ngày nghỉ lễ (không tính khi lùi ngày)</h3><div class="small muted">Dùng chung với hạn nộp tờ khai — sửa ở <a href="#/cai-dat">Cài đặt chung</a> → Ngày nghỉ lễ.</div></div>
+      </div>
+      <div class="sec">
+        <div class="card sec"><h3>Dữ liệu</h3><div class="small" id="usage"></div>
+          <div class="row"><button class="btn pri" id="bkSave">Sao lưu hồ sơ chứng từ (JSON)</button><label class="btn" for="bkLoad">Khôi phục từ file</label><input type="file" id="bkLoad" accept=".json" hidden></div>
+          <div class="row"><button class="btn dang" id="clearEx">Xóa dữ liệu ví dụ</button><button class="btn dang" id="clearAll">Xóa toàn bộ hồ sơ chứng từ</button></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HƯỚNG DẪN (Savitax bản rời, 17/11/2026) ============ -->
+  <section class="view" id="v-hd" hidden>
+    <div class="vhead"><div><h2>Hướng dẫn — Hồ sơ chứng từ</h2><p class="muted">Từ một hóa đơn (bán ra hoặc mua vào), app lập sẵn bộ chứng từ đi kèm theo đúng nghiệp vụ, kiểm tra còn thiếu gì, rồi xuất Word / PDF / Excel để in, ký, lưu hồ sơ.</p></div></div>
+    <div class="dash" style="margin-top:0">
+      <div class="sec">
+        <div class="card sec"><h3>Các bước lập một bộ hồ sơ</h3>
+          <div class="cklist">
+            <div class="ck"><b>1</b><div class="t"><b>Chọn công ty đang làm</b><div class="sub">Ô "Công ty đang làm" ở menu trái. Công ty ở <a href="#/cong-ty">Danh sách công ty</a> tự là khách hàng ở đây — app dựa vào MST của công ty này để biết hóa đơn là <b>bán ra</b> hay <b>mua vào</b>.</div></div><span></span></div>
+            <div class="ck"><b>2</b><div class="t"><b>Bước 1 · Tải hóa đơn</b><div class="sub">Kéo thả file <b>XML</b> hóa đơn điện tử (chuẩn nhất), <b>PDF</b> có lớp chữ, hoặc <b>ZIP</b> tải từ cổng tra cứu — chọn được nhiều file một lần. Không có file thì bấm "Nhập tay từ đầu".</div></div><span></span></div>
+            <div class="ck"><b>3</b><div class="t"><b>Bước 2 · Kiểm tra nghiệp vụ</b><div class="sub">App đoán chiều hóa đơn và lĩnh vực (hàng hóa, dịch vụ, xây dựng, tài sản cố định…) rồi chọn bộ hồ sơ. Khung vàng = app chưa chắc → chọn lại cho đúng.</div></div><span></span></div>
+            <div class="ck"><b>4</b><div class="t"><b>Bước 3, 4 · Bổ sung thông tin</b><div class="sub">Sửa bên bán / bên mua, dòng hàng nếu đọc sai; điền người giao – nhận, phương tiện, số ngày lùi của hợp đồng / đơn đặt hàng. Thông tin đối tác nhớ ở <b>Danh bạ</b> cho lần sau.</div></div><span></span></div>
+            <div class="ck"><b>5</b><div class="t"><b>Xem chứng từ + Kiểm tra tuân thủ</b><div class="sub">Bên phải là checklist (bắt buộc <b class="bb">*</b>) và từng chứng từ khổ A4. Đánh dấu chứng từ đã có / app lập / còn thiếu / không áp dụng.</div></div><span></span></div>
+            <div class="ck"><b>6</b><div class="t"><b>Lưu vào sổ, xuất file</b><div class="sub">Bấm <b>Lưu vào sổ</b>. Xuất <b>Word</b> (sửa tiếp được), <b>PDF</b>, <b>Excel</b>, <b>In</b>, hoặc <b>Phiếu kiểm tra</b> hồ sơ (in logo + tên đơn vị ở <a href="#/cai-dat">Cài đặt chung</a>).</div></div><span></span></div>
+          </div>
+        </div>
+        <div class="card sec"><h3>Các màn khác</h3>
+          <div class="feat">
+            <div><b>📒 Sổ hồ sơ</b>Mọi hóa đơn đã lưu, lọc theo tháng / chiều / tình trạng. Chọn nhiều dòng để xuất gộp (Word, ZIP từng hồ sơ, PDF, Excel, phiếu kiểm tra); "Danh sách chứng từ còn thiếu" để đòi khách.</div>
+            <div><b>🧩 Bộ hồ sơ &amp; checklist</b>Mỗi lĩnh vực một bộ: gồm chứng từ nào, cái nào bắt buộc, ai cung cấp. Sửa được cho hợp với cách làm của đơn vị.</div>
+            <div><b>📄 Mẫu chứng từ</b>Nội dung từng mẫu (hợp đồng, biên bản, phiếu nhập / xuất…). Sửa chữ trực tiếp; ô xanh là chỗ app tự điền.</div>
+            <div><b>📇 Danh bạ</b>Doanh nghiệp đã gặp trên hóa đơn: người đại diện, chức vụ, tài khoản ngân hàng… để lần sau tự điền. Nhập / xuất được bằng Excel.</div>
+          </div>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="card sec"><h3>Lưu file ở đâu</h3>
+          <div class="small">Theo cây thư mục mẫu <b>SVT.MB09</b> (tải ở <a href="#/soatbaocao/huong-dan">Hướng dẫn Soát xét báo cáo</a>), trong <code>2. HỒ SƠ KẾ TOÁN\Năm &lt;năm&gt;\</code>:</div>
+          <div class="tblwrap"><table class="t"><thead><tr><th>Chứng từ</th><th>Thư mục</th></tr></thead><tbody>
+            <tr><td>Hợp đồng bán, phụ lục, thanh lý</td><td><code>1. HỢP ĐỒNG MUA VÀO_BÁN RA\HĐ KHÁCH HÀNG</code></td></tr>
+            <tr><td>Hợp đồng mua đầu vào</td><td><code>1. HỢP ĐỒNG MUA VÀO_BÁN RA\HĐ NHÀ CUNG CẤP</code></td></tr>
+            <tr><td>Hóa đơn + chứng từ đi kèm</td><td><code>2. HÓA ĐƠN MUA VÀO_BÁN RA\QUÝ n\HĐ BÁN RA | HĐ MUA VÀO</code></td></tr>
+          </tbody></table></div>
+          <div class="small muted">Tên file hợp đồng: <code>HD_BAN_&lt;đối tác&gt;_&lt;ngày ký&gt;.pdf</code> / <code>HD_MUA_…</code> — xem đủ ở <a href="#/soatbaocao/quy-uoc">Quy ước lưu hồ sơ</a>.</div>
+        </div>
+        <div class="card sec"><h3>Lưu ý</h3>
+          <ul class="small" style="margin:0;padding-left:18px;list-style:disc;display:grid;gap:4px">
+            <li>Chứng từ app lập là <b>bản nháp để ký</b> — kế toán đọc lại nội dung, ngày tháng trước khi in ký.</li>
+            <li>Ngày chứng từ lùi theo <b>ngày làm việc</b>, bỏ thứ bảy, chủ nhật và ngày nghỉ lễ ở <a href="#/cai-dat">Cài đặt chung</a>.</li>
+            <li>Dữ liệu chỉ ở trình duyệt của máy này. Sao lưu định kỳ ở <a href="#/cai-dat">Cài đặt chung</a> → Sao lưu (JSON) — đã gồm cả hồ sơ chứng từ.</li>
+            <li>Hóa đơn PDF scan (ảnh chụp, không có lớp chữ) app không đọc được — dùng file XML.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" aria-live="polite"></div>
+<div id="pdfStage" aria-hidden="true"></div>
+<!-- #printArea do khung tạo thẳng dưới <body> (lệnh in giấu mọi thứ khác ngoài nó) -->
+
+

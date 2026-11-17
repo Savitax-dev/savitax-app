@@ -47,6 +47,7 @@ export default function TongQuan() {
   const PH = [
     ['soat', '🔎', 'Soát xét báo cáo', 'Đọc thư mục công ty (chỉ đọc): hồ sơ có / thiếu, soát từng kỳ tờ khai ↔ bảng kê ↔ hóa đơn, soát xét năm.'],
     ['ruiro', '⚖️', 'Rủi ro thuế', '39 tiêu chí theo tờ khai, quyết toán, BCTC — số liệu, chênh lệch, tỷ lệ, hồ sơ nên chuẩn bị. Dùng chung thư mục với Soát xét.'],
+    ['chungtu', '📑', 'Hồ sơ chứng từ', 'Từ hóa đơn (XML / PDF / ZIP) lập bộ chứng từ theo nghiệp vụ: hợp đồng, biên bản giao nhận, phiếu nhập / xuất… + checklist đủ / thiếu, xuất Word / PDF / Excel.'],
   ]
   return (
     <AppShell>
@@ -58,10 +59,10 @@ export default function TongQuan() {
               <h2 className="mb-1 font-bold text-gray-800">Bắt đầu</h2>
               <Buoc so={1} xong={congTy.length > 0}>Thêm công ty ở <a className="font-semibold text-[#8B1A1A] underline" href="#/cong-ty">Danh sách công ty</a> — gõ MST rồi 🔍 để tự điền tên, địa chỉ; hoặc nhập cả danh sách từ Excel.</Buoc>
               <Buoc so={2}>Bấm <b>Trỏ thư mục</b> cho từng công ty — chọn thư mục GỐC của công ty trên ổ chung (thư mục có <code>2. HỒ SƠ KẾ TOÁN</code>). App chỉ đọc, không ghi gì.</Buoc>
-              <Buoc so={3}>Mở <b>Soát xét báo cáo</b> hoặc <b>Rủi ro thuế</b>. Lần mở app sau, Chrome có thể hỏi lại quyền đọc thư mục một lần — bấm Cho phép.</Buoc>
+              <Buoc so={3}>Mở <b>Soát xét báo cáo</b> hoặc <b>Rủi ro thuế</b>. Lần mở app sau, Chrome có thể hỏi lại quyền đọc thư mục một lần — bấm Cho phép. Lập chứng từ từ hóa đơn ở <b>Hồ sơ chứng từ</b> (không cần trỏ thư mục).</Buoc>
               <Buoc so={4} xong={!!caiDat.saoLuuLuc}>Thỉnh thoảng vào <a className="font-semibold text-[#8B1A1A] underline" href="#/cai-dat">Cài đặt</a> → Sao lưu (JSON) để chuyển máy hoặc phòng xoá dữ liệu trình duyệt.{caiDat.saoLuuLuc && <span className="text-gray-400"> Lần gần nhất: {new Date(caiDat.saoLuuLuc).toLocaleString('vi-VN')}.</span>}</Buoc>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
               {PH.map(([ma, ic, ten, mo]) => (
                 <div key={ma} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                   <h2 className="font-bold text-gray-800">{ic} {ten}</h2>
