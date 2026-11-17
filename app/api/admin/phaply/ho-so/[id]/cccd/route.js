@@ -2,7 +2,9 @@
 //   POST (multipart: truoc, sau — ảnh đã thu nhỏ ở trình duyệt) → lưu bucket PRIVATE phaply-cccd/<case_id>/… → đọc bằng Claude (nếu
 //        có khoá) → trả { duong_dan, nguoi (đã chuẩn hoá), canh_bao, loi_doc }. Lưu ảnh TRƯỚC, đọc SAU: đọc lỗi không mất ảnh.
 //   GET ?path= → link ký 5 phút để xem ảnh gốc — cần view_phaply_cccd_image + xem được hồ sơ.
-// ⛔ Bản demo (NEXT_PUBLIC_DEMO_MODE=1) KHÔNG nhận ảnh: tài khoản demo dùng chung mật khẩu gửi cả khách — ảnh CCCD thật lên đó là lộ.
+// Bản demo (NEXT_PUBLIC_DEMO_MODE=1): anh cho mở 17/11/2026 để phòng pháp lý thử — tài khoản demo dùng chung mật khẩu gửi cả khách, nên
+// CHỈ tài khoản vai trò phòng pháp lý (phaply / phaply_leader) được tải + xem ảnh (Giám đốc demo — tài khoản khách hay dùng — KHÔNG),
+// và lần làm mới mỗi đêm XOÁ SẠCH kho ảnh phaply-cccd (lib/demo/phapLy.js của nhánh demo).
 import { randomUUID } from 'node:crypto'
 import { requirePhapLy, xemDuoc, suaDuoc, loi, docHet } from '@/lib/phaply/quyen'
 import { COT_HO_SO, ghiNhatKy } from '@/lib/phaply/hoSoMayChu'
@@ -11,6 +13,7 @@ import { coKhoaDoc, docAnhCccd } from '@/lib/phaply/cccdDoc'
 
 const BUCKET = 'phaply-cccd'
 const LA_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === '1'
+const laPhongPhapLy = auth => (auth.vaiTro || []).some(r => /^phaply/.test(r || ''))
 const KIEU = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
 const TOI_DA = 4 * 1024 * 1024
 export const maxDuration = 60
@@ -28,9 +31,9 @@ async function damBaoBucket(admin) {
 }
 
 export async function POST(request, { params }) {
-  if (LA_DEMO) return loi(403, 'Bản demo không nhận ảnh CCCD (tài khoản demo dùng chung) — thử chức năng này trên app thật')
   const auth = await requirePhapLy()
   if (!auth.ok) return loi(auth.status, auth.error)
+  if (LA_DEMO && !laPhongPhapLy(auth)) return loi(403, 'Bản demo: chỉ tài khoản phòng pháp lý được tải ảnh CCCD')
   const { admin, caller } = auth
   const { id } = await params
   const hs = await moHoSo(auth, id)
@@ -82,6 +85,7 @@ export async function GET(request, { params }) {
   const auth = await requirePhapLy()
   if (!auth.ok) return loi(auth.status, auth.error)
   if (!auth.q.cccd) return loi(403, 'Không có quyền xem ảnh CCCD gốc')
+  if (LA_DEMO && !laPhongPhapLy(auth)) return loi(403, 'Bản demo: chỉ tài khoản phòng pháp lý được xem ảnh CCCD')
   const { id } = await params
   const hs = await moHoSo(auth, id)
   if (!hs) return loi(404, 'Không tìm thấy hồ sơ')

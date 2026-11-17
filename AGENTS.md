@@ -434,7 +434,8 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
   (`lib/phaply/cccdDoc.js`, khoá `ANTHROPIC_API_KEY` MỚI — khoá bản thử đã lộ) → `lib/phaply/cccd.js` chuẩn hoá + kiểm chéo (12 số, chữ số 4 =
   thế kỷ + giới tính, số 5–6 = năm sinh, MRZ mặt sau có chữ số kiểm tra ICAO) → lệch thì tô vàng, KHÔNG tự sửa. Địa chỉ trên thẻ cũ (quận/huyện)
   không khớp danh mục → giữ nguyên văn, bắt chọn lại. Ảnh gốc: link ký 5 phút, cần `view_phaply_cccd_image`. Người chỉ nhận đường dẫn ảnh nằm
-  trong thư mục của CHÍNH hồ sơ. **Bản demo KHÔNG nhận ảnh CCCD** (tài khoản demo dùng chung mật khẩu gửi khách). Kiểm `test-phaply-cccd`.
+  trong thư mục của CHÍNH hồ sơ. **Bản demo**: anh cho mở 17/11/2026 nhưng CHỈ tài khoản vai trò phòng pháp lý (phaply / phaply_leader) tải +
+  xem ảnh (Giám đốc demo — tài khoản khách hay dùng — bị chặn), và lần làm mới mỗi đêm XOÁ SẠCH kho phaply-cccd demo. Kiểm `test-phaply-cccd`.
 - **Drive** (anh duyệt 17/11/2026, lưu CẢ ảnh CCCD): Shared drive "7. SAVITAX - PHÁP LÝ DENALI", gốc theo thủ tục ở biến môi trường
   (`PHAPLY_DRIVE_TLM` = thư mục "3. HỒ SƠ THÀNH LẬP", id `1GfnVapMRGmPKPaCooq4FLFXtxHOPshjt`, đã chia sẻ cho service account). Cây
   `<gốc>/<PL-… - TÊN CTY>/{8 thư mục THU_MUC ở lib/phaply/drive.js}`; id thư mục lưu `legal_cases.drive_folder_id`; ghi đè file cùng tên.

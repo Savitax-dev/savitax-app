@@ -511,7 +511,6 @@ function TaiCccd({ caseId, p, setP, toast, canhBao, setCanhBao }) {
     if (!r.ok) return toast(r.data.error || 'Không mở được ảnh', true)
     window.open(r.data.url, '_blank', 'noopener')
   }
-  if (LA_DEMO) return <div className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">📷 Bản demo không nhận ảnh CCCD (tài khoản demo dùng chung) — nhập tay để thử. Đọc CCCD tự động chạy trên app thật.</div>
   const o = (mat, ten, path) => (
     <div className="flex-1 min-w-[150px]">
       <div className="text-xs font-medium text-gray-600 mb-1">{ten}</div>
@@ -526,6 +525,7 @@ function TaiCccd({ caseId, p, setP, toast, canhBao, setCanhBao }) {
   return (
     <div className="rounded-lg border border-gray-200 p-3 space-y-2">
       <div className="text-sm font-semibold">📷 Ảnh CCCD — đọc tự động</div>
+      {LA_DEMO && <div className="text-xs rounded bg-amber-50 text-amber-900 px-2 py-1.5">Bản demo: chỉ tài khoản phòng pháp lý tải được; mọi ảnh <b>tự xoá lúc 2h sáng</b>. Tài khoản demo dùng chung mật khẩu — chỉ dùng CCCD thử, đừng tải CCCD khách thật.</div>}
       <div className="flex gap-3 flex-wrap">{o('truoc', 'Mặt trước', p.cccd_front_path)}{o('sau', 'Mặt sau', p.cccd_back_path)}</div>
       <div className="flex items-center gap-2 flex-wrap">
         <button type="button" className={btnPrimary + ' p-btn-sm'} disabled={dang || (!anh.truoc && !anh.sau)} onClick={doc}>{dang ? 'Đang đọc… (10–30 giây)' : 'Tải lên & đọc CCCD'}</button>
