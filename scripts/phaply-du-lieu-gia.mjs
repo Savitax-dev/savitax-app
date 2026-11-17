@@ -30,6 +30,9 @@ const tiep = {
   thue: { hach_toan: 'doc_lap', pp_gtgt: 'khau_tru', bhxh: 'hang_thang' },
   so_sach: { phan_mem: 'Misa', nien_do_dau_tu: '05/10/2026', nien_do_dau_den: '31/12/2026', ky: 'nam' },
   quy_uoc_phieu: 10000,
+  ban_giao: { ngay: '2026-11-20', nguoi_nhan: 'Trần Văn An', ghi_chu: 'Bên nhận đã kiểm tra con dấu',
+    muc: [{ ten: 'Giấy chứng nhận đăng ký doanh nghiệp (bản gốc)', so_luong: '01' }, { ten: 'Con dấu doanh nghiệp', so_luong: '01', ghi_chu: 'Dấu tròn' }] },
+  ben_giao: { ten: 'Công ty Cổ phần Tư vấn Thuế Mẫu', dia_chi: '1 Đường Mẫu, Phường Mẫu, Thành phố Hồ Chí Minh', mst: '0300000000', dien_thoai: '0280000000' },
 }
 
 export const DU_LIEU_GIA = {

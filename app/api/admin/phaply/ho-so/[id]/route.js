@@ -2,6 +2,8 @@
 import { requirePhapLy, xemDuoc, suaDuoc, anTien, loi } from '@/lib/phaply/quyen'
 import { docHoSoDayDu, ghiNhatKy, nhanVienPhapLy, tenNhanVien, COT_HO_SO, mauCuaThuTuc, hanTuMau } from '@/lib/phaply/hoSoMayChu'
 import { BUOC_DONG, CHO, LOAI_HINH, NGUON, THU_TUC, choLabel } from '@/lib/phaply/hoSo'
+import { docDieuKienDong } from '@/lib/phaply/banGiaoMayChu'
+import { thieuDieuKien } from '@/lib/phaply/banGiao'
 
 export async function GET(request, { params }) {
   const auth = await requirePhapLy()
@@ -112,11 +114,12 @@ export async function PATCH(request, { params }) {
       if (toi === hs.stage) return ok()
       const doi = { stage: toi }
       if (toi === BUOC_DONG) {
-        // Đóng: thu đủ, hoặc người có close_phaply_case đóng còn nợ kèm lý do
-        const { tien } = await docHoSoDayDu(admin, id)
-        if (tien.con_phai_thu > 0) {
-          if (!q.dong) return loi(409, `Còn phải thu ${tien.con_phai_thu.toLocaleString('vi-VN')} đ — trưởng phòng mới đóng được hồ sơ còn nợ`)
-          if (!String(b.note || '').trim()) return loi(400, 'Hồ sơ còn nợ: ghi lý do đóng')
+        // Đóng: đủ điều kiện (thu đủ · có kết quả · đã bàn giao · có scan BBBG — lib/phaply/banGiao.js), hoặc người có
+        // close_phaply_case đóng khi còn thiếu, BẮT BUỘC lý do
+        const thieu = thieuDieuKien(await docDieuKienDong(admin, hs))
+        if (thieu.length) {
+          if (!q.dong) return loi(409, 'Chưa đủ điều kiện đóng: ' + thieu.map(t => t.muc).join('; ') + ' — trưởng phòng mới đóng được khi còn thiếu')
+          if (!String(b.note || '').trim()) return loi(400, 'Còn thiếu điều kiện đóng: ghi lý do')
         }
         Object.assign(doi, { closed_at: new Date().toISOString(), closed_by: caller.staffId, close_note: String(b.note || '').trim() || null, wait_state: null })
       }

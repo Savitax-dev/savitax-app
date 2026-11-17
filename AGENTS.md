@@ -446,6 +446,11 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
   → **trạng thái chờ của hồ sơ TỰ đặt theo lần nộp mới nhất** (`choTheoNop`: chờ → Chờ Sở/Thuế, bổ sung → Cần bổ sung, đạt → bỏ chờ);
   kết quả GCN ghi mã số vào `legal_entities.tax_code` + ngày/nơi cấp; tệp scan (≤ 4 MB) tải THẲNG lên Drive đúng thư mục bước
   (`legal_case_files` chỉ là chỉ mục; xoá = thùng rác Drive). Thư mục hồ sơ dùng chung `lib/phaply/driveMayChu.js`. Kiểm `test-phaply-nop [--that]`.
+- **Bàn giao + đóng hồ sơ** (17/11/2026, `sql/59`): danh mục bàn giao lưu jsonb trên hồ sơ (`ban_giao_*`), in **Biên bản bàn giao** (mẫu `BBBG`,
+  app tự soạn — CHỜ pháp lý duyệt câu chữ; bên giao = `BEN_GIAO` ở `lib/phaply/banGiao.js`, đang theo ĐNTT: CTCP Tư vấn Thuế Savitax).
+  **Đóng hồ sơ phải đủ điều kiện** (`dieuKienDong`): thu đủ tiền · có một lần nộp "Đạt" · đã ghi ngày bàn giao · có scan trong 8. BÀN GIAO
+  (chỉ khi thủ tục có Drive). Thiếu: nhân viên 409; `close_phaply_case` đóng được kèm lý do. Máy chủ xét lại ở PATCH dong (cả khi chuyển
+  thẳng sang bước 10). Kiểm `test-phaply-ban-giao [--that]`.
 
 ## Phân hệ Hóa đơn điện tử — ĐANG GÁC (13/10/2026)
 

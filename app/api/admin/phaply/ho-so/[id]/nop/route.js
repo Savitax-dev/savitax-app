@@ -10,6 +10,8 @@ import { choTheoNop, lanKeTiep, maSoHopLe, CO_QUAN, KET_QUA, coQuanLabel, ketQua
 import { goiYCoQuan } from '@/lib/phaply/phapNhanMayChu'
 import { coDrive } from '@/lib/phaply/drive'
 import { choLabel } from '@/lib/phaply/hoSo'
+import { locMuc, mucMacDinh } from '@/lib/phaply/banGiao'
+import { docDieuKienDong } from '@/lib/phaply/banGiaoMayChu'
 
 async function moHoSo(auth, id) {
   const { data: hs } = await auth.admin.from('legal_cases').select(COT_HO_SO).eq('id', id).maybeSingle()
@@ -33,11 +35,15 @@ export async function GET(request, { params }) {
   if (nop.error) return loi(500, nop.error.message)
   const ten = new Map((nv.data || []).map(s => [s.id, s.full_name]))
   const goiY = ent.data ? await goiYCoQuan(admin, ent.data.tru_so_ma_tinh, null) : {}
+  const { data: dd } = hs.entity_id ? await admin.from('legal_entity_people').select('nguoi:legal_people(ho_ten)').eq('entity_id', hs.entity_id).eq('vai_tro', 'dai_dien').order('thu_tu').limit(1) : { data: [] }
   return Response.json({
     ky: (ky.data || []).map(k => ({ ...k, ten_nguoi: ten.get(k.signed_by) || '' })),
     nop: (nop.data || []).map(s => ({ ...s, ten_nguoi: ten.get(s.created_by) || '' })),
     tep: (tep.data || []).map(f => ({ ...f, ten_nguoi: ten.get(f.uploaded_by) || '' })),
     gcn: { ma_so: ent.data?.tax_code || '', ngay_cap: ent.data?.ngay_cap_gcn || '', noi_cap: ent.data?.noi_cap_gcn || '', goi_y_noi_cap: ent.data?.phong_dkkd || goiY.phong_dkkd || '' },
+    ban_giao: { ngay: hs.ban_giao_ngay || '', nguoi_nhan: hs.ban_giao_nguoi_nhan || '', ghi_chu: hs.ban_giao_ghi_chu || '', muc: hs.ban_giao_muc || [],
+      goi_y_nguoi_nhan: dd?.[0]?.nguoi?.ho_ten || hs.contact_name || '', muc_mac_dinh: mucMacDinh(hs.procedure_code) },
+    dieu_kien_dong: await docDieuKienDong(admin, hs),
     drive: coDrive(hs.procedure_code), sua_duoc: suaDuoc(auth, hs), loai_hinh: hs.entity_type,
   })
 }
@@ -105,6 +111,16 @@ export async function PATCH(request, { params }) {
       await admin.from('legal_case_submissions').delete().eq('id', b.id)
       await ghi(`Xoá lần nộp ${coQuanLabel(s.co_quan)} ${s.ngay_nop}`)
       await dongBoCho()
+      return Response.json({ ok: true })
+    }
+
+    if (b.action === 'ban_giao') {
+      const muc = locMuc(b.muc)
+      const row = { ban_giao_ngay: ngay(b.ngay), ban_giao_nguoi_nhan: chu(b.nguoi_nhan), ban_giao_ghi_chu: chu(b.ghi_chu), ban_giao_muc: muc, updated_at: new Date().toISOString() }
+      if (row.ban_giao_ngay && !muc.length) return loi(400, 'Ghi ngày bàn giao thì phải có ít nhất một mục bàn giao')
+      const { error } = await admin.from('legal_cases').update(row).eq('id', id)
+      if (error) throw new Error(error.message)
+      await ghi(`Bàn giao: ${muc.length} mục${row.ban_giao_ngay ? ', ngày ' + row.ban_giao_ngay : ' (chưa ghi ngày)'}${row.ban_giao_nguoi_nhan ? ', người nhận ' + row.ban_giao_nguoi_nhan : ''}`)
       return Response.json({ ok: true })
     }
 

@@ -1,0 +1,51 @@
+// Biên bản bàn giao hồ sơ, giấy tờ (mọi thủ tục) — app soạn 17/11/2026 theo kế hoạch bước 9, CHỜ phòng pháp lý duyệt câu chữ.
+// Bên giao = pháp nhân Savitax (lib/phaply/congTy.js), người giao = nhân viên phụ trách hồ sơ (uq_); bên nhận = doanh nghiệp khách.
+::cot 45/55
+#cb {sv_ten}
+#c --------------------
+#l Số: ….../BBBG
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+::
+~
+# BIÊN BẢN BÀN GIAO
+#c (Hồ sơ, giấy tờ pháp lý doanh nghiệp)
+~
+Hôm nay, ngày {bg_ngay_d} tháng {bg_thang} năm {bg_nam}, chúng tôi gồm:
+#b BÊN GIAO: {sv_ten}
+#l Địa chỉ: {sv_dia_chi}
+#l Mã số thuế: {sv_mst}[>60]Điện thoại: {sv_dien_thoai}
+#l Người giao: {uq_danh_xung} {uq_ho_ten}
+~
+#b BÊN NHẬN: {ten_cty}
+#l Mã số doanh nghiệp: {ma_dn}
+#l Địa chỉ: {dia_chi_tru_so}
+#l Người nhận: {bg_nguoi_nhan}
+~
+Bên giao bàn giao cho Bên nhận các hồ sơ, giấy tờ sau:
+::bang vien 8^ 56< 14^ 22<
+STT | Tên hồ sơ, giấy tờ | Số lượng | Ghi chú
+---
+{#bg_muc}{stt} | {ten} | {so_luong} | {ghi_chu}{/bg_muc}
+::
+~
+#l {#bg_co_ghi_chu}Ghi chú: {bg_ghi_chu}{/bg_co_ghi_chu}
+Bên nhận đã kiểm tra và nhận đủ các hồ sơ, giấy tờ nêu trên. Biên bản được lập thành 02 bản, mỗi bên giữ 01 bản có giá trị như nhau.
+~
+::cot 50/50
+#cb BÊN GIAO
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+#cb {uq_ho_ten}
+||
+#cb BÊN NHẬN
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+#cb {bg_nguoi_nhan_hoa}
+::

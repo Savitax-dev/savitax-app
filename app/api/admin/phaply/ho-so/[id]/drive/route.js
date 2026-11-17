@@ -35,6 +35,10 @@ export async function POST(request, { params }) {
         const tm = (await ensureFolder(THU_MUC_BO[dot], con.soan)).id
         for (const f of [huongDan, ...files]) { await uploadFile(tm, f.ten, DOCX_MIME, f.buf); soFile++ }
       }
+      if ((hs.ban_giao_muc || []).length) {
+        const { files } = await dungBoWord(admin, hs, 'ban_giao')
+        for (const f of files) { await uploadFile(con.ban_giao, f.ten, DOCX_MIME, f.buf); soFile++ }
+      }
     }
     if (noiDung.has('cccd') && hs.entity_id) {
       const { data: vt } = await admin.from('legal_entity_people').select('vai_tro, nguoi:legal_people(id, ho_ten, cccd_front_path, cccd_back_path)').eq('entity_id', hs.entity_id)

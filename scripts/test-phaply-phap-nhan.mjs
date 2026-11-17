@@ -53,7 +53,8 @@ for (const [lh, goc0] of Object.entries(DU_LIEU_GIA)) {
   // bộ giả dùng thư ký = nhân viên pháp lý; DB lưu thư ký như một vai trò riêng → khứ hồi vẫn phải khớp
   const dv = hoSoDauVao(tachDb(goc))
   const a = chuanBiDuLieu(goc), b = chuanBiDuLieu(dv)
-  const lech = Object.keys({ ...a, ...b }).filter(k => JSON.stringify(a[k]) !== JSON.stringify(b[k]))
+  // thẻ bàn giao (bg_, sv_) lấy từ hồ sơ legal_cases + pháp nhân Savitax, không qua dữ liệu pháp nhân — kiểm ở test-phaply-ban-giao
+  const lech = Object.keys({ ...a, ...b }).filter(k => !/^(bg|sv)_/.test(k) && JSON.stringify(a[k]) !== JSON.stringify(b[k]))
   ok(!lech.length, `${lh}: khứ hồi lệch ${lech.length} thẻ: ${lech.slice(0, 8).map(k => `${k}=${JSON.stringify(a[k])}→${JSON.stringify(b[k])}`).join(' | ')}`)
   ok(conThieu(dv).filter(t => t.chan).length === 0, `${lh}: hồ sơ giả đủ dữ liệu mà vẫn báo thiếu: ${conThieu(dv).filter(t => t.chan).map(t => t.muc).join('; ')}`)
 }

@@ -54,10 +54,13 @@ export default function HoSoPage() {
     if (n === BUOC_DONG) return dongHoSo()
     lam({ action: 'buoc', stage: n }, `Đã chuyển sang bước ${n}. ${buocLabel(n)}`)
   }
-  const dongHoSo = () => {
-    const no = d.tien?.con_phai_thu > 0
-    if (no && !q.dong) return toast(`Còn phải thu ${fmtMoney(d.tien.con_phai_thu)} — chỉ trưởng phòng đóng được hồ sơ còn nợ`, true)
-    setHoi({ tieuDe: no ? 'Đóng hồ sơ còn nợ — ghi lý do' : 'Đóng hồ sơ (ghi chú nếu cần)', batBuoc: no, goi: note => lam({ action: 'dong', note }, 'Đã đóng hồ sơ') })
+  // Đóng: xét điều kiện (thu đủ · có kết quả · đã bàn giao · có scan BBBG) — máy chủ xét lại lần nữa khi đóng
+  const dongHoSo = async () => {
+    const r = await api(`/api/admin/phaply/ho-so/${id}/nop`)
+    const thieu = (r.data?.dieu_kien_dong || []).filter(x => !x.dat)
+    if (thieu.length && !q.dong) return toast('Chưa đủ điều kiện đóng: ' + thieu.map(x => x.muc).join('; ') + ' — xem tab Trình ký & nộp', true)
+    setHoi({ tieuDe: thieu.length ? 'Đóng khi còn thiếu: ' + thieu.map(x => x.muc).join('; ') + ' — ghi lý do' : 'Đóng hồ sơ (ghi chú nếu cần)',
+      batBuoc: thieu.length > 0, goi: note => lam({ action: 'dong', note }, 'Đã đóng hồ sơ') })
   }
 
   return (
