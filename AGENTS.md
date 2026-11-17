@@ -465,6 +465,12 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
   (Word trên máy; mỗi Phần sang trang mới). Sửa giao diện thì sửa cả tài liệu.
 - Mẫu Word: **mỗi Chương (từ Chương II) sang trang mới** — mã đoạn `#p` trong khung.js (pageBreakBefore, không sinh trang trắng); anh dặn
   17/11/2026, áp cho mẫu mới có chương.
+- **Mỗi nhóm thủ tục một trang** (anh yêu cầu 17/11/2026, `sql/60`, `lib/phaply/nhom.js`): /phaply/thanh-lap · thay-doi · tam-ngung · giai-the · khac
+  (+ /phaply = tất cả), cùng khuôn `app/phaply/_danhSach.js`, API `ho-so?nhom=`. Thủ tục trên công ty ĐÃ CÓ → chọn công ty (`api/admin/phaply/
+  doanh-nghiep`: pháp nhân trong phạm vi + khách kế toán) → **dùng LẠI legal_entities** (doanh nghiệp, người, CCCD, ngành nghề chung);
+  `case_goc_id` nối hồ sơ tiếp theo. **Tạm ngừng**: `tam_ngung_tu/den` (tối đa 1 năm), theo dõi CẢ hồ sơ đã đóng, cảnh báo còn 30 / 7 ngày, có hồ
+  sơ tiếp theo (hoạt động lại / gia hạn / giải thể) = đã xử lý; nhắc khách được cả khi hồ sơ đã đóng. Dải cảnh báo hiện ở MỌI trang nhóm.
+  Kiểm `test-phaply-nhom [--that]`. Hạn thông báo = 3 ngày làm việc (T2–T6, CHƯA trừ ngày lễ).
 
 ## Phân hệ Hóa đơn điện tử — ĐANG GÁC (13/10/2026)
 

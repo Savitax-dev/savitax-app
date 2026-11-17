@@ -1,6 +1,6 @@
 # Phân hệ Pháp lý — Hướng dẫn cho nhân viên
 
-Phân hệ **Pháp lý** (menu trái, khu **PHÁP LÝ**) quản lý trọn một hồ sơ: từ lúc nhận khách → nhập thông tin doanh nghiệp,
+Phân hệ **Pháp lý** (menu trái, khu **PHÁP LÝ** — mỗi nhóm thủ tục một trang) quản lý trọn một hồ sơ: từ lúc nhận khách → nhập thông tin doanh nghiệp,
 người, CCCD, ngành nghề → **xuất bộ hồ sơ Word / PDF** → thu tiền → trình ký → nộp và theo dõi → nhận kết quả → bàn giao →
 đóng hồ sơ và lưu Drive. Nhập **một lần**, app tự điền vào mọi giấy tờ.
 
@@ -36,7 +36,7 @@ hồ sơ, xem báo cáo cả phòng, đóng hồ sơ khi còn thiếu điều ki
 
 ## Phần 1 — Bắt đầu: làm một lần
 
-Vào **Hồ sơ pháp lý** → thanh trên cùng chọn **Thông tin cá nhân**. Nhập họ tên, ngày sinh, số CCCD, ngày cấp, nơi cấp,
+Vào trang Pháp lý bất kỳ → thanh trên cùng chọn **Thông tin cá nhân**. Nhập họ tên, ngày sinh, số CCCD, ngày cấp, nơi cấp,
 địa chỉ thường trú của **chính bạn** rồi bấm **Lưu**.
 
 Thông tin này được in vào phần **"người được ủy quyền"** của **Giấy ủy quyền nộp Phòng ĐKKD** ở mọi hồ sơ bạn phụ trách.
@@ -46,10 +46,32 @@ Chưa nhập thì giấy ủy quyền để trống chỗ đó và mục **Còn 
 
 ## Phần 2 — Tiếp nhận hồ sơ
 
-1. Trang **Hồ sơ pháp lý** → bấm **+ Tiếp nhận hồ sơ**.
-2. Chọn **thủ tục** (Thành lập mới, Thay đổi đăng ký, Giải thể…) và **loại hình** (TNHH 1TV, 2TV, Cổ phần…), nhập tên doanh
-   nghiệp dự kiến, người liên hệ, số điện thoại, nguồn khách. Có thể chọn sẵn phí và lịch thu mẫu.
-3. App sinh **mã hồ sơ** `PL-AAMM-NN`, **hạn nội bộ** (tính theo thủ tục, bỏ chủ nhật) và danh sách **việc cần làm**.
+Mỗi **nhóm thủ tục có trang riêng** ở menu trái, khu PHÁP LÝ: **Thành lập mới · Thay đổi đăng ký · Tạm ngừng / Hoạt động lại ·
+Giải thể / Chấm dứt · Thủ tục khác** (cấp lại GCN, khôi phục MST, rút hồ sơ…). **Tất cả hồ sơ** gộp mọi thủ tục.
+
+1. Vào đúng trang nhóm → bấm **+ Tiếp nhận hồ sơ**.
+2. **Thành lập mới**: chọn loại hình, nhập tên doanh nghiệp dự kiến.
+   **Thay đổi / Tạm ngừng / Giải thể / Khác**: ô **Công ty** — gõ tên hoặc MST, chọn công ty trong danh sách:
+   - **⚖️ Đã có hồ sơ pháp lý** → app **dùng lại** doanh nghiệp, người, CCCD, ngành nghề đã nhập (không nhập lại), lấy sẵn người liên hệ cũ.
+   - **📒 Khách kế toán** → app tạo hồ sơ công ty từ tên, MST, địa chỉ bên kế toán.
+   - Không có trong app → gõ tên công ty ở ô bên dưới.
+3. Ô riêng theo thủ tục: **Thay đổi** — tích **nội dung thay đổi** (tăng vốn, đổi tên, đổi địa chỉ, đổi người đại diện…, chọn được
+   nhiều); **Tạm ngừng** — ngày bắt đầu / kết thúc (tối đa 1 năm); **Hoạt động lại** — ngày hoạt động trở lại. App nhắc hạn nộp thông báo.
+4. Nhập người liên hệ, số điện thoại, nguồn khách; có thể chọn sẵn phí và lịch thu mẫu. App sinh **mã hồ sơ** `PL-AAMM-NN`,
+   **hạn nội bộ** (theo thủ tục, bỏ chủ nhật) và danh sách **việc cần làm**.
+
+Trong hồ sơ, tab **Thông tin** có khung **Lịch sử pháp lý của công ty** (mọi hồ sơ khác của cùng công ty) và nút **+ Thay đổi ·
++ Tạm ngừng · + Giải thể** để tạo hồ sơ tiếp theo cho công ty đó.
+
+### Theo dõi thời hạn tạm ngừng
+
+Trang **Tạm ngừng / Hoạt động lại** có khung **⏰ Theo dõi thời hạn tạm ngừng** — gồm cả hồ sơ tạm ngừng **đã đóng** (thời hạn vẫn chạy):
+
+- **Sắp hết hạn** khi còn **30 ngày**, **Gấp** khi còn **7 ngày**, **Đã hết hạn** khi qua ngày kết thúc mà chưa có hồ sơ tiếp theo.
+  Các trang khác cũng hiện dải vàng **"N công ty sắp hết / đã hết thời hạn tạm ngừng"** để không ai bỏ sót.
+- Cột **Hạn nộp thông báo tiếp** = 3 ngày làm việc trước ngày kết thúc + 1 — muốn gia hạn hoặc hoạt động lại đúng hạn phải nộp trước ngày này.
+- Gọi khách xong bấm **Đã nhắc khách** (ghi khách trả lời gì). Khách quyết thì bấm **Hoạt động lại**, **Gia hạn** (app điền sẵn
+  thời hạn mới nối tiếp ngay ngày hết hạn, tối đa 1 năm) hoặc **Giải thể** — hồ sơ mới tự gắn với lần tạm ngừng này, cảnh báo tắt.
 
 Hồ sơ chưa giao ai: nhân viên mở ra bấm **Nhận hồ sơ này**; trưởng phòng chọn người ở ô phụ trách góc trên.
 Xem danh sách theo dạng **Danh sách** hoặc **Theo bước** (cột theo 10 bước).
