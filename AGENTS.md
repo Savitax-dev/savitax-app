@@ -390,6 +390,25 @@ SQL `sql/40_phantich_xem_phi.sql` (đã chạy). **KHÔNG đưa vào bản clone
 - ⏳ Chưa làm: màn Hóa đơn (danh sách từng hóa đơn từ file XML/PDF/HTML), đọc BCTC PDF ở Soát xét năm, đọc ảnh scan, bảng
   lương DOEL quý 2 chỉ đọc ra 1/2 người (anh để sau), mẫu 05/KK theo TT89/2026.
 
+## Bản HTML chạy riêng trên máy (`banRoi/`) — Soát xét + Rủi ro thuế
+
+Một file `dist-ban-roi/Savitax-HoSo.html` (~4,5 MB, gitignore) mở thẳng bằng Chrome / Edge, không máy chủ, không đăng nhập, để
+giao riêng cho đơn vị khác (bản quyền Savitax, khách đổi được logo). Dựng: `node scripts/dung-ban-roi.mjs`. Kế hoạch + tiến độ:
+`docs/ban-html-roi-ke-hoach.md`. GĐ 1 xong 15/11/2026.
+
+- **Dùng NGUYÊN mã màn hình của app** (app/soatbaocao, app/ruirothue, components/phanTich, lib/…) — sửa app là bản rời sửa theo
+  khi dựng lại. Lúc gói, esbuild thay: `next/navigation`, `next/link` → `banRoi/shim` (đường dẫn sau `#`); `@/lib/supabase` →
+  không đăng nhập; `@/components/AppShell` → `banRoi/khung/AppShell.jsx`; `@/components/ThanhTab` → `banRoi/shim/ThanhTab.jsx`
+  (lọc bỏ tab **Tăng trưởng & phí** — anh bỏ khỏi bản rời 15/11/2026, phí là chuyện nội bộ Savitax);
+  `@/components/phanTich/HanNopKy` → `banRoi/shim/HanNopKy.jsx` (chỉ hạn nộp, không có trạng thái nộp từ cổng).
+- Hạn nộp bản rời sinh TẠI MÁY trong `apiMay.js` bằng `lib/tokhaiLich.js` + ngày nghỉ ở Cài đặt (mặc định chép từ `tax_holidays`)
+  — sửa luật sinh lịch ở tokhaiLich là bản rời theo; thêm loại tờ khai vào `tax_filing_types` thì thêm vào `LOAI_TO_KHAI` ở đó.
+- ⚠ `banRoi/apiMay.js` trả lời `fetch('/api/admin/phantich/{cong-ty,han-nop}')` từ kho trên máy theo ĐÚNG khuôn JSON của route
+  — đổi khuôn route thì sửa cả file này. Màn Soát xét / Rủi ro gọi thêm route máy chủ mới thì bản rời không có, phải thêm vào đây.
+- Kho bản rời: IndexedDB `savitax-hoso-ban-roi` (công ty, cài đặt); tay cầm thư mục + đệm đọc file dùng kho của app (`khoMay`).
+  pdf.js chạy bằng worker nhúng (Blob) gắn sẵn ở `banRoi/vao.jsx` — `pdfChu.js` thấy có `workerPort` thì không nạp file worker.
+- Tra MST (`banRoi/khung/traMst.js`, api.vietqr.io) là chức năng DUY NHẤT cần mạng; chỉ gửi MST.
+
 ## Phân hệ Tiền lương (`/luong`)
 
 Chấm công + thưởng + khoản trừ + chốt bảng lương + Excel + phiếu lương, dựng 17–19/10/2026 (production

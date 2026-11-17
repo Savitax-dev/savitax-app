@@ -67,3 +67,6 @@ sao-luu-nghia-vu-hkd-*.json
 
 # Thư mục thử nghiệm, có thể chứa dữ liệu thật của khách — đừng commit
 tmp-*/
+
+# Bản HTML chạy riêng trên máy — dựng bằng scripts/dung-ban-roi.mjs
+/dist-ban-roi/

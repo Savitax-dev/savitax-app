@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cấu trúc chạy — Savitax Hồ Sơ</title>
+<style>
+:root { --do: #8B1A1A; --do2: #6B1212; --vang: #C9A84C; --vang-soft: #fbf5e6; --bg: #f6f7f9; --panel: #fff; --panel2: #f9fafb;
+  --ink: #1f2937; --muted: #6b7280; --line: #e5e7eb; --do-soft: #fbeeee; --ok: #047857; --ok-soft: #ecfdf5; --info: #1d4ed8; --info-soft: #eff6ff;
+  --tim: #6d28d9; --tim-soft: #f5f3ff; --warn: #b45309; --warn-soft: #fffbeb; --err: #b91c1c; --err-soft: #fef2f2;
+  --ui: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif }
+@media (prefers-color-scheme: dark) { :root { --bg: #111418; --panel: #1a1f26; --panel2: #20262e; --ink: #e6e8eb; --muted: #9aa3ad; --line: #2c333c;
+  --do-soft: #3a1a1a; --vang-soft: #33291a; --ok: #4ade80; --ok-soft: #12291c; --info: #93c5fd; --info-soft: #14233a; --tim: #c4b5fd; --tim-soft: #241c3a;
+  --warn: #fbbf24; --warn-soft: #2f240e; --err: #f87171; --err-soft: #331616; color-scheme: dark } }
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.55 var(--ui) }
+.top { background: linear-gradient(90deg, var(--do), var(--do2)); color: #fff; padding: 18px 24px }
+.top h1 { margin: 0; font-size: 21px } .top p { margin: 4px 0 0; color: #fecaca; font-size: 13px }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 18px 16px 50px }
+h2 { font-size: 17px; margin: 26px 0 10px; color: var(--do); display: flex; align-items: center; gap: 8px }
+h2 .n { background: var(--do); color: #fff; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(0,0,0,.04) }
+.muted { color: var(--muted) } .small { font-size: 12.5px }
+code { font-family: Consolas, monospace; font-size: 12.5px; background: var(--panel2); border: 1px solid var(--line); border-radius: 5px; padding: 0 4px }
+
+/* Sơ đồ lớp */
+.file { border: 3px solid var(--do); border-radius: 18px; padding: 12px; background: var(--panel); position: relative }
+.file > .lbl { position: absolute; top: -13px; left: 16px; background: var(--do); color: #fff; font-weight: 700; font-size: 12.5px; padding: 2px 12px; border-radius: 999px }
+.layer { border-radius: 12px; padding: 10px 12px; margin-top: 10px; border: 1px solid }
+.layer > b { display: block; font-size: 13px; margin-bottom: 6px }
+.boxes { display: grid; gap: 8px }
+.b3 { grid-template-columns: repeat(3, minmax(0,1fr)) } .b4 { grid-template-columns: repeat(4, minmax(0,1fr)) } .b5 { grid-template-columns: repeat(5, minmax(0,1fr)) }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 7px 9px; font-size: 12.5px }
+.box > b:first-child { display: block; font-size: 13px }
+.l1 { background: var(--do-soft); border-color: #f3c9c9 } .l1 > b { color: var(--do) }
+.l2 { background: var(--vang-soft); border-color: #ecdcb0 } .l2 > b { color: #8a6a12 }
+.l3 { background: var(--info-soft); border-color: #bfdbfe } .l3 > b { color: var(--info) }
+.l4 { background: var(--tim-soft); border-color: #ddd6fe } .l4 > b { color: var(--tim) }
+:root .layer { } @media (prefers-color-scheme: dark) { .layer { border-color: var(--line) } .l2 > b { color: var(--vang) } }
+.side { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 14px; align-items: stretch }
+.ext { display: flex; flex-direction: column; gap: 10px }
+.ext .box { border-style: dashed; padding: 10px }
+.arrow { text-align: center; color: var(--muted); font-size: 12px }
+
+/* Luồng khởi động */
+.flow { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 0; counter-reset: s }
+.flow > div { background: var(--panel); border: 1px solid var(--line); padding: 10px; font-size: 12.5px; position: relative; counter-increment: s }
+.flow > div:first-child { border-radius: 12px 0 0 12px } .flow > div:last-child { border-radius: 0 12px 12px 0 }
+.flow > div + div { border-left: 0 }
+.flow > div::before { content: counter(s); display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: var(--vang); color: #fff; font-weight: 700; font-size: 11px; align-items: center; justify-content: center; margin-bottom: 4px }
+.flow b { display: block; font-size: 13px }
+
+/* Dựng file */
+.build { display: grid; grid-template-columns: 1fr 70px 1fr 70px 1fr; align-items: center; gap: 4px }
+.build .card { padding: 10px 12px; font-size: 12.5px }
+.build .to { text-align: center; color: var(--do); font-size: 26px; font-weight: 700 }
+.build ul { margin: 4px 0 0; padding-left: 16px }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--panel); border-radius: 12px; overflow: hidden; border: 1px solid var(--line) }
+th { background: var(--do); color: #fff; text-align: left; padding: 8px 10px; font-weight: 600 }
+td { padding: 7px 10px; border-top: 1px solid var(--line); vertical-align: top }
+tr:nth-child(even) td { background: var(--panel2) }
+.tag { display: inline-block; border-radius: 6px; padding: 0 6px; font-size: 11.5px; font-weight: 600 }
+.t-ok { background: var(--ok-soft); color: var(--ok) } .t-warn { background: var(--warn-soft); color: var(--warn) } .t-err { background: var(--err-soft); color: var(--err) }
+ul.g { margin: 0; padding-left: 18px } ul.g li { margin: 3px 0 }
+
+@media (max-width: 860px) {
+  .side, .b3, .b4, .b5, .flow, .build { grid-template-columns: 1fr }
+  .flow > div, .flow > div:first-child, .flow > div:last-child { border-radius: 10px; border-left: 1px solid var(--line); margin-bottom: 6px }
+  .build .to { transform: rotate(90deg) }
+}
+</style>
+</head>
+<body>
+<div class="top"><h1>Cấu trúc chạy của file Savitax-HoSo.html</h1><p>Soát xét báo cáo · Rủi ro thuế · Hồ sơ chứng từ — một file HTML, mở thẳng trên Chrome / Edge, không cần mạng, không cần máy chủ</p></div>
+<div class="wrap">
+
+<h2><span class="n">1</span>Bên trong một file HTML</h2>
+<div class="side">
+  <div class="file"><span class="lbl">📄 Savitax-HoSo-v1.0.html (~6–8 MB)</span>
+    <div class="layer l1"><b>Lớp 4 · Ba phân hệ (màn hình)</b>
+      <div class="boxes b3">
+        <div class="box"><b>🔎 Soát xét báo cáo</b>Hồ sơ dữ liệu · Soát kỳ · Tăng trưởng &amp; phí · Soát xét năm<br><span class="muted">mã React lấy từ app chính</span></div>
+        <div class="box"><b>⚖️ Rủi ro thuế</b>Hồ sơ đã đọc · Bảng 39 tiêu chí · Chi tiết · Nhiều năm · Excel<br><span class="muted">mã React lấy từ app chính</span></div>
+        <div class="box"><b>📑 Hồ sơ chứng từ</b>Tổng quan · Lập hồ sơ · Sổ hồ sơ · Bộ hồ sơ · Mẫu chứng từ<br><span class="muted">lõi JS thuần bản V2, đổi giao diện</span></div>
+      </div></div>
+    <div class="layer l2"><b>Lớp 3 · Khung chung</b>
+      <div class="boxes b5">
+        <div class="box"><b>Menu trái</b>giống app Savitax</div>
+        <div class="box"><b>Công ty đang làm</b>chọn 1 lần, 3 phân hệ dùng chung</div>
+        <div class="box"><b>Chuyển màn</b>theo địa chỉ <code>#/soat/ky</code> — chạy được trên file://</div>
+        <div class="box"><b>Thương hiệu</b>logo + tên khách; dòng © Savitax cố định</div>
+        <div class="box"><b>Cài đặt</b>ngày nghỉ lễ, sao lưu, sáng / tối</div>
+      </div></div>
+    <div class="layer l3"><b>Lớp 2 · Dịch vụ dùng chung</b>
+      <div class="boxes b4">
+        <div class="box"><b>Kho trên máy</b>IndexedDB <code>savitax-hoso</code>: công ty, cài đặt, hồ sơ chứng từ, mẫu, bộ hồ sơ, tay cầm thư mục, đệm đọc file</div>
+        <div class="box"><b>Đọc thư mục</b>File System Access, chế độ <b>CHỈ ĐỌC</b>; một tay cầm / công ty cho cả Soát xét lẫn Rủi ro thuế</div>
+        <div class="box"><b>Lịch thuế</b><code>taxDeadline</code> + <code>tokhaiLich</code> + ngày nghỉ lễ → hạn nộp tính tại máy</div>
+        <div class="box"><b>Xuất file</b>Word (.docx) · Excel (exceljs) · PDF · ZIP → tải về thư mục Downloads</div>
+      </div></div>
+    <div class="layer l4"><b>Lớp 1 · Thư viện + tài nguyên nhúng sẵn (không gọi CDN)</b>
+      <div class="boxes b5">
+        <div class="box"><b>React 19</b>vẽ màn Soát xét, Rủi ro</div>
+        <div class="box"><b>pdf.js + worker</b>đọc PDF có lớp chữ (worker nạp bằng Blob)</div>
+        <div class="box"><b>SheetJS · ExcelJS</b>đọc bảng kê / xuất Excel đẹp</div>
+        <div class="box"><b>JSZip · html2pdf</b>đọc ZIP, ghi .docx, in PDF</div>
+        <div class="box"><b>Phông + logo</b>Be Vietnam Pro, Tinos, logo Savitax (base64)</div>
+      </div></div>
+  </div>
+  <div class="ext">
+    <div class="box"><b>📁 Thư mục Drive của công ty</b>G:\Shared drives\KHÁCH HÀNG\…<br><span class="muted">chỉ ĐỌC — không ghi, không xoá, không đổi tên</span></div>
+    <div class="arrow">↑ đọc khi bấm Trỏ thư mục / Tải lại</div>
+    <div class="box"><b>🧾 File hóa đơn người dùng chọn</b>XML · PDF · ZIP<br><span class="muted">Hồ sơ chứng từ đọc từng file được chọn / kéo thả</span></div>
+    <div class="arrow">↓ tải về</div>
+    <div class="box"><b>⬇ Thư mục Downloads</b>Word, Excel, PDF, ZIP, file sao lưu JSON</div>
+    <div class="box" style="border-color:var(--err)"><b>🚫 Không có</b>máy chủ, Supabase, đăng nhập, Claude, Internet, gửi dữ liệu đi đâu</div>
+  </div>
+</div>
+
+<h2><span class="n">2</span>Khi mở file — chạy theo thứ tự</h2>
+<div class="flow">
+  <div><b>Nạp file</b>Trình duyệt đọc 1 file, thư viện + phông đã ở sẵn bên trong</div>
+  <div><b>Kiểm trình duyệt</b>Có trỏ thư mục, IndexedDB? Firefox / Safari → báo dùng Chrome / Edge</div>
+  <div><b>Mở kho</b>IndexedDB → công ty, cài đặt, thương hiệu; lần đầu nạp dữ liệu ví dụ</div>
+  <div><b>Vẽ khung</b>Logo khách, menu, công ty đang làm, màn theo <code>#/…</code></div>
+  <div><b>Xin lại quyền thư mục</b>Tay cầm cũ cần 1 cú bấm "Cho phép" (luật Chrome)</div>
+  <div><b>Làm việc</b>Đọc thư mục / hóa đơn → tính tại máy → lưu kho → xuất file</div>
+</div>
+
+<h2><span class="n">3</span>Dữ liệu nằm ở đâu</h2>
+<table>
+  <thead><tr><th>Dữ liệu</th><th>Lưu ở</th><th>Vào file sao lưu?</th><th>Ghi chú</th></tr></thead>
+  <tbody>
+    <tr><td>Danh sách công ty, đối tác</td><td>IndexedDB</td><td><span class="tag t-ok">Có</span></td><td>Nhập từ Excel mẫu hoặc gõ tay; Hồ sơ chứng từ tự thêm đối tác khi đọc hóa đơn</td></tr>
+    <tr><td>Thương hiệu khách (logo, tên, MST, địa chỉ)</td><td>IndexedDB</td><td><span class="tag t-ok">Có</span></td><td>Logo lưu dạng ảnh base64, giới hạn 500 KB</td></tr>
+    <tr><td>Sổ hồ sơ chứng từ, mẫu đã sửa, bộ hồ sơ</td><td>IndexedDB</td><td><span class="tag t-ok">Có</span></td><td>Nhận được file sao lưu bản cũ (cùng cấu trúc)</td></tr>
+    <tr><td>Ngày nghỉ lễ</td><td>IndexedDB</td><td><span class="tag t-ok">Có</span></td><td>Dùng chung cho hạn nộp + lùi ngày chứng từ</td></tr>
+    <tr><td>Tay cầm thư mục Drive</td><td>IndexedDB</td><td><span class="tag t-err">Không</span></td><td>Trình duyệt không cho mang sang máy khác → máy mới trỏ lại</td></tr>
+    <tr><td>Bộ nhớ đệm đọc file</td><td>IndexedDB</td><td><span class="tag t-err">Không</span></td><td>Tự đọc lại khi thiếu; có nút xoá ở Cài đặt</td></tr>
+    <tr><td>Kết quả soát, bảng 39 tiêu chí</td><td>Bộ nhớ phiên</td><td><span class="tag t-warn">Không cần</span></td><td>Tính lại từ thư mục mỗi lần mở; chuyển tab không đọc lại</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="n">4</span>Từ mã nguồn ra file — một nguồn, hai nơi chạy</h2>
+<div class="build">
+  <div class="card"><b>Repo savitax-app</b><ul>
+    <li><code>lib/phanTich</code>, <code>lib/soatbaocao</code>, <code>lib/ruiro</code>, <code>components/phanTich</code> — dùng chung với app</li>
+    <li><code>lib/banRoi/nguon.js</code> — app gọi API, bản rời đọc kho máy</li>
+    <li><code>banRoi/khung/</code> — menu, Cài đặt, thương hiệu</li>
+    <li><code>banRoi/hoSoChungTu/</code> — lõi + giao diện + thư viện mẫu</li></ul></div>
+  <div class="to">→</div>
+  <div class="card"><b><code>node scripts/dung-ban-roi.mjs</code></b><ul>
+    <li>esbuild gói mã + thư viện thành 1 khối JS</li>
+    <li>nhúng phông, logo, worker pdf.js</li>
+    <li>kiểm: không còn <code>http</code> ra ngoài, không còn tên đơn vị nguồn cũ, không có lệnh ghi thư mục</li></ul></div>
+  <div class="to">→</div>
+  <div class="card"><b><code>dist-ban-roi/Savitax-HoSo-v1.0.html</code></b><ul>
+    <li>gửi khách 1 file + hướng dẫn</li>
+    <li>bản mới = chạy lại script, khách thay file, dữ liệu giữ nguyên (cùng kho)</li></ul></div>
+</div>
+<p class="small muted">App chính trên app.savitax.vn vẫn build bằng Next.js từ cùng thư mục <code>lib/</code> — sửa nghiệp vụ một chỗ, hai nơi cùng đúng.</p>
+
+<h2><span class="n">5</span>Điều kiện &amp; giới hạn</h2>
+<div class="card"><ul class="g">
+  <li><b>Trình duyệt</b>: Chrome hoặc Edge trên máy tính (cần trỏ thư mục). Firefox, Safari, điện thoại: chỉ xem được Hồ sơ chứng từ, không soát được thư mục.</li>
+  <li><b>Mỗi máy một kho riêng</b>: hai người hai máy không thấy dữ liệu của nhau. Muốn chuyển máy → Sao lưu JSON → Khôi phục.</li>
+  <li><b>Xoá dữ liệu duyệt web</b> (cookie &amp; dữ liệu trang) là mất kho → nhắc sao lưu định kỳ, app hiện ngày sao lưu gần nhất.</li>
+  <li><b>Giữ file ở một chỗ cố định</b>: mọi file mở từ ổ đĩa dùng chung một vùng lưu, nên kho đặt tên riêng <code>savitax-hoso</code> để không lẫn với file HTML khác.</li>
+  <li><b>Mở lần đầu mỗi phiên</b>, Chrome hỏi lại quyền đọc thư mục đã trỏ — bấm "Cho phép" một lần.</li>
+  <li><b>Bản quyền</b>: dòng "Bản quyền © Savitax" nằm cứng trong file; khách đổi logo / tên / địa chỉ ở Cài đặt.</li>
+</ul></div>
+
+</div>
+</body>
+</html>

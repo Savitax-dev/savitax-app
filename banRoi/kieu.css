@@ -1,0 +1,14 @@
+/* Bản rời — CSS. Tailwind quét đúng các thư mục mã mà bản rời gói vào, rồi scripts/dung-ban-roi.mjs nhúng kết quả vào file
+   HTML (không gọi CDN). Đường dẫn @source tính từ thư mục banRoi/. */
+@import "tailwindcss" source(none);
+@source "../app/soatbaocao";
+@source "../app/ruirothue";
+@source "../components";
+@source "../lib/phanTich";
+@source "../lib/ruiro";
+@source "../lib/soatbaocao";
+@source "./";
+
+/* Như app/globals.css: luôn giao diện sáng; phông hệ thống (bản rời không tải phông từ mạng) */
+:root { color-scheme: only light; }
+body { background: #f9fafb; color: #171717; font-family: Arial, Helvetica, sans-serif; margin: 0; }
