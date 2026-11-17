@@ -427,7 +427,19 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
   495 mã cấp 4) — ~24 mã cũ được DÙNG LẠI với nghĩa khác (4661–4663, 4762…, xem `data/phaply/danh-muc/nganh/NGUON.md`), chép mã từ hồ sơ cũ
   là đăng ký sai ngành.
 - Xuất Word `ho-so/[id]/word?dot=so|thue[&ma=]` đọc `templates/phaply/word/*.docx` bằng readFileSync → **phải có trong
-  `outputFileTracingIncludes`** (next.config.mjs), thiếu là Vercel báo không thấy file.
+  `outputFileTracingIncludes`** (next.config.mjs), thiếu là Vercel báo không thấy file. Dựng bộ ở MỘT hàm `lib/phaply/xuatBo.js`
+  (nút tải về và nút lưu Drive ra file giống hệt).
+- **CCCD** (GĐ 2b, 17/11/2026): trình duyệt thu nhỏ ảnh (cạnh 1800px — Vercel nhận tối đa 4,5 MB/lượt) → `ho-so/[id]/cccd` lưu bucket
+  PRIVATE `phaply-cccd/<case_id>/<uuid>-<mặt>.jpg` TRƯỚC rồi mới đọc (đọc lỗi không mất ảnh) → Claude `claude-opus-5-5` structured outputs
+  (`lib/phaply/cccdDoc.js`, khoá `ANTHROPIC_API_KEY` MỚI — khoá bản thử đã lộ) → `lib/phaply/cccd.js` chuẩn hoá + kiểm chéo (12 số, chữ số 4 =
+  thế kỷ + giới tính, số 5–6 = năm sinh, MRZ mặt sau có chữ số kiểm tra ICAO) → lệch thì tô vàng, KHÔNG tự sửa. Địa chỉ trên thẻ cũ (quận/huyện)
+  không khớp danh mục → giữ nguyên văn, bắt chọn lại. Ảnh gốc: link ký 5 phút, cần `view_phaply_cccd_image`. Người chỉ nhận đường dẫn ảnh nằm
+  trong thư mục của CHÍNH hồ sơ. **Bản demo KHÔNG nhận ảnh CCCD** (tài khoản demo dùng chung mật khẩu gửi khách). Kiểm `test-phaply-cccd`.
+- **Drive** (anh duyệt 17/11/2026, lưu CẢ ảnh CCCD): Shared drive "7. SAVITAX - PHÁP LÝ DENALI", gốc theo thủ tục ở biến môi trường
+  (`PHAPLY_DRIVE_TLM` = thư mục "3. HỒ SƠ THÀNH LẬP", id `1GfnVapMRGmPKPaCooq4FLFXtxHOPshjt`, đã chia sẻ cho service account). Cây
+  `<gốc>/<PL-… - TÊN CTY>/{8 thư mục THU_MUC ở lib/phaply/drive.js}`; id thư mục lưu `legal_cases.drive_folder_id`; ghi đè file cùng tên.
+  Demo KHÔNG đặt biến → không lưu Drive. Thử thật: `test-phaply-drive` (hồ sơ giả, bỏ thùng rác thư mục thử). ⏳ Cron xoá ảnh CCCD 24 tháng
+  sau đóng hồ sơ phải xoá CẢ bản trên Drive.
 
 ## Phân hệ Hóa đơn điện tử — ĐANG GÁC (13/10/2026)
 

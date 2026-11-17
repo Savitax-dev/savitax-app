@@ -37,7 +37,7 @@ export default function PhapNhan({ id, tab, sua, loaiHinh, toast, taiLaiHoSo }) 
       {tab === 'doanh_nghiep' && <DoanhNghiep d={d} lh={lh} sua={coSua} goi={goi} />}
       {tab === 'nguoi' && <Nguoi d={d} lh={lh} sua={coSua} goi={goi} id={id} toast={toast} />}
       {tab === 'nganh' && <Nganh d={d} sua={coSua} goi={goi} />}
-      {tab === 'word' && <XuatWord d={d} id={id} lh={lh} toast={toast} />}
+      {tab === 'word' && <XuatWord d={d} id={id} lh={lh} toast={toast} sua={coSua} taiLai={load} />}
     </div>
   )
 }
@@ -384,8 +384,9 @@ function Nganh({ d, sua, goi }) {
 // ─── Còn thiếu & xuất Word ────────────────────────────────────────────────────────────────────────────────
 const TEN_DOT = { so: 'Hồ sơ thành lập — nộp Phòng ĐKKD', thue: 'Hồ sơ pháp lý ban đầu — sau khi có GPKD' }
 
-function XuatWord({ d, id, lh, toast }) {
+function XuatWord({ d, id, lh, toast, sua, taiLai }) {
   const [dang, setDang] = useState(null)
+  const [luuDrive, setLuuDrive] = useState(false)
   if (!['1tv', '2tv', 'cp'].includes(lh)) return <div className="p-panel p-4 text-sm text-gray-500">Mẫu Word hiện chỉ có cho công ty TNHH 1TV, 2TV và cổ phần.</div>
   const tai = async (dot, ma) => {
     setDang(dot + (ma || ''))
@@ -399,8 +400,25 @@ function XuatWord({ d, id, lh, toast }) {
       setTimeout(() => URL.revokeObjectURL(url), 5000)
     } finally { setDang(null) }
   }
+  const guiDrive = async () => {
+    setLuuDrive(true)
+    const r = await api(`/api/admin/phaply/ho-so/${id}/drive`, { method: 'POST', body: {} })
+    setLuuDrive(false)
+    if (!r.ok) return toast(r.data.error || 'Không lưu được lên Drive', true)
+    toast(`Đã lưu ${r.data.so_file} file lên Drive`); taiLai()
+  }
+  const dv = d.drive || {}
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="lg:col-span-2 p-panel px-4 py-3 flex items-center gap-3 flex-wrap">
+        <span className="text-sm font-semibold">☁ Drive phòng pháp lý</span>
+        {dv.co ? (<>
+          <span className="text-xs text-gray-500 flex-1 min-w-[200px]">Lưu cả 2 bộ Word (4. SOẠN HỒ SƠ) + ảnh CCCD (2. THU THẬP THÔNG TIN) vào thư mục của hồ sơ; lưu lại thì ghi đè file cùng tên.
+            {dv.luc ? ` Lần lưu gần nhất: ${new Date(dv.luc).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}.` : ' Chưa lưu lần nào.'}</span>
+          {dv.url && <a className="p-btn p-btn-sm" href={dv.url} target="_blank" rel="noopener noreferrer">Mở thư mục ↗</a>}
+          {sua && <button className={btnPrimary + ' p-btn-sm'} disabled={luuDrive || !!dang} onClick={guiDrive}>{luuDrive ? 'Đang lưu… (có thể tới 1 phút)' : 'Lưu lên Drive'}</button>}
+        </>) : <span className="text-xs text-gray-500">Chưa cấu hình thư mục Drive cho thủ tục này{process.env.NEXT_PUBLIC_DEMO_MODE === '1' ? ' (bản demo không lưu Drive)' : ''}.</span>}
+      </div>
       {['so', 'thue'].map(dot => {
         const thieu = d.thieu?.[dot] || []
         const chan = thieu.filter(t => t.chan), nhac = thieu.filter(t => !t.chan)

@@ -31,6 +31,10 @@ alter table legal_entities add column if not exists quy_uoc_phieu  numeric;    -
 alter table legal_entities add column if not exists dien_thue_san  boolean not null default false;  -- in sẵn MST + cơ quan thuế ở hồ sơ ban đầu
 alter table legal_entities add column if not exists updated_at     timestamptz default now();
 
+-- 1b. Hồ sơ — thư mục Drive phòng pháp lý (lib/phaply/drive.js; anh duyệt lưu Drive 17/11/2026)
+alter table legal_cases add column if not exists drive_folder_id text;
+alter table legal_cases add column if not exists drive_saved_at  timestamptz;
+
 -- 2. Người (khách: chủ sở hữu, thành viên, cổ đông, đại diện, kế toán… — và nhân viên pháp lý Savitax: staff_id)
 create table if not exists legal_people (
   id              uuid primary key default gen_random_uuid(),
