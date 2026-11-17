@@ -408,6 +408,11 @@ giao riêng cho đơn vị khác (bản quyền Savitax, khách đổi được 
 - Kho bản rời: IndexedDB `savitax-hoso-ban-roi` (công ty, cài đặt); tay cầm thư mục + đệm đọc file dùng kho của app (`khoMay`).
   pdf.js chạy bằng worker nhúng (Blob) gắn sẵn ở `banRoi/vao.jsx` — `pdfChu.js` thấy có `workerPort` thì không nạp file worker.
 - Tra MST (`banRoi/khung/traMst.js`, api.vietqr.io) là chức năng DUY NHẤT cần mạng; chỉ gửi MST.
+- ⚠ `banRoi/vaChu.mjs` thay 11 câu chỉ-đúng-trong-app (phạm vi phòng / nhân viên, "dùng chung với Tờ khai") trong
+  `CongTyCuaToi` / `ThanhCongTy` / `useHoSoCty` lúc gói — mỗi câu phải khớp ĐÚNG 1 lần, sửa chữ ở 3 file đó là `dung-ban-roi`
+  dừng báo lỗi → sửa danh sách cho khớp. Script dựng cũng dừng nếu file ra còn tên đơn vị nguồn cũ.
+- Tab 🧭 Hướng dẫn (Soát xét + Rủi ro) ở `banRoi/khung/HuongDan.jsx`; cây thư mục mẫu SVT.MB09 ở `banRoi/cayMau.json` (chỉ tên
+  thư mục) — đổi cây ISO thì chép lại file này.
 
 ## Phân hệ Tiền lương (`/luong`)
 

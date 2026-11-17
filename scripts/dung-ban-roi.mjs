@@ -4,11 +4,13 @@
 // Gói nguyên mã màn hình của app (không sửa app) + banRoi/ (khung, kho trên máy, bản thay Next.js / máy chủ). Thư viện,
 // worker pdf.js, logo, CSS đều nhúng sẵn — file chạy không cần mạng. Kế hoạch: docs/ban-html-roi-ke-hoach.md.
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import esbuild from 'esbuild'
 import postcss from 'postcss'
 import tailwind from '@tailwindcss/postcss'
+import { VA_CHU, apVaChu } from '../banRoi/vaChu.mjs'
 
 const GOC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const RA = path.join(GOC, 'dist-ban-roi')
@@ -38,6 +40,12 @@ const banRoi = {
     b.onResolve({ filter: /^(next\/navigation|next\/link|@\/lib\/supabase|@\/components\/AppShell|@\/components\/ThanhTab|@\/components\/phanTich\/HanNopKy)$/ }, a => ({ path: path.join(GOC, THAY[a.path]) }))
     // Bí danh "@/…" của app (jsconfig) = thư mục gốc repo
     b.onResolve({ filter: /^@\// }, a => b.resolve('./' + a.path.slice(2), { resolveDir: GOC, kind: a.kind }))
+    // Thay chữ chỉ-đúng-trong-app ở vài file dùng chung (banRoi/vaChu.mjs) — không sửa file gốc
+    const canVa = new Set(VA_CHU.map(([t]) => path.join(GOC, t)))
+    b.onLoad({ filter: /\.js$/ }, a => {
+      if (!canVa.has(a.path)) return undefined
+      return { contents: apVaChu(path.relative(GOC, a.path).replace(/\\/g, '/'), fs.readFileSync(a.path, 'utf8')), loader: 'jsx', resolveDir: path.dirname(a.path) }
+    })
   },
 }
 
@@ -63,6 +71,7 @@ const js = await esbuild.build({
   bundle: true, write: false, minify: true, metafile: kichCo,
   format: 'iife', platform: 'browser', target: ['chrome105', 'edge105'],
   jsx: 'automatic', loader: { '.js': 'jsx', '.png': 'dataurl' },
+  charset: 'utf8',   // giữ chữ tiếng Việt nguyên dạng (file trang khai <meta charset="utf-8">), nhẹ hơn \uXXXX, dễ soát
   define: { 'process.env.NODE_ENV': '"production"', __PHIEN_BAN__: JSON.stringify(PHIEN_BAN) },
   logLevel: 'warning', logOverride: { 'empty-import-meta': 'silent', 'unsupported-dynamic-import': 'silent' },
   plugins: [workerPlugin, banRoi],
@@ -96,6 +105,16 @@ const html = `<!doctype html>
 </body>
 </html>
 `
+// Không được còn tên đơn vị nguồn cũ trong file giao ra ngoài (từ khoá CỐ Ý để ngoài repo, như test-phantich-thuong-hieu).
+// Khớp theo TỪ (có ranh giới chữ): từ khoá ngắn nằm lọt trong chữ khác của thư viện ("smartTagPr", base64) không tính.
+const tepTuKhoa = process.env.THUONG_HIEU_TU_KHOA || path.join(os.homedir(), '.savitax-keys', 'tu-khoa-thuong-hieu-cu.txt')
+if (fs.existsSync(tepTuKhoa)) {
+  const thoat = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const tuKhoa = fs.readFileSync(tepTuKhoa, 'utf8').split(/\r?\n/).map(s => s.trim()).filter(s => s && !s.startsWith('#'))
+  const con = tuKhoa.filter(k => new RegExp('(?<![\\p{L}\\p{N}])' + thoat(k) + '(?![\\p{L}\\p{N}])', 'iu').test(html))
+  if (con.length) { console.error(`DỪNG: file dựng còn ${con.length} tên đơn vị nguồn cũ — tìm bằng scripts/test-phantich-thuong-hieu.mjs`); process.exit(1) }
+} else console.warn('⚠ Không có file từ khoá thương hiệu (~/.savitax-keys) — bỏ qua bước kiểm tên đơn vị nguồn cũ')
+
 fs.mkdirSync(RA, { recursive: true })
 const tep = path.join(RA, 'Savitax-HoSo.html')
 fs.writeFileSync(tep, html)

@@ -19,6 +19,7 @@ import TongQuan from './khung/TongQuan'
 import DanhSachCongTy from './khung/DanhSachCongTy'
 import CaiDat from './khung/CaiDat'
 import QuyUoc from './khung/QuyUoc'
+import { HuongDanSoat, HuongDanRuiRo } from './khung/HuongDan'
 import SoatCongTy from '@/app/soatbaocao/page'
 import SoatHoSo from '@/app/soatbaocao/ho-so/page'
 import SoatKy from '@/app/soatbaocao/soat-ky/page'
@@ -45,6 +46,8 @@ const TUYEN = {
   // '/soatbaocao/tang-truong' — Tăng trưởng & phí: bản rời không có (anh bỏ 15/11/2026, xem shim/ThanhTab.jsx)
   '/soatbaocao/nam': SoatNam,
   '/soatbaocao/quy-uoc': QuyUoc,
+  '/soatbaocao/huong-dan': HuongDanSoat,
+  '/ruirothue/huong-dan': HuongDanRuiRo,
   '/ruirothue': RuiRoCongTy,
   '/ruirothue/phan-tich': RuiRoPhanTich,
 }
@@ -58,5 +61,9 @@ function Goc() {
   const Trang = TUYEN[p] || KhongCo
   return <Trang key={p} />
 }
+
+// Xin Chrome đánh dấu dữ liệu của trang là "lưu lâu dài" — không thì khi ổ đĩa đầy, Chrome được phép tự xoá danh sách công
+// ty, cài đặt, quyền đọc thư mục. Không được cũng không sao (vẫn chạy, chỉ là kém bền hơn) → nhắc sao lưu ở Tổng quan.
+try { navigator.storage?.persist?.().catch(() => {}) } catch {}
 
 napKho().then(() => createRoot(document.getElementById('goc')).render(<Goc />))

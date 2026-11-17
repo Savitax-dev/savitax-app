@@ -152,6 +152,12 @@ Tổng ~6,5–7,5 ngày. Mỗi giai đoạn: thử ở máy → gửi anh file x
   `tax_holidays`: 1/1, 30/4, 1/5, 2/9 năm 2026–2027; khách tự thêm Tết, Giỗ Tổ, nghỉ bù). Khung "Hạn nộp và trạng thái nộp" thay
   bằng `banRoi/shim/HanNopKy.jsx`: chỉ hạn nộp + còn N ngày, trạng thái nộp xem dải kỳ (đọc thư mục). Giới hạn: một kỳ khai / công
   ty (TNCN theo kỳ của GTGT); hộ kinh doanh chỉ 01/CNKD. Đã thử: Q1/2026 → 04/05 (30/4, 1/5, cuối tuần), Q3 → 02/11, T08 → 21/09.
+- **Việc nhỏ xong (17/11/2026)**: tab 🧭 Hướng dẫn cho Soát xét + Rủi ro thuế (`banRoi/khung/HuongDan.jsx`, thêm vào thanh tab ở
+  `shim/ThanhTab.jsx`), nút tải cây thư mục SVT.MB09 dạng ZIP dựng tại máy từ `banRoi/cayMau.json` (94 thư mục, chỉ tên); thay 11
+  câu chỉ-đúng-trong-app (phạm vi phòng / nhân viên, "dùng chung với Tờ khai") lúc đóng gói — `banRoi/vaChu.mjs`, mỗi câu phải
+  khớp đúng 1 lần không thì dựng dừng; xin Chrome lưu dữ liệu lâu dài (`navigator.storage.persist`); esbuild `charset: utf8`
+  (file 4,16 MB); script dựng tự dừng nếu file còn tên đơn vị nguồn cũ (khớp theo từ, từ khoá ở `~/.savitax-keys`).
+- **Còn**: GĐ 4 Hồ sơ chứng từ; GĐ 5 đóng gói + hướng dẫn PDF + thử máy sạch; thử Tải Excel / Soát xét năm / Năm cũ trên dữ liệu thật.
 
 ## Bộ bàn giao
 
