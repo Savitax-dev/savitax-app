@@ -5,6 +5,7 @@ import { COT_HO_SO, ghiNhatKy } from '@/lib/phaply/hoSoMayChu'
 import { docPhapNhan, locCotCty, locCotNguoi, locVaiTro, ghepDiaChi, goiYCoQuan } from '@/lib/phaply/phapNhanMayChu'
 import { hoSoDauVao, conThieu } from '@/lib/phaply/phapNhan'
 import { coDrive, linkThuMuc } from '@/lib/phaply/drive'
+import { coPdf } from '@/lib/phaply/pdf'
 
 async function moHoSo(auth, id) {
   const { data: hs } = await auth.admin.from('legal_cases').select(COT_HO_SO).eq('id', id).maybeSingle()
@@ -26,6 +27,7 @@ export async function GET(request, { params }) {
       thieu: { so: conThieu(dauVao, { dot: 'so' }), thue: conThieu(dauVao, { dot: 'thue' }) },
       sua_duoc: suaDuoc(auth, hs),
       drive: { co: coDrive(hs.procedure_code), url: linkThuMuc(hs.drive_folder_id), luc: hs.drive_saved_at },
+      pdf: coPdf(),
     })
   } catch (e) { return loi(500, e.message) }
 }

@@ -8,6 +8,7 @@ import { dungBoWord, LOAI_CO_MAU, tenFile } from '@/lib/phaply/xuatBo'
 import { ensureFolder, uploadFile, DOCX_MIME } from '@/lib/googleDrive'
 import { coDrive, THU_MUC_BO, THU_MUC_CCCD, linkThuMuc } from '@/lib/phaply/drive'
 import { thuMucHoSo } from '@/lib/phaply/driveMayChu'
+import { coPdf, doiPdf, gopPdf } from '@/lib/phaply/pdf'
 import { VAI_TRO } from '@/lib/phaply/phapNhan'
 
 export const maxDuration = 60
@@ -29,11 +30,19 @@ export async function POST(request, { params }) {
     const { folderId, con } = await thuMucHoSo(admin, hs)
 
     let soFile = 0
+    const loiPdf = []
     if (LOAI_CO_MAU.includes(hs.entity_type)) {
       for (const dot of ['so', 'thue'].filter(x => noiDung.has(x))) {
         const { files, huongDan } = await dungBoWord(admin, hs, dot)
         const tm = (await ensureFolder(THU_MUC_BO[dot], con.soan)).id
         for (const f of [huongDan, ...files]) { await uploadFile(tm, f.ten, DOCX_MIME, f.buf); soFile++ }
+        if (coPdf()) {
+          try {
+            const pdfs = await doiPdf(files)
+            await uploadFile(tm, '00. Bo trinh ky (gop).pdf', 'application/pdf', await gopPdf(pdfs.map(x => x.buf))); soFile++
+            for (const x of pdfs) { await uploadFile(tm, x.ten, 'application/pdf', x.buf); soFile++ }
+          } catch (e) { loiPdf.push(e.message) }
+        }
       }
       if ((hs.ban_giao_muc || []).length) {
         const { files } = await dungBoWord(admin, hs, 'ban_giao')
@@ -63,6 +72,6 @@ export async function POST(request, { params }) {
     }
     await admin.from('legal_cases').update({ drive_saved_at: new Date().toISOString() }).eq('id', id)
     await ghiNhatKy(admin, id, 'edit', null, null, caller.staffId, `Lưu Drive: ${soFile} file (${[...noiDung].join(', ')})`)
-    return Response.json({ ok: true, url: linkThuMuc(folderId), so_file: soFile })
+    return Response.json({ ok: true, url: linkThuMuc(folderId), so_file: soFile, loi_pdf: loiPdf[0] || null })
   } catch (e) { return loi(500, e.message) }
 }

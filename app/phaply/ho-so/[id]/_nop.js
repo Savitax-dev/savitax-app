@@ -231,11 +231,11 @@ function BanGiao({ d, id, sua, goi, toast }) {
   const doi = JSON.stringify(f) !== JSON.stringify(dau())
   const set = (k, v) => setF(o => ({ ...o, [k]: v }))
   const setM = (i, k, v) => setF(o => ({ ...o, muc: o.muc.map((m, j) => (j === i ? { ...m, [k]: v } : m)) }))
-  const taiBbbg = async () => {
+  const taiBbbg = async (kieu = 'word') => {
     if (doi) return toast('Lưu bàn giao trước rồi mới tải biên bản', true)
     setDang(true)
     try {
-      const r = await fetch(`/api/admin/phaply/ho-so/${id}/word?dot=ban_giao&ma=BBBG`)
+      const r = await fetch(`/api/admin/phaply/ho-so/${id}/${kieu}?dot=ban_giao&ma=BBBG`)
       if (!r.ok) { const j = await r.json().catch(() => ({})); toast(j.error || 'Không xuất được', true); return }
       const cd = r.headers.get('Content-Disposition') || ''
       const ten = decodeURIComponent((cd.match(/filename\*=UTF-8''([^;]+)/) || [])[1] || 'Bien ban ban giao.docx')
@@ -247,7 +247,8 @@ function BanGiao({ d, id, sua, goi, toast }) {
   return (
     <div className="p-panel">
       <div className="p-panel-h flex items-center justify-between gap-2"><span>Bàn giao cho khách</span>
-        {LOAI_CO_MAU.includes(d.loai_hinh) && <button className="p-btn p-btn-sm" disabled={dang || !f.muc.length} onClick={taiBbbg}>{dang ? '…' : '⬇ Biên bản bàn giao (.docx)'}</button>}</div>
+        {LOAI_CO_MAU.includes(d.loai_hinh) && <span className="flex gap-1.5"><button className="p-btn p-btn-sm" disabled={dang || !f.muc.length} onClick={() => taiBbbg()}>{dang ? '…' : '⬇ Biên bản (.docx)'}</button>
+          {d.pdf && <button className="p-btn p-btn-sm" disabled={dang || !f.muc.length} onClick={() => taiBbbg('pdf')}>{dang ? '…' : '.pdf'}</button>}</span>}</div>
       <div className="p-4 space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Ngày bàn giao" hint="ghi khi đã giao thật"><input type="date" className={inputCls + ' num'} value={f.ngay} disabled={!sua} onChange={e => set('ngay', e.target.value)} /></Field>

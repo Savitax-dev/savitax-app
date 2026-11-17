@@ -451,6 +451,14 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
   **Đóng hồ sơ phải đủ điều kiện** (`dieuKienDong`): thu đủ tiền · có một lần nộp "Đạt" · đã ghi ngày bàn giao · có scan trong 8. BÀN GIAO
   (chỉ khi thủ tục có Drive). Thiếu: nhân viên 409; `close_phaply_case` đóng được kèm lý do. Máy chủ xét lại ở PATCH dong (cả khi chuyển
   thẳng sang bước 10). Kiểm `test-phaply-ban-giao [--that]`.
+- **PDF** (GĐ 3, 17/11/2026 — anh chọn DÙNG CHUNG VPS ngân hàng 103.126.161.187, khuyên nâng gói CheapSSD 2 cho dư): LibreOffice 7.3 headless
+  + dịch vụ `vps/phaply-pdf/pdf_server.py` (systemd `phaply-pdf`, tài khoản `phaplypdf`, MemoryMax 700M, CPUQuota 90%, Nice 10, IO idle — cron
+  ngân hàng luôn được ưu tiên; đã thêm swap 2 GB). Cổng **8443 HTTPS chứng chỉ TỰ KÝ** gắn IP; app GHIM chứng chỉ (`PHAPLY_PDF_CA`) + khoá
+  `PHAPLY_PDF_SECRET` + `PHAPLY_PDF_URL` — xem trên VPS: `/etc/phaply-pdf/{env,cert.pem}`. Một lượt gửi .zip nhiều .docx → .zip PDF (một lần chạy
+  LibreOffice cho cả bộ, ~3,4 giây/5 mẫu, RAM đỉnh ~210 MB). Log CHỈ ghi số file + thời gian. Phông: Times New Roman → Liberation Serif (cùng
+  kích thước), Segoe UI Symbol → DejaVu; bản in khớp Word (đường chấm, ô ☐☒, số trang) — Google Drive làm MẤT đường chấm, đừng dùng.
+  App: `lib/phaply/pdf.js` (doiPdf, gopPdf), route `ho-so/[id]/pdf` (cả bộ = từng PDF + "00. Bo trinh ky (gop).pdf"), nút Lưu Drive kèm PDF.
+  PDF lỗi không chặn Word. Kiểm `node --env-file=.env.local scripts/test-phaply-pdf.mjs [--that]`.
 
 ## Phân hệ Hóa đơn điện tử — ĐANG GÁC (13/10/2026)
 

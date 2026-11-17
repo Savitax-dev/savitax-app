@@ -9,6 +9,7 @@ import { mauCuaBo } from '@/lib/phaply/word/danhMuc'
 import { choTheoNop, lanKeTiep, maSoHopLe, CO_QUAN, KET_QUA, coQuanLabel, ketQuaLabel } from '@/lib/phaply/nop'
 import { goiYCoQuan } from '@/lib/phaply/phapNhanMayChu'
 import { coDrive } from '@/lib/phaply/drive'
+import { coPdf } from '@/lib/phaply/pdf'
 import { choLabel } from '@/lib/phaply/hoSo'
 import { locMuc, mucMacDinh } from '@/lib/phaply/banGiao'
 import { docDieuKienDong } from '@/lib/phaply/banGiaoMayChu'
@@ -44,7 +45,7 @@ export async function GET(request, { params }) {
     ban_giao: { ngay: hs.ban_giao_ngay || '', nguoi_nhan: hs.ban_giao_nguoi_nhan || '', ghi_chu: hs.ban_giao_ghi_chu || '', muc: hs.ban_giao_muc || [],
       goi_y_nguoi_nhan: dd?.[0]?.nguoi?.ho_ten || hs.contact_name || '', muc_mac_dinh: mucMacDinh(hs.procedure_code) },
     dieu_kien_dong: await docDieuKienDong(admin, hs),
-    drive: coDrive(hs.procedure_code), sua_duoc: suaDuoc(auth, hs), loai_hinh: hs.entity_type,
+    drive: coDrive(hs.procedure_code), pdf: coPdf(), sua_duoc: suaDuoc(auth, hs), loai_hinh: hs.entity_type,
   })
 }
 

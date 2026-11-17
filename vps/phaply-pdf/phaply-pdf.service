@@ -1,0 +1,31 @@
+# /etc/systemd/system/phaply-pdf.service — dịch vụ đổi Word → PDF phân hệ Pháp lý (vps/phaply-pdf/pdf_server.py).
+# Chạy dưới tài khoản riêng không đăng nhập được, giới hạn RAM / CPU, ưu tiên THẤP hơn cron ngân hàng (acb_zalo, app_sync).
+[Unit]
+Description=Savitax phaply-pdf (Word -> PDF)
+After=network-online.target
+
+[Service]
+User=phaplypdf
+Group=phaplypdf
+EnvironmentFile=/etc/phaply-pdf/env
+Environment=HOME=/var/lib/phaply-pdf
+ExecStart=/usr/bin/python3 /opt/phaply-pdf/pdf_server.py
+Restart=always
+RestartSec=3
+Nice=10
+IOSchedulingClass=idle
+MemoryMax=700M
+MemorySwapMax=512M
+CPUQuota=90%
+TasksMax=64
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/phaply-pdf
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+
+[Install]
+WantedBy=multi-user.target

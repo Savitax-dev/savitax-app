@@ -388,13 +388,14 @@ function XuatWord({ d, id, lh, toast, sua, taiLai }) {
   const [dang, setDang] = useState(null)
   const [luuDrive, setLuuDrive] = useState(false)
   if (!['1tv', '2tv', 'cp'].includes(lh)) return <div className="p-panel p-4 text-sm text-gray-500">Mẫu Word hiện chỉ có cho công ty TNHH 1TV, 2TV và cổ phần.</div>
-  const tai = async (dot, ma) => {
-    setDang(dot + (ma || ''))
+  // kieu: 'word' | 'pdf' (PDF đổi ở VPS — chậm hơn vài giây)
+  const tai = async (dot, ma, kieu = 'word') => {
+    setDang(dot + (ma || '') + kieu)
     try {
-      const r = await fetch(`/api/admin/phaply/ho-so/${id}/word?dot=${dot}${ma ? '&ma=' + ma : ''}`)
+      const r = await fetch(`/api/admin/phaply/ho-so/${id}/${kieu}?dot=${dot}${ma ? '&ma=' + ma : ''}`)
       if (!r.ok) { const j = await r.json().catch(() => ({})); toast(j.error || 'Không xuất được', true); return }
       const cd = r.headers.get('Content-Disposition') || ''
-      const ten = decodeURIComponent((cd.match(/filename\*=UTF-8''([^;]+)/) || [])[1] || (ma || dot) + (ma ? '.docx' : '.zip'))
+      const ten = decodeURIComponent((cd.match(/filename\*=UTF-8''([^;]+)/) || [])[1] || (ma || dot) + (ma ? (kieu === 'pdf' ? '.pdf' : '.docx') : '.zip'))
       const url = URL.createObjectURL(await r.blob())
       const a = document.createElement('a'); a.href = url; a.download = ten; a.click()
       setTimeout(() => URL.revokeObjectURL(url), 5000)
@@ -405,7 +406,7 @@ function XuatWord({ d, id, lh, toast, sua, taiLai }) {
     const r = await api(`/api/admin/phaply/ho-so/${id}/drive`, { method: 'POST', body: {} })
     setLuuDrive(false)
     if (!r.ok) return toast(r.data.error || 'Không lưu được lên Drive', true)
-    toast(`Đã lưu ${r.data.so_file} file lên Drive`); taiLai()
+    toast(`Đã lưu ${r.data.so_file} file lên Drive${r.data.loi_pdf ? ' (PDF lỗi: ' + r.data.loi_pdf + ' — chỉ lưu Word)' : ''}`, !!r.data.loi_pdf); taiLai()
   }
   const dv = d.drive || {}
   return (
@@ -426,7 +427,10 @@ function XuatWord({ d, id, lh, toast, sua, taiLai }) {
           <div key={dot} className="p-panel">
             <div className="p-panel-h flex items-center justify-between gap-2">
               <span>{TEN_DOT[dot]}</span>
-              <button className={btnPrimary + ' p-btn-sm'} disabled={!!dang} onClick={() => tai(dot)}>{dang === dot ? 'Đang dựng…' : '⬇ Cả bộ (.zip)'}</button>
+              <span className="flex gap-1.5">
+                <button className={btnPrimary + ' p-btn-sm'} disabled={!!dang} onClick={() => tai(dot)}>{dang === dot + 'word' ? 'Đang dựng…' : '⬇ Cả bộ Word'}</button>
+                {d.pdf && <button className={btnPrimary + ' p-btn-sm'} disabled={!!dang} onClick={() => tai(dot, null, 'pdf')} title="Từng PDF + 1 file gộp cả bộ để in">{dang === dot + 'pdf' ? 'Đang đổi PDF…' : '⬇ Cả bộ PDF'}</button>}
+              </span>
             </div>
             <div className="p-4 space-y-3">
               {chan.length ? (
@@ -441,7 +445,8 @@ function XuatWord({ d, id, lh, toast, sua, taiLai }) {
                   <tr key={m.ma}>
                     <td className="l num w-8">{String(m.thuTu).padStart(2, '0')}</td>
                     <td className="l">{m.ten}<div className="text-xs text-gray-500">{m.nguoiKy[lh]}</div></td>
-                    <td className="r"><button className="p-btn p-btn-sm" disabled={!!dang} onClick={() => tai(dot, m.ma)}>{dang === dot + m.ma ? '…' : '.docx'}</button></td>
+                    <td className="r whitespace-nowrap"><button className="p-btn p-btn-sm" disabled={!!dang} onClick={() => tai(dot, m.ma)}>{dang === dot + m.ma + 'word' ? '…' : '.docx'}</button>
+                      {d.pdf && <button className="p-btn p-btn-sm ml-1" disabled={!!dang} onClick={() => tai(dot, m.ma, 'pdf')}>{dang === dot + m.ma + 'pdf' ? '…' : '.pdf'}</button>}</td>
                   </tr>
                 ))}
               </tbody></table>

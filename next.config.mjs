@@ -22,6 +22,7 @@ const nextConfig = {
     // Phân hệ Pháp lý — xuất bộ hồ sơ Word (đọc mẫu dựng sẵn bằng readFileSync)
     '/api/admin/phaply/ho-so/[id]/word': ['./templates/phaply/word/**'],
     '/api/admin/phaply/ho-so/[id]/drive': ['./templates/phaply/word/**'],
+    '/api/admin/phaply/ho-so/[id]/pdf': ['./templates/phaply/word/**'],
     // Trang tài liệu (components/TrangTaiLieu.js) đọc docs lúc chạy — cần đăng nhập nên không dựng tĩnh được
     '/soatbaocao/quy-uoc': ['./docs/quy-uoc-luu-ho-so.md'],
     '/tokhai/huong-dan': ['./docs/huong-dan-phan-he-to-khai.md'],
