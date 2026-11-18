@@ -302,7 +302,7 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
   // dựng 1 dòng từ post_detail để thẻ "Đã ghi" không hiện dấu gạch.
   const pd = r.post_detail
   const lines = r.status === 'posted'
-    ? (pd?.done || (pd?.kind ? [{ kind: pd.kind === 'hcns_case' ? 'hcns_case' : 'khach', amount: pd.amount, label: pd.name }] : []))
+    ? (pd?.done || (pd?.kind ? [{ kind: pd.kind === 'hcns_case' || pd.kind === 'phap_ly' ? pd.kind : 'khach', amount: pd.amount, label: pd.name }] : []))
     : (r.plan || [])
 
   const pickedCase = hcnsCases && hcnsPick ? hcnsCases.find(c => c.name === hcnsPick) : null
