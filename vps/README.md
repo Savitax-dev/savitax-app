@@ -71,3 +71,30 @@ App chống trùng lần hai bằng `ext_id`: gửi lại bao nhiêu lần cũng
 | Log `LOI gui len app` | Mạng/app lỗi. Giao dịch KHÔNG bị đánh dấu, lần chạy sau tự gửi lại |
 | App không thấy giao dịch mới | `python3 app_sync.py --dry` xem có bắt được email không |
 | Muốn bỏ qua hẳn một giai đoạn | Đặt thêm biến `BANK_SYNC_FROM` (ISO) trên Vercel — app bỏ mọi giao dịch cũ hơn mốc đó |
+
+---
+
+# `zalo_label.py` — gắn nhãn "Đã gửi Zalo" trong Gmail (18/11/2026)
+
+Thư báo có trong `congnosavitax@gmail.com` đã được `acb_zalo.py` / `tcb_zalo.py` gửi lên nhóm Zalo
+thì tự có nhãn **Đã gửi Zalo**. Chạy độc lập, KHÔNG sửa script Zalo — chỉ đọc sổ chống trùng của chúng:
+
+- ACB: thư **Ghi có** có dấu vân tay trong `processed_msgids.json` (thư Ghi nợ cũng nằm trong sổ đó
+  nhưng không gửi Zalo → không gắn).
+- TCB: thư kèm sao kê có tiền vào, khoá `tài khoản|ngày` nằm trong `tcb_processed.json`.
+- Gửi Zalo lỗi → chưa có trong sổ → chưa gắn, lần chạy sau kiểm lại.
+
+Chỉ thêm nhãn (`STORE +X-GM-LABELS`, đọc bằng `BODY.PEEK`): không đổi trạng thái đã đọc, không
+chuyển thư mục. File riêng: `zalo_label_state.json` (UID đã xử lý), `zalo_label.log`.
+
+```bash
+scp vps/zalo_label.py root@103.126.161.187:/root/acb_zalo/
+python3 zalo_label.py --dry --tu 2026-09-01   # xem trước, không gắn
+python3 zalo_label.py --tu 2026-09-01         # gắn bù (đã chạy 18/11/2026)
+```
+
+```cron
+*/2 * * * *  /usr/bin/flock -n /tmp/zalo_label.lock /usr/bin/timeout 600 /usr/bin/python3 /root/acb_zalo/zalo_label.py >> /root/acb_zalo/zalo_label.cron.log 2>&1
+```
+
+Mặc định quét 3 ngày gần nhất. Tên nhãn có dấu gửi IMAP dạng modified UTF-7 (`&ARAA4w- g&Hu0-i Zalo`).
