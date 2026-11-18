@@ -51,7 +51,8 @@ if (process.argv.includes('--that')) {
   gia.forEach((t, i) => console.log('   · ' + String(t.memo).slice(0, 45).padEnd(45) + ' ' + Number(t.amount).toLocaleString('vi-VN').padStart(10)
     + ' | đã ghi ' + daGhiCuaGd(t).toLocaleString('vi-VN') + ' | còn ' + conLaiCuaGd(t).toLocaleString('vi-VN')
     + ' → ' + cls[i].status + (cls[i].client ? ' · ' + cls[i].client.client_code : '') + ' · ' + (cls[i].reason || '')))
-  kiem('chỉ còn Ý CƠ là còn dư thật (HOANGANH, MBG ghi công nợ trọn giao dịch)', du.map(t => String(t.memo).slice(0, 3)), ['YCO'])
+  // Ý CƠ (ca gốc) đã tự khớp sổ phần còn lại 2.160.000 ngày 03/11 → không còn giao dịch đóng nào còn dư.
+  kiem('không còn giao dịch đã đóng mà còn dư (Ý CƠ đã khớp sổ phần còn lại 03/11)', du.map(t => String(t.memo).slice(0, 3)), [])
   const yco = gia.findIndex(t => /^YCO-TTPHIDICHVU-10\/2026/.test(t.memo || ''))
   if (yco >= 0) kiem('Ý CƠ: phần còn lại 2.160.000 nhận ra "đã ghi tay" (khớp sổ, không ghi trùng)', [conLaiCuaGd(gia[yco]), cls[yco].status], [2160000, 'done'])
 }

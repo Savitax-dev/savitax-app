@@ -11,6 +11,7 @@
 //   [2] CÓ quyền rồi vẫn phải ĐANG LÀM TRƯỞNG đúng phòng chứa công ty đó
 //   [3] KHÔNG có nhánh "công ty mình phụ trách" — khác hẳn quyền bỏ tick
 import { canReviewChecklist, canUncheckTask } from '../lib/checklistScope.js'
+import { xoaBoNhoQuyen } from '../lib/quyenCache.js'
 
 let dat = 0, hong = 0
 const kiem = (ten, dieuKien) => {
@@ -20,6 +21,9 @@ const kiem = (ten, dieuKien) => {
 
 // db giả: chỉ trả đúng những bảng hai hàm này hỏi tới.
 function dungDb({ client, secondary = [], systemRoles = [], perms = [], nhanVien = [] }) {
+  // Bảng quyền được nhớ 5 phút ở cấp module (lib/quyenCache.js) — mỗi ca một db giả thì phải xoá,
+  // không thì ca đầu (chưa cấp quyền) để lại bảng rỗng cho mọi ca sau.
+  xoaBoNhoQuyen()
   const q = rows => {
     const o = {
       _r: rows,

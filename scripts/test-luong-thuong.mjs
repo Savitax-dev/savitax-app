@@ -78,9 +78,14 @@ if (process.argv.includes('--that')) {
   const { data: st } = await sb.from('staff').select('id, full_name')
   const dt = await doanhThuTheoNhanVien(sb, 2026, 9)
   console.log('\nDoanh thu thật T9/2026 so với file lương mẫu:')
+  // Doanh thu tính theo người phụ trách CHÍNH HIỆN TẠI. Ngày 07/11 + 16/11/2026 công ty của Kim Ngân đã chia
+  // sang người khác (Sơn Ca nhận 4 công ty) → tính lại T9 không còn khớp file mẫu, chỉ in để tham khảo.
+  // Hai người không đổi công ty vẫn phải khớp từng đồng.
+  const DOI_PHU_TRACH = new Set(['NGUYỄN THÁI KIM NGÂN', 'TRẦN THỊ SƠN CA'])
   for (const [ten, so] of [['NGUYỄN THÁI KIM NGÂN', 52000000], ['TRẦN THỊ SƠN CA', 33000000], ['HUỲNH THỊ MỸ LỆ', 63000000], ['NGUYỄN THỊ TRUNG ANH', 59500000]]) {
     const s = st.find(x => x.full_name.toUpperCase() === ten)
-    kiem(ten, dt.get(s?.id)?.tong, so)
+    if (DOI_PHU_TRACH.has(ten)) console.log('  (bỏ qua) ' + ten + ': file mẫu ' + so.toLocaleString('vi-VN') + ', tính lại hôm nay ' + Number(dt.get(s?.id)?.tong || 0).toLocaleString('vi-VN') + ' — đã đổi người phụ trách 07/11')
+    else kiem(ten, dt.get(s?.id)?.tong, so)
   }
 
   // Thưởng DS phòng 1% trên bảng lương thật T10/2026: chỉ người làm trưởng phòng (chính hoặc kiêm nhiệm) mới có,
