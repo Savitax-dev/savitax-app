@@ -98,7 +98,7 @@ export async function GET(request, { params }) {
     </tbody>
   </table>
   <p style="margin:6px 0">Đề nghị quý khách hàng thanh toán số tiền trên trước ngày <b>${han}</b>.</p>
-  <div style="display:flex;gap:14px;align-items:center;margin:6px 0">
+  <div style="display:flex;gap:16px;align-items:center;justify-content:center;margin:8px 0">
     <img src="${qrUrl}" alt="QR" style="width:110px;height:110px" onerror="this.style.display='none'"/>
     <div style="line-height:1.8">
       <div>Số tài khoản: <b>3878556868</b> — Ngân hàng ACB – PGD Bạch Đằng</div>
