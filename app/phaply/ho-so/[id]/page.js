@@ -233,6 +233,28 @@ function TabViec({ d, sua, id, load, toast }) {
 }
 
 // ─── Công nợ ───────────────────────────────────────────────────────────────────────────────────────────────────
+// Phiếu đề nghị thanh toán (ĐNTT) — luôn có ở đầu tab Công nợ (18/11/2026: trước đó chỉ hiện trong từng đợt thu, hồ sơ chưa lập
+// đợt thì không xuất được). Mặc định "toàn bộ phí trừ phần đã thu"; có đợt thì chọn từng đợt / các đợt đã đến hạn.
+function XuatDntt({ id, t }) {
+  const coDenHan = t.dots.some(x => x.da_den_han && x.con > 0)
+  const [chon, setChon] = useState(coDenHan ? 'den_han' : 'toan_bo')
+  const href = `/api/admin/phaply/ho-so/${id}/dntt?` + (chon === 'toan_bo' || chon === 'den_han' ? 'pham_vi=' + chon : 'dot=' + chon)
+  return (
+    <div className="p-panel px-4 py-3 flex items-center gap-3 flex-wrap">
+      <span className="text-sm font-semibold">🧾 Đề nghị thanh toán (ĐNTT)</span>
+      {t.phi ? (<>
+        <select className={inputCls + ' w-auto min-w-[260px]'} value={chon} onChange={e => setChon(e.target.value)}>
+          <option value="toan_bo">Toàn bộ phí hồ sơ (còn {fmt(t.con_phai_thu)} đ)</option>
+          {coDenHan && <option value="den_han">Các đợt đã đến hạn (nợ {fmt(t.no_den_han)} đ)</option>}
+          {t.dots.map(x => <option key={x.id} value={x.id}>{x.name || 'Đợt ' + x.seq} — còn {fmt(x.con)} đ</option>)}
+        </select>
+        <a className={btnPrimary + ' p-btn-sm'} target="_blank" rel="noreferrer" href={href}>Xuất ĐNTT ↗</a>
+        <span className="text-xs text-gray-500">Mở phiếu ở tab mới → In / Lưu PDF gửi khách. Liệt kê từng khoản phí, tách VAT 8%; thu hộ không VAT.</span>
+      </>) : <span className="text-xs text-gray-500">Nhập các khoản phí bên dưới và bấm <b>Lưu phí</b> trước, rồi mới xuất được ĐNTT.</span>}
+    </div>
+  )
+}
+
 function TabTien({ d, sua, q, id, load, toast, setHoi }) {
   const t = d.tien
   const coThu = d.payments.some(p => !p.deleted_at)
@@ -262,6 +284,7 @@ function TabTien({ d, sua, q, id, load, toast, setHoi }) {
         <StatCard label="Nợ đến hạn" value={fmt(t.no_den_han)} unit="đ" tone="red" foot="đợt đã đến hạn mà chưa thu" />
       </div>
       {t.canh_bao.map((c, i) => <div key={i} className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">⚠ {c}</div>)}
+      <XuatDntt id={id} t={t} />
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <div className="p-panel">
