@@ -1,7 +1,8 @@
 // Phân hệ Pháp lý — phiếu đề nghị thanh toán (ĐNTT, mẫu SVT.MB13) của hồ sơ, theo bố cục file Excel phòng pháp lý đang dùng.
 // Số liệu: lib/phaply/dntt.js (hàm thuần). Khác phiếu kế toán (/api/admin/dntt): chỉ PHÍ DỊCH VỤ chịu VAT 8% — số lưu gồm VAT nên
 // tách ngược (÷1,08); THU HỘ (lệ phí nhà nước, khắc dấu, chữ ký số…) KHÔNG chịu VAT.
-//   GET ?dot=<installment_id>  một đợt  ·  ?pham_vi=den_han  các đợt đã đến hạn  ·  (mặc định) toàn bộ phí hồ sơ trừ phần đã thu
+//   GET ?dots=<id>,<id>[&no_truoc=1]  các đợt được tick · ?khoan=<fee_id>,…  các khoản phí được tick (hồ sơ chưa chia đợt)
+//       (trống) toàn bộ phí hồ sơ trừ phần đã thu · kiểu cũ ?dot=<id> / ?pham_vi=den_han vẫn chạy
 import { requirePhapLy, xemDuoc } from '@/lib/phaply/quyen'
 import { docHoSoDayDu, tenNhanVien, ghiNhatKy } from '@/lib/phaply/hoSoMayChu'
 import { thuTucLabel } from '@/lib/phaply/hoSo'
@@ -22,7 +23,12 @@ export async function GET(request, { params }) {
   const u = new URL(request.url).searchParams
   const hs = d.ho_so
   const tenThuTuc = thuTucLabel(hs.procedure_code)
-  const s = soLieuDntt({ fees: d.fees, tien: d.tien, dot: u.get('dot'), phamVi: u.get('pham_vi') || 'toan_bo', tenThuTuc: tenThuTuc.toLowerCase() })
+  const ds = k => (u.get(k) || '').split(',').map(x => x.trim()).filter(Boolean)
+  // ?dot=<id> (kiểu cũ, một đợt + cộng nợ đợt trước) · ?pham_vi=den_han · ?dots=a,b[&no_truoc=1] · ?khoan=feeId,… · (trống) toàn bộ
+  let dots = ds('dots'), kemNoTruoc = u.get('no_truoc') === '1'
+  if (u.get('dot')) { dots = [u.get('dot')]; kemNoTruoc = true }
+  if (u.get('pham_vi') === 'den_han') dots = d.tien.dots.filter(x => x.da_den_han && x.con > 0).map(x => x.id)
+  const s = soLieuDntt({ fees: d.fees, tien: d.tien, dots, khoan: ds('khoan'), kemNoTruoc, tenThuTuc: tenThuTuc.toLowerCase() })
   if (!s) return new Response('Không thấy đợt thu', { status: 404 })
   if (!s.tongB && !s.A) return new Response('Hồ sơ chưa có khoản phí nào — nhập các khoản phí ở tab Công nợ rồi bấm "Lưu phí" trước', { status: 400, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
 

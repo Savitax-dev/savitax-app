@@ -235,22 +235,46 @@ function TabViec({ d, sua, id, load, toast }) {
 // ─── Công nợ ───────────────────────────────────────────────────────────────────────────────────────────────────
 // Phiếu đề nghị thanh toán (ĐNTT) — luôn có ở đầu tab Công nợ (18/11/2026: trước đó chỉ hiện trong từng đợt thu, hồ sơ chưa lập
 // đợt thì không xuất được). Mặc định "toàn bộ phí trừ phần đã thu"; có đợt thì chọn từng đợt / các đợt đã đến hạn.
-function XuatDntt({ id, t }) {
-  const coDenHan = t.dots.some(x => x.da_den_han && x.con > 0)
-  const [chon, setChon] = useState(coDenHan ? 'den_han' : 'toan_bo')
-  const href = `/api/admin/phaply/ho-so/${id}/dntt?` + (chon === 'toan_bo' || chon === 'den_han' ? 'pham_vi=' + chon : 'dot=' + chon)
+function XuatDntt({ id, t, fees }) {
+  // tick từng đợt (hồ sơ có lịch thu) hoặc từng khoản phí (chưa chia đợt) — mặc định tick hết những gì còn phải thu
+  const coDot = t.dots.length > 0
+  const dsChon = coDot ? t.dots.filter(x => x.con > 0) : fees.filter(f => Number(f.amount) > 0)
+  const [chon, setChon] = useState(() => new Set(dsChon.map(x => x.id)))
+  const [noTruoc, setNoTruoc] = useState(false)   // bỏ tick đợt nào là không đòi đợt đó — muốn ghi vào dòng A thì tick
+  const doi = (k, on) => setChon(o => { const n = new Set(o); on ? n.add(k) : n.delete(k); return n })
+  const ids = dsChon.filter(x => chon.has(x.id)).map(x => x.id)
+  const dau = Math.min(...t.dots.filter(x => chon.has(x.id)).map(x => Number(x.seq)))
+  const noCu = coDot ? t.dots.filter(x => !chon.has(x.id) && x.da_den_han && x.con > 0 && Number(x.seq) < dau).reduce((a, x) => a + x.con, 0) : 0
+  const tongChon = coDot ? t.dots.filter(x => chon.has(x.id)).reduce((a, x) => a + x.con, 0) + (noTruoc ? noCu : 0)
+    : (ids.length === dsChon.length ? t.con_phai_thu : dsChon.filter(x => chon.has(x.id)).reduce((a, f) => a + Number(f.amount), 0))
+  const href = `/api/admin/phaply/ho-so/${id}/dntt?` + (coDot ? `dots=${ids.join(',')}${noCu && noTruoc ? '&no_truoc=1' : ''}` : (ids.length === dsChon.length ? '' : 'khoan=' + ids.join(',')))
   return (
-    <div className="p-panel px-4 py-3 flex items-center gap-3 flex-wrap">
-      <span className="text-sm font-semibold">🧾 Đề nghị thanh toán (ĐNTT)</span>
-      {t.phi ? (<>
-        <select className={inputCls + ' w-auto min-w-[260px]'} value={chon} onChange={e => setChon(e.target.value)}>
-          <option value="toan_bo">Toàn bộ phí hồ sơ (còn {fmt(t.con_phai_thu)} đ)</option>
-          {coDenHan && <option value="den_han">Các đợt đã đến hạn (nợ {fmt(t.no_den_han)} đ)</option>}
-          {t.dots.map(x => <option key={x.id} value={x.id}>{x.name || 'Đợt ' + x.seq} — còn {fmt(x.con)} đ</option>)}
-        </select>
-        <a className={btnPrimary + ' p-btn-sm'} target="_blank" rel="noreferrer" href={href}>Xuất ĐNTT ↗</a>
-        <span className="text-xs text-gray-500">Mở phiếu ở tab mới → In / Lưu PDF gửi khách. Liệt kê từng khoản phí, tách VAT 8%; thu hộ không VAT.</span>
-      </>) : <span className="text-xs text-gray-500">Nhập các khoản phí bên dưới và bấm <b>Lưu phí</b> trước, rồi mới xuất được ĐNTT.</span>}
+    <div className="p-panel px-4 py-3 space-y-2">
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-sm font-semibold">🧾 Đề nghị thanh toán (ĐNTT)</span>
+        {t.phi > 0 && dsChon.length > 0 && <>
+          <button className="text-xs underline text-gray-600" onClick={() => setChon(new Set(dsChon.map(x => x.id)))}>Chọn hết</button>
+          <button className="text-xs underline text-gray-600" onClick={() => setChon(new Set())}>Bỏ chọn</button>
+          <span className="ml-auto text-sm">Đề nghị thanh toán: <b className="text-red-700">{fmt(tongChon)} đ</b></span>
+          {ids.length ? <a className={btnPrimary + ' p-btn-sm'} target="_blank" rel="noreferrer" href={href}>Xuất ĐNTT ↗</a>
+            : <button className={btnPrimary + ' p-btn-sm'} disabled>Xuất ĐNTT ↗</button>}
+        </>}
+      </div>
+      {!t.phi ? <div className="text-xs text-gray-500">Nhập các khoản phí bên dưới và bấm <b>Lưu phí</b> trước, rồi mới xuất được ĐNTT.</div>
+        : !dsChon.length ? <div className="text-xs text-green-700">✓ Khách đã thanh toán đủ — không còn khoản nào để đề nghị.</div> : (
+        <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+          {dsChon.map(x => (
+            <label key={x.id} className="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" checked={chon.has(x.id)} onChange={e => doi(x.id, e.target.checked)} />
+              {coDot ? <span>{x.name || 'Đợt ' + x.seq} <span className="text-gray-500">— còn {fmt(x.con)} đ{x.da_den_han ? ' · đã đến hạn' : ''}</span></span>
+                : <span>{x.name} <span className="text-gray-500">— {fmt(x.amount)} đ{x.kind === 'thu_ho' ? ' (thu hộ)' : ''}</span></span>}
+            </label>
+          ))}
+          {noCu > 0 && <label className="flex items-center gap-2 text-sm cursor-pointer text-amber-800">
+            <input type="checkbox" checked={noTruoc} onChange={e => setNoTruoc(e.target.checked)} />Cộng nợ đợt trước chưa thu ({fmt(noCu)} đ) vào dòng A</label>}
+        </div>
+      )}
+      {!coDot && t.da_thu > 0 && ids.length > 0 && ids.length < dsChon.length && <div className="text-xs text-amber-800">Khách đã trả {fmt(t.da_thu)} đ — chỉ tự trừ khi chọn đủ mọi khoản (tiền đã trả chưa gắn với khoản nào).</div>}
     </div>
   )
 }
@@ -284,7 +308,7 @@ function TabTien({ d, sua, q, id, load, toast, setHoi }) {
         <StatCard label="Nợ đến hạn" value={fmt(t.no_den_han)} unit="đ" tone="red" foot="đợt đã đến hạn mà chưa thu" />
       </div>
       {t.canh_bao.map((c, i) => <div key={i} className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">⚠ {c}</div>)}
-      <XuatDntt id={id} t={t} />
+      <XuatDntt key={JSON.stringify(t.dots.map(x => [x.id, x.con])) + d.fees.map(f => f.id).join()} id={id} t={t} fees={d.fees} />
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <div className="p-panel">
@@ -332,8 +356,10 @@ function TabTien({ d, sua, q, id, load, toast, setHoi }) {
                       <option value="">—</option>{BUOC.map(b => <option key={b.n} value={b.n}>{b.n}. {b.ngan}</option>)}</select></Field>
                     <Field label="hoặc tới ngày"><input type="date" className={inputCls} value={x.due_date || ''} disabled={!sua} onChange={e => setX('due_date', e.target.value || null)} /></Field>
                   </div>
-                  {tt && <div className="text-xs text-gray-600 flex items-center gap-2 flex-wrap"><span>{tt.da_den_han ? <span className="text-red-700 font-semibold">Đến hạn {dmy(tt.den_han_ngay)}</span> : tt.den_han_ngay ? `Đến hạn ${dmy(tt.den_han_ngay)}` : 'Chưa đến hạn'}
-                    {' · '}đã thu <b className="num">{fmt(tt.da_thu)}</b> · còn <b className={'num' + (tt.con > 0 && tt.da_den_han ? ' text-red-700' : '')}>{fmt(tt.con)}</b></span>
+                  {tt && <div className="text-xs text-gray-600 flex items-center gap-2 flex-wrap"><span>{tt.con <= 0 && tt.tong > 0 ? <span className="text-green-700 font-semibold">✓ Đã thu đủ</span>
+                      : tt.da_den_han ? <span className="text-red-700 font-semibold">Đến hạn {dmy(tt.den_han_ngay)}</span> : tt.den_han_ngay ? `Đến hạn ${dmy(tt.den_han_ngay)}` : 'Chưa đến hạn'}
+                    {/* đã thu màu xanh, còn phải thu màu đỏ (pháp lý yêu cầu 18/11/2026) */}
+                    {' · '}<span className="text-green-700">đã thu <b className="num">{fmt(tt.da_thu)}</b></span> · <span className={tt.con > 0 ? 'text-red-700' : 'text-green-700'}>còn <b className="num">{fmt(tt.con)}</b></span></span>
                     {tt.con > 0 && <a className="p-btn p-btn-sm ml-auto" target="_blank" rel="noreferrer" href={`/api/admin/phaply/ho-so/${id}/dntt?dot=${tt.id}`}>🧾 ĐNTT đợt này</a>}</div>}
                 </div>
               )
