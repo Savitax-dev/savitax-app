@@ -4,10 +4,13 @@
 //   POST {viec:'chot'|'mo_chot', nam, thang, ly_do?}                                                     (manage_payroll)
 //   POST {viec:'gui_phieu', nam, thang}  · {viec:'chuyen_luong', nam, thang, da}                         (manage_payroll)
 //   POST {viec:'tra_giu_lai', nam, thang, staffId, so_tien, ghi_chu} → trả tiền giữ lại ở tháng (chưa chốt)  (manage_payroll)
+//   POST {viec:'dieu_chinh', nam, thang, staffId, dong:[{id?, so_tien, noi_dung}]} → điều chỉnh tăng / giảm nhiều dòng
+//        (luong_dieu_chinh — cùng bảng nhân viên, chỉ loại 'dieu_chinh'; chốt theo bảng CTV)                       (manage_payroll)
 //   POST {viec:'xac_nhan'|'bao_sai', nam, thang, ghi_chu?} → người nhận xác nhận / báo sai phiếu của mình
 import { requireLogin } from '@/lib/serverAuth'
 import { getAdmin, loi, quyenCua, namThang } from '@/lib/luong/api'
 import { tinhBangLuongCtv, soGiuLai } from '@/lib/luong/luongCtv'
+import { chuanHoaDong } from '@/lib/luong/dieuChinh'
 
 export const maxDuration = 60
 const CHUA_SQL = 'Chưa chạy sql/51_luong_ctv.sql trong Supabase'
@@ -163,6 +166,26 @@ export async function POST(request) {
       const { error } = await supabase.from('staff').update({ loai_khoi_luong_ctv: body.loai !== false }).eq('id', body.staffId)
       if (error) return loi(/loai_khoi_luong_ctv/.test(error.message) ? 'Chưa chạy sql/52_luong_ctv_loai.sql' : error.message, 500)
       return Response.json({ ok: true })
+    }
+
+    // Điều chỉnh tăng / giảm của CTV (anh yêu cầu 18/11/2026) — mỗi khoản bắt buộc nội dung, như bảng lương nhân viên.
+    if (viec === 'dieu_chinh') {
+      if (daChot) return loi('Bảng lương CTV tháng này đã chốt — mở chốt rồi mới sửa điều chỉnh', 409)
+      const { data: st } = await supabase.from('staff').select('id, room_id').eq('id', body.staffId).maybeSingle()
+      if (!st) return loi('Không tìm thấy người')
+      const { data: ph } = st.room_id ? await supabase.from('rooms').select('type').eq('id', st.room_id).maybeSingle() : { data: null }
+      if (ph?.type !== 'remote') return loi('Người này không thuộc phòng CTV / remote — nhập điều chỉnh ở tab Bảng lương', 400)
+      const dongGui = (Array.isArray(body.dong) ? body.dong : []).map(d => ({ ...d, loai: 'dieu_chinh' }))
+      const { data: cu, error: eCu } = await supabase.from('luong_dieu_chinh').select('chi_tiet')
+        .eq('nam', nt.nam).eq('thang', nt.thang).eq('staff_id', body.staffId).maybeSingle()
+      if (eCu) return loi(/chi_tiet/.test(eCu.message) ? 'Chưa chạy sql/47_luong_dieu_chinh_nhieu_dong.sql' : eCu.message, 500)
+      const kq = chuanHoaDong(dongGui, cu?.chi_tiet, caller.staffId, new Date().toISOString())
+      if (kq.loi) return loi(kq.loi)
+      const { error } = await supabase.from('luong_dieu_chinh').upsert({
+        nam: nt.nam, thang: nt.thang, staff_id: body.staffId, phu_cap: 0, dieu_chinh: kq.dieuChinh,
+        ly_do: kq.lyDo, chi_tiet: kq.dong, sua_boi: caller.staffId, sua_luc: new Date().toISOString(),
+      }, { onConflict: 'nam,thang,staff_id' })
+      return error ? loi(error.message, 500) : Response.json({ ok: true, dieuChinh: kq.dieuChinh, soDong: kq.dong.length })
     }
 
     if (viec === 'tra_giu_lai') {

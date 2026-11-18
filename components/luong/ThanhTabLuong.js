@@ -5,12 +5,13 @@
 import Link from 'next/link'
 
 export function dsTabLuong(quyen) {
-  // Người phòng remote / CTV (sql/51): không chấm công, chỉ có phiếu lương CTV của mình.
+  // Người phòng remote / CTV (sql/51): không chấm công — có phiếu lương CTV của mình + khai thưởng DVK.
   const ctv = !!quyen?.laCtv
   return [
     !ctv && quyen?.cham_cong && ['cua_toi', 'Chấm công của tôi', '🗓️'],
     (quyen?.congToanCty || quyen?.phongTruong?.length > 0) && ['phong', quyen.congToanCty ? 'Chấm công toàn công ty' : 'Chấm công phòng', '👥'],
-    !ctv && quyen?.cham_cong && ['dvk', 'Thưởng dịch vụ khác', '🧾'],
+    // CTV cũng tự khai thưởng DVK (anh chốt 18/11/2026) — số đã duyệt vào cột Dịch vụ khác của Lương CTV.
+    quyen?.cham_cong && ['dvk', 'Thưởng dịch vụ khác', '🧾'],
     (ctv || quyen?.cham_cong) && ['phieu', 'Phiếu lương của tôi', '📄'],
     quyen?.view && ['bang_luong', 'Bảng lương', '💰'],
     quyen?.view && ['luong_ctv', 'Lương CTV', '🤝'],

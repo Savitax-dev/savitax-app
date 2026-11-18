@@ -49,13 +49,15 @@ export default function PhieuCtvCuaToi() {
             <div className="px-4 py-2 text-sm">
               <Dong nhan="Doanh thu phí kế toán (chưa VAT)" phu={x.soCty + ' công ty · ' + (x.tyLeMoTa || '')} giaTri={fmt(x.doanhThu)} />
               <Dong nhan="Hoa hồng" giaTri={fmt(x.hoaHong)} mau="text-violet-700" dam />
-              <Dong nhan="SVT giữ lại 20% hoa hồng" phu={'Còn giữ sau tháng này: ' + fmt(x.giuSau) + 'đ'} giaTri={'−' + fmt(x.giuLai)} mau="text-amber-700" />
+              {x.dvk > 0 && <Dong nhan="Thưởng dịch vụ khác" phu={(x.dvkDong || []).length + ' dòng đã duyệt'} giaTri={'+' + fmt(x.dvk)} mau="text-orange-700" />}
+              <Dong nhan={x.giuDvk > 0 ? 'SVT giữ lại 20% (hoa hồng + DVK chưa thanh lý)' : 'SVT giữ lại 20% hoa hồng'} phu={'Còn giữ sau tháng này: ' + fmt(x.giuSau) + 'đ'} giaTri={'−' + fmt(x.giuLai)} mau="text-amber-700" />
               {x.traGiuLai > 0 && <Dong nhan="Trả tiền giữ lại" phu={x.ghiChuTra || null} giaTri={'+' + fmt(x.traGiuLai)} mau="text-teal-700" />}
+              {!!x.dieuChinh && <Dong nhan="Điều chỉnh" phu={(x.dongDieuChinh || []).map(d => d.noi_dung).filter(Boolean).join(' · ') || null} giaTri={(x.dieuChinh > 0 ? '+' : '') + fmt(x.dieuChinh)} mau={x.dieuChinh < 0 ? 'text-rose-600' : 'text-emerald-700'} />}
               <Dong nhan="Tổng thu nhập" giaTri={fmt(x.thuNhap)} dam />
               <Dong nhan="Thuế TNCN 10%" giaTri={'−' + fmt(x.thue)} mau="text-rose-600" />
               <Dong nhan="Thực nhận" giaTri={fmt(x.thucNhan) + 'đ'} dam />
               <details className="mt-2">
-                <summary className="text-xs text-sky-700 cursor-pointer">Xem từng công ty</summary>
+                <summary className="text-xs text-sky-700 cursor-pointer">Xem từng công ty{x.dvk > 0 ? ' · dịch vụ khác' : ''}</summary>
                 <table className="w-full text-xs mt-1">
                   <tbody>{(x.congTy || []).map(c => (
                     <tr key={c.id} className="border-t border-gray-100">
@@ -64,6 +66,18 @@ export default function PhieuCtvCuaToi() {
                     </tr>))}
                   </tbody>
                 </table>
+                {(x.dvkDong || []).length > 0 && (
+                  <table className="w-full text-xs mt-2">
+                    <tbody>{x.dvkDong.map(d => (
+                      <tr key={d.id} className="border-t border-gray-100">
+                        <td className="py-1">🧾 {d.ten}</td>
+                        <td className="text-right">{fmt(d.soTien)} × {d.tyLe}%</td>
+                        <td className="text-right w-28">{d.thanhLy ? 'đã thanh lý' : 'giữ ' + fmt(d.giu)}</td>
+                        <td className="text-right font-semibold">{fmt(d.thuong)}</td>
+                      </tr>))}
+                    </tbody>
+                  </table>
+                )}
               </details>
             </div>
             <div className="px-4 py-3 bg-gray-50 flex items-center gap-2 text-sm">

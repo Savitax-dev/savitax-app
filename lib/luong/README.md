@@ -117,3 +117,15 @@ Dùng chung: `lib/luong/api.js` (quyền, đọc ngày lễ, kiểm tham số �
 Tab riêng "Lương CTV", không đụng bảng lương nhân viên. Mọi luật ở `luongCtv.js` (hàm thuần `tinhDongCtv` + `tinhBangLuongCtv`),
 API `app/api/admin/luong/ctv/route.js`, SQL `sql/51_luong_ctv.sql`. Doanh thu = phí kế toán phải thu theo kỳ, chưa VAT (dùng lại
 `doanhThuTheoNhanVien`) × tỷ lệ phòng → giữ lại 20% → + trả giữ lại → thuế 10% → thực nhận. Bộ kiểm `scripts/test-luong-ctv.mjs`.
+
+**Dịch vụ khác + Điều chỉnh** (anh chốt 18/11/2026, áp từ T11/2026 — không cần SQL mới):
+- Cột **Dịch vụ khác** = thưởng DVK CTV TỰ KHAI ở tab "Thưởng dịch vụ khác" (mở cho CTV), ĐÃ DUYỆT — dùng nguyên bảng
+  `luong_dvk_khai` + luồng duyệt của nhân viên (`dvkCuaCtv`). Dòng chờ duyệt chưa tính, chỉ báo số dòng.
+- **Giữ lại 20% với DVK theo hồ sơ**: hồ sơ Dịch vụ khác đã THANH LÝ (`other_services.status = 'done'`) → không giữ; còn mở → giữ
+  20% như hoa hồng; dòng HCNS Thời điểm (chỉ khai được khi đã xong + đã thu) coi như thanh lý; dịch vụ ngoài app → giữ 20%.
+  Xét lúc tính / lúc chốt; hồ sơ thanh lý sau đó thì trả phần đã giữ bằng nút "Trả" như hoa hồng.
+- Cột **Điều chỉnh** = khoản tăng / giảm nhiều dòng, bắt buộc nội dung — cùng bảng `luong_dieu_chinh` + cùng hộp nhập
+  `components/luong/HopDieuChinh.js` với nhân viên (chỉ loại Điều chỉnh), lưu qua `viec:'dieu_chinh'` của API CTV (chặn theo
+  chốt CTV, chỉ người phòng remote). Không giữ lại.
+- Thu nhập = hoa hồng + DVK − giữ lại + trả giữ lại + điều chỉnh; thuế 10% thu nhập (âm thì 0). Bản chốt cũ (T10) không có
+  hai cột này → hiện "—".

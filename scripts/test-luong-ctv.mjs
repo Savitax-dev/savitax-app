@@ -33,6 +33,20 @@ kiem('Dakshin 10tr: hoa hồng 3tr − giữ 600k + trả 1tr = 3,4tr → thuế
 kiem('chỉ trả giữ lại, không có công ty', gon(tinhDongCtv({ congTy: [], tyLe: tyLeCuaPhong('Dakshin'), traGiuLai: 500000 })), [0, 0, 0, 500000, 50000, 450000])
 kiem('cộng tổng', tongCua([{ hoaHong: 1, thucNhan: 2 }, { hoaHong: 3, thucNhan: 4 }]).thucNhan, 6)
 
+console.log('Dịch vụ khác + điều chỉnh (anh chốt 18/11/2026): hồ sơ đã thanh lý thì KHÔNG giữ 20%')
+const dvkMau = tinhDongCtv({ congTy: [{ doanhThu: 10000000 }], tyLe: tyLeCuaPhong('CTV Savitax'),
+  dvk: [{ ten: 'Thanh lý xong', thuong: 1000000, thanhLy: true }, { ten: 'Còn mở', thuong: 500000, thanhLy: false }], dieuChinh: -200000 })
+// hoa hồng 2tr (giữ 400k) + DVK 1,5tr (giữ 0 + 100k) − 200k điều chỉnh → thu nhập 2,8tr → thuế 280k → nhận 2,52tr
+kiem('DVK 1,5tr · giữ 400k + 100k · điều chỉnh −200k → thu nhập 2,8tr · thuế 280k · nhận 2,52tr',
+  [dvkMau.dvk, dvkMau.giuHoaHong, dvkMau.giuDvk, dvkMau.giuLai, dvkMau.dieuChinh, dvkMau.thuNhap, dvkMau.thue, dvkMau.thucNhan],
+  [1500000, 400000, 100000, 500000, -200000, 2800000, 280000, 2520000])
+kiem('từng dòng DVK ghi phần giữ', dvkMau.dvkDong.map(d => d.giu), [0, 100000])
+kiem('chỉ DVK đã thanh lý, không công ty: không giữ, thuế 10%', gon(tinhDongCtv({ congTy: [], tyLe: tyLeCuaPhong('Danxia'), dvk: [{ thuong: 2000000, thanhLy: true }] })),
+  [0, 0, 0, 2000000, 200000, 1800000])
+kiem('điều chỉnh âm hơn thu nhập → thuế 0, thực nhận âm (để quản trị thấy)', [tinhDongCtv({ congTy: [], tyLe: null, dieuChinh: -300000 }).thue, tinhDongCtv({ congTy: [], tyLe: null, dieuChinh: -300000 }).thucNhan], [0, -300000])
+kiem('không DVK, không điều chỉnh → y như cũ', gon(tinhDongCtv({ congTy: [{ doanhThu: 10000000 }], tyLe: tyLeCuaPhong('CTV Savitax'), dvk: [], dieuChinh: 0 })),
+  [10000000, 2000000, 400000, 1600000, 160000, 1440000])
+
 if (process.argv.includes('--that')) {
   const { createClient } = await import('@supabase/supabase-js')
   const { tinhBangLuongCtv } = await import('../lib/luong/luongCtv.js')
@@ -41,9 +55,10 @@ if (process.argv.includes('--that')) {
   const kq = await tinhBangLuongCtv(sb, nam, thang)
   console.log('\nBảng lương CTV thật T' + thang + '/' + nam + ':')
   for (const x of kq.dong) {
-    const lai = tinhDongCtv({ congTy: x.congTy, tyLe: tyLeCuaPhong(x.phong), traGiuLai: x.traGiuLai })
-    kiem(x.phong + ' · ' + x.ten + ' → nhận ' + x.thucNhan.toLocaleString('vi-VN'), gon(x), gon(lai))
-    kiem(x.ten + ': thu nhập = hoa hồng − giữ + trả, nhận = thu nhập − thuế', [x.thuNhap, x.thucNhan], [x.hoaHong - x.giuLai + x.traGiuLai, x.thuNhap - x.thue])
+    const lai = tinhDongCtv({ congTy: x.congTy, tyLe: tyLeCuaPhong(x.phong), traGiuLai: x.traGiuLai, dvk: x.dvkDong || [], dieuChinh: x.dieuChinh || 0 })
+    kiem(x.phong + ' · ' + x.ten + ' → nhận ' + x.thucNhan.toLocaleString('vi-VN') + (x.dvk ? ' · DVK ' + x.dvk.toLocaleString('vi-VN') : '') + (x.dieuChinh ? ' · đc ' + x.dieuChinh.toLocaleString('vi-VN') : ''), gon(x), gon(lai))
+    kiem(x.ten + ': thu nhập = hoa hồng + DVK − giữ + trả + điều chỉnh, nhận = thu nhập − thuế', [x.thuNhap, x.thucNhan],
+      [x.hoaHong + (x.dvk || 0) - x.giuLai + x.traGiuLai + (x.dieuChinh || 0), x.thuNhap - x.thue])
   }
   kiem('tổng thực nhận = cộng từng người', kq.tong.thucNhan, kq.dong.reduce((a, x) => a + x.thucNhan, 0))
   kiem('tổng phòng = tổng chung', kq.phong.reduce((a, p) => a + p.thucNhan, 0), kq.tong.thucNhan)

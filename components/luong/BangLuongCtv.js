@@ -6,6 +6,7 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { goi, HopThongBao, searchKey } from './chung'
 import { dongChuyenKhoan, xuatFileChuyenKhoan, khongDau } from '@/lib/luong/fileChuyenKhoan'
 import { soExcelMoi, themSheetMang, taiVeExcel } from '@/lib/excelDep'
+import HopDieuChinh from './HopDieuChinh'
 
 const fmt = n => (n === null || n === undefined) ? '—' : Number(n).toLocaleString('vi-VN')
 const pctTxt = v => Math.round((Number(v) || 0) * 100) + '%'
@@ -26,6 +27,8 @@ export default function BangLuongCtv({ quyen }) {
   const [phong, setPhong] = useState('')
   const [tim, setTim] = useState('')
   const [mo, setMo] = useState(null)   // staff_id đang mở danh sách công ty
+  const [suaDc, setSuaDc] = useState(null)   // hộp nhập điều chỉnh đang mở (components/luong/HopDieuChinh.js)
+  const [loiDc, setLoiDc] = useState(null)
 
   const tai = useCallback(async () => {
     setD(null); setLoi(null)
@@ -55,6 +58,21 @@ export default function BangLuongCtv({ quyen }) {
     lam({ viec: 'tra_giu_lai', staffId: x.staff_id, so_tien: soTien, ghi_chu: ghiChu })
   }
 
+  // Điều chỉnh tăng / giảm nhiều dòng (anh yêu cầu 18/11/2026) — cùng hộp nhập với bảng lương nhân viên, chỉ loại Điều chỉnh.
+  const moSuaDc = x => {
+    setLoiDc(null)
+    const dong = (x.dongDieuChinh || []).map(d => ({ ...d, khoa: d.id || Math.random(), id: String(d.id || '').startsWith('cu-') ? undefined : d.id }))
+    setSuaDc({ staff_id: x.staff_id, ten: x.ten, phong: x.phong, thucLinh: x.thucNhan,
+      dong: dong.length ? dong : [{ khoa: Math.random(), loai: 'dieu_chinh', so_tien: 0, noi_dung: '' }] })
+  }
+  const luuDc = async () => {
+    setLoiDc(null)
+    const dong = suaDc.dong.filter(x => Number(x.so_tien) || String(x.noi_dung || '').trim()).map(x => ({ id: x.id, so_tien: Number(x.so_tien) || 0, noi_dung: x.noi_dung }))
+    const j = await goi('/api/admin/luong/ctv', { viec: 'dieu_chinh', nam: ky.nam, thang: ky.thang, staffId: suaDc.staff_id, dong })
+    if (j.error) { setLoiDc(j.error); return }
+    setSuaDc(null); await tai()
+  }
+
   const dsPhong = useMemo(() => (d?.phong || []).map(p => p.ten), [d])
   const k = searchKey(tim)
   const ds = (d?.dong || []).filter(x => (!phong || x.phong === phong) && (!k || searchKey(x.ten).includes(k)))
@@ -68,15 +86,20 @@ export default function BangLuongCtv({ quyen }) {
     const H = [['BẢNG LƯƠNG CTV — THÁNG ' + ky.thang + '/' + ky.nam],
       ['Hoa hồng theo doanh thu phí kế toán phải thu theo kỳ (chưa VAT) · SVT giữ lại 20% hoa hồng · Thuế TNCN 10% thu nhập · ' + (daChot ? 'ĐÃ CHỐT ' + new Date(daChot.luc).toLocaleString('vi-VN') : 'CHƯA CHỐT — số còn đổi')],
       [],
-      ['Phòng', 'Nhân viên', 'Tỷ lệ', 'Số cty', 'Doanh thu (chưa VAT)', 'Hoa hồng', 'SVT giữ lại 20%', 'Trả giữ lại', 'Thu nhập', 'Thuế TNCN 10%', 'Thực nhận', 'Còn giữ sau tháng']]
-    for (const x of ds) H.push([x.phong, x.ten, x.tyLeMoTa || 'chưa có tỷ lệ', x.soCty, x.doanhThu, x.hoaHong, x.giuLai, x.traGiuLai, x.thuNhap, x.thue, x.thucNhan, x.giuSau])
-    H.push(['TỔNG', ds.length + ' người', '', ds.reduce((a, x) => a + x.soCty, 0), tong('doanhThu'), tong('hoaHong'), tong('giuLai'), tong('traGiuLai'), tong('thuNhap'), tong('thue'), tong('thucNhan'), tong('giuSau')])
-    themSheetMang(wb, 'Luong CTV', H, { doRong: [14, 28, 30, 8, 18, 15, 15, 13, 15, 14, 15, 16] })
+      ['Phòng', 'Nhân viên', 'Tỷ lệ', 'Số cty', 'Doanh thu (chưa VAT)', 'Hoa hồng', 'Dịch vụ khác', 'SVT giữ lại 20%', 'Trả giữ lại', 'Điều chỉnh', 'Thu nhập', 'Thuế TNCN 10%', 'Thực nhận', 'Còn giữ sau tháng', 'Nội dung điều chỉnh']]
+    for (const x of ds) H.push([x.phong, x.ten, x.tyLeMoTa || 'chưa có tỷ lệ', x.soCty, x.doanhThu, x.hoaHong, x.dvk || 0, x.giuLai, x.traGiuLai, x.dieuChinh || 0, x.thuNhap, x.thue, x.thucNhan, x.giuSau,
+      (x.dongDieuChinh || []).map(d => (d.so_tien > 0 ? '+' : '') + fmt(d.so_tien) + ' ' + (d.noi_dung || '')).join(' · ')])
+    H.push(['TỔNG', ds.length + ' người', '', ds.reduce((a, x) => a + x.soCty, 0), tong('doanhThu'), tong('hoaHong'), tong('dvk'), tong('giuLai'), tong('traGiuLai'), tong('dieuChinh'), tong('thuNhap'), tong('thue'), tong('thucNhan'), tong('giuSau'), ''])
+    themSheetMang(wb, 'Luong CTV', H, { doRong: [14, 28, 30, 8, 18, 15, 14, 15, 13, 14, 15, 14, 15, 16, 40] })
     const C = [['CHI TIẾT CÔNG TY — LƯƠNG CTV T' + ky.thang + '/' + ky.nam], [],
       ['Phòng', 'Nhân viên', 'Mã KH', 'Công ty', 'Loại', 'Phí kỳ (gồm VAT)', 'Doanh thu tháng (chưa VAT)', 'Tỷ lệ', 'Hoa hồng']]
     for (const x of ds) for (const c of x.congTy || []) C.push([x.phong, x.ten, c.ma || '', c.ten, (c.hkd ? 'Hộ kinh doanh' : 'Doanh nghiệp') + (c.quy ? ' · quý ÷3' : '') + (c.khongVat ? ' · không VAT' : ''), c.phiKy, c.doanhThu, pctTxt(c.tyLe), c.hoaHong])
     C.push(['TỔNG', '', '', '', '', null, tong('doanhThu'), '', tong('hoaHong')])
     themSheetMang(wb, 'Chi tiet cong ty', C, { doRong: [14, 26, 16, 44, 26, 16, 18, 8, 15] })
+    const V = ds.flatMap(x => (x.dvkDong || []).map(d => [x.phong, x.ten, d.ten, d.soTien, d.tyLe + '%', d.thuong, d.thanhLy ? 'Đã thanh lý' : 'Chưa thanh lý', d.giu, d.ghiChu || '']))
+    if (V.length) themSheetMang(wb, 'Dich vu khac', [['THƯỞNG DỊCH VỤ KHÁC ĐÃ DUYỆT — LƯƠNG CTV T' + ky.thang + '/' + ky.nam], [],
+      ['Phòng', 'Nhân viên', 'Dịch vụ', 'Tiền thực nhận', 'Tỷ lệ', 'Thưởng', 'Hồ sơ', 'SVT giữ 20%', 'Ghi chú'], ...V,
+      ['TỔNG', '', '', null, '', tong('dvk'), '', ds.reduce((a, x) => a + (x.giuDvk || 0), 0), '']], { doRong: [14, 26, 50, 16, 8, 15, 14, 14, 36] })
     await taiVeExcel(wb, 'LuongCTV_T' + ky.thang + '-' + ky.nam + '.xlsx')
   }
   const chuyenKhoan = async () => {
@@ -128,10 +151,13 @@ export default function BangLuongCtv({ quyen }) {
             {quyen.manage && daChot && <button disabled={ban} onClick={moChot} className="px-3 py-1.5 rounded-lg border border-rose-300 bg-white text-rose-700 text-xs disabled:opacity-50">Mở chốt</button>}
           </div>
           <HopThongBao msg={msg} />
+          {suaDc && <HopDieuChinh sua={suaDc} setSua={setSuaDc} ky={ky} loiSua={loiDc} onLuu={luuDc} chiDieuChinh />}
 
-          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-5 xl:grid-cols-9 gap-2">
             {[['Doanh thu (chưa VAT)', tong('doanhThu'), 'bg-sky-50 border-sky-200 text-sky-900'], ['Hoa hồng', tong('hoaHong'), 'bg-violet-50 border-violet-200 text-violet-900'],
+              ['Dịch vụ khác', tong('dvk'), 'bg-orange-50 border-orange-200 text-orange-900'],
               ['SVT giữ lại 20%', tong('giuLai'), 'bg-amber-50 border-amber-200 text-amber-900'], ['Trả giữ lại', tong('traGiuLai'), 'bg-teal-50 border-teal-200 text-teal-900'],
+              ['Điều chỉnh', tong('dieuChinh'), 'bg-lime-50 border-lime-200 text-lime-900'],
               ['Thu nhập', tong('thuNhap'), 'bg-white border-gray-200 text-gray-900'], ['Thuế TNCN 10%', tong('thue'), 'bg-rose-50 border-rose-200 text-rose-900'],
               ['Thực nhận', tong('thucNhan'), 'bg-gray-900 border-gray-900 text-white']].map(([n, v, c]) => (
               <div key={n} className={'rounded-xl border px-3 py-2 ' + c}><div className="text-xs opacity-80">{n}</div><div className="text-lg font-bold">{fmt(v)}</div></div>
@@ -153,7 +179,7 @@ export default function BangLuongCtv({ quyen }) {
             <table className="w-full text-sm border-collapse">
               <thead className="sticky top-0 z-10 bg-gray-50 text-xs text-[#8B1A1A] uppercase">
                 <tr>
-                  {['Nhân viên', 'Doanh thu', 'Hoa hồng', 'Giữ lại 20%', 'Trả giữ lại', 'Thu nhập', 'Thuế 10%', 'Thực nhận', 'Còn giữ', 'Phiếu'].map((h, i) => (
+                  {['Nhân viên', 'Doanh thu', 'Hoa hồng', 'Dịch vụ khác', 'Giữ lại 20%', 'Trả giữ lại', 'Điều chỉnh', 'Thu nhập', 'Thuế 10%', 'Thực nhận', 'Còn giữ', 'Phiếu'].map((h, i) => (
                     <th key={h} className={'px-3 py-2 border-b border-r border-gray-200 font-semibold ' + (i ? 'text-right' : 'text-left')}>{h}</th>
                   ))}
                 </tr>
@@ -165,7 +191,7 @@ export default function BangLuongCtv({ quyen }) {
                   return (
                     <Fragment key={p.room_id}>
                       <tr className={MAU_PHONG[ip % MAU_PHONG.length]}>
-                        <td colSpan={10} className="px-3 py-1.5 font-semibold border-b border-gray-200">🏢 {p.ten} · {nguoi.length} người · <span className="font-normal">{p.tyLe}</span></td>
+                        <td colSpan={12} className="px-3 py-1.5 font-semibold border-b border-gray-200">🏢 {p.ten} · {nguoi.length} người · <span className="font-normal">{p.tyLe}</span></td>
                       </tr>
                       {nguoi.map((x, i) => {
                         const ph = phieuCua.get(x.staff_id)
@@ -182,11 +208,25 @@ export default function BangLuongCtv({ quyen }) {
                                 <div className="text-xs text-gray-400">{x.soCty} cty {mo === x.staff_id ? '▲' : '▼'}</div>
                               </td>
                               <td className="px-3 py-1.5 border-b border-r border-gray-100 text-right text-violet-800 font-semibold">{fmt(x.hoaHong)}</td>
-                              <td className="px-3 py-1.5 border-b border-r border-gray-100 text-right text-amber-700">−{fmt(x.giuLai)}</td>
+                              <td className="px-3 py-1.5 border-b border-r border-gray-100 text-right">
+                                {x.dvk ? <button onClick={() => setMo(mo === x.staff_id ? null : x.staff_id)} className="text-orange-700 font-semibold hover:underline">+{fmt(x.dvk)}</button> : <span className="text-gray-300">—</span>}
+                                {(x.dvkDong || []).length > 0 && <div className="text-xs text-gray-400">{x.dvkDong.length} dòng</div>}
+                                {x.dvkChoDuyet > 0 && <div className="text-xs text-amber-600" title="Dòng khai chưa duyệt chưa được tính — duyệt ở tab Thưởng dịch vụ khác">{x.dvkChoDuyet} chờ duyệt</div>}
+                              </td>
+                              <td className="px-3 py-1.5 border-b border-r border-gray-100 text-right text-amber-700" title={x.giuDvk ? 'Hoa hồng ' + fmt(x.giuHoaHong) + ' + DVK chưa thanh lý ' + fmt(x.giuDvk) : undefined}>
+                                −{fmt(x.giuLai)}
+                                {x.giuDvk > 0 && <div className="text-xs text-gray-400">gồm DVK {fmt(x.giuDvk)}</div>}
+                              </td>
                               <td className="px-3 py-1.5 border-b border-r border-gray-100 text-right">
                                 <span className={x.traGiuLai ? 'text-teal-700 font-semibold' : 'text-gray-300'}>{x.traGiuLai ? '+' + fmt(x.traGiuLai) : '—'}</span>
                                 {sua && x.giuTruoc > 0 && <div><button onClick={() => traGiuLai(x)} className="text-xs text-teal-700 underline">Trả</button></div>}
                                 {x.ghiChuTra && <div className="text-xs text-gray-400 max-w-[140px] truncate" title={x.ghiChuTra}>{x.ghiChuTra}</div>}
+                              </td>
+                              <td className="px-3 py-1.5 border-b border-r border-gray-100 text-right"
+                                title={(x.dongDieuChinh || []).map(d => (d.so_tien > 0 ? '+' : '') + fmt(d.so_tien) + '  ' + (d.noi_dung || '') + (d.tenNguoi ? ' (' + d.tenNguoi + ')' : '')).join('\n') || undefined}>
+                                <span className={!x.dieuChinh ? 'text-gray-300' : x.dieuChinh < 0 ? 'text-rose-600 font-semibold' : 'text-emerald-700 font-semibold'}>{x.dieuChinh ? (x.dieuChinh > 0 ? '+' : '') + fmt(x.dieuChinh) : '—'}</span>
+                                {(x.dongDieuChinh || []).length > 0 && <div className="text-xs text-gray-400">{x.dongDieuChinh.length} khoản</div>}
+                                {sua && <div><button onClick={() => moSuaDc(x)} className="text-xs text-[#8B1A1A] underline">{x.dieuChinh ? 'Sửa' : 'Nhập'}</button></div>}
                               </td>
                               <td className="px-3 py-1.5 border-b border-r border-gray-100 text-right">{fmt(x.thuNhap)}</td>
                               <td className="px-3 py-1.5 border-b border-r border-gray-100 text-right text-rose-600">−{fmt(x.thue)}</td>
@@ -197,7 +237,7 @@ export default function BangLuongCtv({ quyen }) {
                               </td>
                             </tr>
                             {mo === x.staff_id && (
-                              <tr><td colSpan={10} className="px-6 py-2 bg-sky-50/50 border-b border-gray-200">
+                              <tr><td colSpan={12} className="px-6 py-2 bg-sky-50/50 border-b border-gray-200">
                                 {/* Dãn hết bề ngang bảng (anh yêu cầu 06/11/2026) */}
                                 <table className="text-xs w-full">
                                   <thead><tr className="text-gray-500"><th className="text-left py-1 w-[40%]">Công ty</th><th className="text-left px-3">Loại</th><th className="text-right px-3">Phí kỳ (gồm VAT)</th><th className="text-right px-3">Doanh thu tháng</th><th className="text-right px-3">Tỷ lệ</th><th className="text-right px-3">Hoa hồng</th></tr></thead>
@@ -210,6 +250,19 @@ export default function BangLuongCtv({ quyen }) {
                                     </tr>))}
                                   </tbody>
                                 </table>
+                                {(x.dvkDong || []).length > 0 && (
+                                  <table className="text-xs w-full mt-2">
+                                    <thead><tr className="text-gray-500"><th className="text-left py-1 w-[40%]">Dịch vụ khác (đã duyệt)</th><th className="text-right px-3">Tiền thực nhận</th><th className="text-right px-3">Tỷ lệ</th><th className="text-right px-3">Hồ sơ</th><th className="text-right px-3">Giữ 20%</th><th className="text-right px-3">Thưởng</th></tr></thead>
+                                    <tbody>{x.dvkDong.map(dv => (
+                                      <tr key={dv.id} className="border-t border-orange-100">
+                                        <td className="py-1">🧾 {dv.ten}{dv.ghiChu ? <span className="text-gray-400"> · {dv.ghiChu}</span> : null}</td>
+                                        <td className="text-right px-3">{fmt(dv.soTien)}</td><td className="text-right px-3">{dv.tyLe}%</td>
+                                        <td className="text-right px-3">{dv.thanhLy ? <span className="text-emerald-700">Đã thanh lý</span> : <span className="text-amber-700">{dv.ngoaiApp ? 'Ngoài app' : 'Chưa thanh lý'}</span>}</td>
+                                        <td className="text-right px-3">{dv.giu ? fmt(dv.giu) : '—'}</td><td className="text-right px-3 font-semibold">{fmt(dv.thuong)}</td>
+                                      </tr>))}
+                                    </tbody>
+                                  </table>
+                                )}
                               </td></tr>
                             )}
                           </Fragment>
@@ -218,13 +271,13 @@ export default function BangLuongCtv({ quyen }) {
                     </Fragment>
                   )
                 })}
-                {!ds.length && <tr><td colSpan={10} className="px-3 py-6 text-center text-gray-400">Không có ai trong bảng lương CTV tháng này.</td></tr>}
+                {!ds.length && <tr><td colSpan={12} className="px-3 py-6 text-center text-gray-400">Không có ai trong bảng lương CTV tháng này.</td></tr>}
               </tbody>
               {ds.length > 0 && (
                 <tfoot className="sticky bottom-0 bg-gray-100 font-bold text-sm">
                   <tr>
                     <td className="px-3 py-2 border-t border-r border-gray-300">TỔNG {ds.length} người</td>
-                    {['doanhThu', 'hoaHong', 'giuLai', 'traGiuLai', 'thuNhap', 'thue', 'thucNhan', 'giuSau'].map(f => <td key={f} className="px-3 py-2 border-t border-r border-gray-300 text-right">{fmt(tong(f))}</td>)}
+                    {['doanhThu', 'hoaHong', 'dvk', 'giuLai', 'traGiuLai', 'dieuChinh', 'thuNhap', 'thue', 'thucNhan', 'giuSau'].map(f => <td key={f} className="px-3 py-2 border-t border-r border-gray-300 text-right">{fmt(tong(f))}</td>)}
                     <td className="border-t border-gray-300" />
                   </tr>
                 </tfoot>
