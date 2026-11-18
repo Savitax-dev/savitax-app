@@ -139,5 +139,17 @@ const sheets = docExcel(buf)
 const vong = docBangKe(sheets, { chieu: 'ban_ra' })[0]
 kiem('đọc lại từ file .xlsx ra đúng 3 hóa đơn, cùng tổng thuế', [vong.mau, vong.hoaDon.length, vong.hoaDon.reduce((s, h) => s + h.thue, 0)], ['cong', 3, 17760000])
 
+// TAM Q4/2025 (18/11/2026): 05/KK-TNCN cổng mới — tên "Tờ khai thuế thu nhập cá nhân (TT80/2021)", mã mẫu chỉ ở moTaBMau
+console.log('\n05/KK-TNCN tên mới (mã 864 / moTaBMau):')
+{
+  const tk = (ma, ten, mau = '') => `<HSoThueDTu><HSoKhaiThue><TTinChung><TTinTKhaiThue><TKhaiThue><maTKhai>${ma}</maTKhai><tenTKhai>${ten}</tenTKhai>` +
+    `${mau ? `<moTaBMau>${mau}</moTaBMau>` : ''}<loaiTKhai>C</loaiTKhai><soLan>0</soLan><KyKKhaiThue><kieuKy>Q</kieuKy><kyKKhai>4/2025</kyKKhai></KyKKhaiThue>` +
+    `<ngayLapTKhai>20/01/2026</ngayLapTKhai></TKhaiThue><NNT><mst>9999000011</mst><tenNNT>MAU</tenNNT></NNT></TTinTKhaiThue></TTinChung>` +
+    `<CTieuTKhaiChinh><ct16>3</ct16></CTieuTKhaiChinh></HSoKhaiThue></HSoThueDTu>`
+  kiem('mã 864, tên không có "05/KK" → 05/KK-TNCN Q4.2025', (d => [d.loai, d.maKy])(docToKhai(tk('864', 'Tờ khai thuế thu nhập cá nhân (TT80/2021)', '05/KK-TNCN'))), ['05/KK-TNCN', 'Q4.2025'])
+  kiem('mã lạ nhưng moTaBMau 05/KK-TNCN → vẫn nhận', docToKhai(tk('999', 'Tờ khai thuế thu nhập cá nhân', '05/KK-TNCN')).loai, '05/KK-TNCN')
+  kiem('mã lạ, không moTaBMau, tên lạ → null', docToKhai(tk('999', 'Tờ khai gì đó')).loai, null)
+}
+
 console.log(hong ? `\n${hong} kiểm tra HỎNG` : '\nTất cả đạt.')
 process.exit(hong ? 1 : 0)

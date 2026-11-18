@@ -90,6 +90,7 @@ function HoSoDuLieu() {
                 <div className="rounded-2xl bg-white border border-gray-100 shadow-sm px-4 py-3 text-xs text-gray-600 space-y-1">
                   <p className="text-sm font-bold text-gray-800 mb-1">Cách app nhận thư mục</p>
                   <p>• So theo <b>số thứ tự + từ khoá</b>, không so nguyên tên (tên mỗi năm mỗi khác).</p>
+                  <p>• Hai thư mục cùng loại (vd “8. SỔ SÁCH…” và “FILE SO SACH…”): thư mục <b>đúng số thứ tự</b> là chính, thư mục kia không đọc.</p>
                   <p>• Thư mục đuôi <b>(kps)</b> = không phát sinh: không báo thiếu.</p>
                   <p>• Kỳ lấy theo <b>nội dung tờ khai XML</b> khi đọc được, không tin tên file.</p>
                   <p>• Kỳ đã hết nhưng chưa tới hạn nộp thì chỉ “chờ”, chưa báo thiếu.</p>

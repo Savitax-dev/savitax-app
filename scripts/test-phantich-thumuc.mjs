@@ -220,5 +220,25 @@ for (const [ten, f] of [['Rủi ro thuế', tepRuiRoCuaNam], ['Soát xét năm',
   kiem(`${ten}: thư mục năm gốc mất → ném lỗi`, e2, 'NotFoundError')
 }
 
+// TAM 18/11/2026: thư mục ngoài cây cùng từ khoá ("FILE SO SACH THEO DOI RIENG") GHI ĐÈ vùng của "8. SỔ SÁCH KẾ TOÁN"
+console.log('\nHai thư mục cùng loại — thư mục đúng số thứ tự là chính:')
+{
+  const q = await quetNam(thu('Năm 2026',
+    thu('8. SỔ SÁCH KẾ TOÁN', thu('7. SỔ NHẬT KÝ CHUNG', tep('SO NHAT KY CHUNG.pdf')), tep('CDPS.xlsx')),
+    thu('FILE SO SACH THEO DOI RIENG', tep('BC THUE 2023.rar'), tep('NGAN HANG.rar'))))
+  kiem('vùng sổ sách là của "8. SỔ SÁCH KẾ TOÁN"', q.vung.so_sach.map(t => t.ten).sort(), ['CDPS.xlsx', 'SO NHAT KY CHUNG.pdf'])
+  kiem('thư mục ngoài cây → lạ, ghi thư mục chính', q.thuMuc.find(t => t.ten.startsWith('FILE')), { ten: 'FILE SO SACH THEO DOI RIENG', ma: null, kps: false, trungVoi: '8. SỔ SÁCH KẾ TOÁN' })
+  // thư mục ngoài cây đứng TRƯỚC trong danh sách vẫn không thắng thư mục đúng số
+  const q2 = await quetNam(thu('Năm 2026', thu('A SỔ SÁCH CŨ', tep('x.rar')), thu('8. SỔ SÁCH KẾ TOÁN', tep('CDPS.xlsx'))))
+  kiem('thứ tự không quan trọng: "8. …" vẫn thắng', q2.vung.so_sach.map(t => t.ten), ['CDPS.xlsx'])
+  // không có thư mục đúng số → thư mục khớp từ khoá vẫn được nhận như trước
+  const q3 = await quetNam(thu('Năm 2026', thu('SỔ SÁCH', tep('CDPS.xlsx'))))
+  kiem('chỉ có thư mục không đánh số → vẫn là sổ sách', q3.vung.so_sach.map(t => t.ten), ['CDPS.xlsx'])
+  const kk = kiemKeNam({ ...q, nam: 2026 }, [], { kyKhai: 'quy', homNay: '2026-11-18' })
+  const dSo = kk.dong.filter(d => d.ma === 'so_sach')
+  kiem('mục 8 không còn "cần xem" vì file nén của thư mục khác', dSo.some(d => d.trangThai === 'can_xem'), false)
+  kiem('thư mục ngoài cây hiện dòng "Thư mục lạ"', kk.dong.find(d => d.ten === 'FILE SO SACH THEO DOI RIENG')?.trangThai, 'la')
+}
+
 console.log(hong ? `\n${hong} kiểm tra HỎNG` : '\nTất cả đạt.')
 process.exit(hong ? 1 : 0)
