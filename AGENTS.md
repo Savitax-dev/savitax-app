@@ -475,7 +475,8 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
   dấu phẩy); loại giấy tờ trong lời văn QĐ / BB bổ nhiệm lấy theo người (`*_giay_to_so`: "Thẻ Căn cước số", "Hộ chiếu số"…); Mẫu 2/3/4 mục
   "Địa chỉ nhận thông báo thuế" in sẵn điện thoại / fax / email công ty nếu có; tờ **Hướng dẫn in + ký** có cột họ tên người ký (`kyBoi` ở
   danhMuc.js), tải riêng `?ma=HUONG_DAN` (Word / PDF) + khung trên tab "Còn thiếu & xuất Word", PDF của nó KHÔNG gộp vào bộ trình ký.
-  ⚠ PDF đổi ở VPS: máy VPS chưa có phông Times New Roman → LibreOffice thay bằng Liberation Serif (cùng khổ chữ, khác nét).
+  PDF đổi ở VPS: đã cài `ttf-mscorefonts-installer` (anh cho đồng ý EULA 18/11/2026) → PDF nhúng đúng Times New Roman; dựng VPS mới
+  phải cài lại gói này, thiếu thì LibreOffice lặng lẽ thay bằng Liberation Serif (pháp lý nhận ra ngay vì khác nét).
 - **Mỗi nhóm thủ tục một trang** (anh yêu cầu 17/11/2026, `sql/60`, `lib/phaply/nhom.js`): /phaply/thanh-lap · thay-doi · tam-ngung · giai-the · khac
   (+ /phaply = tất cả), cùng khuôn `app/phaply/_danhSach.js`, API `ho-so?nhom=`. Thủ tục trên công ty ĐÃ CÓ → chọn công ty (`api/admin/phaply/
   doanh-nghiep`: pháp nhân trong phạm vi + khách kế toán) → **dùng LẠI legal_entities** (doanh nghiệp, người, CCCD, ngành nghề chung);
