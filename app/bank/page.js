@@ -47,7 +47,7 @@ const VIA = { code: ['qua Mã KH', 'bg-blue-50 text-blue-700'], mst: ['qua MST',
 // Nhãn thao tác trong nhật ký từng giao dịch (bank_action_logs.action).
 const ACTION_LABEL = { post: 'Ghi công nợ', ignore: 'Đóng giao dịch', reopen: 'Mở lại', assign: 'Chọn công ty', note: 'Ghi chú' }
 const KIND = { ketoan: ['KT', 'bg-emerald-50 text-emerald-700'], hcns: ['HCNS', 'bg-violet-50 text-violet-700'], no_ton: ['Nợ tồn', 'bg-orange-50 text-orange-700'],
-  khach: ['DV khác', 'bg-teal-50 text-teal-700'], hcns_case: ['HCNS hồ sơ', 'bg-violet-50 text-violet-700'] }
+  khach: ['DV khác', 'bg-teal-50 text-teal-700'], hcns_case: ['HCNS hồ sơ', 'bg-violet-50 text-violet-700'], phap_ly: ['Pháp lý', 'bg-amber-50 text-amber-800'] }
 
 // Tô mã KH (xanh) và kỳ (tím) trên nội dung gốc.
 function Memo({ text, hl }) {
@@ -84,6 +84,7 @@ export default function BankPage() {
   const [msg, setMsg] = useState(null)
   const [clients, setClients] = useState(null)
   const [hcnsCases, setHcnsCases] = useState(null)
+  const [phapLyCases, setPhapLyCases] = useState(null)
 
   useEffect(() => {
     (async () => {
@@ -119,6 +120,12 @@ export default function BankPage() {
 
   // Hồ sơ HCNS "Thời điểm" không gắn công ty kế toán nên không có trong danh sách chọn công ty —
   // phải lấy riêng, và chỉ lấy khi nhân viên bấm vào (danh sách ít dùng).
+  // Hồ sơ PHÁP LÝ còn phải thu (18/11/2026) — ghép tay tiền vào công nợ phòng pháp lý
+  const loadPhapLyCases = async () => {
+    if (phapLyCases) return
+    const json = await fetch('/api/admin/bank-transactions?phapLyCases=1', { cache: 'no-store' }).then(r => r.json()).catch(() => ({}))
+    setPhapLyCases(json.data || [])
+  }
   const loadHcnsCases = async () => {
     if (hcnsCases) return
     const json = await fetch('/api/admin/bank-transactions?hcnsCases=1', { cache: 'no-store' }).then(r => r.json())
@@ -243,7 +250,7 @@ export default function BankPage() {
               toggle={() => setOpen(o => ({ ...o, [r.id]: !o[r.id] }))}
               busy={busy === r.id || busy === 'all'} act={act}
               clients={clients} loadClients={loadClients}
-              hcnsCases={hcnsCases} loadHcnsCases={loadHcnsCases} />
+              hcnsCases={hcnsCases} loadHcnsCases={loadHcnsCases} phapLyCases={phapLyCases} loadPhapLyCases={loadPhapLyCases} />
           ))}
         </div>
 
@@ -261,7 +268,8 @@ export default function BankPage() {
   )
 }
 
-function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCases, loadHcnsCases }) {
+function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCases, loadHcnsCases, phapLyCases, loadPhapLyCases }) {
+  const conLaiGd = r.conLai ?? r.amount   // demo: route trả conLai (phần chưa ghi)
   const g = groupOf(r)
   const st = ST[g]
   const pill = r.state === "open" ? st.label : pillLabel(r)
@@ -286,6 +294,8 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
   const [svcAmount, setSvcAmount] = useState('')
   const [hcnsPick, setHcnsPick] = useState('')
   const [hcnsAmount, setHcnsAmount] = useState('')
+  const [plPick, setPlPick] = useState('')
+  const [plAmount, setPlAmount] = useState('')
 
   const pickedClient = clients && pick ? clients.find(c => c.name === pick || c.client_code === pick) : null
   // Ghi vào HỒ SƠ (Dịch vụ khác / HCNS Thời điểm) không có `done` như ghi công nợ hàng tháng —
@@ -320,6 +330,18 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
     const x = (svcList || []).find(v => v.id === vid)
     setSvcAmount(x ? goiY(x.remain) : '')
   }
+  const nhanPl = c => c.code + ' · ' + (c.title || '') + (c.contact ? ' · ' + c.contact : '')
+  const plConNo = phapLyCases || []
+  const pickedPl = plPick ? plConNo.find(c => nhanPl(c) === plPick) || null : null
+  const pickPl = (name) => {
+    setPlPick(name)
+    const x = plConNo.find(c => nhanPl(c) === name)
+    setPlAmount(x ? goiY(x.con) : '')
+  }
+  const ghiPhapLy = async (hs, soTien) => {
+    if (!confirm('Ghi ' + fmt(soTien) + ' vào công nợ hồ sơ pháp lý ' + hs.code + ' “' + (hs.title || '') + '”?\nTiền chia vào các đợt còn nợ (đợt cũ trước). Ngày khách trả = ngày tiền vào ngân hàng.')) return
+    if (await act({ action: 'postPhapLy', id: r.id, caseId: hs.id, amount: soTien, userNote: note.trim() || undefined }, 'Đã ghi vào công nợ pháp lý ' + hs.code)) setNote('')
+  }
   const pickHcns = (name) => {
     setHcnsPick(name)
     const x = (hcnsCases || []).find(c => c.name === name)
@@ -344,6 +366,8 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
               {periodTxt && r.state === 'open' && <Chip cls="bg-violet-50 text-violet-700">{periodTxt}</Chip>}
               {ghiVaoTxt && r.state === 'open' && <Chip cls="bg-amber-50 text-amber-700">→ {ghiVaoTxt}</Chip>}
               {via && r.state === 'open' && <Chip cls={via[1]}>{via[0]}</Chip>}
+              {r.state === 'open' && r.phapLy && <Chip cls="bg-amber-50 text-amber-800">⚖ Pháp lý {r.phapLy.code} · còn {fmt(r.phapLy.con)}</Chip>}
+              {r.state === 'open' && !r.phapLy && r.phapLyMa && <Chip cls="bg-rose-50 text-rose-700">⚖ {r.phapLyMa} — không thấy hồ sơ</Chip>}
             </div>
           </div>
           <div className="text-right flex-shrink-0">
@@ -367,6 +391,22 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
                 Kế toán T{r.info.month}: đã thu {fmt(r.info.ktPaid)} / phí {fmt(r.info.ktFee)}{r.info.ktRolled ? ' (đã chuyển nợ tồn)' : ''}
                 {r.info.hFee > 0 && <> · HCNS: đã thu {fmt(r.info.hPaid)} / phí {fmt(r.info.hFee)}{r.info.hRolled ? ' (đã chuyển nợ tồn)' : ''}</>}
                 {' · '}Nợ tồn {fmt(r.otherDebt)}
+              </span>
+            </>)}
+
+            {r.state === 'open' && r.phapLy && (<>
+              <span className="text-amber-800 font-medium">⚖ Pháp lý</span>
+              <span className="flex flex-wrap items-center gap-1.5 text-amber-900">
+                Nội dung có mã hồ sơ <b>{r.phapLy.code}</b> — {r.phapLy.title} · phí {fmt(r.phapLy.phi)} · đã thu {fmt(r.phapLy.da_thu)} ·
+                <b className={r.phapLy.con > 0 ? 'text-red-700' : 'text-green-700'}>còn {fmt(r.phapLy.con)}</b>
+                {r.phapLy.con > 0 ? (
+                  <button disabled={busy} onClick={() => ghiPhapLy(r.phapLy, Math.min(conLaiGd, r.phapLy.con))}
+                    className="px-2.5 py-1 rounded-md border border-amber-400 bg-amber-50 text-amber-800 font-medium hover:bg-amber-100 disabled:opacity-40">
+                    Ghi {fmt(Math.min(conLaiGd, r.phapLy.con))} vào công nợ pháp lý
+                  </button>
+                ) : <span className="text-green-700">hồ sơ đã thu đủ — kiểm tra khách có chuyển trùng không</span>}
+                {conLaiGd > r.phapLy.con && r.phapLy.con > 0 && <span className="text-amber-700">· tiền vào dư {fmt(conLaiGd - r.phapLy.con)} — phần dư ghi tiếp bên dưới</span>}
+                {conLaiGd < r.phapLy.con && <span className="text-gray-500">· khách trả một phần, hồ sơ còn {fmt(r.phapLy.con - conLaiGd)} sau khi ghi</span>}
               </span>
             </>)}
 
@@ -420,6 +460,10 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
                     className={'px-2.5 py-1 rounded-md border ' + (target === 'hcns' ? 'border-teal-400 bg-teal-50 text-teal-700' : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-100')}>
                     HCNS Thời điểm
                   </button>
+                  <button onClick={() => { setTarget(t => t === 'phaply' ? '' : 'phaply'); loadPhapLyCases() }}
+                    className={'px-2.5 py-1 rounded-md border ' + (target === 'phaply' ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-100')}>
+                    Hồ sơ pháp lý
+                  </button>
                   {!target && <span className="text-gray-400">Chỉ dùng khi tiền này là phí của một hồ sơ, không phải phí hàng tháng</span>}
                 </span>
 
@@ -445,6 +489,25 @@ function Row({ r, zebra, open, toggle, busy, act, clients, loadClients, hcnsCase
                           Ghi vào hồ sơ
                         </button>
                       </>)}
+                  </span>
+                )}
+
+                {target === 'phaply' && (
+                  <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <input list={'pl-' + r.id} value={plPick} onChange={e => pickPl(e.target.value)}
+                      placeholder={phapLyCases === null ? 'Đang lấy hồ sơ…' : 'Gõ mã PL-… / tên công ty / người liên hệ…'}
+                      className="border border-gray-200 rounded-md px-2 py-1 w-96 max-w-full" />
+                    <datalist id={'pl-' + r.id}>
+                      {plConNo.map(c => <option key={c.id} value={nhanPl(c)}>{'còn ' + fmt(c.con) + ' / phí ' + fmt(c.phi)}</option>)}
+                    </datalist>
+                    {phapLyCases !== null && !plConNo.length && <span className="text-gray-500">Không còn hồ sơ pháp lý nào chưa thu đủ.</span>}
+                    <input value={plAmount} onChange={e => setPlAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                      className="border border-gray-200 rounded-md px-2 py-1 w-32 text-right" />
+                    <button disabled={busy || !pickedPl || !Number(plAmount)} onClick={() => ghiPhapLy(pickedPl, Number(plAmount))}
+                      className="px-2.5 py-1 rounded-md border border-amber-400 bg-amber-50 text-amber-800 font-medium hover:bg-amber-100 disabled:opacity-40">
+                      Ghi vào công nợ pháp lý
+                    </button>
+                    {pickedPl && <span className="text-gray-500">còn phải thu {fmt(pickedPl.con)}{pickedPl.dots?.length ? ' · ' + pickedPl.dots.map(d => d.name + ' ' + fmt(d.con)).join(', ') : ''}</span>}
                   </span>
                 )}
 

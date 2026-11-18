@@ -134,6 +134,14 @@ HCNS/Kinh doanh — bỏ `sql/21`, `app/bank`, `app/api/bank`, `app/api/admin/ba
 `lib/bank*.js`, `vps/`, mục menu trong `components/Sidebar.js` và `'bank_transactions'` trong danh sách
 backup. Quyền không tồn tại thì mục menu tự ẩn, backup tự bỏ qua bảng thiếu.
 
+- **Tiền hồ sơ PHÁP LÝ** (anh yêu cầu 18/11/2026, `lib/phaply/nganHang.js` + `nganHangMayChu.js`, bộ kiểm `test-phaply-ngan-hang` offline +
+  `test-phaply-ngan-hang-api` trên demo): nội dung CK có mã hồ sơ (`PL261192_ThanhToan_Phidichvu_MM_YYYY` của phiếu ĐNTT pháp lý — nhận cả
+  "PL 2611 92", "PL-2611-92", bị bỏ dấu) → thẻ giao dịch hiện ⚖ Pháp lý + nút "Ghi … vào công nợ pháp lý", nhóm "Cần xem". **KHÔNG tự ghi**
+  tiền pháp lý, và `bankAuto` BỎ QUA giao dịch có mã pháp lý (không tự ghi / tự khớp phí kế toán). Ghép tay: nút "Hồ sơ pháp lý" ở "Ghi vào
+  hồ sơ" (`?phapLyCases=1`, action `postPhapLy`). Tiền chia vào các đợt còn nợ, đợt cũ trước, mỗi đợt trừ THU HỘ trước (`phanBoVaoDot`,
+  như nút Ghi thu); lịch thu chưa phủ hết phí thì phần còn lại ghi không gắn đợt; vượt phần còn phải thu thì chặn. Phần ghi `kind: 'phap_ly'`
+  trong `post_detail.parts` (giữ `paymentIds`). ⚠ Trưởng phòng pháp lý xoá khoản thu ở tab Công nợ thì giao dịch NH vẫn "Đã ghi" — chưa
+  nối hai chiều. Bản clone không có phân hệ Pháp lý → bỏ luôn 2 file `lib/phaply/nganHang*.js` và các dòng pháp lý trong route + page /bank.
 - **TỰ GHI có điều kiện** (anh duyệt 01/11/2026, `lib/bankAuto.js`, công tắc `TU_GHI_CONG_NO`): chạy khi VPS đẩy giao
   dịch mới và khi mở trang /bank. CHỈ tự ghi lệnh "Sẵn sàng" nhận bằng MÃ KH / MST của công ty NỢ TỒN = 0đ, đề xuất không có
   dòng nợ tồn (dùng đúng `executePlan`, `posted_by` trống, `post_detail.tuDong`). Khoản "Đã khớp sổ" (nhân viên đã ghi tay —

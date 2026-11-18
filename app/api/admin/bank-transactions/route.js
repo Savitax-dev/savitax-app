@@ -4,6 +4,9 @@ import { classifyTransactions } from '@/lib/bankData'
 import { planSignature, ST_READY, ST_REVIEW } from '@/lib/bankMatch'
 import { executePlan } from '@/lib/bankPost'
 import { tuXuLyGiaoDich } from '@/lib/bankAuto'
+import { conLaiCuaGd, themPhan } from '@/lib/bankPhan'
+import { docMaHoSo } from '@/lib/phaply/nganHang'
+import { hoSoPhapLyConNo, hoSoTheoMa, ghiThuTuNganHang } from '@/lib/phaply/nganHangMayChu'
 
 // Trang Đối soát ngân hàng (/bank) — quyền riêng `bank_reconcile` (sql/21_bank_transactions.sql).
 //
@@ -16,6 +19,7 @@ import { tuXuLyGiaoDich } from '@/lib/bankAuto'
 //      { action: 'postOther',    id, serviceId, amount }                     -> ghi vào hồ sơ Dịch vụ khác
 //      { action: 'postHcnsCase', id, hcnsClientId, caseServiceId?, amount }  -> ghi vào hồ sơ HCNS Thời điểm
 // GET  ?hcnsCases=1                    -> danh sách hồ sơ HCNS Thời điểm + phần còn phải thu
+// GET  ?phapLyCases=1 · POST postPhapLy — tiền hồ sơ PHÁP LÝ (bản demo ghép từ nhánh feat/phap-ly 18/11/2026, xem AGENTS.md)
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -80,6 +84,10 @@ export async function GET(request) {
     } catch (e) { return Response.json({ data: [], error: e?.message }) }
   }
 
+  if (url.searchParams.get('phapLyCases')) {
+    try { return Response.json({ data: await hoSoPhapLyConNo(supabase) }) } catch (e) { return Response.json({ data: [], error: e?.message }) }
+  }
+
   if (url.searchParams.get('clients')) {
     const all = []
     for (let from = 0; ; from += 1000) {
@@ -115,6 +123,9 @@ export async function GET(request) {
     return Response.json({ error: 'Lỗi phân loại: ' + e.message }, { status: 500 })
   }
   const clsById = new Map(open.map((t, i) => [t.id, cls[i]]))
+  const maPl = new Map(open.map(t => [t.id, docMaHoSo(t.memo)]))
+  let plTheoMa = new Map()
+  try { plTheoMa = await hoSoTheoMa(supabase, [...new Set([...maPl.values()].flat())]) } catch (e) { console.error('phapLy:', e?.message || e) }
 
   // Tên công ty cho giao dịch đã ghi.
   const postedIds = [...new Set((txs || []).filter(t => t.state !== 'open' && t.client_id).map(t => t.client_id))]
@@ -159,11 +170,14 @@ export async function GET(request) {
     if (t.state !== 'open') {
       return { ...base, status: t.state, client: t.client_id ? { id: t.client_id, name: names.get(t.client_id) || '' } : null }
     }
-    const c = clsById.get(t.id)
+    const c0 = clsById.get(t.id)
+    const pl = (maPl.get(t.id) || []).map(m => plTheoMa.get(m)).find(Boolean) || null
+    const c = pl && pl.con > 0 && !c0.client ? { ...c0, status: ST_REVIEW, reason: 'Tiền hồ sơ pháp lý ' + pl.code + ' — bấm "Ghi … vào công nợ pháp lý" ở dòng ⚖ Pháp lý' } : c0
     return {
       ...base, ...c,
       manualClient: !!t.client_id, manualPeriod: !!(t.period_year && t.period_month),
       signature: c.plan ? planSignature(c.client?.id, c.plan) : null,
+      phapLy: pl, phapLyMa: maPl.get(t.id)?.[0] || null, conLai: conLaiCuaGd(t),
     }
   })
   return Response.json({ data: rows })
@@ -395,6 +409,37 @@ export async function POST(request) {
       note: body.userNote, staffId,
     })
     return Response.json({ ok: true })
+  }
+
+  if (action === 'postPhapLy') {
+    if (tx.state !== 'open') return Response.json({ error: 'Giao dịch đã được xử lý — tải lại trang' }, { status: 409 })
+    const amount = Math.round(Number(body.amount) || 0)
+    if (amount <= 0) return Response.json({ error: 'Số tiền ghi phải lớn hơn 0' }, { status: 400 })
+    const conLaiGd = conLaiCuaGd(tx)
+    if (amount > conLaiGd) return Response.json({ error: 'Số tiền ghi lớn hơn phần CHƯA GHI của giao dịch (' + conLaiGd.toLocaleString('vi-VN') + 'đ)' }, { status: 400 })
+    const { data: claimed, error: cErr } = await supabase.from('bank_transactions')
+      .update({ state: 'posted', posted_at: new Date().toISOString(), posted_by: staffId })
+      .eq('id', id).eq('state', 'open').select('id')
+    if (cErr) return Response.json({ error: cErr.message }, { status: 500 })
+    if (!claimed?.length) return Response.json({ error: 'Giao dịch đã được xử lý bởi người khác — tải lại trang' }, { status: 409 })
+    const d = vnParts(tx.tx_time)
+    const kq = await ghiThuTuNganHang(supabase, { caseId: body.caseId, soTien: amount, paidAt: d.ymd, staffId,
+      ghiChu: 'Đối soát NH ' + String(tx.source || '').toUpperCase() + ' ' + fmtDay(tx.tx_time) })
+    if (!kq.ok) {
+      await supabase.from('bank_transactions').update({ state: 'open', posted_at: tx.posted_at, posted_by: tx.posted_by }).eq('id', id)
+      return Response.json({ error: kq.loi }, { status: 400 })
+    }
+    const moi = themPhan(tx, { kind: 'phap_ly', caseId: body.caseId, code: kq.code, name: kq.title, paymentIds: kq.ids, amount, paid_at: d.ymd, boi: staffId })
+    // bản ngân hàng cũ của demo hiện thẻ "Đã ghi" theo post_detail.kind/name/amount → kèm cả 3
+    await supabase.from('bank_transactions').update({ post_detail: { ...moi.post_detail, kind: 'phap_ly', name: kq.code + ' ' + (kq.title || ''), amount },
+      state: moi.dong ? 'posted' : 'open' }).eq('id', id)
+    await logAction(supabase, {
+      txId: id, clientId: tx.client_id, action: 'post', staffId, note: body.userNote,
+      detail: 'Hồ sơ pháp lý ' + kq.code + ' "' + (kq.title || '') + '" ' + amount.toLocaleString('vi-VN') + 'đ · ngày trả ' + d.ymd
+        + (kq.conSau > 0 ? ' · còn phải thu ' + kq.conSau.toLocaleString('vi-VN') + 'đ' : ' · đã thu đủ')
+        + (moi.dong ? '' : ' · giao dịch còn ' + moi.conLai.toLocaleString('vi-VN') + 'đ chưa ghi'),
+    })
+    return Response.json({ ok: true, conLai: moi.conLai })
   }
 
   return Response.json({ error: 'Thao tác không hợp lệ' }, { status: 400 })
