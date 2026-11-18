@@ -423,6 +423,9 @@ export default function Sidebar({ onClose }) {
             <NavItem href="/phaply"           icon="⚖️" label="Tất cả hồ sơ"        pathname={pathname} onClose={onClose} />
             <NavItem href="/phaply/bao-cao"   icon="📈" label="Báo cáo pháp lý"     pathname={pathname} onClose={onClose} />
             {canMauPhapLy && <NavItem href="/phaply/mau" icon="🗂️" label="Mẫu & checklist" pathname={pathname} onClose={onClose} />}
+            {/* Người chỉ ở phòng Pháp lý bị ẩn phân khu Kế toán (noAccounting) → mục Đối soát ngân hàng đặt lại ở đây để TP pháp lý
+                ghép tiền khách vào công nợ pháp lý (18/11/2026). Người thấy phân khu Kế toán đã có mục này ở đó — không lặp. */}
+            {canBankReconcile && noAccounting && <NavItem href="/bank" icon="🏦" label="Đối soát ngân hàng" pathname={pathname} onClose={onClose} />}
           </div>
         )}
 
