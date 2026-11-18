@@ -2,9 +2,8 @@
 // Lời văn chép đúng bản PDF (lỗi chính tả gốc đã sửa 06/11/2026, anh duyệt); phần riêng của công ty là thẻ.
 // "Giám đốc" trong lời văn = {chuc_danh_gd} (đổi thành "Tổng giám đốc" khi hồ sơ ghi chức danh đó).
 // Phần thân Điều 7 → Điều 52 sinh từ chữ trích PDF (ghép dòng), đừng sửa tay lẻ tẻ mà quên đối chiếu bản gốc.
-@co 11
+@co 12
 @le 18/18/18/15
-@so-trang
 #cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
 #cb Độc lập - Tự do - Hạnh phúc
 #cb ĐIỀU LỆ

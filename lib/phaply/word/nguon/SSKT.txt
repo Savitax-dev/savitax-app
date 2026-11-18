@@ -10,7 +10,7 @@
 #cb13 ĐĂNG KÝ
 #cb13 MỞ SỔ SÁCH KẾ TOÁN TRÊN MÁY VI TÍNH
 ~
-#c Kính gửi: {#dien_thue_san}{co_quan_thue}{/dien_thue_san}{^dien_thue_san}………………………………………………………………………………………………………………………{/dien_thue_san}
+#c Kính gửi: {#dien_thue_san}{co_quan_thue}{/dien_thue_san}{^dien_thue_san}……………………………………………………………{/dien_thue_san}
 ~
 #l \* Doanh nghiệp: **{ten_cty}**
 #l \* Mã số thuế: {#dien_thue_san}{ma_dn}{/dien_thue_san}{^dien_thue_san}[...]{/dien_thue_san}

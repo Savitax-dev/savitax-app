@@ -3,7 +3,6 @@
 // theo bản PDF; lỗi chính tả của bản gốc đã sửa 06/11/2026 (anh duyệt). Chức danh Giám đốc / Tổng giám đốc đi theo {chuc_danh_gd}.
 // Chỗ ký trang cuối: từng cặp 2 thành viên một hàng (thanh_vien_ky), thành viên lẻ cuối cùng đứng giữa (thanh_vien_ky_le).
 @co 12
-@so-trang
 @le 18/18/22/18
 #cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
 #cb Độc lập - Tự do - Hạnh phúc
@@ -18,28 +17,28 @@ Chúng tôi, gồm những thành viên có tên như sau:
 Các thành viên cùng đồng ý ký tên và chấp thuận thành lập: {ten_cty} với Điều lệ được các thành viên công ty thông qua theo quy định của Luật Doanh nghiệp số 59/2020/QH14 được Quốc Hội nước Cộng hòa Xã hội Chủ nghĩa Việt Nam thông qua ngày 17/6/2020, gồm các điều, khoản của Điều lệ này như sau:
 #cb Chương I
 #cb ĐIỀU KHOẢN CHUNG
-#b Điều 1. Tư cách pháp nhân, phạm vi trách nhiệm
+#bk Điều 1. Tư cách pháp nhân, phạm vi trách nhiệm
 1. Công ty là một pháp nhân độc lập và có tư cách pháp nhân theo Luật pháp Việt Nam. Tất cả hoạt động của Công ty được điều chỉnh bởi Luật pháp Việt Nam và theo các quy định tại Giấy chứng nhận đăng ký doanh nghiệp, Điều lệ này và bất kỳ giấy phép hoặc cấp phép của Cơ quan Nhà nước, cần thiết cho hoạt động kinh doanh của Công ty.
 2. Mỗi thành viên trong Công ty chỉ chịu trách nhiệm về các khoản nợ và các nghĩa vụ tài sản khác của Công ty trong phạm vi số vốn đã cam kết góp vào Công ty.
-#b Điều 2. Tên Doanh nghiệp
+#bk Điều 2. Tên Doanh nghiệp
 Tên công ty viết bằng tiếng Việt (*ghi bằng chữ in hoa*):
 #l {ten_cty}
 Tên công ty viết bằng tiếng nước ngoài (*nếu có*):
 #l {ten_cty_nn}
 Tên công ty viết tắt (*nếu có*):
 #l {ten_cty_viet_tat}
-#b Điều 3. Trụ sở chính và địa chỉ chi nhánh, văn phòng đại diện
+#bk Điều 3. Trụ sở chính và địa chỉ chi nhánh, văn phòng đại diện
 Địa chỉ trụ sở chính:
 #l {dia_chi_tru_so}
-#b Điều 4. Ngành, nghề kinh doanh
+#bk Điều 4. Ngành, nghề kinh doanh
 ::bang vien 9^ 73< 9^ 9^
 #cb STT | #cb Tên ngành | #cb Mã Ngành | #cb Ngành chính
 {#nganh}{stt} | {ten} | {ma} | #cb {chinh}{/nganh}
 ::
-#b Điều 5. Thời hạn hoạt động
+#bk Điều 5. Thời hạn hoạt động
 1. Thời hạn hoạt động của công ty là: 50 năm kể từ ngày được cơ quan đăng ký kinh doanh cấp Giấy chứng nhận đăng ký doanh nghiệp.
 2. Công ty có thể chấm dứt hoạt động trước thời hạn hoặc kéo dài thêm thời gian hoạt động theo quyết định của Hội đồng thành viên hoặc theo quy định của pháp luật.
-#b Điều 6. Người đại diện theo pháp luật
+#bk Điều 6. Người đại diện theo pháp luật
 1. Số lượng người đại diện theo pháp luật: Công ty có 01 người là người đại diện theo pháp luật:
 #l Họ và tên (ghi bằng chữ in hoa): {dd_ho_ten}
 #l Ngày, tháng, năm sinh: {dd_ngay_sinh}
@@ -54,8 +53,8 @@ b) Trung thành với lợi ích của doanh nghiệp; không lạm dụng đị
 c) Thông báo kịp thời, đầy đủ, chính xác cho doanh nghiệp về doanh nghiệp mà mình, người có liên quan của mình làm chủ hoặc có cổ phần, phần vốn góp theo quy định của Luật Doanh nghiệp.
 Người đại diện theo pháp luật của doanh nghiệp chịu trách nhiệm cá nhân đối với thiệt hại cho doanh nghiệp do vi phạm trách nhiệm quy định tại khoản 3 Điều này.
 #cbkp Chương II
-#cb VỐN ĐIỀU LỆ, QUYỀN VÀ NGHĨA VỤ CỦA THÀNH VIÊN
-#b Điều 7. Vốn điều lệ, phần vốn góp của thành viên công ty
+#cbk VỐN ĐIỀU LỆ, QUYỀN VÀ NGHĨA VỤ CỦA THÀNH VIÊN
+#bk Điều 7. Vốn điều lệ, phần vốn góp của thành viên công ty
 #b 1. Vốn điều lệ của công ty:
 - Vốn điều lệ: {von_dieu_le} đồng.
 Ghi bằng chữ: {von_dieu_le_chu}
@@ -73,7 +72,7 @@ Vốn điều lệ có thể tăng hoặc giảm do yêu cầu tình hình hoạ
 ---
 {#thanh_vien}{stt} | {ho_ten} | {von_gop} | {ty_le} | {loai_tai_san} | {thoi_han_gop} | {/thanh_vien}
 ::
-#b Điều 8. Góp vốn thành lập công ty và cấp giấy chứng nhận phần vốn góp
+#bk Điều 8. Góp vốn thành lập công ty và cấp giấy chứng nhận phần vốn góp
 1. Vốn điều lệ của công ty trách nhiệm hữu hạn hai thành viên trở lên khi đăng ký thành lập doanh nghiệp là tổng giá trị phần vốn góp của các thành viên cam kết góp và ghi trong Điều lệ công ty.
 2. Thành viên phải góp vốn cho công ty đủ và đúng loại tài sản đã cam kết khi đăng ký thành lập doanh nghiệp trong thời hạn 90 ngày kể từ ngày được cấp Giấy chứng nhận đăng ký doanh nghiệp, không kể thời gian vận chuyển, nhập khẩu tài sản góp vốn, thực hiện thủ tục hành chính để chuyển quyền sở hữu tài sản. Trong thời hạn này, thành viên có các quyền và nghĩa vụ tương ứng với tỷ lệ phần vốn góp đã cam kết. Thành viên công ty chỉ được góp vốn cho công ty bằng loại tài sản khác với tài sản đã cam kết nếu được sự tán thành của trên 50% số thành viên còn lại.
 3. Sau thời hạn quy định tại khoản 2 Điều này mà vẫn có thành viên chưa góp vốn hoặc chưa góp đủ phần vốn góp đã cam kết thì được xử lý như sau:
@@ -82,7 +81,7 @@ b) Thành viên chưa góp đủ phần vốn góp đã cam kết có các quy�
 c) Phần vốn góp chưa góp của các thành viên được chào bán theo nghị quyết, quyết định của Hội đồng thành viên.
 4. Trường hợp có thành viên chưa góp vốn hoặc chưa góp đủ số vốn đã cam kết, công ty phải đăng ký thay đổi vốn điều lệ, tỷ lệ phần vốn góp của các thành viên bằng số vốn đã góp trong thời hạn 30 ngày kể từ ngày cuối cùng phải góp đủ phần vốn góp theo quy định tại khoản 2 Điều này. Các thành viên chưa góp vốn hoặc chưa góp đủ số vốn đã cam kết phải chịu trách nhiệm tương ứng với tỷ lệ phần vốn góp đã cam kết đối với các nghĩa vụ tài chính của công ty phát sinh trong thời gian trước ngày công ty đăng ký thay đổi vốn điều lệ và tỷ lệ phần vốn góp của thành viên.
 5. Trừ trường hợp quy định tại khoản 2 Điều này, người góp vốn trở thành thành viên của công ty kể từ thời điểm đã thanh toán phần vốn góp và những thông tin về người góp vốn quy định tại các điểm b, c và đ khoản 2 Điều 48 của Luật Doanh nghiệp được ghi đầy đủ vào sổ đăng ký thành viên. Tại thời điểm góp đủ phần vốn góp, công ty phải cấp giấy chứng nhận phần vốn góp cho thành viên tương ứng với giá trị phần vốn đã góp.
-#b Điều 9. Quyền và nghĩa vụ của thành viên Hội đồng thành viên
+#bk Điều 9. Quyền và nghĩa vụ của thành viên Hội đồng thành viên
 #b 9.1 Quyền của thành viên Hội đồng thành viên
 #b 9.1.1. Thành viên Hội đồng thành viên có các quyền sau đây:
 a) Tham dự họp Hội đồng thành viên, thảo luận, kiến nghị, biểu quyết các vấn đề thuộc thẩm quyền của Hội đồng thành viên;
@@ -109,22 +108,22 @@ a) Vi phạm pháp luật;
 b) Tiến hành kinh doanh hoặc giao dịch khác không nhằm phục vụ lợi ích của công ty và gây thiệt hại cho người khác;
 c) Thanh toán khoản nợ chưa đến hạn trước nguy cơ tài chính có thể xảy ra đối với công ty.
 6. Nghĩa vụ khác theo quy định của Luật Doanh nghiệp.
-#b Điều 10. Mua lại phần vốn góp
+#bk Điều 10. Mua lại phần vốn góp
 1. Thành viên có quyền yêu cầu công ty mua lại phần vốn góp của mình nếu thành viên đó đã bỏ phiếu không tán thành đối với nghị quyết, quyết định của Hội đồng thành viên về vấn đề sau đây:
 a) Sửa đổi, bổ sung các nội dung trong Điều lệ công ty liên quan đến quyền và nghĩa vụ của thành viên, Hội đồng thành viên;
 b) Tổ chức lại công ty;
 2. Yêu cầu mua lại phần vốn góp phải bằng văn bản và được gửi đến công ty trong thời hạn 15 ngày kể từ ngày thông qua nghị quyết, quyết định quy định tại khoản 1 Điều này.
 3. Trong thời hạn 15 ngày kể từ ngày nhận được yêu cầu của thành viên quy định tại khoản 1 Điều này thì công ty phải mua lại phần vốn góp của thành viên đó theo giá thị trường hoặc giá được xác định do hai bên thỏa thuận được về giá. Việc thanh toán chỉ được thực hiện nếu sau khi thanh toán đủ phần vốn góp được mua lại, công ty vẫn thanh toán đủ các khoản nợ và nghĩa vụ tài sản khác.
 4. Trường hợp công ty không thanh toán được phần vốn góp được yêu cầu mua lại theo quy định tại khoản 3 Điều này thì thành viên đó có quyền tự do chuyển nhượng phần vốn góp của mình cho thành viên khác hoặc người không phải là thành viên công ty.
-#b Điều 11. Chuyển nhượng phần vốn góp
+#bk Điều 11. Chuyển nhượng phần vốn góp
 1. Trừ trường hợp quy định tại khoản 4 Điều 51, khoản 6 và khoản 7 Điều 53 của Luật Doanh nghiệp, thành viên công ty trách nhiệm hữu hạn hai thành viên trở lên có quyền chuyển nhượng một phần hoặc toàn bộ phần vốn góp của mình cho người khác theo quy định sau đây:
 a) Chào bán phần vốn góp đó cho các thành viên còn lại theo tỷ lệ tương ứng với phần vốn góp của họ trong công ty với cùng điều kiện chào bán;
 b) Chuyển nhượng với cùng điều kiện chào bán đối với các thành viên còn lại quy định tại điểm a khoản này cho người không phải là thành viên nếu các thành viên còn lại của công ty không mua hoặc không mua hết trong thời hạn 30 ngày kể từ ngày chào bán.
 2. Thành viên chuyển nhượng vẫn có các quyền và nghĩa vụ đối với công ty tương ứng với phần vốn góp có liên quan cho đến khi thông tin về người mua quy định tại các điểm b, c và đ khoản 2 Điều 48 của Luật Doanh nghiệp được ghi đầy đủ vào sổ đăng ký thành viên.
 3. Trường hợp chuyển nhượng hoặc thay đổi phần vốn góp của các thành viên dẫn đến chỉ còn một thành viên công ty thì công ty phải tổ chức quản lý theo loại hình công ty trách nhiệm hữu hạn một thành viên và thực hiện đăng ký thay đổi nội dung đăng ký doanh nghiệp trong thời hạn 15 ngày kể từ ngày hoàn thành việc chuyển nhượng.
 #cbkp Chương III
-#cb CƠ CẤU TỔ CHỨC QUẢN LÝ, NGUYÊN TẮC HOẠT ĐỘNG CỦA CÔNG TY
-#b Điều 12. Cơ cấu tổ chức quản lý
+#cbk CƠ CẤU TỔ CHỨC QUẢN LÝ, NGUYÊN TẮC HOẠT ĐỘNG CỦA CÔNG TY
+#bk Điều 12. Cơ cấu tổ chức quản lý
 Cơ cấu tổ chức của Công ty gồm có:
 #l  -  Hội đồng thành viên:
 {#thanh_vien}
@@ -134,7 +133,7 @@ Cơ cấu tổ chức của Công ty gồm có:
 #l {ct_ho_ten}
 #l - {chuc_danh_gd}:
 #l {gd_ho_ten}
-#b Điều 13. Hội đồng thành viên
+#bk Điều 13. Hội đồng thành viên
 1. Hội đồng thành viên là cơ quan quyết định cao nhất của công ty, bao gồm tất cả thành viên công ty là cá nhân và người đại diện theo ủy quyền của thành viên công ty là tổ chức. Hội đồng thành viên phải họp 01 lần mỗi năm
 2. Hội đồng thành viên có quyền và nghĩa vụ sau đây:
 a) Quyết định chiến lược phát triển và kế hoạch kinh doanh hằng năm của công ty;
@@ -150,7 +149,7 @@ k) Sửa đổi, bổ sung Điều lệ công ty;
 l) Quyết định tổ chức lại công ty;
 m) Quyết định giải thể hoặc yêu cầu phá sản công ty;
 n) Quyền và nghĩa vụ khác theo quy định của Luật Doanh nghiệp và Điều lệ công ty.
-#b Điều 14. Chủ tịch Hội đồng thành viên
+#bk Điều 14. Chủ tịch Hội đồng thành viên
 1. Hội đồng thành viên bầu một thành viên làm Chủ tịch. Chủ tịch Hội đồng thành viên có thể kiêm {chuc_danh_gd} công ty.
 2. Chủ tịch Hội đồng thành viên có quyền và nghĩa vụ sau đây:
 a) Chuẩn bị chương trình, kế hoạch hoạt động của Hội đồng thành viên;
@@ -161,7 +160,7 @@ d) Giám sát hoặc tổ chức giám sát việc thực hiện nghị quyết,
 e) Quyền và nghĩa vụ khác theo quy định của Luật Doanh nghiệp và Điều lệ công ty.
 3. Nhiệm kỳ của Chủ tịch Hội đồng thành viên không quá 05 năm và có thể được bầu lại với số nhiệm kỳ không hạn chế.
 4. Trường hợp Chủ tịch Hội đồng thành viên vắng mặt hoặc không thể thực hiện các quyền và nghĩa vụ của mình thì phải ủy quyền bằng văn bản cho một thành viên thực hiện các quyền và nghĩa vụ của Chủ tịch Hội đồng thành viên. Trường hợp không có thành viên được ủy quyền hoặc Chủ tịch Hội đồng thành viên chết, mất tích, bị tạm giam, đang chấp hành hình phạt tù, đang chấp hành biện pháp xử lý hành chính tại cơ sở cai nghiện bắt buộc, cơ sở giáo dục bắt buộc, trốn khỏi nơi cư trú, bị hạn chế hoặc mất năng lực hành vi dân sự, có khó khăn trong nhận thức, làm chủ hành vi, bị Tòa án cấm đảm nhiệm chức vụ, cấm hành nghề hoặc làm công việc nhất định thì một trong số các thành viên Hội đồng thành viên triệu tập họp các thành viên còn lại bầu một người trong số các thành viên tạm thời làm Chủ tịch Hội đồng thành viên theo nguyên tắc đa số thành viên còn lại tán thành cho đến khi có quyết định mới của Hội đồng thành viên.
-#b Điều 15. {chuc_danh_gd}
+#bk Điều 15. {chuc_danh_gd}
 1. {chuc_danh_gd} là người điều hành hoạt động kinh doanh hằng ngày của công ty, chịu trách nhiệm trước Hội đồng thành viên về việc thực hiện quyền và nghĩa vụ của mình.
 2. {chuc_danh_gd} có quyền và nghĩa vụ sau đây:
 a) Tổ chức thực hiện nghị quyết, quyết định của Hội đồng thành viên;
@@ -175,14 +174,14 @@ h) Trình báo cáo tài chính hằng năm lên Hội đồng thành viên;
 i) Kiến nghị phương án sử dụng và phân chia lợi nhuận hoặc xử lý lỗ trong kinh doanh;
 k) Tuyển dụng lao động;
 l) Quyền và nghĩa vụ khác được quy định tại Điều lệ công ty, nghị quyết, quyết định của Hội đồng thành viên, hợp đồng lao động.
-#b Điều 16. Điều kiện và thể thức tiến hành họp Hội đồng thành viên
+#bk Điều 16. Điều kiện và thể thức tiến hành họp Hội đồng thành viên
 1. Cuộc họp Hội đồng thành viên được tiến hành khi có số thành viên dự họp sở hữu từ 65% vốn điều lệ trở lên.
 2. Trường hợp cuộc họp Hội đồng thành viên lần thứ nhất không đủ điều kiện tiến hành theo quy định tại khoản 1 Điều này thì việc triệu tập họp Hội đồng thành viên được thực hiện như sau:
 a) Thông báo mời họp lần thứ hai phải được gửi trong thời hạn 15 ngày kể từ ngày dự định họp lần thứ nhất. Cuộc họp Hội đồng thành viên lần thứ hai được tiến hành khi có số thành viên dự họp sở hữu từ 50% vốn điều lệ trở lên;
 b) Trường hợp cuộc họp Hội đồng thành viên lần thứ hai không đủ điều kiện tiến hành theo quy định tại điểm a khoản này, thông báo mời họp lần thứ ba phải được gửi trong thời hạn 10 ngày kể từ ngày dự định họp lần thứ hai. Cuộc họp Hội đồng thành viên lần thứ ba được tiến hành không phụ thuộc số thành viên dự họp và số vốn điều lệ được đại diện bởi số thành viên dự họp.
 3. Thành viên, người đại diện theo ủy quyền của thành viên phải tham dự và biểu quyết tại cuộc họp Hội đồng thành viên. Thể thức tiến hành họp Hội đồng thành viên, hình thức biểu quyết do Điều lệ công ty quy định.
 4. Trường hợp cuộc họp đủ điều kiện quy định tại Điều này không hoàn thành chương trình họp trong thời hạn dự kiến thì có thể kéo dài nhưng không được quá 30 ngày kể từ ngày khai mạc cuộc họp đó.
-#b Điều 17. Nghị quyết, quyết định của Hội đồng thành viên
+#bk Điều 17. Nghị quyết, quyết định của Hội đồng thành viên
 1. Hội đồng thành viên thông qua nghị quyết, quyết định thuộc thẩm quyền bằng biểu quyết tại cuộc họp, lấy ý kiến bằng văn bản.
 2. Nghị quyết, quyết định về các vấn đề sau đây phải được thông qua bằng biểu quyết tại cuộc họp Hội đồng thành viên:
 a) Sửa đổi, bổ sung nội dung Điều lệ công ty;
@@ -199,7 +198,7 @@ b) Ủy quyền cho người khác tham dự và biểu quyết tại cuộc h�
 c) Tham dự và biểu quyết thông qua cuộc họp trực tuyến, bỏ phiếu điện tử hoặc hình thức điện tử khác;
 d) Gửi phiếu biểu quyết đến cuộc họp thông qua thư, fax, thư điện tử.
 5. Nghị quyết, quyết định của Hội đồng thành viên được thông qua dưới hình thức lấy ý kiến bằng văn bản khi được số thành viên sở hữu từ 65% vốn điều lệ trở lên tán thành.
-#b Điều 18. Thủ tục thông qua nghị quyết, quyết định của Hội đồng thành viên theo hình thức lấy ý kiến bằng văn bản
+#bk Điều 18. Thủ tục thông qua nghị quyết, quyết định của Hội đồng thành viên theo hình thức lấy ý kiến bằng văn bản
 Thẩm quyền và thể thức lấy ý kiến thành viên bằng văn bản để thông qua nghị quyết, quyết định được thực hiện theo quy định sau đây:
 1. Chủ tịch Hội đồng thành viên quyết định việc lấy ý kiến thành viên Hội đồng thành viên bằng văn bản để thông qua nghị quyết, quyết định các vấn đề thuộc thẩm quyền;
 2. Chủ tịch Hội đồng thành viên có trách nhiệm tổ chức việc soạn thảo, gửi các báo cáo, tờ trình về nội dung cần quyết định, dự thảo nghị quyết, quyết định và phiếu lấy ý kiến đến các thành viên Hội đồng thành viên;
@@ -216,44 +215,44 @@ c) Vấn đề được lấy ý kiến và biểu quyết; tóm tắt ý kiến
 d) Tổng số phiếu lấy ý kiến hợp lệ, không hợp lệ, không nhận được; tổng số phiếu lấy ý kiến hợp lệ tán thành, không tán thành, không có ý kiến đối với từng vấn đề biểu quyết;
 đ) Nghị quyết, quyết định được thông qua và tỷ lệ phiếu biểu quyết tương ứng;
 e) Họ, tên, chữ ký của người kiểm phiếu và Chủ tịch Hội đồng thành viên. Người kiểm phiếu và Chủ tịch Hội đồng thành viên chịu trách nhiệm liên đới về tính đầy đủ, chính xác, trung thực của nội dung báo cáo kết quả kiểm phiếu.
-#b Điều 19. Hiệu lực nghị quyết, quyết định của Hội đồng thành viên
+#bk Điều 19. Hiệu lực nghị quyết, quyết định của Hội đồng thành viên
 1. Nghị quyết, quyết định của Hội đồng thành viên có hiệu lực thi hành kể từ ngày được thông qua hoặc từ ngày có hiệu lực được ghi tại nghị quyết, quyết định đó.
 2. Nghị quyết, quyết định của Hội đồng thành viên được thông qua bằng 100% tổng số vốn điều lệ là hợp pháp và có hiệu lực ngay cả trong trường hợp trình tự và thủ tục thông qua nghị quyết, quyết định đó không được thực hiện đúng quy định.
 3. Trường hợp thành viên, nhóm thành viên yêu cầu Tòa án hoặc Trọng tài hủy bỏ nghị quyết, quyết định đã được thông qua thì nghị quyết, quyết định đó vẫn có hiệu lực thi hành theo quy định tại khoản 1 Điều này cho đến khi có quyết định hủy bỏ của Tòa án hoặc Trọng tài có hiệu lực pháp luật, trừ trường hợp áp dụng biện pháp khẩn cấp tạm thời theo quyết định của cơ quan có thẩm quyền.
-#b Điều 20. Thù lao, tiền lương và thưởng của thành viên Hội đồng thành viên, {chuc_danh_gd}
+#bk Điều 20. Thù lao, tiền lương và thưởng của thành viên Hội đồng thành viên, {chuc_danh_gd}
 1. Công ty trả thù lao, tiền lương và thưởng cho Chủ tịch Hội đồng thành viên, {chuc_danh_gd} và người quản lý khác theo kết quả và hiệu quả kinh doanh.
 2. Thù lao, tiền lương của Chủ tịch Hội đồng thành viên, {chuc_danh_gd} và người quản lý khác được tính vào chi phí kinh doanh theo quy định của pháp luật về thuế thu nhập doanh nghiệp, pháp luật có liên quan và phải được thể hiện thành mục riêng trong báo cáo tài chính hằng năm của công ty
-#b Điều 21. Nguyên tắc giải quyết tranh chấp nội bộ
+#bk Điều 21. Nguyên tắc giải quyết tranh chấp nội bộ
 1. Các tranh chấp nội bộ giữa Công ty với thành viên của Công ty, giữa các thành viên Công ty với nhau liên quan đến thành lập, hoạt động, giải thể Công ty trước hết phải được giải quyết thông qua thương lượng, hoà giải.
 2. Trường hợp giải quyết tranh chấp nội bộ theo phương thức thương lượng, hòa giải không đạt được kết quả thì bất kỳ bên nào cũng có quyền đưa tranh chấp ra Tòa án có thẩm quyền để giải quyết.
 #cbkp Chương IV
-#cb NĂM TÀI CHÍNH PHÂN PHỐI LỢI NHUẬN
-#b Điều 22. Năm tài chính
+#cbk NĂM TÀI CHÍNH PHÂN PHỐI LỢI NHUẬN
+#bk Điều 22. Năm tài chính
 Năm tài chính của Công ty bắt đầu từ ngày đầu tiên của tháng 1 (một) hàng năm và kết thúc vào ngày thứ 31 của tháng 12.
 Năm tài chính đầu tiên bắt đầu từ ngày cấp Giấy chứng nhận đăng ký doanh nghiệp và kết thúc vào ngày thứ 31 của tháng 12 ngay sau ngày cấp Giấy chứng nhận đăng ký doanh nghiệp đó.
-#b Điều 23. Điều kiện để chia lợi nhuận, phân phối lợi nhuận, lập quỹ và nguyên tắc xử lý lỗ trong kinh doanh
+#bk Điều 23. Điều kiện để chia lợi nhuận, phân phối lợi nhuận, lập quỹ và nguyên tắc xử lý lỗ trong kinh doanh
 1. Công ty chỉ được chia lợi nhuận cho các thành viên khi kinh doanh có lãi, đã hoàn thành nghĩa vụ thuế và các nghĩa vụ tài chính khác theo quy định của pháp luật và bảo đảm thanh toán đủ các khoản nợ và nghĩa vụ tài sản đến hạn trả khác sau khi chia lợi nhuận.
 2. Sau khi đã hoàn thành nghĩa vụ nộp thuế và các nghĩa vụ tài chính khác theo quy định của pháp luật, đã thanh toán đủ (hoặc đã dành phần thanh toán đủ) các khoản nợ và nghĩa vụ tài sản khác đã đến hạn phải trả công ty lập các loại quỹ theo quy định của pháp luật
 3. Công ty sẽ phân phối lợi nhuận cho các thành viên theo tỷ lệ vốn góp
 4. Nguyên tắc xử lý lỗ trong kinh doanh: Trường hợp quyết toán năm tài chính bị lỗ, Hội đồng thành viên công ty được quyết định theo các hướng sau:
 a) Trích quỹ dự trữ để bù.
 b) Chuyển sang năm sau để trừ vào lợi nhuận của năm tài chính sau trước khi phân phối lợi nhuận.
-#b Điều 24. Thu hồi phần vốn góp đã hoàn trả hoặc lợi nhuận đã chia
+#bk Điều 24. Thu hồi phần vốn góp đã hoàn trả hoặc lợi nhuận đã chia
 Trường hợp hoàn trả một phần vốn góp do giảm vốn điều lệ trái với quy định tại khoản 3 Điều 68 của Luật Doanh nghiệp hoặc chia lợi nhuận cho thành viên trái với quy định tại Điều 69 của Luật Doanh nghiệp thì các thành viên công ty phải hoàn trả cho công ty số tiền, tài sản khác đã nhận; phải cùng liên đới chịu trách nhiệm về các khoản nợ và nghĩa vụ tài sản khác của công ty tương ứng với số tiền, tài sản chưa hoàn trả đủ cho đến khi hoàn trả đủ số tiền, tài sản khác đã nhận.
 #cbkp Chương V
-#cb THÀNH LẬP, TỔ CHỨC LẠI, GIẢI THỂ
-#b Điều 25. Thành lập, tổ chức lại
+#cbk THÀNH LẬP, TỔ CHỨC LẠI, GIẢI THỂ
+#bk Điều 25. Thành lập, tổ chức lại
 Công ty được thành lập sau khi được cơ quan đăng ký kinh doanh cấp giấy chứng nhận đăng ký doanh nghiệp.
 Mọi phí tổn liên hệ đến việc thành lập Công ty đều được ghi vào mục chi phí của Công ty và được tính hoàn giảm vào chi phí của năm tài chính đầu tiên.
 Việc tổ chức lại doanh nghiệp (chia, tách, hợp nhất, sáp nhập hoặc chuyển đổi loại hình doanh nghiệp) công ty thực hiện quy định của Luật Doanh nghiệp.
-#b Điều 26. Các trường hợp và điều kiện giải thể doanh nghiệp
+#bk Điều 26. Các trường hợp và điều kiện giải thể doanh nghiệp
 1. Công ty bị giải thể trong các trường hợp sau đây:
 a) Kết thúc thời hạn hoạt động đã ghi trong Điều lệ công ty mà không có quyết định gia hạn;
 b) Theo nghị quyết, quyết định của Hội đồng thành viên;
 c) Công ty không còn đủ số lượng thành viên tối thiểu theo quy định của Luật doanh nghiệp trong thời hạn 06 tháng liên tục mà không làm thủ tục chuyển đổi loại hình doanh nghiệp;
 d) Bị thu hồi Giấy chứng nhận đăng ký doanh nghiệp.
 2. Công ty chỉ được giải thể khi bảo đảm thanh toán hết các khoản nợ và nghĩa vụ tài sản khác và doanh nghiệp không trong quá trình giải quyết tranh chấp tại Tòa án hoặc cơ quan trọng tài. Người quản lý có liên quan và doanh nghiệp quy định tại điểm d khoản 1 Điều này cùng liên đới chịu trách nhiệm về các khoản nợ của doanh nghiệp.
-#b Điều 27. Trình tự, thủ tục giải thể doanh nghiệp và thanh lý tài sản
+#bk Điều 27. Trình tự, thủ tục giải thể doanh nghiệp và thanh lý tài sản
 Việc giải thể doanh nghiệp trong các trường hợp quy định tại các điểm a, b, c khoản 1 Điều 26 của Điều lệ này được thực hiện theo quy định sau đây:
 1. Thông qua nghị quyết, quyết định giải thể doanh nghiệp. Nghị quyết, quyết định giải thể doanh nghiệp phải bao gồm các nội dung chủ yếu sau đây:
 a) Tên, địa chỉ trụ sở chính của doanh nghiệp;
@@ -270,14 +269,14 @@ c) Các khoản nợ khác;
 5. Sau khi đã thanh toán chi phí giải thể doanh nghiệp và các khoản nợ, phần còn lại chia cho chủ doanh nghiệp tư nhân, các thành viên, cổ đông hoặc chủ sở hữu công ty theo tỷ lệ sở hữu phần vốn góp, cổ phần;
 6. Người đại diện theo pháp luật của doanh nghiệp gửi hồ sơ giải thể doanh nghiệp cho Cơ quan đăng ký kinh doanh trong thời hạn 05 ngày làm việc kể từ ngày thanh toán hết các khoản nợ của doanh nghiệp;
 #cbkp Chương VI
-#cb ĐIỀU KHOẢN THI HÀNH
-#b Điều 28. Hiệu lực của Điều lệ
+#cbk ĐIỀU KHOẢN THI HÀNH
+#bk Điều 28. Hiệu lực của Điều lệ
 Điều lệ này có hiệu lực kể từ ngày được cơ quan đăng ký kinh doanh cấp giấy chứng nhận đăng ký doanh nghiệp.
-#b Điều 29. Thể thức sửa đổi bổ sung các điều khoản của Điều lệ
+#bk Điều 29. Thể thức sửa đổi bổ sung các điều khoản của Điều lệ
 1. Những vấn đề liên quan đến hoạt động của Công ty không được nêu trong Bản điều lệ này sẽ do Luật doanh nghiệp và các văn bản pháp luật liên quan khác điều chỉnh.
 2. Trong trường hợp Điều lệ này có điều khoản trái luật pháp hoặc dẫn đến việc thi hành trái luật pháp, thì điều khoản đó không được thi hành và sẽ được xem xét sửa đổi ngay trong kỳ họp gần nhất của Hội đồng thành viên.
 3. Khi muốn bổ sung, sửa đổi nội dung Điều lệ này, Hội đồng thành viên sẽ họp để thông qua quyết định nội dung thay đổi. Thể thức họp thông qua nội dung sửa đổi theo quy định của Luật Doanh nghiệp.
-#b Điều 30. Điều khoản cuối cùng
+#bk Điều 30. Điều khoản cuối cùng
 Bản điều lệ này đã được tập thể thành viên xem xét từng chương từng điều và cùng ký tên chấp thuận.
 Bản điều lệ này gồm 6 chương 30 điều, được lập thành {dl_so_ban_2tv} bản có giá trị như nhau: 01 bản thực hiện thủ tục đăng ký doanh nghiệp tại cơ quan đăng ký kinh doanh, 01 bản lưu trữ tại trụ sở công ty, 01 bản cho mỗi thành viên.
 Mọi sự sao chép phải được ký xác nhận của Chủ tịch Hội đồng thành viên hoặc của {chuc_danh_gd} công ty.

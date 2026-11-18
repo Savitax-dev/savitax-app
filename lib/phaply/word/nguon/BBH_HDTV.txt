@@ -4,11 +4,13 @@
 ::cot 45/55
 #cb {ten_cty}
 #c --------------------
-#l Số: 01/BBH-HĐTV
 ||
 #cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
 #cb Độc lập - Tự do - Hạnh phúc
 #c --------------------
+==
+#c Số: 01/BBH-HĐTV
+||
 #ci …………….., ngày……/……/………
 ::
 ~
@@ -30,7 +32,7 @@ Tiến hành họp Hội đồng thành viên về việc: Bổ nhiệm chức d
 - {ct_danh_xung} {ct_ho_ten} - chủ tịch Hội đồng thành viên tuyên bố việc triệu tập họp Hội đồng thành viên, điều kiện, thể thức tiến hành họp Hội đồng thành viên phù hợp theo quy định của Luật Doanh nghiệp, Điều lệ công ty; số thành viên dự họp đạt 100% vốn điều lệ đủ điều kiện tiến hành họp Hội đồng thành viên.
 #lb A. Nội dung cuộc họp:
 Hội đồng thành viên lấy ý kiến của các thành viên dự họp về việc bổ nhiệm {gd_danh_xung} **{gd_ho_ten}** giữ chức vụ {gd_chuc_danh} Công ty:
-#l - Căn cước công dân số: {gd_so_giay_to}[>55]- Ngày cấp: {gd_ngay_cap}
+#l - {gd_giay_to_so}: {gd_so_giay_to}[>55]- Ngày cấp: {gd_ngay_cap}
 #l - Nơi cấp: {gd_noi_cap}
 #l - Thường trú: {gd_dia_chi_thuong_tru}
 #lb B. Ý kiến phát biểu của các thành viên dự họp:

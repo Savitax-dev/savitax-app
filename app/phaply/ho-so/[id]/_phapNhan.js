@@ -7,7 +7,8 @@ import Link from 'next/link'
 import { Modal, Field, NumInput, inputCls, btnPrimary, btnGhost, api, fmt } from '../../_ui'
 import { NguoiForm, DiaChiChon, noiDiaChiNgan } from '../../_nguoi'
 import { VAI_TRO, VAI_TRO_THEO_LOAI, CHUC_DANH, THOI_HAN_GOP } from '@/lib/phaply/phapNhan'
-import { mauCuaBo } from '@/lib/phaply/word/danhMuc'
+import { mauCuaBo, LUU_Y_IN_KY } from '@/lib/phaply/word/danhMuc'
+import { inTyLe } from '@/lib/phaply/word/duLieu'
 
 export const TAB_PHAP_NHAN = [['doanh_nghiep', 'Doanh nghiệp'], ['nguoi', 'Người & CCCD'], ['nganh', 'Ngành nghề'], ['word', 'Còn thiếu & xuất Word']]
 
@@ -182,6 +183,14 @@ function Nguoi({ d, lh, sua, goi, id, toast }) {
   const vdl = Number(d.entity?.von_dieu_le) || 0, menh = Number(d.entity?.menh_gia) || 10000
   const tongTv = d.vai_tro.filter(v => v.vai_tro === 'thanh_vien').reduce((s, v) => s + (Number(v.von_gop) || 0), 0)
   const tongCp = d.vai_tro.filter(v => v.vai_tro === 'co_dong').reduce((s, v) => s + (Number(v.so_co_phan) || 0), 0)
+  // Mẫu 6 / Mẫu 7 / Điều lệ: tổng vốn góp (giá trị cổ phần) phải bằng vốn điều lệ — phòng pháp lý yêu cầu cảnh báo 18/11/2026
+  const lechVon = k => {
+    if (!vdl) return null
+    const tong = k === 'thanh_vien' ? tongTv : k === 'co_dong' ? tongCp * menh : null
+    const coNguoi = d.vai_tro.some(v => v.vai_tro === k)
+    if (tong == null || !coNguoi || tong === vdl) return null
+    return `Tổng ${k === 'thanh_vien' ? 'vốn góp của các thành viên' : 'giá trị cổ phần của các cổ đông'} ${fmt(tong)} đ ${tong > vdl ? 'VƯỢT' : 'CHƯA ĐỦ'} vốn điều lệ ${fmt(vdl)} đ (lệch ${fmt(Math.abs(tong - vdl))} đ) — tỷ lệ cộng lại ${inTyLe(100 * tong / vdl)}. ${k === 'thanh_vien' ? 'Mẫu 6' : 'Mẫu 7'} và Điều lệ sẽ sai — sửa vốn góp / số cổ phần hoặc vốn điều lệ.`
+  }
   return (
     <div className="space-y-4">
       {choPhep.map(k => {
@@ -193,6 +202,7 @@ function Nguoi({ d, lh, sua, goi, id, toast }) {
               <span>{VAI_TRO[k]}{k === 'thanh_vien' && vdl ? ` — đã góp ${fmt(tongTv)} / ${fmt(vdl)}` : ''}{k === 'co_dong' && vdl ? ` — ${fmt(tongCp)} cổ phần = ${fmt(tongCp * menh)} / ${fmt(vdl)}` : ''}</span>
               {sua && <button className="p-btn p-btn-sm" onClick={() => setMo({ nguoi: { loai_giay_to: 'Căn cước công dân', quoc_tich: 'Việt Nam', dan_toc: 'Kinh' }, vai_tro: [{ vai_tro: k, thoi_han_gop: ['thanh_vien', 'co_dong'].includes(k) ? THOI_HAN_GOP : '' }] })}>+ Thêm</button>}
             </div>
+            {lechVon(k) && <div className="mx-4 mt-3 text-sm rounded border border-red-300 bg-red-50 text-red-800 px-3 py-2">⚠ {lechVon(k)}</div>}
             {!ds.length ? <div className="px-4 py-3 text-sm text-gray-400">Chưa có.</div> : (
               <table className="p-tbl w-full"><tbody>
                 {ds.map(v => {
@@ -202,7 +212,9 @@ function Nguoi({ d, lh, sua, goi, id, toast }) {
                       <td className="l"><b>{v.nguoi?.ho_ten || '(chưa có tên)'}</b>{v.chu_tich ? <span className="ml-2 text-xs px-1.5 rounded bg-amber-100">Chủ tịch</span> : null}
                         {v.chuc_danh ? <span className="ml-2 text-xs text-gray-500">{v.chuc_danh}</span> : null}
                         <div className="text-xs text-gray-500">{v.nguoi?.loai_giay_to || 'Giấy tờ'} {v.nguoi?.so_giay_to || '—'} · {noiDiaChiNgan(v.nguoi?.thuong_tru) || 'chưa có thường trú'}</div></td>
-                      <td className="r num whitespace-nowrap">{k === 'thanh_vien' ? fmt(v.von_gop) + ' đ' : k === 'co_dong' ? fmt(v.so_co_phan) + ' CP' : ''}</td>
+                      <td className="r num whitespace-nowrap">{k === 'thanh_vien' ? fmt(v.von_gop) + ' đ' : k === 'co_dong' ? fmt(v.so_co_phan) + ' CP' : ''}
+                        {vdl && k === 'thanh_vien' ? <div className="text-xs text-gray-500">{inTyLe(100 * (Number(v.von_gop) || 0) / vdl)}</div> : null}
+                        {vdl && k === 'co_dong' ? <div className="text-xs text-gray-500">{inTyLe(100 * (Number(v.so_co_phan) || 0) * menh / vdl)}</div> : null}</td>
                       <td className="r text-xs text-gray-500 whitespace-nowrap">{(p?.vai_tro || []).filter(x => x.vai_tro !== k).map(x => VAI_TRO[x.vai_tro].split(' /')[0]).join(', ')}</td>
                     </tr>
                   )
@@ -213,12 +225,24 @@ function Nguoi({ d, lh, sua, goi, id, toast }) {
         )
       })}
       {sua && <div className="text-xs text-gray-500">Một người giữ nhiều vai trò (VD chủ sở hữu kiêm giám đốc, đại diện pháp luật): mở người đó và tích thêm vai trò — không nhập hai lần. Giám đốc trống = lấy người đại diện theo pháp luật.</div>}
-      {mo && <SuaNguoi mo={mo} choPhep={choPhep} goi={goi} id={id} toast={toast} onClose={() => setMo(null)} />}
+      {mo && <SuaNguoi mo={mo} choPhep={choPhep} goi={goi} id={id} toast={toast} onClose={() => setMo(null)}
+        von={{ vdl, menh, tvKhac: tongTv - (Number(mo.vai_tro.find(x => x.vai_tro === 'thanh_vien')?.von_gop) || 0), cpKhac: tongCp - (Number(mo.vai_tro.find(x => x.vai_tro === 'co_dong')?.so_co_phan) || 0) }} />}
     </div>
   )
 }
 
-function SuaNguoi({ mo, choPhep, goi, id, toast, onClose }) {
+// Dưới ô vốn góp / số cổ phần: tỷ lệ của người này + tổng cả công ty sau khi lưu so với vốn điều lệ
+function ConVon({ tong, rieng, vdl }) {
+  if (!vdl) return <div className="text-xs text-gray-500 mt-1">Chưa nhập vốn điều lệ ở tab Doanh nghiệp</div>
+  return (
+    <div className="text-xs mt-1">
+      <span className="text-gray-600">= {fmt(rieng)} đ · {inTyLe(100 * rieng / vdl)} vốn điều lệ</span>
+      {tong !== vdl && <div className="text-red-700 font-medium">⚠ Tổng sau khi lưu {fmt(tong)} đ {tong > vdl ? 'vượt' : 'chưa đủ'} vốn điều lệ {fmt(vdl)} đ (lệch {fmt(Math.abs(tong - vdl))} đ)</div>}
+    </div>
+  )
+}
+
+function SuaNguoi({ mo, choPhep, goi, id, toast, onClose, von = {} }) {
   const [canhBao, setCanhBao] = useState([])
   const [p, setP] = useState(mo.nguoi)
   const [vt, setVt] = useState(() => Object.fromEntries(mo.vai_tro.map(v => [v.vai_tro, { ...v }])))
@@ -254,14 +278,16 @@ function SuaNguoi({ mo, choPhep, goi, id, toast, onClose }) {
                 )}
                 {vt[k] && k === 'thanh_vien' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
-                    <Field label="Vốn góp (đồng)"><NumInput value={vt[k].von_gop} onChange={v => setV(k, 'von_gop', v)} /></Field>
+                    <Field label="Vốn góp (đồng)"><NumInput value={vt[k].von_gop} onChange={v => setV(k, 'von_gop', v)} />
+                      <ConVon tong={von.tvKhac + (Number(vt[k].von_gop) || 0)} rieng={Number(vt[k].von_gop) || 0} vdl={von.vdl} /></Field>
                     <Field label="Thời hạn góp" className="md:col-span-2"><input className={inputCls} value={vt[k].thoi_han_gop || ''} onChange={e => setV(k, 'thoi_han_gop', e.target.value)} /></Field>
                     <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!vt[k].chu_tich} onChange={e => setV(k, 'chu_tich', e.target.checked)} />Chủ tịch Hội đồng thành viên</label>
                   </div>
                 )}
                 {vt[k] && k === 'co_dong' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
-                    <Field label="Số cổ phần"><NumInput value={vt[k].so_co_phan} onChange={v => setV(k, 'so_co_phan', v)} /></Field>
+                    <Field label="Số cổ phần"><NumInput value={vt[k].so_co_phan} onChange={v => setV(k, 'so_co_phan', v)} />
+                      <ConVon tong={(von.cpKhac + (Number(vt[k].so_co_phan) || 0)) * von.menh} rieng={(Number(vt[k].so_co_phan) || 0) * von.menh} vdl={von.vdl} /></Field>
                     <Field label="Thời hạn góp" className="md:col-span-2"><input className={inputCls} value={vt[k].thoi_han_gop || ''} onChange={e => setV(k, 'thoi_han_gop', e.target.value)} /></Field>
                     <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!vt[k].chu_tich} onChange={e => setV(k, 'chu_tich', e.target.checked)} />Chủ tịch Hội đồng quản trị</label>
                   </div>
@@ -450,6 +476,18 @@ function XuatWord({ d, id, lh, toast, sua, taiLai }) {
                   </tr>
                 ))}
               </tbody></table>
+              {/* Hướng dẫn in + ký: in kèm cho khách cùng bộ hồ sơ (phòng pháp lý yêu cầu 18/11/2026) */}
+              <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <b className="text-sky-900">🖨 Hướng dẫn in + ký gửi khách</b>
+                  <span className="flex gap-1">
+                    <button className="p-btn p-btn-sm" disabled={!!dang} onClick={() => tai(dot, 'HUONG_DAN')}>{dang === dot + 'HUONG_DANword' ? '…' : '.docx'}</button>
+                    {d.pdf && <button className="p-btn p-btn-sm" disabled={!!dang} onClick={() => tai(dot, 'HUONG_DAN', 'pdf')}>{dang === dot + 'HUONG_DANpdf' ? '…' : '.pdf'}</button>}
+                  </span>
+                </div>
+                <ul className="list-disc ml-5 mt-1 text-sky-900">{(LUU_Y_IN_KY[dot]?.[lh] || []).map(l => <li key={l}>{l}</li>)}</ul>
+                <div className="text-xs text-sky-800 mt-1">Tờ hướng dẫn liệt kê từng file, ai ký, ký ở đâu, kèm họ tên người ký — có sẵn trong file .zip cả bộ (file 00).</div>
+              </div>
             </div>
           </div>
         )

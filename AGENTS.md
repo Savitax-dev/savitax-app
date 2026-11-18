@@ -466,7 +466,16 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
   `docs/huong-dan-phan-he-phap-ly.md` = trang `/phaply/huong-dan` (TrangTaiLieu) + `.docx` dựng bằng `node scripts/phaply-huong-dan-docx.mjs`
   (Word trên máy; mỗi Phần sang trang mới). Sửa giao diện thì sửa cả tài liệu.
 - Mẫu Word: **mỗi Chương (từ Chương II) sang trang mới** — mã đoạn `#p` trong khung.js (pageBreakBefore, không sinh trang trắng); anh dặn
-  17/11/2026, áp cho mẫu mới có chương.
+  17/11/2026 — **TRỪ Điều lệ 1TV** (chương ngắn, sang trang thành nhiều nửa trang trắng — pháp lý báo "ngắt trang bừa bãi" 18/11): 1TV chạy
+  liền như bản phòng nộp, tên chương + tiêu đề Điều luôn giữ cùng trang với đoạn sau (`#cbk` / `#bk`).
+- **Chuẩn trình bày mẫu Word** (pháp lý góp ý 18/11/2026, bộ kiểm `node scripts/test-phaply-word-chuan.mjs`): Times New Roman **12** (trừ
+  bảng ngang 14–19 cột Mẫu 6/7/10); Điều lệ KHÔNG đánh số trang; `~` đơn = khoảng 6pt, `~~`/nhiều `~` liền = dòng trống đủ cao (chỗ ký) — trước
+  đây mỗi `~` là dòng 17pt nên mẫu thưa; đầu trang 2 cột chia 2 hàng bằng `==` để "Số: …" và "…, ngày … tháng … năm …" thẳng hàng; tỷ lệ góp
+  vốn / sở hữu **3 chữ số thập phân, dấu phẩy** (66,667% — `inTyLe`, so ngưỡng hưởng lợi bằng SỐ `ty_le_so`, đừng parseFloat chuỗi có
+  dấu phẩy); loại giấy tờ trong lời văn QĐ / BB bổ nhiệm lấy theo người (`*_giay_to_so`: "Thẻ Căn cước số", "Hộ chiếu số"…); Mẫu 2/3/4 mục
+  "Địa chỉ nhận thông báo thuế" in sẵn điện thoại / fax / email công ty nếu có; tờ **Hướng dẫn in + ký** có cột họ tên người ký (`kyBoi` ở
+  danhMuc.js), tải riêng `?ma=HUONG_DAN` (Word / PDF) + khung trên tab "Còn thiếu & xuất Word", PDF của nó KHÔNG gộp vào bộ trình ký.
+  ⚠ PDF đổi ở VPS: máy VPS chưa có phông Times New Roman → LibreOffice thay bằng Liberation Serif (cùng khổ chữ, khác nét).
 - **Mỗi nhóm thủ tục một trang** (anh yêu cầu 17/11/2026, `sql/60`, `lib/phaply/nhom.js`): /phaply/thanh-lap · thay-doi · tam-ngung · giai-the · khac
   (+ /phaply = tất cả), cùng khuôn `app/phaply/_danhSach.js`, API `ho-so?nhom=`. Thủ tục trên công ty ĐÃ CÓ → chọn công ty (`api/admin/phaply/
   doanh-nghiep`: pháp nhân trong phạm vi + khách kế toán) → **dùng LẠI legal_entities** (doanh nghiệp, người, CCCD, ngành nghề chung);

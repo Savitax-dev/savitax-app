@@ -4,16 +4,18 @@
 ::cot 45/55
 #cb {ten_cty}
 #c --------------------
-#l Số: ….../GGT
 ||
 #cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
 #cb Độc lập - Tự do - Hạnh phúc
 #c --------------------
+==
+#c Số: ….../GGT
+||
 #ci …………….., ngày……/……/………
 ::
 ~
 # GIẤY GIỚI THIỆU
-#c Kính gửi: {#dien_thue_san}{co_quan_thue}{/dien_thue_san}{^dien_thue_san}………………………………………………………………………………………………………………………{/dien_thue_san}
+#c Kính gửi: {#dien_thue_san}{co_quan_thue}{/dien_thue_san}{^dien_thue_san}……………………………………………………………{/dien_thue_san}
 ~
 #b {ten_cty}
 #l Trân trọng giới thiệu:

@@ -2,11 +2,13 @@
 ::cot 45/55
 #cb {ten_cty}
 #c --------------------
-#l Số: 01/QĐ-HĐQT
 ||
 #cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
 #cb Độc lập – Tự do – Hạnh phúc
 #c --------------------
+==
+#c Số: 01/QĐ-HĐQT
+||
 #ci ………….., ngày ….. tháng ….. năm ………
 ::
 ~
@@ -23,7 +25,7 @@
 ~
 #lb Điều 1:
 #l {gd_danh_xung} **{gd_ho_ten}** là người giữ chức vụ {gd_chuc_danh}
-#l - Số căn cước: {gd_so_giay_to}
+#l - {gd_giay_to_so}: {gd_so_giay_to}
 #l - Ngày cấp: {gd_ngay_cap}
 #l - Nơi cấp: {gd_noi_cap}
 #l - Thường trú: {gd_dia_chi_thuong_tru}
