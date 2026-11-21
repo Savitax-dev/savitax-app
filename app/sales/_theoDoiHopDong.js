@@ -6,7 +6,7 @@
 // có phí tháng tự sinh kỳ mới mỗi tháng và không bao giờ lệch với báo giá đã gửi khách.
 // Người lập nhập SỐ TIỀN VỀ TÀI KHOẢN (đã gồm VAT), app tự chia ra số chưa VAT để tính doanh số.
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { trackContract, netFromGross, grossFromNet, VAT_DEFAULT } from '@/lib/salesContract'
+import { trackContract, netFromGross, grossFromNet, revenueInMonth, collectedInMonth, VAT_DEFAULT } from '@/lib/salesContract'
 import { monthVN } from '@/lib/salesItems'
 import { api, fmt, fmtMoney, Modal, Field, NumInput, MonthInput, StatCard, inputCls, btnPrimary, btnGhost } from './_ui'
 
@@ -38,9 +38,19 @@ export default function TheoDoiHopDong({ toast }) {
   const tong = useMemo(() => rows.reduce((a, c) => ({
     canThu: a.canThu + c.track.canThu, daThu: a.daThu + c.track.daThu, conLai: a.conLai + c.track.conLai,
   }), { canThu: 0, daThu: 0, conLai: 0 }), [rows])
-  // Doanh số tháng đang xem = tiền VỀ trong tháng đó (không phải kỳ phí của tháng đó).
-  const doanhSo = useMemo(() => (res?.contracts || []).reduce((a, c) =>
-    a + (c.payments || []).filter(p => p.paid_month === upto).reduce((s, p) => s + (Number(p.net) || 0), 0), 0), [res, upto])
+  // Hai số KHÁC NHAU, đừng gộp:
+  //   thuTrongThang — mọi tiền về trong tháng (công nợ)
+  //   doanhSo       — phần tính cho nhân viên kinh doanh: phí hằng tháng CHỈ kỳ đầu tiên,
+  //                   khoản một lần / mỗi năm tính hết (anh chốt 21/11/2026).
+  const { doanhSo, thuTrongThang } = useMemo(() => {
+    let ds = 0, thu = 0
+    for (const c of res?.contracts || []) {
+      const map = new Map([[c.id, c.items || []]])
+      ds += revenueInMonth(c.payments || [], upto, map)
+      thu += collectedInMonth(c.payments || [], upto)
+    }
+    return { doanhSo: ds, thuTrongThang: thu }
+  }, [res, upto])
 
   const xoa = async (p, ten) => {
     if (!window.confirm('Xoá lần thu ' + fmtMoney(p.gross) + ' của ' + ten + '? Doanh số tháng ' + mmyyyy(p.paid_month) + ' sẽ giảm theo.')) return
@@ -73,7 +83,8 @@ export default function TheoDoiHopDong({ toast }) {
         <StatCard label="Hợp đồng theo dõi" value={rows.length} foot={'tính tới ' + mmyyyy(upto)} tone="sky" />
         <StatCard label="Cần thu" value={fmt(tong.canThu)} unit="đ" foot="chưa gồm VAT" tone="blue" />
         <StatCard label="Đã thu" value={fmt(tong.daThu)} unit="đ" foot={tong.canThu ? Math.round(tong.daThu * 100 / tong.canThu) + '% số cần thu' : '—'} tone="grn" />
-        <StatCard label={'Doanh số tháng ' + mmyyyy(upto)} value={fmt(doanhSo)} unit="đ" foot={tong.conLai > 0 ? 'còn thiếu ' + fmt(tong.conLai) + ' đ' : 'đã thu đủ'} tone="gold" />
+        <StatCard label={'Doanh số KD tháng ' + mmyyyy(upto)} value={fmt(doanhSo)} unit="đ"
+          foot={thuTrongThang > doanhSo ? 'tiền về ' + fmt(thuTrongThang) + ' đ · phí tháng từ kỳ 2 không tính' : 'phí tháng chỉ tính kỳ đầu'} tone="gold" />
       </div>
 
       <div className="s-panel">
@@ -127,7 +138,14 @@ export default function TheoDoiHopDong({ toast }) {
                       <td></td>
                       <td></td>
                       <td className="num whitespace-nowrap">{mmyyyy(k.month)}</td>
-                      <td className="num">{fmtMoney(k.due)}</td>
+                      <td className="num">
+                        {fmtMoney(k.due)}
+                        {k.salesDue !== k.due && (
+                          <p className="text-[11px] font-normal text-gray-400">
+                            {k.salesDue > 0 ? 'doanh số KD ' + fmtMoney(k.salesDue) : 'không tính doanh số KD'}
+                          </p>
+                        )}
+                      </td>
                       <td className="num text-emerald-700">{k.paid ? fmtMoney(k.paid) : <span className="text-gray-300">—</span>}</td>
                       <td className={'num ' + (k.left > 0 ? 'text-red-700' : 'text-gray-400')}>{fmtMoney(k.left)}</td>
                       <td className="l min-w-[260px]">

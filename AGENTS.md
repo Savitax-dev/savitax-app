@@ -240,6 +240,13 @@ Khách tiềm năng + báo giá SVT.MB03 + báo cáo, dựng 2026-09-11 (commit 
   paid_month**. Số CẦN THU không lưu, tính thẳng từ bảng khoản phí (`trackContract` trong `lib/salesContract.js`)
   nên hợp đồng có phí tháng tự sinh kỳ mới mỗi tháng. Người lập nhập tiền VỀ TÀI KHOẢN (đã gồm VAT), server
   chia ra `net` chưa VAT — **không tin số trình duyệt gửi**.
+- **Doanh số NVKD chỉ ăn THÁNG ĐẦU** (anh chốt 21/11/2026): phí **hằng tháng** chỉ tính doanh số ở **kỳ đầu
+  tiên** của hợp đồng (tháng = `start_month`), từ kỳ 2 trở đi vẫn theo dõi công nợ nhưng KHÔNG cộng cho nhân
+  viên kinh doanh nữa; khoản **một lần / thu dồn / mỗi năm** tính HẾT dù rơi vào kỳ nào (BCTC năm, ghi tăng
+  BHXH thu trễ). Khách trả chậm vẫn tính, vào THÁNG TIỀN VỀ. Kỳ vừa có phí tháng vừa có khoản một lần (Gau Gau
+  tháng 3: 35tr + 254tr BCTC) thì chia **theo tỷ lệ** cơ cấu kỳ — `salesDueInMonth` / `salesShare` / `salesNet`
+  trong `lib/salesContract.js`. **Đừng dùng `collectedInMonth` để tính thưởng** (đó là tiền thu cho công nợ,
+  không cắt gì) và route thưởng **BẮT BUỘC** nạp bảng khoản phí (`loadItemsOf`) — thiếu là cộng thừa tiền thưởng.
 - **Doanh số & thưởng** (2026-11-08, `sql/55_sales_bonus.sql`): tab thứ hai ở trang Báo cáo
   (`app/sales/_doanhSoThuong.js`), hàm thuần `lib/salesBonus.js`. Doanh số = tiền thực thu trong tháng, CHƯA
   VAT, chỉ khoản `to_savitax`. Thưởng = (doanh số − mốc) × tỷ lệ; mốc 30tr thử việc / 35tr chính thức, tỷ lệ

@@ -5,7 +5,7 @@
 // Số luôn TÍNH LẠI ở server từ bảng lần thu — dòng đã lưu trong sales_bonus_reports chỉ là ảnh chụp
 // lúc trình duyệt, dùng để biết sếp đã duyệt chưa và số có bị đổi sau khi duyệt không.
 import { requireSales, loadSalesStaff, fetchAll } from '@/lib/salesScope'
-import { revenueByStaff } from '@/lib/salesContract'
+import { revenueByStaff, salesNet } from '@/lib/salesContract'
 import { buildBonusReport, defaultSettings, nguongCua, tinhThuong, mucOf } from '@/lib/salesBonus'
 import { monthVN } from '@/lib/salesItems'
 
@@ -43,6 +43,19 @@ async function loadPaid(admin, period) {
   } catch (_) { return [] }
 }
 
+// Doanh số NVKD chỉ ăn tháng đầu của phí hằng tháng (anh chốt 21/11/2026) nên PHẢI có bảng khoản
+// phí của hợp đồng mới cắt đúng — thiếu nó là cộng thừa tiền thưởng.
+async function loadItemsOf(admin, quoteIds) {
+  const ids = [...new Set((quoteIds || []).filter(Boolean))]
+  if (!ids.length) return new Map()
+  const rows = await fetchAll((a, b) => admin.from('sales_quote_items')
+    .select('quote_id, service, billing, amount, months, start_month, to_savitax')
+    .in('quote_id', ids).order('id').range(a, b))
+  const m = new Map()
+  for (const it of rows) { if (!m.has(it.quote_id)) m.set(it.quote_id, []); m.get(it.quote_id).push(it) }
+  return m
+}
+
 async function duyetNames(admin, rows) {
   const ids = [...new Set(rows.map(r => r.nguoi_duyet).filter(Boolean))]
   if (!ids.length) return new Map()
@@ -61,11 +74,11 @@ export async function GET(request) {
   const [settings, levels, saved, paid, staff] = await Promise.all([
     loadSettings(admin), loadLevels(admin), loadSaved(admin, period), loadPaid(admin, period), loadSalesStaff(admin),
   ])
-  const ten = await duyetNames(admin, saved)
+  const [ten, itemsByQuote] = await Promise.all([duyetNames(admin, saved), loadItemsOf(admin, paid.map(p => p.quote_id))])
 
   const rep = buildBonusReport({
     period, staff,
-    doanhSo: revenueByStaff(paid, period),
+    doanhSo: revenueByStaff(paid, period, itemsByQuote),
     levels: new Map(levels.map(l => [l.staff_id, l])),
     settings: settings || defaultSettings(),
     saved: new Map(saved.map(r => [r.staff_id, r])),
@@ -95,7 +108,8 @@ export async function POST(request) {
   if (settings === null) return Response.json({ error: 'Chưa cài bảng thưởng — chạy sql/55_sales_bonus.sql trước' }, { status: 400 })
 
   const s = { ...defaultSettings(), ...settings }
-  const ds = revenueByStaff(paid, period)
+  const itemsByQuote = await loadItemsOf(admin, paid.map(p => p.quote_id))
+  const ds = revenueByStaff(paid, period, itemsByQuote)
   const lvMap = new Map(levels.map(l => [l.staff_id, l]))
   const now = new Date().toISOString()
 
@@ -108,7 +122,11 @@ export async function POST(request) {
     return {
       period, staff_id: nv.id, doanh_so: doanhSo, nguong, ty_le: Number(s.ty_le) || 0, vuot, thuong,
       level: mucOf(level.level).k, trang_thai: 'cho_duyet', nguoi_duyet: null, luc_duyet: null,
-      chi_tiet: paid.filter(x => x.staff_id === nv.id).map(x => ({ quote_id: x.quote_id, due_month: x.due_month, gross: x.gross, vat_rate: x.vat_rate, net: x.net })),
+      chi_tiet: paid.filter(x => x.staff_id === nv.id).map(x => ({
+        quote_id: x.quote_id, due_month: x.due_month, gross: x.gross, vat_rate: x.vat_rate, net: x.net,
+        // phần thực sự vào doanh số sau khi cắt phí tháng từ kỳ 2 — để sau này truy ngược được
+        doanh_so: salesNet(x, itemsByQuote),
+      })),
       created_by: auth.caller.staffId, updated_at: now,
     }
   })

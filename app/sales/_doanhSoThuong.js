@@ -12,6 +12,8 @@ import { api, fmt, fmtMoney, dmyTime, Modal, Field, NumInput, MonthInput, StatCa
 const mmyyyy = m => (m && m.length === 7 ? m.slice(5) + '/' + m.slice(0, 4) : '—')
 
 export default function DoanhSoThuong({ toast }) {
+  // Anh chốt 21/11/2026: phí hằng tháng chỉ tính doanh số ở KỲ ĐẦU TIÊN của hợp đồng; khoản một
+  // lần / thu dồn / mỗi năm tính hết. Server cắt sẵn, trang này chỉ hiển thị.
   const [period, setPeriod] = useState(monthVN())
   const [res, setRes] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -50,7 +52,8 @@ export default function DoanhSoThuong({ toast }) {
     const s = res.settings || {}
     const hang = [
       ['BÁO CÁO DOANH SỐ VÀ THƯỞNG — PHÒNG KINH DOANH'],
-      ['Tháng ' + mmyyyy(period) + ' · doanh số là tiền thực thu CHƯA gồm thuế GTGT · thưởng = ' + fmt(s.ty_le) +
+      ['Tháng ' + mmyyyy(period) + ' · doanh số là tiền thực thu CHƯA gồm thuế GTGT · phí hằng tháng chỉ tính KỲ ĐẦU TIÊN ' +
+        'của hợp đồng, khoản một lần / mỗi năm tính hết · thưởng = ' + fmt(s.ty_le) +
         '% phần vượt mốc · mốc thử việc ' + fmt(s.nguong_thu_viec) + ' đ, chính thức ' + fmt(s.nguong_chinh_thuc) + ' đ'],
       [],
       ['STT', 'Nhân viên', 'Cấp', 'Doanh số (chưa VAT)', 'Mốc doanh số', 'Phần vượt mốc', 'Tỷ lệ', 'Tiền thưởng', 'Trạng thái', 'Người duyệt'],

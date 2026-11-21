@@ -55,7 +55,7 @@ export default function SalesReportPage() {
         <div className="mb-4">
           <PageHead title="Báo cáo kinh doanh" sub={tab === 'pheu'
             ? <>Tính theo lứa khách <b>tiếp nhận trong {pl}</b> — lứa đó đã đi được tới đâu (lũy kế theo phễu)</>
-            : <>Doanh số là <b>tiền thực thu trong tháng, chưa gồm thuế GTGT</b>; thưởng tính trên phần vượt mốc</>}>
+            : <>Doanh số là <b>tiền thực thu trong tháng, chưa gồm thuế GTGT</b>; phí hằng tháng <b>chỉ tính kỳ đầu tiên</b> của hợp đồng, khoản một lần / mỗi năm tính hết; thưởng tính trên phần vượt mốc</>}>
             {tab === 'pheu' && <PeriodFilter value={period} onChange={setPeriod} />}
           </PageHead>
         </div>
