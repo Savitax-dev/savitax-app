@@ -46,6 +46,17 @@ node -e "const c=require('crypto'),f=require('fs');const k=JSON.parse(f.readFile
 
 ## Cập nhật lên bản mới
 
+**Bản 1.4 (THỬ, 21/11/2026 — chỉ trên demo.savitax.vn/thu-hoadon):** thử tải bảng kê hóa đơn từ hoadondientu.gdt.gov.vn bằng cách
+bấm hộ CHÍNH các nút của trang cổng (Tìm kiếm, Xuất excel) trong tab nhân viên đã tự đăng nhập — tiện ích không gửi yêu cầu nào tới
+cổng hóa đơn (cổng chặn mọi yêu cầu không do trang gửi, đo 13/10/2026; không lách). Xin thêm quyền `scripting`, `downloads`, tên miền
+hoadondientu.gdt.gov.vn và nhận tin từ demo.savitax.vn. Mã ở `hddt.js`.
+
+**Bản 1.3 (19/11/2026):** cần cho nút **Tra chính xác** ở Rủi ro thuế → Tra cứu tình trạng MST (trang tracuunnt.gdt.gov.vn của Cục Thuế,
+nhân viên tự gõ mã xác nhận). Bản này xin thêm quyền vào tracuunnt.gdt.gov.vn — sau khi Tải lại, nếu Chrome tắt tiện ích và hỏi
+quyền mới thì bấm cho phép. Các chức năng khác vẫn chạy với bản 1.2; tra hàng loạt (VietQR) không cần tiện ích.
+
+**Bản 1.2 (06/11/2026):** cần để tải **Giấy nộp tiền** (đi theo chuyển hướng khi vào eTax). Tải tờ khai vẫn chạy với bản 1.1.
+
 Chép đè thư mục rồi vào `chrome://extensions` nhấn nút **Tải lại** (mũi tên vòng) ở ô tiện ích. Mã
 không đổi nên web app không cần build lại.
 

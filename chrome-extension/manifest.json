@@ -1,18 +1,21 @@
 {
   "manifest_version": 3,
   "name": "Savitax — Cầu nối cổng thuế",
-  "version": "1.1.0",
-  "description": "Chuyển tiếp yêu cầu giữa app.savitax.vn và cổng Dịch vụ công thuế. Không thu thập dữ liệu, không chạy nền.",
+  "version": "1.4.0",
+  "description": "Chuyển tiếp yêu cầu giữa app.savitax.vn và cổng thuế (Dịch vụ công, tra cứu người nộp thuế). Không thu thập dữ liệu, không chạy nền.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoAXLh9qmn+GTxSxMo7JgnACeY5EpFcaXCZoqFWWpNrvKjI9D6utOc1TWJkJYfql012GNu3fuZisOVvKyuSy8Ww15lS9ArBD2UxUCcErmG9/CFcH3KLpCcl2Qc0NmSLG7sZn4lySM7NLD9qsZ60UCl5am1V14cPnvS3WQg95u0hZcq/Jy3BUlcUmzA1vIBcvi9MI7xii1z07ce6jeyR2eh01wmiT1+0Ztueb8w7qwHXkTrg3Y1OG0Z5w7/BUKSvBtS7S/6sq9Ja54baNYPXlzkRQz366mRGeqICIzo4mrtMSoO3RrZ8zVcetGnr/cf/SULNGxpEeti/MGyoyIBqPS4wIDAQAB",
-  "permissions": ["cookies", "storage"],
+  "permissions": ["cookies", "storage", "scripting", "downloads"],
   "host_permissions": [
     "https://dichvucong.gdt.gov.vn/*",
-    "https://thuedientu.gdt.gov.vn/*"
+    "https://thuedientu.gdt.gov.vn/*",
+    "https://tracuunnt.gdt.gov.vn/*",
+    "https://hoadondientu.gdt.gov.vn/*"
   ],
   "background": { "service_worker": "background.js", "type": "module" },
   "externally_connectable": {
     "matches": [
       "https://app.savitax.vn/*",
+      "https://demo.savitax.vn/*",
       "http://localhost/*"
     ]
   },
