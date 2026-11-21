@@ -71,7 +71,11 @@ export async function chayLuot(tuyChon) {
   const thongBao = () => [...document.querySelectorAll('.ant-message, .ant-notification, .ant-modal-body, .ant-alert')]
     .filter(hien).map(el => gon(el.innerText)).filter(t => t && t !== gon(document.title))
   const biChan = () => thongBao().find(t => CHAN.test(boDau(t)))
-  const bam = el => {
+  // KHÔNG BAO GIỜ bấm các nút này (21/11/2026: bộ dò nút xuất đã bấm nhầm "Đăng xuất" ở đầu trang — chú thích cũng có chữ "xuất")
+  const CAM = /\b(dang xuat|logout|thoat|doi mat khau|xoa|huy)\b/
+  const bam = (el, chuThichDaDoc = '') => {
+    const ten = boDau([el.innerText, el.getAttribute('title'), el.getAttribute('aria-label'), chuThichDaDoc].join(' '))
+    if (CAM.test(ten)) throw new Error('Chặn bấm nút cấm: ' + ten)
     el.scrollIntoView({ block: 'center' })
     for (const k of ['pointerdown', 'mousedown', 'pointerup', 'mouseup']) el.dispatchEvent(new MouseEvent(k, { bubbles: true, cancelable: true, view: window }))
     el.click()
@@ -166,20 +170,24 @@ export async function chayLuot(tuyChon) {
     ghi('Bấm Tìm kiếm', xong, `${xong ? '' : 'Quá 30 giây vẫn đang tải · '}${kq || '(không đọc được số kết quả)'}${thongBao().length ? ' · thông báo: ' + thongBao().join(' | ') : ''}`)
     if (/^Có\s+0\s/.test(kq)) { ghi('Bấm xuất', true, 'Không có hóa đơn — không xuất'); return { ok: true, khongCo: true, nhatKy } }
 
-    // 4. Nút xuất (chỉ có biểu tượng): đọc chú thích các nút không chữ đang hiện
+    // 4. Nút xuất (chỉ có biểu tượng): CHỈ dò trong tab tra cứu đang mở (khung chứa nút Tìm kiếm vừa bấm) — không bao giờ dò
+    //    thanh đầu trang (ở đó có nút Đăng xuất). Đọc chú thích từng nút, nhận đúng chữ của nút xuất danh sách.
     if (xuat) {
       await cho(800)
-      const ung = [...document.querySelectorAll('button, .ant-btn')].filter(hien).filter(el => !gon(el.innerText))
+      const khung = nutTim.closest('.ant-tabs-tabpane-active')
+      if (!khung) { ghi('Tìm nút xuất', false, 'Không xác định được khung tab đang mở — dừng để khỏi bấm nhầm'); return { ok: false, nhatKy } }
+      const ung = [...khung.querySelectorAll('button, .ant-btn')].filter(hien).filter(el => !gon(el.innerText))
       const daDoc = []
-      let nutXuat = null
+      let nutXuat = null, tenXuat = ''
       for (const el of ung) {
         const t = await chuThich(el)
+        const k = boDau(t)
         daDoc.push((t || '(không chú thích)') + (el.disabled ? ' [tắt]' : ''))
-        if (!el.disabled && /xuat|ket xuat|excel|tai ve/.test(boDau(t)) && !/xml|in hoa don|^in$/.test(boDau(t))) { nutXuat = el; break }
+        if (!el.disabled && /xuat|excel|tai ve/.test(k) && !CAM.test(k) && !/xml|^in\b|in hoa don/.test(k)) { nutXuat = el; tenXuat = t; break }
       }
-      if (!nutXuat) { ghi('Tìm nút xuất', false, 'Các nút biểu tượng: ' + (daDoc.join(' ; ') || '(không có)')); return { ok: false, nhatKy } }
-      ghi('Tìm nút xuất', true, daDoc.at(-1))
-      bam(nutXuat)
+      if (!nutXuat) { ghi('Tìm nút xuất', false, 'Các nút biểu tượng trong khung: ' + (daDoc.join(' ; ') || '(không có)')); return { ok: false, nhatKy } }
+      ghi('Tìm nút xuất', true, tenXuat + '  (đã đọc: ' + daDoc.join(' ; ') + ')')
+      bam(nutXuat, tenXuat)
       await cho(1500)
       // Cổng có thể hỏi lại bằng hộp thoại → bấm nút đồng ý của hộp thoại (vẫn là nút của trang)
       const hop = [...document.querySelectorAll('.ant-modal-wrap, .ant-popover, .ant-modal-confirm')].filter(x => x.getBoundingClientRect().width > 0 && getComputedStyle(x).display !== 'none').at(-1)
