@@ -46,10 +46,11 @@ node -e "const c=require('crypto'),f=require('fs');const k=JSON.parse(f.readFile
 
 ## Cập nhật lên bản mới
 
-**Bản 1.4 (THỬ, 21/11/2026 — chỉ trên demo.savitax.vn/thu-hoadon):** thử tải bảng kê hóa đơn từ hoadondientu.gdt.gov.vn bằng cách
-bấm hộ CHÍNH các nút của trang cổng (Tìm kiếm, Xuất excel) trong tab nhân viên đã tự đăng nhập — tiện ích không gửi yêu cầu nào tới
-cổng hóa đơn (cổng chặn mọi yêu cầu không do trang gửi, đo 13/10/2026; không lách). Xin thêm quyền `scripting`, `downloads`, tên miền
-hoadondientu.gdt.gov.vn và nhận tin từ demo.savitax.vn. Mã ở `hddt.js`.
+**Bản 1.4 (21/11/2026 — đang thử trên demo.savitax.vn/hoadon):** tải bảng kê hóa đơn từ hoadondientu.gdt.gov.vn bằng cách bấm hộ
+CHÍNH các nút của trang cổng (Đăng nhập, Tìm kiếm, Xuất hóa đơn, Đăng xuất) trong một cửa sổ cổng nhỏ; nhân viên tự gõ mã xác nhận.
+Tiện ích không gửi yêu cầu nào tới cổng hóa đơn (cổng chặn mọi yêu cầu không do trang gửi, đo 13/10/2026; không lách). Xin thêm quyền
+`scripting`, `downloads`, tên miền hoadondientu.gdt.gov.vn và nhận tin từ demo.savitax.vn. Mã ở `hddt-trang.js`. File tải từ cổng
+được đặt tên lại vào thư mục `Savitax-HDDT` trong thư mục Tải về — tắt "Hỏi vị trí lưu từng tệp" trong cài đặt tải xuống của Chrome.
 
 **Bản 1.3 (19/11/2026):** cần cho nút **Tra chính xác** ở Rủi ro thuế → Tra cứu tình trạng MST (trang tracuunnt.gdt.gov.vn của Cục Thuế,
 nhân viên tự gõ mã xác nhận). Bản này xin thêm quyền vào tracuunnt.gdt.gov.vn — sau khi Tải lại, nếu Chrome tắt tiện ích và hỏi

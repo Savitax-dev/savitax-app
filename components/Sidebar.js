@@ -327,6 +327,11 @@ export default function Sidebar({ onClose }) {
         {canViewToKhai && !noAccounting && (
           <NavItem href="/tokhai" icon="🧾" label="Tờ khai & Hạn nộp" pathname={pathname} onClose={onClose} />
         )}
+        {/* Tải bảng kê hóa đơn (hoadondientu) qua tiện ích bấm hộ nút của trang cổng — cùng điều kiện với Tờ khai.
+            Module rời — KHÔNG đưa vào bản clone (bỏ cùng app/hoadon, app/api/admin/hoadon, lib/hddt*.js). */}
+        {canViewToKhai && !noAccounting && (
+          <NavItem href="/hoadon" icon="📥" label="Tải bảng kê hóa đơn" pathname={pathname} onClose={onClose} />
+        )}
         {/* Soát xét báo cáo: mọi nhân viên kế toán, API tự giới hạn theo công ty phụ trách / phòng.
             Module rời — KHÔNG đưa vào bản clone (bỏ mục này cùng app/soatbaocao, lib/phanTich). */}
         {!noAccounting && (

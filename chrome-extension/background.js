@@ -23,7 +23,6 @@
 import {
   docCookieCong, xoaCookieCong, datCookieCong, khoPhien, taoHangDoi,
 } from './phien.js'
-import { doTrang, chayLuot } from './hddt.js'
 
 // Chỉ cho gọi đúng các tên miền của cơ quan thuế dưới đây. Thiếu chặn này thì bất kỳ trang nào trên
 // app.savitax.vn (kể cả trang bị chèn mã độc) cũng biến tiện ích thành máy chủ trung chuyển
@@ -125,39 +124,112 @@ async function dongPhien(phien) {
   return { ok: true }
 }
 
-// ── 1.4 (THỬ): bảng kê hóa đơn — bấm hộ nút của trang hoadondientu.gdt.gov.vn (xem hddt.js) ─────────────────────────
-// Tiện ích KHÔNG gửi yêu cầu nào tới cổng hóa đơn: chỉ chạy mã bấm nút trong tab nhân viên đã tự đăng nhập, và đọc danh
-// sách file trình duyệt vừa tải về (chrome.downloads) để báo lại cho app.
+// ── 1.4: bảng kê hóa đơn — BẤM HỘ NÚT của trang hoadondientu.gdt.gov.vn (bộ hàm ở hddt-trang.js) ───────────────────────
+// Tiện ích KHÔNG gửi yêu cầu nào tới cổng hóa đơn (cổng chặn mọi yêu cầu không do trang gửi, đo 13/10/2026 — không lách).
+// Việc của tiện ích ở đây: mở cửa sổ cổng, nạp bộ hàm bấm nút vào trang, chuyển trang (như người gõ địa chỉ), và đặt tên
+// file trình duyệt vừa tải từ cổng về thư mục Tải về\Savitax-HDDT\<mã lượt>.xlsx để app tìm đúng file mà đọc.
 const CONG_HDDT = 'https://hoadondientu.gdt.gov.vn/*'
+const GOC_HDDT = 'https://hoadondientu.gdt.gov.vn'
+const HAM_TRANG = ['trangThai', 'moDangNhap', 'layMaMoi', 'guiMa', 'dangXuat', 'chayLuot', 'doTrang']
+const THU_MUC_TAI = 'Savitax-HDDT'
 
 async function tabHddt() {
+  const daNho = (await chrome.storage.session.get('hddtTab')).hddtTab
+  if (daNho) { try { const t = await chrome.tabs.get(daNho); if (/^https:\/\/hoadondientu\.gdt\.gov\.vn\//.test(t.url || t.pendingUrl || '')) return t } catch { /* đã đóng */ } }
   const tabs = await chrome.tabs.query({ url: CONG_HDDT })
   if (!tabs.length) return null
   return tabs.find(t => t.active) || tabs.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0))[0]
 }
 
+function choTabTai(tabId, gioiHan = 30000) {
+  return new Promise(xong => {
+    let het = null
+    const nghe = (id, info) => { if (id === tabId && info.status === 'complete') ket() }
+    const ket = () => { chrome.tabs.onUpdated.removeListener(nghe); clearTimeout(het); setTimeout(xong, 2000) }   // chờ thêm cho trang React vẽ xong
+    chrome.tabs.onUpdated.addListener(nghe)
+    het = setTimeout(ket, gioiHan)
+  })
+}
+
+// Mở (hoặc dùng lại) cửa sổ cổng. Cửa sổ nhỏ riêng, KHÔNG phải tab nền: tab nền bị trình duyệt hãm hoạt ảnh nên hộp thoại
+// của trang có thể không mở. Nhân viên nhìn thấy tiện ích đang bấm gì.
+async function moCuaSoCong() {
+  let tab = await tabHddt()
+  if (!tab) {
+    const w = await chrome.windows.create({ url: GOC_HDDT + '/', type: 'popup', width: 1150, height: 820, left: 0, top: 0, focused: false })
+    tab = w.tabs[0]
+    await choTabTai(tab.id)
+  }
+  await chrome.storage.session.set({ hddtTab: tab.id })
+  return tab
+}
+
+async function diToi(tab, duongDan) {
+  const url = GOC_HDDT + duongDan
+  if ((tab.url || '').split('#')[0] === url) return
+  const cho = choTabTai(tab.id)
+  await chrome.tabs.update(tab.id, { url })
+  await cho
+}
+
+// File tải về trong lúc một lượt đang chạy → đặt tên theo mã lượt
+let choTai = null
 const laFileHddt = d => /hoadondientu\.gdt\.gov\.vn/.test([d.url, d.referrer, d.finalUrl].join(' '))
 const tenFile = p => String(p || '').split(/[\\/]/).pop()
+chrome.downloads.onDeterminingFilename.addListener((d, suggest) => {
+  if (choTai && Date.now() < choTai.het && laFileHddt(d)) {
+    const duoi = (String(d.filename || '').match(/\.[A-Za-z0-9]+$/) || ['.xlsx'])[0]
+    suggest({ filename: `${THU_MUC_TAI}/${choTai.ma}${duoi}`, conflictAction: 'overwrite' })
+    choTai = null
+    return
+  }
+  suggest()
+})
+
+async function goiTrang(tab, ham, thamSo) {
+  await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['hddt-trang.js'] })
+  const [kq] = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: (ten, ts) => window.__svtHddt[ten](ts),
+    args: [ham, thamSo ?? {}],
+  })
+  return kq?.result ?? null
+}
 
 async function hddt(tin) {
-  const tab = await tabHddt()
-  if (!tab) return { ok: false, loi: 'Chưa mở tab hoadondientu.gdt.gov.vn — mở cổng, tự đăng nhập rồi bấm lại' }
-  if (tin.viec === 'hddtTab') return { ok: true, tab: { url: tab.url, tieuDe: tab.title } }
   if (tin.viec === 'hddtTai') {
     const ds = await chrome.downloads.search({ startedAfter: new Date(tin.tu || Date.now() - 600000).toISOString(), orderBy: ['-startTime'], limit: 30 })
     return {
       ok: true,
-      file: ds.filter(laFileHddt).map(d => ({
-        ten: tenFile(d.filename), kichThuoc: d.fileSize || d.totalBytes || 0, trangThai: d.state, loi: d.error || '', luc: d.startTime,
+      file: ds.filter(laFileHddt).filter(d => !tin.ma || tenFile(d.filename).startsWith(tin.ma)).map(d => ({
+        ten: tenFile(d.filename), duongDan: d.filename, kichThuoc: d.fileSize || d.totalBytes || 0, trangThai: d.state, loi: d.error || '', luc: d.startTime,
       })),
     }
   }
-  const [kq] = await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: tin.viec === 'hddtDo' ? doTrang : chayLuot,
-    args: tin.viec === 'hddtDo' ? [] : [tin.tuyChon || {}],
-  })
-  return { ok: true, ketQua: kq?.result ?? null, tab: { url: tab.url, tieuDe: tab.title } }
+  if (tin.viec === 'hddtMo') {
+    const tab = await moCuaSoCong()
+    return { ok: true, tab: { url: tab.url, tieuDe: tab.title } }
+  }
+  const tab = await tabHddt()
+  if (!tab) return { ok: false, chuaMo: true, loi: 'Chưa mở cổng hoadondientu.gdt.gov.vn' }
+  if (tin.viec === 'hddtTab') return { ok: true, tab: { url: tab.url, tieuDe: tab.title } }
+  if (tin.viec === 'hddtXem') { await chrome.windows.update(tab.windowId, { focused: true }); await chrome.tabs.update(tab.id, { active: true }); return { ok: true } }
+  if (tin.viec === 'hddtDiToi') {
+    if (!/^\/[\w\-/]*$/.test(tin.duongDan || '')) return { ok: false, loi: 'Đường dẫn không hợp lệ' }
+    await diToi(tab, tin.duongDan)
+    return { ok: true }
+  }
+  // Bản thử /thu-hoadon dùng tên cũ
+  const ham = tin.viec === 'hddtDo' ? 'doTrang' : tin.viec === 'hddtChay' ? 'chayLuot' : tin.ham
+  if (!HAM_TRANG.includes(ham)) return { ok: false, loi: 'Không hiểu yêu cầu' }
+  const thamSo = tin.viec === 'hddtChay' ? tin.tuyChon : tin.thamSo
+  if (ham === 'chayLuot' && thamSo?.maLuot) choTai = { ma: String(thamSo.maLuot).replace(/[^\w-]/g, ''), het: Date.now() + 120000 }
+  try {
+    const ketQua = await goiTrang(tab, ham, thamSo)
+    return { ok: true, ketQua, tab: { url: tab.url, tieuDe: tab.title } }
+  } finally {
+    if (ham === 'chayLuot') setTimeout(() => { if (choTai && choTai.ma === thamSo?.maLuot) choTai = null }, 60000)
+  }
 }
 
 chrome.runtime.onMessageExternal.addListener((tin, nguoiGui, traLoi) => {
@@ -169,14 +241,14 @@ chrome.runtime.onMessageExternal.addListener((tin, nguoiGui, traLoi) => {
   }
 
   if (tin?.viec === 'ping') {
-    traLoi({ ok: true, phienBan: chrome.runtime.getManifest().version, coPhienAo: true, theoChuyenHuong: true, traNnt: true, hddt: true })
+    traLoi({ ok: true, phienBan: chrome.runtime.getManifest().version, coPhienAo: true, theoChuyenHuong: true, traNnt: true, hddt: 2 })
     return false
   }
   if (tin?.viec === 'xoaCookie') { donCookie().then(traLoi); return true }
   if (tin?.viec === 'moPhien') { moPhien(tin.phien).then(traLoi); return true }
   if (tin?.viec === 'dongPhien') { dongPhien(tin.phien).then(traLoi); return true }
   if (tin?.viec === 'goiCong') { goiCong(tin).then(traLoi); return true }
-  if (/^hddt(Tab|Do|Chay|Tai)$/.test(tin?.viec || '')) {
+  if (/^hddt(Tab|Do|Chay|Tai|Mo|Xem|DiToi|Goi)$/.test(tin?.viec || '')) {
     hddt(tin).then(traLoi, e => traLoi({ ok: false, loi: String(e?.message || e) }))
     return true
   }
