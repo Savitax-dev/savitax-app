@@ -492,26 +492,13 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
   sơ tiếp theo (hoạt động lại / gia hạn / giải thể) = đã xử lý; nhắc khách được cả khi hồ sơ đã đóng. Dải cảnh báo hiện ở MỌI trang nhóm.
   Kiểm `test-phaply-nhom [--that]`. Hạn thông báo = 3 ngày làm việc (T2–T6, CHƯA trừ ngày lễ).
 
-## Tải bảng kê hóa đơn (`/hoadon`) — tiện ích BẤM HỘ NÚT của trang cổng (21/11/2026, đang thử trên demo)
+## Phân hệ Hóa đơn điện tử — ĐANG GÁC (13/10/2026)
 
-Cổng hoadondientu.gdt.gov.vn **chặn** mọi yêu cầu không do mã của trang gửi (đo 13/10/2026: tiện ích tự đăng nhập, đọc chen
-trong tab đều 403 "hành vi không hợp lệ"). Giả dấu nhận diện = lách lớp chống tự động → **không làm, đừng thử lại**.
-Cách đang dùng (anh mở lại 21/11, thử thật: cổng NHẬN, xuất đủ 99 hóa đơn): tiện ích 1.4 (`chrome-extension/hddt-trang.js`) chỉ
-điền ô + bấm nút CỦA TRANG trong một cửa sổ cổng nhỏ; mọi yêu cầu (kể cả đăng nhập) do trang gửi; nhân viên TỰ GÕ mã xác nhận
-(ảnh mã chép sang app). Tài khoản lấy ở mục "Hóa đơn điện tử" của hồ sơ công ty (`/api/admin/hoadon/tai-khoan`, phạm vi
-`credentialScope`, ghi `tax_access_logs`).
-- ⚠ **An toàn**: cổng báo chặn → dừng hẳn mọi lượt; sai MẬT KHẨU → dừng công ty đó, không thử lại (khoá tài khoản khách); danh
-  sách nút CẤM bấm (đăng xuất, xoá, huỷ…) — lần thử đầu bộ dò nút xuất đã bấm nhầm "Đăng xuất" (nút biểu tượng, chú thích có chữ
-  "xuất"); nút xuất chỉ dò TRONG khung tab tra cứu đang mở.
-- Giao diện cổng (Ant Design 3): tab bán ra / mua vào nằm sẵn trong trang (tab ẩn vẫn có kích thước → lọc theo lớp
-  `ant-tabs-tabpane-inactive`); ô ngày chỉ đọc → mở lịch, gõ `.ant-calendar-input`, Enter; nút xuất chỉ có biểu tượng, chú thích
-  "Xuất hóa đơn". Hộp đăng nhập CHƯA dò trên cổng thật (bộ nhận đoán theo Ant Design) — hụt thì nút "Dò trang" ở `/thu-hoadon`.
-- File: tiện ích đặt tên Tải về\Savitax-HDDT\<mã lượt>.xlsx (`downloads.onDeterminingFilename`) → app đọc qua tay cầm thư mục
-  Tải về → `lib/hddtBangKe.js` kiểm (khoảng ngày dòng 4, số hóa đơn = "Có N kết quả", MST công ty đúng phía mua / bán, ngày lập
-  trong kỳ; sai là KHÔNG lưu) → `lib/hddtLuu.js` ghi `<cty>\2. HỒ SƠ KẾ TOÁN\Năm <năm>\2. HÓA ĐƠN MUA VÀO_BÁN RA\QUÝ n|THÁNG mm\HĐ
-  MUA VÀO|HĐ BÁN RA\<MST> - Mua vào - Tổng quan - <từ>_<đến>.xlsx` (tên này Soát xét nhận là bảng kê cổng), ghi đè bản tải trước.
-  Cổng không cho tra cả quý thì tự tách từng tháng. Bộ kiểm: `node scripts/test-hddt-bang-ke.mjs`.
-- Mã thử cũ (gọi thẳng cổng, bị chặn) vẫn ở nhánh local `gac/hoa-don-dien-tu` — không dùng.
+Cổng hoadondientu.gdt.gov.vn **chặn** cả đăng nhập gửi từ tiện ích lẫn lượt đọc chạy trong tab đã
+đăng nhập ("Hệ thống phát hiện hành vi không hợp lệ"). Muốn qua phải giả dấu nhận diện = lách lớp
+chống tự động của cơ quan thuế → **không làm**. Mã thử nằm ở nhánh local `gac/hoa-don-dien-tu`
+(worktree D:\savitax-bank). Hướng còn lại nếu anh mở lại: app chỉ XẾP FILE nhân viên đã tải về
+(đọc XML, kiểm MST người mua, đổi tên, xếp thư mục tháng), hoặc hỏi kênh kết nối chính thức.
 
 ## Mật khẩu khách & khóa mã hóa
 
