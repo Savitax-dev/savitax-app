@@ -72,17 +72,21 @@ export default function TheoDoiHopDong({ toast }) {
 
   return (
     <>
-      <div className="flex items-center gap-2 flex-wrap mb-3">
+      <div className="s-filter">
         <input value={qText} onChange={e => setQText(e.target.value)} placeholder="Tìm số hợp đồng, tên công ty, người lập…"
           className="s-input !w-auto flex-1 min-w-[260px]" />
-        <span className="text-xs text-gray-500">Tính kỳ thu tới tháng</span>
-        <MonthInput value={upto} onChange={setUpto} className="s-input !py-1.5" />
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-xs text-gray-500">Tính kỳ thu tới tháng</span>
+          <MonthInput value={upto} onChange={setUpto} className="s-input !py-1.5" />
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <StatCard label="Hợp đồng theo dõi" value={rows.length} foot={'tính tới ' + mmyyyy(upto)} tone="sky" />
-        <StatCard label="Cần thu" value={fmt(tong.canThu)} unit="đ" foot="chưa gồm VAT" tone="blue" />
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+        <StatCard label="Hợp đồng theo dõi" value={rows.length} foot={'tính tới ' + mmyyyy(upto)} tone="red" />
+        <StatCard label="Cần thu" value={fmt(tong.canThu)} unit="đ" foot="chưa gồm VAT" tone="amb" />
         <StatCard label="Đã thu" value={fmt(tong.daThu)} unit="đ" foot={tong.canThu ? Math.round(tong.daThu * 100 / tong.canThu) + '% số cần thu' : '—'} tone="grn" />
+        <StatCard label="Còn thiếu" value={fmt(Math.max(0, tong.conLai))} unit="đ"
+          foot={tong.conLai > 0 ? rows.filter(c => c.track.conLai > 0).length + ' hợp đồng chưa thu đủ' : 'đã thu đủ'} tone="blue" />
         <StatCard label={'Doanh số KD tháng ' + mmyyyy(upto)} value={fmt(doanhSo)} unit="đ"
           foot={thuTrongThang > doanhSo ? 'tiền về ' + fmt(thuTrongThang) + ' đ · phí tháng từ kỳ 2 không tính' : 'phí tháng chỉ tính kỳ đầu'} tone="gold" />
       </div>
@@ -94,7 +98,7 @@ export default function TheoDoiHopDong({ toast }) {
             <p className="text-xs text-gray-400 mt-1">Hợp đồng tự vào đây khi tình trạng khách chuyển sang <b>Chốt hợp đồng</b> và báo giá đã tách dòng phí.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="s-scroll">
             <table className="s-tbl">
               <thead>
                 <tr>
@@ -104,6 +108,7 @@ export default function TheoDoiHopDong({ toast }) {
                   <th>Cần thu</th>
                   <th>Đã thu</th>
                   <th>Còn lại</th>
+                  <th>Tình trạng</th>
                   <th className="l">Các lần tiền về</th>
                   <th></th>
                 </tr>
@@ -120,13 +125,14 @@ export default function TheoDoiHopDong({ toast }) {
                     <td className="num font-semibold">{fmtMoney(c.track.canThu)}</td>
                     <td className="num font-semibold text-emerald-700">{fmtMoney(c.track.daThu)}</td>
                     <td className={'num font-semibold ' + (c.track.conLai > 0 ? 'text-red-700' : 'text-gray-400')}>{fmtMoney(c.track.conLai)}</td>
+                    <td><TinhTrang due={c.track.canThu} paid={c.track.daThu} /></td>
                     <td className="l text-xs text-gray-500">{c.payments.length ? c.payments.length + ' lần thu' : 'chưa thu lần nào'}</td>
                     <td></td>
                   </tr>
                   {!c.track.kys.length && (
                     <tr>
                       <td></td>
-                      <td colSpan={6} className="l text-xs text-amber-800 bg-amber-50">
+                      <td colSpan={7} className="l text-xs text-amber-800 bg-amber-50">
                         Báo giá này chưa tách dòng phí nên chưa biết cần thu bao nhiêu — mở báo giá <b className="num">{c.quote_no}</b>,
                         dựng <b>Bước 5 · Bảng khoản phí</b> rồi quay lại đây.
                       </td>
@@ -148,6 +154,7 @@ export default function TheoDoiHopDong({ toast }) {
                       </td>
                       <td className="num text-emerald-700">{k.paid ? fmtMoney(k.paid) : <span className="text-gray-300">—</span>}</td>
                       <td className={'num ' + (k.left > 0 ? 'text-red-700' : 'text-gray-400')}>{fmtMoney(k.left)}</td>
+                      <td><TinhTrang due={k.due} paid={k.paid} /></td>
                       <td className="l min-w-[260px]">
                         {!k.payments.length ? <span className="text-xs text-gray-400">—</span> : (
                           <div className="flex flex-col gap-1">
@@ -178,6 +185,17 @@ export default function TheoDoiHopDong({ toast }) {
                   ))}
                 </tbody>
               ))}
+              <tbody>
+                <tr className="s-sum">
+                  <td></td>
+                  <td className="l">TỔNG CỘNG {rows.length} hợp đồng</td>
+                  <td></td>
+                  <td className="num">{fmtMoney(tong.canThu)}</td>
+                  <td className="num text-emerald-800">{fmtMoney(tong.daThu)}</td>
+                  <td className={'num ' + (tong.conLai > 0 ? 'text-red-800' : 'text-gray-500')}>{fmtMoney(tong.conLai)}</td>
+                  <td colSpan={3} className="l text-xs">Doanh số KD tháng {mmyyyy(upto)}: <span className="num">{fmtMoney(doanhSo)}</span></td>
+                </tr>
+              </tbody>
             </table>
           </div>
         )}
@@ -189,6 +207,16 @@ export default function TheoDoiHopDong({ toast }) {
       )}
     </>
   )
+}
+
+// Nhãn màu cho một kỳ / một hợp đồng: xanh = thu đủ, đỏ = còn thiếu, xám = chưa thu đồng nào.
+function TinhTrang({ due, paid }) {
+  const con = (Number(due) || 0) - (Number(paid) || 0)
+  const [nhan, cls] = !paid ? ['Chưa thu', 'bg-gray-100 text-gray-600 border-gray-200']
+    : con > 0 ? ['Còn thiếu', 'bg-red-50 text-red-800 border-red-200']
+      : con < 0 ? ['Thu dư', 'bg-amber-50 text-amber-800 border-amber-200']
+        : ['Đủ', 'bg-emerald-50 text-emerald-800 border-emerald-200']
+  return <span className={'text-xs px-2.5 py-0.5 rounded-full border whitespace-nowrap ' + cls}>{nhan}</span>
 }
 
 // Hộp ghi một lần tiền về. Nhập số tiền VỀ TÀI KHOẢN (đã gồm VAT) — số chưa VAT hiện ngay bên dưới

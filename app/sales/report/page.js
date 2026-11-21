@@ -56,17 +56,22 @@ export default function SalesReportPage() {
           <PageHead title="Báo cáo kinh doanh" sub={tab === 'pheu'
             ? <>Tính theo lứa khách <b>tiếp nhận trong {pl}</b> — lứa đó đã đi được tới đâu (lũy kế theo phễu)</>
             : <>Doanh số là <b>tiền thực thu trong tháng, chưa gồm thuế GTGT</b>; phí hằng tháng <b>chỉ tính kỳ đầu tiên</b> của hợp đồng, khoản một lần / mỗi năm tính hết; thưởng tính trên phần vượt mốc</>}>
-            {tab === 'pheu' && <PeriodFilter value={period} onChange={setPeriod} />}
           </PageHead>
         </div>
 
-        <div className="flex gap-1.5 flex-wrap mb-3">
-          {[['pheu', 'Phễu khách hàng'], ['thuong', '💰 Doanh số & thưởng']].map(([k, lb]) => (
-            <button key={k} onClick={() => setTab(k)} className={'s-chip' + (tab === k ? ' on' : '')}>{lb}</button>
+        <div className="s-tabs grid-cols-2">
+          {[['pheu', '🫗', 'Phễu khách hàng'], ['thuong', '💰', 'Doanh số & thưởng']].map(([k, ic, lb]) => (
+            <button key={k} onClick={() => setTab(k)} className={'s-tab' + (tab === k ? ' on' : '')}>
+              <span>{ic}</span><span className="lb">{lb}</span>
+            </button>
           ))}
         </div>
 
         {tab === 'thuong' ? <DoanhSoThuong toast={toast} /> : (<>
+        <div className="s-filter">
+          <span className="text-sm text-gray-600">Lứa khách tiếp nhận trong</span>
+          <div className="ml-auto"><PeriodFilter value={period} onChange={setPeriod} /></div>
+        </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
           <StatCard label="Khách tiếp nhận" value={t.leads} foot={pl} tone="sky" />

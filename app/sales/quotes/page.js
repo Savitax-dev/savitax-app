@@ -194,9 +194,28 @@ export default function SalesQuotesPage() {
           </button>
         )}
 
+
+        {/* Tình trạng 7 bước + Theo dõi hợp đồng — tab chia ĐỀU trong một khung (anh chỉ 01/11/2026) */}
+        <div className="s-tabs grid-cols-3 sm:grid-cols-5 lg:grid-cols-9">
+          {[{ k: '', label: 'Tất cả' }, ...STAGES].map(c => {
+            const n = c.k ? inKy.filter(q => stageKey(q.lead_stage) === c.k).length : inKy.length
+            const on = !tabHD && fStage === c.k
+            return (
+              <button key={c.k || 'all'} onClick={() => { setTabHD(false); setFStage(c.k) }} className={'s-tab' + (on ? ' on' : '')}>
+                <span className="lb">{c.label}</span><span className="n num">{n}</span>
+              </button>
+            )
+          })}
+          {/* Hợp đồng chốt xong sang đây: khách đã trả bao nhiêu, tháng nào, còn thiếu bao nhiêu */}
+          <button onClick={() => setTabHD(true)} className={'s-tab' + (tabHD ? ' on' : '')}
+            style={tabHD ? undefined : { color: '#8A6D12', background: '#FFF8E6' }}>
+            <span>📒</span><span className="lb">Theo dõi HĐ</span>
+          </button>
+        </div>
+
+        {tabHD ? <TheoDoiHopDong toast={toast} /> : (<>
         {/* Ô tìm giãn hết phần còn trống, bộ lọc kỳ dồn về cuối hàng */}
-        {!tabHD && (<>
-        <div className="flex items-center gap-2 flex-wrap mb-3">
+        <div className="s-filter">
           <input value={qText} onChange={e => setQText(e.target.value)} placeholder="Tìm số BG, tên công ty, MST, người liên hệ, SĐT…"
             className="s-input !w-auto flex-1 min-w-[260px]" />
           {onlyPending && <span className="text-xs px-2 py-1 rounded-lg bg-red-100 text-red-800">Đang lọc: chờ duyệt</span>}
@@ -210,27 +229,6 @@ export default function SalesQuotesPage() {
           <StatCard label="Phí hằng tháng" value={fmt(sum)} unit="đ/tháng" foot={sumOnce ? 'thu một lần ' + fmt(sumOnce) + ' đ' : pl} tone="blue" />
           <StatCard label="Tổng 12 tháng đầu" value={fmt(sumYear1)} unit="đ" foot={sumSigned ? 'đã chốt ' + fmt(sumSigned) + ' đ' : 'chưa có hợp đồng chốt'} tone="gold" />
         </div>
-        </>)}
-
-        {/* Đếm theo tình trạng 7 bước — bấm để lọc */}
-        <div className="flex gap-1.5 flex-wrap mb-3">
-          {[{ k: '', label: 'Tất cả' }, ...STAGES].map(c => {
-            const n = c.k ? inKy.filter(q => stageKey(q.lead_stage) === c.k).length : inKy.length
-            const on = !tabHD && fStage === c.k
-            return (
-              <button key={c.k || 'all'} onClick={() => { setTabHD(false); setFStage(c.k) }} className={'s-chip' + (on ? ' on' : '')}>
-                {c.label}<span className="n num">{n}</span>
-              </button>
-            )
-          })}
-          {/* Hợp đồng chốt xong sang đây: khách đã trả bao nhiêu, tháng nào, còn thiếu bao nhiêu */}
-          <button onClick={() => setTabHD(true)} className={'s-chip' + (tabHD ? ' on' : '')}
-            style={tabHD ? undefined : { borderColor: GOLD, color: '#8A6D12' }}>
-            📒 Theo dõi hợp đồng
-          </button>
-        </div>
-
-        {tabHD ? <TheoDoiHopDong toast={toast} /> : (
         <div className="s-panel">
           {!qs.length ? (
             <div className="py-12 text-center">
@@ -238,7 +236,7 @@ export default function SalesQuotesPage() {
               <p className="text-xs text-gray-400 mt-1">{all.length ? 'Đổi từ khoá tìm kiếm, chọn kỳ khác hoặc bấm “Tất cả”' : 'Bấm “+ Tạo báo giá mới”, nhập khảo sát hoặc tải file khảo sát của khách lên'}</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="s-scroll">
               <table className="s-tbl">
                 <thead>
                   <tr>
@@ -308,7 +306,7 @@ export default function SalesQuotesPage() {
             </div>
           )}
         </div>
-        )}
+        </>)}
       </div>
 
       {lostFor && (

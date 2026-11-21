@@ -126,6 +126,45 @@
 .sales-ui .s-tbl tbody tr:nth-child(even) td { background: var(--svt-wash); }
 .sales-ui .s-tbl tbody tr.s-click { cursor: pointer; }
 .sales-ui .s-tbl tbody tr:hover td { background: var(--svt-row-h); }
+/* Kẻ dọc giữa các cột — anh chốt 26/10/2026: dòng liền nhau xen màu, CÓ kẻ dọc. */
+.sales-ui .s-tbl th + th, .sales-ui .s-tbl td + td { border-left: 1px solid var(--svt-line); }
+/* Tiêu đề bảng dính khi cuộn trong khung .s-scroll — anh không chịu được cảnh kéo xuống mất tiêu đề. */
+.sales-ui .s-tbl thead th { position: sticky; top: 0; z-index: 3; }
+/* Dòng tổng cuối bảng */
+.sales-ui .s-tbl tbody tr.s-sum td { background: var(--svt-gold-soft); font-weight: 700; border-top: 2px solid var(--svt-gold); }
+.sales-ui .s-tbl tbody tr.s-sum:hover td { background: var(--svt-gold-soft); }
+
+/* Nhân viên ĐẠT mốc doanh số: nền xanh lá nhạt cho nổi khỏi người chưa đạt */
+.sales-ui .s-tbl tbody tr.s-dat td { background: #ECFDF5; }
+.sales-ui .s-tbl tbody tr.s-dat:hover td { background: #D7F7E8; }
+
+/* Khung cuộn của bảng dài: thanh kéo ngang nằm ngay dưới màn hình, không phải lôi tới cuối bảng */
+.sales-ui .s-scroll { overflow: auto; max-height: calc(100vh - 300px); min-height: 220px; }
+
+/* Hàng lọc trên mỗi tab: cao CỐ ĐỊNH để chuyển tab không lệch dòng (anh bắt lỗi 21/11/2026) */
+.sales-ui .s-filter {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  min-height: 40px; margin-bottom: 12px;
+}
+
+/* Thanh tab: các tab CHIA ĐỀU trong MỘT khung trắng (anh chỉ 01/11/2026) */
+.sales-ui .s-tabs {
+  display: grid; gap: 4px; padding: 4px; margin-bottom: 12px;
+  border-radius: 16px; border: 1px solid var(--svt-line); background: var(--svt-surface);
+}
+.sales-ui .s-tab {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  height: 38px; padding: 0 8px; border-radius: 12px; font-size: 13px; font-weight: 600;
+  color: #4B5563; white-space: nowrap; overflow: hidden; transition: background-color .12s, color .12s;
+}
+.sales-ui .s-tab:hover { background: var(--svt-wash); color: var(--svt-primary); }
+.sales-ui .s-tab.on { background: var(--svt-primary); color: #fff; }
+.sales-ui .s-tab .n {
+  font-size: 12px; font-weight: 700; min-width: 20px; padding: 0 5px; border-radius: 7px;
+  background: rgba(0, 0, 0, .06); color: inherit;
+}
+.sales-ui .s-tab.on .n { background: rgba(255, 255, 255, .22); }
+.sales-ui .s-tab .lb { overflow: hidden; text-overflow: ellipsis; }
 
 /* Nút lọc dạng chip */
 .sales-ui .s-chip {

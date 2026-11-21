@@ -89,7 +89,7 @@ export default function DoanhSoThuong({ toast }) {
 
   return (
     <>
-      <div className="flex items-center gap-2 flex-wrap mb-3">
+      <div className="s-filter">
         <span className="text-sm text-gray-600">Tháng báo cáo</span>
         <MonthInput value={period} onChange={setPeriod} className="s-input !py-1.5" />
         <span className="text-xs text-gray-500">{res.soLanThu} lần tiền về trong tháng</span>
@@ -105,11 +105,12 @@ export default function DoanhSoThuong({ toast }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <StatCard label="Doanh số cả phòng" value={fmt(res.tongDoanhSo)} unit="đ" foot={'tháng ' + mmyyyy(period) + ' · chưa VAT'} tone="blue" />
-        <StatCard label="Số người đạt mốc" value={res.soNguoiDat} foot={'trên ' + res.rows.length + ' nhân viên'} tone="grn" />
-        <StatCard label="Tổng tiền thưởng" value={fmt(res.tongThuong)} unit="đ" foot={fmt(s.ty_le) + '% phần vượt mốc'} tone="gold" />
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+        <StatCard label="Nhân viên kinh doanh" value={res.rows.length} foot={'tháng ' + mmyyyy(period)} tone="red" />
+        <StatCard label="Số người đạt mốc" value={res.soNguoiDat} foot={res.rows.length ? Math.round(res.soNguoiDat * 100 / res.rows.length) + '% số nhân viên' : '—'} tone="grn" />
         <StatCard label="Đã trình duyệt" value={daTrinh} foot={choDuyet ? choDuyet + ' dòng chờ quản trị duyệt' : (daTrinh ? 'quản trị đã xử lý hết' : 'chưa trình')} tone={choDuyet ? 'amb' : 'sky'} />
+        <StatCard label="Doanh số cả phòng" value={fmt(res.tongDoanhSo)} unit="đ" foot={'chưa VAT · ' + res.soLanThu + ' lần tiền về'} tone="blue" />
+        <StatCard label="Tổng tiền thưởng" value={fmt(res.tongThuong)} unit="đ" foot={fmt(s.ty_le) + '% phần vượt mốc'} tone="gold" />
       </div>
 
       {coLech && (
@@ -120,7 +121,7 @@ export default function DoanhSoThuong({ toast }) {
       )}
 
       <div className="s-panel">
-        <div className="overflow-x-auto">
+        <div className="s-scroll">
           <table className="s-tbl">
             <thead>
               <tr>
@@ -142,7 +143,7 @@ export default function DoanhSoThuong({ toast }) {
               {res.rows.map((r, i) => {
                 const tt = r.trang_thai ? trangThaiOf(r.trang_thai) : null
                 return (
-                  <tr key={r.staff_id}>
+                  <tr key={r.staff_id} className={r.dat ? 's-dat' : ''}>
                     <td className="num">{i + 1}</td>
                     <td className="l min-w-[200px]">
                       <p className="font-medium text-gray-900">{r.staff_name}</p>

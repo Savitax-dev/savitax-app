@@ -136,15 +136,15 @@ export default function SalesLeadsPage() {
             </select>
           </div>
         </div>
-        <div className="flex gap-1 flex-wrap mb-3">
+        <div className="s-tabs grid-cols-3 sm:grid-cols-5 lg:grid-cols-11">
           {[['open', 'Đang chăm sóc'], ['due', 'Cần chăm sóc'], ['none', 'Chưa ai nhận'], ...STAGES.map(s => [s.k, s.label]), ['all', 'Tất cả']].map(([k, lb]) => {
             const n = k === 'open' ? leads.filter(l => OPEN_STAGES.includes(l.stage)).length
               : k === 'due' ? leads.filter(l => OPEN_STAGES.includes(l.stage) && l.next_follow_up && l.next_follow_up <= today).length
               : k === 'none' ? unassigned.length
               : k === 'all' ? leads.length : countStage(k)
             return (
-              <button key={k} onClick={() => setFStage(k)} className={'s-chip' + (fStage === k ? ' on' : '')}>
-                {lb}<span className="n num">{n}</span>
+              <button key={k} onClick={() => setFStage(k)} className={'s-tab' + (fStage === k ? ' on' : '')}>
+                <span className="lb">{lb}</span><span className="n num">{n}</span>
               </button>
             )
           })}
@@ -157,7 +157,7 @@ export default function SalesLeadsPage() {
               <p className="text-xs text-gray-400 mt-1">{leads.length ? 'Thử bỏ bớt bộ lọc hoặc chọn "Tất cả"' : 'Bấm "+ Tiếp nhận khách" khi có khách liên hệ qua Facebook, Zalo, website, hotline…'}</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="s-scroll">
               <table className="s-tbl">
                 <thead>
                   <tr>
