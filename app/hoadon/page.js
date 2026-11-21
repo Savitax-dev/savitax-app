@@ -161,16 +161,22 @@ export default function TaiBangKeHoaDonPage() {
     capNhat({ buoc: 'mo_cong', loi: '' })
     const mo = await TI.moCong()
     if (!mo.ok) { capNhat({ buoc: 'loi', loi: 'Không mở được cổng: ' + mo.loi }); return }
-    let tt = await TI.goi('trangThai')
+    const tt = await TI.goi('trangThai', { mst: p.cty.mst })
     if (tt.biChan) return dungHan(tt.biChan)
     if (tt.ok && tt.daDangNhap) {
-      // Đang đăng nhập (có thể là công ty khác) → đăng xuất bằng nút của trang cho chắc đúng tài khoản
+      // Đang đăng nhập đúng MST công ty này (hiện ở dải đầu trang) → chạy luôn. File tải về vẫn được kiểm MST lần nữa.
+      if (tt.dungTaiKhoan) { capNhat({ buoc: 'chay', loi: 'Cổng đang đăng nhập sẵn đúng MST này — chạy luôn.', taiKhoan: { ...p.taiKhoan, matKhau: '' } }); await chayHet(); return }
+      // Tài khoản khác / không rõ → đăng xuất bằng nút của trang cho chắc đúng tài khoản
       capNhat({ buoc: 'dang_xuat_cu' })
       const x = await TI.goi('dangXuat')
-      if (!x.ok) { capNhat({ buoc: 'loi', loi: 'Cổng đang đăng nhập sẵn và không đăng xuất được: ' + (x.loi || '') + ' — đăng xuất tay trên cửa sổ cổng rồi chạy lại.' }); return }
+      if (!x.ok) {
+        capNhat({ buoc: 'loi', loi: `Cổng đang đăng nhập sẵn (đầu trang: "${(tt.chuDauTrang || '').slice(0, 120)}") và tiện ích không tìm được nút Đăng xuất. Anh/chị bấm Đăng xuất trên cửa sổ cổng rồi bấm ▶ Tải lại — hoặc vào /thu-hoadon bấm "Dò trang" gửi kỹ thuật để chỉnh.` })
+        await TI.xemCong()
+        return
+      }
       await cho(1500)
     }
-    const r = await TI.goi('moDangNhap', { tenDangNhap: p.taiKhoan.tenDangNhap, matKhau: p.taiKhoan.matKhau })
+    const r = await TI.goi('moDangNhap', { tenDangNhap: p.taiKhoan.tenDangNhap, matKhau: p.taiKhoan.matKhau }, { veApp: true })
     if (r.biChan) return dungHan(r.loi)
     if (!r.ok) { capNhat({ buoc: 'loi', loi: r.loi }); return }
     capNhat({ buoc: 'cho_ma', anhMa: r.anhMa, ma: '' })
@@ -181,7 +187,7 @@ export default function TaiBangKeHoaDonPage() {
     const p = phienRef.current
     if (!p.ma.trim()) return
     capNhat({ buoc: 'gui_ma', loi: '' })
-    const r = await TI.goi('guiMa', { ma: p.ma.trim() })
+    const r = await TI.goi('guiMa', { ma: p.ma.trim() }, { veApp: true })
     if (r.biChan) return dungHan(r.loi)
     if (r.ok) { capNhat({ buoc: 'chay', anhMa: null, taiKhoan: { ...p.taiKhoan, matKhau: '' } }); await chayHet(); return }
     if (r.saiMatKhau) {
@@ -190,12 +196,12 @@ export default function TaiBangKeHoaDonPage() {
       return
     }
     let anh = r.anhMa
-    if (!anh) { const m = await TI.goi('layMaMoi'); anh = m.anhMa }
+    if (!anh) { const m = await TI.goi('layMaMoi', {}, { veApp: true }); anh = m.anhMa }
     capNhat({ buoc: 'cho_ma', ma: '', anhMa: anh || p.anhMa, loi: r.saiMa ? 'Sai mã xác nhận — gõ lại mã mới' : (r.loi || 'Đăng nhập chưa được') })
   }
 
   async function maKhac() {
-    const m = await TI.goi('layMaMoi')
+    const m = await TI.goi('layMaMoi', {}, { veApp: true })
     if (m.anhMa) capNhat({ anhMa: m.anhMa, ma: '' })
     else capNhat({ loi: m.loi || 'Không lấy được mã mới' })
   }
@@ -207,17 +213,21 @@ export default function TaiBangKeHoaDonPage() {
   }
 
   async function chayHet() {
-    let i = 0
+    let i = 0, loiLien = 0
     while (i < phienRef.current.luot.length) {
-      if (dungRef.current) { capNhat(p => ({ luot: p.luot.map(l => (l.trangThai === 'cho' ? { ...l, trangThai: 'bo', ghiChu: 'Đã dừng' } : l)) })); break }
+      if (dungRef.current || loiLien >= 2) {
+        const lyDo = dungRef.current ? 'Đã dừng' : 'Dừng vì 2 lượt liền lỗi — xem lỗi ở trên'
+        capNhat(p => ({ luot: p.luot.map(l => (l.trangThai === 'cho' ? { ...l, trangThai: 'bo', ghiChu: lyDo } : l)) }))
+        break
+      }
       const kq = await motLuot(i)
+      loiLien = kq === 'loi' ? loiLien + 1 : 0
       if (kq === 'chan') return
       if (kq === 'het_phien') { capNhat({ buoc: 'loi', loi: 'Cổng đã đăng xuất giữa chừng (hết phiên) — bấm Tải lại để đăng nhập và chạy tiếp các kỳ còn thiếu.' }); return }
       i++
       if (i < phienRef.current.luot.length) await cho(NGHI_GIUA_LUOT)
     }
-    if (dangXuatKhiXong && !dungRef.current) { capNhat({ buoc: 'dang_xuat' }); await TI.goi('dangXuat') }
-    const p = phienRef.current
+    if (dangXuatKhiXong && !dungRef.current) { capNhat({ buoc: 'dang_xuat' }); await TI.goi('dangXuat', {}, { veApp: true }) }    const p = phienRef.current
     capNhat({ buoc: dungRef.current ? 'dung' : 'xong' })
     const daLuu = p.luot.filter(l => ['da_luu', 'khong_co'].includes(l.trangThai)).length
     setTinhTrang(t => ({ ...t, [p.cty.id]: { daCo: daLuu, tong: p.luot.length, vuaChay: true } }))

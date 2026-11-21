@@ -153,15 +153,34 @@ function choTabTai(tabId, gioiHan = 30000) {
 
 // Mở (hoặc dùng lại) cửa sổ cổng. Cửa sổ nhỏ riêng, KHÔNG phải tab nền: tab nền bị trình duyệt hãm hoạt ảnh nên hộp thoại
 // của trang có thể không mở. Nhân viên nhìn thấy tiện ích đang bấm gì.
+// Tab cổng nhân viên mở sẵn trong cửa sổ chính → chuyển sang cửa sổ nhỏ riêng (giữ nguyên phiên đăng nhập), để khi đưa cửa sổ
+// cổng lên trước không che mất tab app.
 async function moCuaSoCong() {
   let tab = await tabHddt()
   if (!tab) {
     const w = await chrome.windows.create({ url: GOC_HDDT + '/', type: 'popup', width: 1150, height: 820, left: 0, top: 0, focused: false })
     tab = w.tabs[0]
     await choTabTai(tab.id)
+  } else {
+    const w = await chrome.windows.get(tab.windowId, { populate: true })
+    if (w.type !== 'popup' || w.tabs.length > 1) {
+      const moi = await chrome.windows.create({ tabId: tab.id, type: 'popup', width: 1150, height: 820, left: 0, top: 0, focused: false })
+      tab = moi.tabs[0]
+    }
   }
   await chrome.storage.session.set({ hddtTab: tab.id })
   return tab
+}
+
+// Đưa cửa sổ cổng lên trước khi bấm hộ: tab khuất thì trình duyệt có thể không vẽ chú thích / hộp thoại (hoạt ảnh bị hãm)
+async function lenTruoc(tab) {
+  try { await chrome.windows.update(tab.windowId, { focused: true }); await chrome.tabs.update(tab.id, { active: true }) } catch { /* bỏ qua */ }
+}
+// Trả lại tab app (nhân viên cần gõ mã xác nhận trên app)
+async function veApp(nguoiGui) {
+  const t = nguoiGui?.tab
+  if (!t) return
+  try { await chrome.windows.update(t.windowId, { focused: true }); await chrome.tabs.update(t.id, { active: true }) } catch { /* bỏ qua */ }
 }
 
 async function diToi(tab, duongDan) {
@@ -196,7 +215,7 @@ async function goiTrang(tab, ham, thamSo) {
   return kq?.result ?? null
 }
 
-async function hddt(tin) {
+async function hddt(tin, nguoiGui) {
   if (tin.viec === 'hddtTai') {
     const ds = await chrome.downloads.search({ startedAfter: new Date(tin.tu || Date.now() - 600000).toISOString(), orderBy: ['-startTime'], limit: 30 })
     return {
@@ -225,7 +244,9 @@ async function hddt(tin) {
   const thamSo = tin.viec === 'hddtChay' ? tin.tuyChon : tin.thamSo
   if (ham === 'chayLuot' && thamSo?.maLuot) choTai = { ma: String(thamSo.maLuot).replace(/[^\w-]/g, ''), het: Date.now() + 120000 }
   try {
+    if (tin.viec === 'hddtGoi') await lenTruoc(tab)
     const ketQua = await goiTrang(tab, ham, thamSo)
+    if (tin.veApp) await veApp(nguoiGui)
     return { ok: true, ketQua, tab: { url: tab.url, tieuDe: tab.title } }
   } finally {
     if (ham === 'chayLuot') setTimeout(() => { if (choTai && choTai.ma === thamSo?.maLuot) choTai = null }, 60000)
@@ -249,7 +270,7 @@ chrome.runtime.onMessageExternal.addListener((tin, nguoiGui, traLoi) => {
   if (tin?.viec === 'dongPhien') { dongPhien(tin.phien).then(traLoi); return true }
   if (tin?.viec === 'goiCong') { goiCong(tin).then(traLoi); return true }
   if (/^hddt(Tab|Do|Chay|Tai|Mo|Xem|DiToi|Goi)$/.test(tin?.viec || '')) {
-    hddt(tin).then(traLoi, e => traLoi({ ok: false, loi: String(e?.message || e) }))
+    hddt(tin, nguoiGui).then(traLoi, e => traLoi({ ok: false, loi: String(e?.message || e) }))
     return true
   }
 

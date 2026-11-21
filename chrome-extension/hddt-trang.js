@@ -86,17 +86,26 @@
   const nutMoDangNhap = () => [...document.querySelectorAll('a, button, [role=button], span, div, li')]
     .filter(coKichThuoc).filter(el => !el.closest('.ant-modal-wrap, .ant-modal'))
     .filter(el => /^dang nhap$/.test(boDau(el.innerText)) && el.children.length <= 2).at(-1)
+  // Biểu tượng của nút (lớp anticon-…, data-icon của svg, aria-label) — nhận nút khi chú thích rê chuột không hiện
+  // (tab cổng nằm khuất thì trình duyệt có thể không vẽ chú thích).
+  const bieuTuong = el => boDau([...el.querySelectorAll('.anticon, i, svg, img, use')].map(i =>
+    [i.getAttribute('aria-label'), i.getAttribute('data-icon'), i.getAttribute('type'), i.getAttribute('alt'), i.getAttribute('xlink:href'), i.getAttribute('href'),
+      typeof i.className === 'string' ? i.className : i.getAttribute('class')].filter(Boolean).join(' ')).join(' '))
   // Nút Đăng xuất ở đầu trang (biểu tượng, chú thích "Đăng xuất") — có nút này là đang đăng nhập
   const timNutDangXuat = async () => {
     const coChu = [...document.querySelectorAll('a, button, [role=button], li, span')].filter(coKichThuoc)
       .find(el => /^dang xuat$/.test(boDau(el.innerText)))
     if (coChu) return coChu
-    for (const el of [...document.querySelectorAll('button, .ant-btn, [role=button]')].filter(coKichThuoc).filter(el => !gon(el.innerText))) {
-      if (el.closest('.ant-tabs-tabpane')) continue          // nút trong khung tra cứu thì không phải
-      if (/dang xuat/.test(boDau(await chuThich(el)))) return el
-    }
+    const ung = [...document.querySelectorAll('button, .ant-btn, [role=button], a')].filter(coKichThuoc)
+      .filter(el => !gon(el.innerText) && !el.closest('.ant-tabs-tabpane'))      // nút trong khung tra cứu thì không phải
+    const theoHinh = ung.find(el => /logout|poweroff|log-out|sign-out|signout|dang xuat/.test(bieuTuong(el) + ' ' + boDau(el.getAttribute('title') || el.getAttribute('aria-label'))))
+    if (theoHinh) return theoHinh
+    for (const el of ung) if (/dang xuat/.test(boDau(await chuThich(el)))) return el
     return null
   }
+  // Chữ ở dải đầu trang (tên / MST tài khoản đang đăng nhập thường nằm ở đây)
+  const chuDauTrang = () => [...document.querySelectorAll('header, .ant-layout-header, nav, [class*=header], [class*=Header]')]
+    .filter(coKichThuoc).filter(el => el.getBoundingClientRect().top < 150).map(el => gon(el.innerText)).join(' ').slice(0, 500)
   const daDangNhap = () => !nutMoDangNhap() && !hopDangNhap()
 
   // Chép ảnh mã xác nhận đang hiện trên trang (trang đã tải sẵn — tiện ích KHÔNG gọi cổng lấy mã)
@@ -130,10 +139,14 @@
   }
 
   const api = {
-    async trangThai() {
+    // { mst }: có thì trả thêm dungTaiKhoan = MST này hiện ở dải đầu trang (đang đăng nhập đúng công ty → khỏi đăng xuất)
+    async trangThai({ mst } = {}) {
       if (!laCong()) return { ok: false, loi: 'Không phải trang cổng hóa đơn' }
       const chan = biChan()
-      return { ok: true, daDangNhap: daDangNhap(), coHop: !!hopDangNhap(), duongDan: location.pathname, biChan: chan || null }
+      const dau = chuDauTrang()
+      const so = String(mst || '').replace(/[^\d-]/g, '')
+      return { ok: true, daDangNhap: daDangNhap(), coHop: !!hopDangNhap(), duongDan: location.pathname, biChan: chan || null,
+        chuDauTrang: dau, dungTaiKhoan: !!so && dau.replace(/[^\d-]/g, ' ').split(/\s+/).some(x => x === so || x.startsWith(so + '-')) }
     },
 
     // Mở hộp đăng nhập của trang, điền tên + mật khẩu, trả ảnh mã xác nhận
@@ -255,8 +268,24 @@
         ghi('Kiểm trang', true, location.pathname)
 
         const tenTab = loai === 'ban' ? 'bán ra' : 'mua vào'
-        const tab = await choDen(() => timTab(loai === 'ban' ? /ban ra/ : /mua vao/), 10000)
-        if (!tab) { ghi('Chọn tab ' + tenTab, false, 'Không thấy tab'); return { ok: false, nhatKy } }
+        const reTab = loai === 'ban' ? /ban ra/ : /mua vao/
+        let tab = await choDen(() => timTab(reTab), 6000)
+        if (!tab) {
+          // Mở thẳng địa chỉ trang tra cứu có thể không hiện màn tra cứu → đi bằng MENU của trang ("Tra cứu" → "Tra cứu hóa đơn")
+          const muc = re => [...document.querySelectorAll('a, li, span, div[role=menuitem], .ant-menu-item, .ant-menu-submenu-title')]
+            .filter(coKichThuoc).filter(el => el.children.length <= 3).find(el => re.test(boDau(el.innerText)))
+          const cha = muc(/^tra cuu$/)
+          if (cha) { for (const k of ['mouseover', 'mouseenter']) cha.dispatchEvent(new MouseEvent(k, { bubbles: k !== 'mouseenter', view: window })); bam(cha); await cho(800) }
+          const con = muc(/^tra cuu hoa don$/)
+          if (con) { bam(con); await cho(2500) }
+          tab = await choDen(() => timTab(reTab), 8000)
+          if (!tab) {
+            const thay = [...document.querySelectorAll('a, [role=tab], .ant-menu-item, .ant-menu-submenu-title, h1, h2, h3')].filter(coKichThuoc)
+              .map(el => gon(el.innerText)).filter(t => t && t.length < 60).slice(0, 15).join(' | ')
+            ghi('Chọn tab ' + tenTab, false, `Không thấy tab · trang: ${location.pathname} · menu "Tra cứu": ${cha ? 'có' : 'không'} · "Tra cứu hóa đơn": ${con ? 'có' : 'không'} · đang thấy: ${thay}`)
+            return { ok: false, nhatKy }
+          }
+        }
         bam(tab); await cho(900); ghi('Chọn tab ' + tenTab, true, gon(tab.innerText))
 
         const t2 = timTab(tabCon === 'mtt' ? /may tinh tien/ : /^hoa don dien tu$/)
@@ -327,8 +356,8 @@
       for (const el of [...document.querySelectorAll('button, [role=button], .ant-btn, a')].filter(hien)) {
         const chu = gon(el.innerText || el.getAttribute('title') || el.getAttribute('aria-label')).slice(0, 80)
         if (/^(xem danh sach|thong tin lien quan)/.test(boDau(chu))) continue
-        const muc = { the: el.tagName.toLowerCase(), chu, lop: lop(el), tat: !!el.disabled, trongHop: !!el.closest('.ant-modal-wrap, .ant-modal') }
-        if (!chu && el.tagName !== 'A') muc.chuThich = await chuThich(el)
+        const muc = { the: el.tagName.toLowerCase(), chu, lop: lop(el), tat: !!el.disabled, trongHop: !!el.closest('.ant-modal-wrap, .ant-modal'), trongKhung: !!el.closest('.ant-tabs-tabpane') }
+        if (!chu) { muc.bieuTuong = bieuTuong(el).slice(0, 120); if (el.tagName !== 'A') muc.chuThich = await chuThich(el) }
         nut.push(muc)
         if (nut.length >= 50) break
       }
@@ -342,7 +371,7 @@
       const tab = [...document.querySelectorAll('[role=tab], .ant-tabs-tab')].filter(hien)
         .map(el => ({ chu: gon(el.innerText), chon: el.getAttribute('aria-selected') === 'true' || /active/.test(lop(el)) })).slice(0, 20)
       const dauTrang = [...document.querySelectorAll('header a, header span, .ant-layout-header a, nav a')].filter(coKichThuoc).map(x => gon(x.innerText)).filter(Boolean).slice(0, 20)
-      return { url: location.href, tieuDe: document.title, daDangNhap: daDangNhap(), dauTrang, nut, o, hop, tab, thongBao: thongBao().slice(0, 10), tong: (document.body.innerText.match(/Có\s+[\d.]+\s+kết quả/g) || []).slice(0, 4) }
+      return { url: location.href, tieuDe: document.title, daDangNhap: daDangNhap(), dauTrang, chuDauTrang: chuDauTrang(), nut, o, hop, tab, thongBao: thongBao().slice(0, 10), tong: (document.body.innerText.match(/Có\s+[\d.]+\s+kết quả/g) || []).slice(0, 4) }
     },
   }
 
