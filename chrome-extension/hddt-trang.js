@@ -186,6 +186,48 @@
       return { ok: true, anhMa: anh }
     },
 
+    // Vào màn "Tra cứu hóa đơn" BẰNG MENU CỦA TRANG. ⚠ Mở thẳng địa chỉ /tra-cuu/tra-cuu-hoa-don (tải lại trang) thì cổng hiện
+    // "403 — Rất tiếc, bạn không có quyền truy cập trang này" (anh gặp 21/11/2026): trang chỉ cho vào màn tra cứu khi đi từ menu
+    // sau đăng nhập. Gặp trang 403 / 404 thì bấm "Về trang chủ" của trang rồi đi menu.
+    async vaoTraCuu() {
+      const coTab = () => timTab(/mua vao/) || timTab(/ban ra/)
+      if (coTab()) return { ok: true, buoc: ['đã ở màn tra cứu'] }
+      const buoc = []
+      const ve = timNut(/^ve trang chu$/)
+      if (ve) { bam(ve); buoc.push('Về trang chủ'); await cho(2500) }
+      const { dong } = await api.dongThongBao()
+      if (dong) buoc.push(`đóng ${dong} thông báo`)
+      // Lấy phần tử SÂU NHẤT khớp chữ (li bọc a: bấm vào li không kích hoạt liên kết a bên trong)
+      const muc = re => {
+        const ds = [...document.querySelectorAll('a, li, span, div[role=menuitem], .ant-menu-item, .ant-menu-submenu-title')]
+          .filter(coKichThuoc).filter(el => el.children.length <= 3 && re.test(boDau(el.innerText)))
+        return ds.find(el => !ds.some(o => o !== el && el.contains(o)))
+      }
+      const moMenuCha = async () => {
+        const cha = muc(/^tra cuu$/)
+        if (!cha) return false
+        for (const k of ['pointerover', 'mouseover', 'mouseenter']) cha.dispatchEvent(new MouseEvent(k, { bubbles: k !== 'mouseenter', view: window }))
+        await cho(500)
+        if (!muc(/^tra cuu hoa don$/)) { bam(cha); await cho(700) }
+        buoc.push('menu "Tra cứu"')
+        return true
+      }
+      let con = muc(/^tra cuu hoa don$/)
+      if (!con && !(await moMenuCha())) {
+        // Cửa sổ hẹp: menu gập vào nút ☰
+        const bars = [...document.querySelectorAll('button, .ant-btn, [role=button], a, span, i')].filter(coKichThuoc)
+          .find(el => !gon(el.innerText) && /bars|menu-fold|menu-unfold|anticon-menu|hamburger|navbar-toggler/.test(bieuTuong(el) + ' ' + boDau(typeof el.className === 'string' ? el.className : '')))
+        if (bars) { bam(bars); buoc.push('nút ☰'); await cho(800); await moMenuCha() }
+      }
+      con = con || muc(/^tra cuu hoa don$/)
+      if (con) { bam(con); buoc.push('"Tra cứu hóa đơn"') }
+      const tab = await choDen(coTab, 10000)
+      if (tab) { await api.dongThongBao(); return { ok: true, buoc } }
+      const thay = [...document.querySelectorAll('a, [role=tab], .ant-menu-item, .ant-menu-submenu-title, button, h1, h2, h3')].filter(coKichThuoc)
+        .map(el => gon(el.innerText)).filter(t => t && t.length < 50).slice(0, 20).join(' | ')
+      return { ok: false, buoc, loi: `Không vào được màn Tra cứu hóa đơn · trang: ${location.pathname} · đã bấm: ${buoc.join(' → ') || '(không thấy menu)'} · đang thấy: ${thay}` }
+    },
+
     // Đóng các hộp THÔNG BÁO của cổng (vd "Hiện nay, có hiện tượng…" hiện ở trang chủ) — chỉ hộp không có ô nhập, bấm nút X của hộp
     async dongThongBao() {
       let dong = 0
@@ -293,22 +335,13 @@
 
         const tenTab = loai === 'ban' ? 'bán ra' : 'mua vào'
         const reTab = loai === 'ban' ? /ban ra/ : /mua vao/
-        let tab = await choDen(() => timTab(reTab), 6000)
+        let tab = await choDen(() => timTab(reTab), 3000)
         if (!tab) {
-          // Mở thẳng địa chỉ trang tra cứu có thể không hiện màn tra cứu → đi bằng MENU của trang ("Tra cứu" → "Tra cứu hóa đơn")
-          const muc = re => [...document.querySelectorAll('a, li, span, div[role=menuitem], .ant-menu-item, .ant-menu-submenu-title')]
-            .filter(coKichThuoc).filter(el => el.children.length <= 3).find(el => re.test(boDau(el.innerText)))
-          const cha = muc(/^tra cuu$/)
-          if (cha) { for (const k of ['mouseover', 'mouseenter']) cha.dispatchEvent(new MouseEvent(k, { bubbles: k !== 'mouseenter', view: window })); bam(cha); await cho(800) }
-          const con = muc(/^tra cuu hoa don$/)
-          if (con) { bam(con); await cho(2500) }
-          tab = await choDen(() => timTab(reTab), 8000)
-          if (!tab) {
-            const thay = [...document.querySelectorAll('a, [role=tab], .ant-menu-item, .ant-menu-submenu-title, h1, h2, h3')].filter(coKichThuoc)
-              .map(el => gon(el.innerText)).filter(t => t && t.length < 60).slice(0, 15).join(' | ')
-            ghi('Chọn tab ' + tenTab, false, `Không thấy tab · trang: ${location.pathname} · menu "Tra cứu": ${cha ? 'có' : 'không'} · "Tra cứu hóa đơn": ${con ? 'có' : 'không'} · đang thấy: ${thay}`)
-            return { ok: false, nhatKy }
-          }
+          const v = await api.vaoTraCuu()
+          if (!v.ok) { ghi('Vào màn tra cứu', false, v.loi); return { ok: false, nhatKy } }
+          ghi('Vào màn tra cứu', true, v.buoc.join(' → '))
+          tab = await choDen(() => timTab(reTab), 5000)
+          if (!tab) { ghi('Chọn tab ' + tenTab, false, 'Đã vào màn tra cứu nhưng không thấy tab'); return { ok: false, nhatKy } }
         }
         bam(tab); await cho(900); ghi('Chọn tab ' + tenTab, true, gon(tab.innerText))
 

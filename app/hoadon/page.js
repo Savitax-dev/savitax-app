@@ -17,7 +17,6 @@ import { kyCanTai, danhSachLuot, docBangKeCong, kiemBangKe, chuanMst } from '@/l
 import { chonThuMucTaiVe, layThuMucTaiVe, docFileTai, luuVaoCongTy, daCoFile, THU_MUC_TAI } from '@/lib/hddtLuu'
 import * as TI from '@/lib/hddtTienIch'
 
-const TRA_CUU = '/tra-cuu/tra-cuu-hoa-don'
 const NGHI_GIUA_LUOT = 2500
 const cho = ms => new Promise(r => setTimeout(r, ms))
 const khoaKhongCo = (mst, l) => `hddt0:${chuanMst(mst)}|${l.loai}|${l.tabCon}|${l.tuNgay}|${l.denNgay}`
@@ -273,7 +272,9 @@ export default function TaiBangKeHoaDonPage() {
     const p = phienRef.current
     const l = p.luot[i]
     capNhatLuot(i, { trangThai: 'dang', ghiChu: 'Đang tra cứu…' })
-    await TI.diToi(TRA_CUU)
+    // Vào màn tra cứu bằng MENU của trang — mở thẳng địa chỉ thì cổng báo 403 "không có quyền truy cập trang này"
+    const v = await TI.goi('vaoTraCuu')
+    if (!v.ok) { capNhatLuot(i, { trangThai: 'loi', ghiChu: v.loi || 'Không vào được màn Tra cứu hóa đơn' }); return 'loi' }
     const ma = 'L' + Date.now().toString(36) + i
     const tu = Date.now()
     const r = await TI.goi('chayLuot', { loai: l.loai, tabCon: l.tabCon, tuNgay: l.tuNgay, denNgay: l.denNgay, xuat: true, maLuot: ma })

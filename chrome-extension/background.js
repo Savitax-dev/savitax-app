@@ -130,7 +130,7 @@ async function dongPhien(phien) {
 // file trình duyệt vừa tải từ cổng về thư mục Tải về\Savitax-HDDT\<mã lượt>.xlsx để app tìm đúng file mà đọc.
 const CONG_HDDT = 'https://hoadondientu.gdt.gov.vn/*'
 const GOC_HDDT = 'https://hoadondientu.gdt.gov.vn'
-const HAM_TRANG = ['trangThai', 'moDangNhap', 'layMaMoi', 'guiMa', 'dangXuat', 'chayLuot', 'doTrang', 'dongThongBao']
+const HAM_TRANG = ['trangThai', 'moDangNhap', 'layMaMoi', 'guiMa', 'dangXuat', 'chayLuot', 'doTrang', 'dongThongBao', 'vaoTraCuu']
 const THU_MUC_TAI = 'Savitax-HDDT'
 
 async function tabHddt() {
