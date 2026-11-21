@@ -317,6 +317,16 @@ hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công 
   báo lỗi — bộ dựng cũ `lib/tokhaiPdf.js` dính lỗi này) → tự cắt bằng `lib/catPhong.js` (giữ nguyên số hiệu nét chữ,
   dựng 2 lượt), nhúng `subset: false`: ~60–80 KB/file, ảnh in giống hệt bản nhúng nguyên. ⛔ Bộ dựng cũ (cờ `DUNG_PDF`) vẫn TẮT.
 - **01/GTGT theo TT89/2026** (maTKhai **2032**, XML 3.0.x; bản cổng in CHARGEPOINT T10/2026, 21/11/2026): mẫu thứ ba `GTGT3` trong `lib/tokhaiPdfMau.js`, chọn theo maTKhai (không theo phiên bản). Khác bản QUANG: ô Mẫu số ghi TT89, [06]/[03 phụ lục] "tổ chức, cá nhân cung cấp dịch vụ làm thủ tục về thuế", bỏ [11b], thêm hàng e [32b] + 3 [34a], khối chữ ký 2 cột ("NGƯỜI TRỰC TIẾP THỰC HIỆN DỊCH VỤ…") + 7 mục Ghi chú sau dòng chữ ký số, phụ lục NQ 204 cột khác. Đáy vùng nội dung 812 (mẫu cũ 822); bảng phụ lục ngắt dòng như trình duyệt cổng (`ngat` `html`: sau "-", trước "–", cắt giữa chữ quá dài, gộp khoảng trắng). So với bản gốc: 13/13 trang, nội dung từng dòng khớp — chỉ khác chỗ cổng cắt đôi hàng qua trang. 05/KK-TNCN theo TT89 CHƯA có bản gốc → chỉ lưu XML.
+- **03/TNDN (maTKhai 892) + phụ lục 03-1A, 03-3A + 01/KHBS** và **BCTC TT200 (maTKhai 402: B01 hoạt động liên tục + B02 + B03
+  trực tiếp)** — bản cổng in ca TEN NOODLES năm 2025 BSL1 (21/11/2026). Tờ khai 03/TNDN khai báo ở `lib/tokhaiPdfTndn.js` (dùng khung
+  tờ khai chung + `apDung`/`caoDau`/`camDoan`/`ghiChu` hàm); phụ lục + BCTC vẽ bằng **bộ biểu chung `lib/tokhaiPdfBieu.js`** (trang,
+  bảng tự sang trang, ô ngắt dòng như trình duyệt). BCTC ở `lib/tokhaiPdfBctc.js`: tên chỉ tiêu + kiểu chữ từng ô TRÍCH TỰ ĐỘNG từ
+  bản cổng (`scripts/trich-bang-pdf-cong.mjs` — gom theo đường kẻ, đoán đậm/thường bằng bề rộng phông + bỏ phiếu theo phông vì
+  tên phông chỉ là "CIDFont+Fn"). 03-3A (bảng 25 cột) cổng thu nhỏ cả trang 0,449 → app dựng trên trang ẢO 1250,6 × 1850,5 rồi
+  `embedPage` vào A4. KHBS khác theo tờ khai gốc (`RIENG` trong `lib/tokhaiKhbs.js`): 03/TNDN in số thô ở cột (4)(5) của 01-1/KHBS,
+  tên người ký B+118,9. Bảng HTML của cổng có lề đáy 6,48 sau hàng cuối. Kết quả so bản gốc: 03/TNDN 10/10 trang (tờ khai tr.1,
+  03-1A, 03-3A, 01/KHBS khớp 100%), BCTC 8/8 (B02, B03 100%); còn khác duy nhất chỗ cổng cắt đôi hàng qua trang. Đo mẫu mới:
+  `scripts/do-pdf-cong.mjs`, `do-net-pdf-cong.mjs`, `so-hai-pdf.mjs` (bản cổng in có dấu cách là ký tự `\u0003` — phải lọc).
 - **Hộ kinh doanh**: `clients.is_hkd` (ô tick ở hồ sơ công ty). Từ 28/10/2026 (anh chốt, `sql/41`):
   nộp **01/CNKD** (TT40/2021, gộp GTGT + TNCN chủ hộ, kỳ/hạn như 01/GTGT); **05/KK-TNCN và 01/GTGT CHỈ
   sinh lịch khi hộ đã TỪNG nộp loại đó** trên cổng (có người lao động…), không quyết toán năm; doanh
