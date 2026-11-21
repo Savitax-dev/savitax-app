@@ -61,7 +61,7 @@
   }
   const choDen = async (dk, gioiHan = 15000, buoc = 300) => {
     const bd = Date.now()
-    while (Date.now() - bd < gioiHan) { const v = dk(); if (v) return v; await cho(buoc) }
+    while (Date.now() - bd < gioiHan) { const v = await dk(); if (v) return v; await cho(buoc) }
     return null
   }
   const timNut = (re, goc = document) => [...goc.querySelectorAll('button, [role=button], .ant-btn, a')].filter(hien)
@@ -82,6 +82,9 @@
   // Hộp đăng nhập = hộp thoại đang hiện có ô mật khẩu
   const hopDangNhap = () => [...document.querySelectorAll('.ant-modal-wrap, .ant-modal, [role=dialog], form')]
     .filter(coKichThuoc).find(m => m.querySelector('input[type=password]'))
+  // Hộp "Nhập mã captcha" của màn tra cứu: hộp thoại đang hiện, tiêu đề / nhãn có chữ "mã captcha", có ô nhập, KHÔNG có ô mật khẩu
+  const hopMaTraCuu = () => [...document.querySelectorAll('.ant-modal-wrap, .ant-modal')].filter(coKichThuoc)
+    .find(m => !m.querySelector('input[type=password]') && m.querySelector('input:not([type=hidden])') && /ma captcha|ma xac nhan/.test(boDau(m.innerText)))
   // Nút / liên kết "Đăng nhập" ngoài hộp thoại (đầu trang)
   const nutMoDangNhap = () => [...document.querySelectorAll('a, button, [role=button], span, div, li')]
     .filter(coKichThuoc).filter(el => !el.closest('.ant-modal-wrap, .ant-modal'))
@@ -309,9 +312,37 @@
       return { ok: !!xong }
     },
 
-    // ── Một lượt xuất: { loai: 'mua'|'ban', tuNgay, denNgay, tabCon: ''|'mtt', xuat, chiBam } ─────────────────────────
+    // ── Hộp "Nhập mã captcha" khi TRA CỨU (cổng hỏi mã trước khi trả kết quả — thấy thật 21/11/2026 ở tab bán ra) ─────────
+    // Không lách: chép ảnh mã sang app, NHÂN VIÊN gõ, tiện ích điền vào ô của hộp rồi bấm "Xác nhận" của trang.
+    async nhapMaTraCuu({ ma }) {
+      const hop = hopMaTraCuu()
+      if (!hop) return { ok: true, daDong: true }
+      const o = [...hop.querySelectorAll('input')].filter(coKichThuoc).filter(i => i.type !== 'hidden')[0]
+      if (!o) return { ok: false, loi: 'Không thấy ô nhập mã trong hộp' }
+      datGiaTri(o, ma); await cho(200)
+      const nut = timNut(/^xac nhan$|^dong y$|^ok$/, hop)
+      if (!nut) return { ok: false, loi: 'Không thấy nút Xác nhận trong hộp' }
+      const anhCu = await anhMa(hop)
+      bam(nut)
+      const kq = await choDen(async () => {
+        const chan = biChan(); if (chan) return { biChan: chan }
+        const h = hopMaTraCuu()
+        if (!h) return { ok: true }
+        const loi = [...h.querySelectorAll('.ant-form-explain, .ant-form-item-explain, [class*=error]')].filter(coKichThuoc).map(x => gon(x.innerText)).filter(Boolean).join(' | ')
+        const anh = await anhMa(h)
+        if (loi || (anh && anh !== anhCu)) return { saiMa: true, loi: loi || 'Mã chưa đúng', anhMa: anh }
+        return null
+      }, 15000, 500)
+      if (!kq) return { ok: false, loi: 'Quá 15 giây hộp mã chưa đóng' }
+      if (kq.biChan) return { ok: false, biChan: true, loi: kq.biChan }
+      return kq.ok ? { ok: true } : { ok: false, saiMa: true, loi: kq.loi, anhMa: kq.anhMa }
+    },
+
+    // ── Một lượt xuất: { loai: 'mua'|'ban', tuNgay, denNgay, tabCon: ''|'mtt', xuat, chiBam, tuBuoc } ────────────────
+    //   Gặp hộp mã captcha khi tra / xuất → trả { canMa: true, anhMa, buocMa: 'tim'|'xuat' }; app hỏi nhân viên, gọi nhapMaTraCuu,
+    //   rồi gọi lại chayLuot với tuBuoc = 'sau_tim' | 'sau_xuat' để đi tiếp từ đúng chỗ.
     async chayLuot(tuyChon) {
-      const { loai = 'mua', tuNgay = '', denNgay = '', tabCon = '', xuat = true, chiBam = false } = tuyChon || {}
+      const { loai = 'mua', tuNgay = '', denNgay = '', tabCon = '', xuat = true, chiBam = false, tuBuoc = '' } = tuyChon || {}
       const nhatKy = []
       const ghi = (buoc, ok, chiTiet = '') => nhatKy.push({ buoc, ok, chiTiet: String(chiTiet).slice(0, 400) })
       const dienNgay = async (el, gt) => {
@@ -335,11 +366,80 @@
         const m = vung.match(/Có\s+([\d.]+)\s+kết quả/)
         return m ? Number(m[1].replace(/\./g, '')) : null
       }
+      const canMa = async buocMa => {
+        const h = hopMaTraCuu()
+        ghi(buocMa === 'tim' ? 'Bấm Tìm kiếm' : 'Bấm xuất', true, 'Cổng hỏi mã captcha — chờ nhân viên gõ')
+        return { ok: false, canMa: true, buocMa, anhMa: h ? await anhMa(h) : null, nhatKy }
+      }
+      // Kết quả sau Tìm kiếm → bấm xuất. Tách riêng để đi tiếp được sau khi nhân viên gõ mã captcha.
+      const sauTim = async () => {
+        const khung = [...document.querySelectorAll('.ant-tabs-tabpane-active')].filter(hien)
+          .find(p => [...p.querySelectorAll('button')].some(b => /^tim kiem$/.test(boDau(b.innerText))))
+        const xong = await choHetQuay()
+        const chan1 = biChan()
+        if (chan1) { ghi('Bấm Tìm kiếm', false, 'CỔNG CHẶN: ' + chan1); return { ok: false, biChan: true, nhatKy } }
+        if (hopMaTraCuu()) return canMa('tim')
+        const loiForm = [...document.querySelectorAll('.ant-form-explain, .ant-form-item-explain')].filter(hien).map(el => gon(el.innerText)).filter(Boolean)
+        if (loiForm.length) { ghi('Bấm Tìm kiếm', false, 'Cổng báo: ' + loiForm.join(' | ')); return { ok: false, loiForm: loiForm.join(' | '), nhatKy } }
+        const so = soKetQua()
+        ghi('Kết quả tra cứu', xong, `${xong ? '' : 'Quá 30 giây vẫn đang tải · '}${so == null ? '(không đọc được số kết quả)' : 'Có ' + so + ' kết quả'}`)
+        if (so === 0) return { ok: true, soKetQua: 0, khongCo: true, nhatKy }
+        if (!xuat) return { ok: true, soKetQua: so, nhatKy }
+        await cho(800)
+        if (!khung) { ghi('Tìm nút xuất', false, 'Không xác định được khung tab đang mở — dừng để khỏi bấm nhầm'); return { ok: false, nhatKy } }
+        // Mọi nút biểu tượng có chú thích "Xuất…" (trừ XML / In) — chọn nút ĐANG MỞ; chưa nút nào mở thì chờ
+        const daDoc = [], ungVien = []
+        for (const el of [...khung.querySelectorAll('button, .ant-btn')].filter(hien).filter(el => !gon(el.innerText))) {
+          const t = await chuThich(el)
+          const k = boDau(t)
+          daDoc.push((t || '(không chú thích)') + (el.disabled ? ' [tắt]' : ''))
+          if (/xuat|excel|tai ve/.test(k) && !CAM.test(k) && !/xml|^in\b|in hoa don/.test(k)) ungVien.push({ el, t })
+        }
+        if (!ungVien.length) { ghi('Tìm nút xuất', false, 'Các nút biểu tượng trong khung: ' + (daDoc.join(' ; ') || '(không có)')); return { ok: false, nhatKy } }
+        let chon = ungVien.find(u => !u.el.disabled)
+        if (!chon) {
+          // Có hóa đơn đang được CHỌN trong bảng thì nút xuất danh sách có thể bị khoá → bỏ chọn (bấm lại ô chọn của chính hàng đó)
+          const daChon = [...khung.querySelectorAll('tr.ant-table-row-selected, tbody input[type=checkbox]:checked')].filter(hien)
+          for (const x of daChon) { const o = x.matches('input') ? x : x.querySelector('input[type=checkbox]'); if (o) { bam(o); await cho(400) } }
+          await choDen(() => ungVien.find(u => !u.el.disabled), 15000, 500)
+          chon = ungVien.find(u => !u.el.disabled)
+          if (!chon) {
+            const hang = [...khung.querySelectorAll('table tbody tr')].filter(hien).filter(tr => !/placeholder|measure/.test(tr.className) && gon(tr.innerText)).length
+            const trong = !hang || /khong co du lieu|no data/.test(boDau(khung.innerText))
+            if (trong) { ghi('Tìm nút xuất', true, 'Nút xuất khoá + bảng trống → không có hóa đơn'); return { ok: true, soKetQua: 0, khongCo: true, nhatKy } }
+            ghi('Tìm nút xuất', false, `Nút xuất vẫn khoá sau 15 giây · ${so == null ? 'không đọc được số kết quả' : 'Có ' + so + ' kết quả'} · ${hang} hàng · ${daChon.length} hàng đang chọn (đã bỏ chọn) · đã đọc: ${daDoc.join(' ; ')}`)
+            return { ok: false, nhatKy }
+          }
+        }
+        ghi('Tìm nút xuất', true, chon.t)
+        bam(chon.el, { chuThichDaDoc: chon.t })
+        await cho(1500)
+        return sauXuat(so)
+      }
+      const sauXuat = async so => {
+        if (hopMaTraCuu()) return canMa('xuat')
+        const hop = [...document.querySelectorAll('.ant-modal-wrap, .ant-popover, .ant-modal-confirm')].filter(x => coKichThuoc(x) && getComputedStyle(x).display !== 'none').at(-1)
+        if (hop && !hop.querySelector('input')) {
+          const dongY = [...hop.querySelectorAll('button')].filter(coKichThuoc).find(el => /dong y|xac nhan|xuat|tai|^ok$|^co$/.test(boDau(el.innerText)))
+          ghi('Hộp thoại sau Xuất', !!dongY, gon(hop.innerText).slice(0, 250))
+          if (dongY) { bam(dongY); await cho(1200) }
+        }
+        await choHetQuay(60000)
+        if (hopMaTraCuu()) return canMa('xuat')
+        const chan2 = biChan()
+        if (chan2) { ghi('Bấm xuất', false, 'CỔNG CHẶN: ' + chan2); return { ok: false, biChan: true, nhatKy } }
+        ghi('Bấm xuất', true, 'Đã bấm')
+        return { ok: true, soKetQua: so ?? soKetQua(), nhatKy }
+      }
+
       try {
         if (!laCong()) { ghi('Kiểm trang', false, 'Không phải trang hoadondientu.gdt.gov.vn'); return { ok: false, nhatKy } }
         const chan0 = biChan()
         if (chan0) { ghi('Kiểm trang', false, 'Cổng đang báo: ' + chan0); return { ok: false, biChan: true, nhatKy } }
         if (!daDangNhap()) { ghi('Kiểm trang', false, 'Chưa đăng nhập cổng'); return { ok: false, chuaDangNhap: true, nhatKy } }
+        if (tuBuoc === 'sau_tim') return await sauTim()
+        if (tuBuoc === 'sau_xuat') return await sauXuat(null)
+        if (hopMaTraCuu()) return canMa('tim')
         const { dong } = await api.dongThongBao()
         ghi('Kiểm trang', true, location.pathname + (dong ? ` · đóng ${dong} hộp thông báo` : ''))
 
@@ -363,9 +463,14 @@
           let oNgay = [...document.querySelectorAll('input.ant-calendar-picker-input, .ant-calendar-picker input, .ant-picker input')].filter(hien)
           if (oNgay.length < 2) oNgay = [...document.querySelectorAll('input')].filter(hien).filter(el => /ngay|dd\/mm|thoi diem/.test(boDau(el.placeholder)))
           if (oNgay.length < 2) { ghi('Tìm ô ngày', false, 'Chỉ thấy ' + oNgay.length + ' ô'); return { ok: false, nhatKy } }
-          const a1 = await dienNgay(oNgay[0], tuNgay)
-          const b = await dienNgay(oNgay[1], denNgay)
-          const a = a1 === tuNgay ? a1 : await dienNgay(oNgay[0], tuNgay)
+          // Cổng giới hạn khoảng ngày (≤ 1 tháng) và ô này phụ thuộc ô kia → điền lại tối đa 3 lần, đổi thứ tự:
+          // lần 1 Từ → Đến; lần 2 Đến → Từ; lần 3 Từ → Đến (bán ra T7 21/11/2026: "Đến ngày" giữ nguyên 21/11).
+          let a = oNgay[0].value, b = oNgay[1].value
+          for (let lan = 0; lan < 3 && !(a === tuNgay && b === denNgay); lan++) {
+            if (lan === 1) { b = await dienNgay(oNgay[1], denNgay); a = await dienNgay(oNgay[0], tuNgay) }
+            else { a = await dienNgay(oNgay[0], tuNgay); b = await dienNgay(oNgay[1], denNgay) }
+            a = oNgay[0].value; b = oNgay[1].value
+          }
           const khop = a === tuNgay && b === denNgay
           ghi('Điền ngày', khop, `Từ ngày: "${a}" · Đến ngày: "${b}"`)
           if (!khop) return { ok: false, nhatKy }
@@ -374,53 +479,7 @@
         const nutTim = timNut(/^tim kiem$/)
         if (!nutTim) { ghi('Bấm Tìm kiếm', false, 'Không thấy nút'); return { ok: false, nhatKy } }
         bam(nutTim)
-        const xong = await choHetQuay()
-        const chan1 = biChan()
-        if (chan1) { ghi('Bấm Tìm kiếm', false, 'CỔNG CHẶN: ' + chan1); return { ok: false, biChan: true, nhatKy } }
-        const loiForm = [...document.querySelectorAll('.ant-form-explain, .ant-form-item-explain')].filter(hien).map(el => gon(el.innerText)).filter(Boolean)
-        if (loiForm.length) { ghi('Bấm Tìm kiếm', false, 'Cổng báo: ' + loiForm.join(' | ')); return { ok: false, loiForm: loiForm.join(' | '), nhatKy } }
-        const so = soKetQua()
-        ghi('Bấm Tìm kiếm', xong, `${xong ? '' : 'Quá 30 giây vẫn đang tải · '}${so == null ? '(không đọc được số kết quả)' : 'Có ' + so + ' kết quả'}`)
-        if (so === 0) return { ok: true, soKetQua: 0, khongCo: true, nhatKy }
-        if (!xuat) return { ok: true, soKetQua: so, nhatKy }
-
-        await cho(800)
-        const khung = nutTim.closest('.ant-tabs-tabpane-active')
-        if (!khung) { ghi('Tìm nút xuất', false, 'Không xác định được khung tab đang mở — dừng để khỏi bấm nhầm'); return { ok: false, nhatKy } }
-        const daDoc = []
-        let nutXuat = null, tenXuat = ''
-        for (const el of [...khung.querySelectorAll('button, .ant-btn')].filter(hien).filter(el => !gon(el.innerText))) {
-          const t = await chuThich(el)
-          const k = boDau(t)
-          daDoc.push((t || '(không chú thích)') + (el.disabled ? ' [tắt]' : ''))
-          if (/xuat|excel|tai ve/.test(k) && !CAM.test(k) && !/xml|^in\b|in hoa don/.test(k)) { nutXuat = el; tenXuat = t; break }
-        }
-        if (!nutXuat) { ghi('Tìm nút xuất', false, 'Các nút biểu tượng trong khung: ' + (daDoc.join(' ; ') || '(không có)')); return { ok: false, nhatKy } }
-        // Nút xuất đang KHOÁ (Tháng 08, 21/11/2026): chờ danh sách tải xong; bảng trống thì là không có hóa đơn
-        if (nutXuat.disabled) {
-          const mo = await choDen(() => !nutXuat.disabled, 15000, 500)
-          if (!mo) {
-            const hang = [...khung.querySelectorAll('table tbody tr')].filter(hien).filter(tr => !/placeholder|measure/.test(tr.className) && gon(tr.innerText)).length
-            const trong = !hang || /khong co du lieu|no data/.test(boDau(khung.innerText))
-            if (trong) { ghi('Tìm nút xuất', true, 'Nút xuất khoá + bảng trống → không có hóa đơn'); return { ok: true, soKetQua: 0, khongCo: true, nhatKy } }
-            ghi('Tìm nút xuất', false, `Nút "${tenXuat}" vẫn khoá sau 15 giây · ${so == null ? 'không đọc được số kết quả' : 'Có ' + so + ' kết quả'} · ${hang} hàng trên bảng · đã đọc: ${daDoc.join(' ; ')}`)
-            return { ok: false, nhatKy }
-          }
-        }
-        ghi('Tìm nút xuất', true, tenXuat)
-        bam(nutXuat, { chuThichDaDoc: tenXuat })
-        await cho(1500)
-        const hop = [...document.querySelectorAll('.ant-modal-wrap, .ant-popover, .ant-modal-confirm')].filter(x => coKichThuoc(x) && getComputedStyle(x).display !== 'none').at(-1)
-        if (hop && !hop.querySelector('input[type=password]')) {
-          const dongY = [...hop.querySelectorAll('button')].filter(coKichThuoc).find(el => /dong y|xac nhan|xuat|tai|^ok$|^co$/.test(boDau(el.innerText)))
-          ghi('Hộp thoại sau Xuất', !!dongY, gon(hop.innerText).slice(0, 250))
-          if (dongY) { bam(dongY); await cho(1200) }
-        }
-        await choHetQuay(60000)
-        const chan2 = biChan()
-        if (chan2) { ghi('Bấm xuất', false, 'CỔNG CHẶN: ' + chan2); return { ok: false, biChan: true, nhatKy } }
-        ghi('Bấm xuất', true, 'Đã bấm')
-        return { ok: true, soKetQua: so, nhatKy }
+        return await sauTim()
       } catch (e) {
         ghi('Lỗi', false, String(e?.message || e))
         return { ok: false, nhatKy }

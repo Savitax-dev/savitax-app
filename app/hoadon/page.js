@@ -17,7 +17,7 @@ import { kyCanTai, danhSachLuot, docBangKeCong, kiemBangKe, chuanMst } from '@/l
 import { chonThuMucTaiVe, layThuMucTaiVe, docFileTai, luuVaoCongTy, daCoFile, THU_MUC_TAI } from '@/lib/hddtLuu'
 import * as TI from '@/lib/hddtTienIch'
 
-const NGHI_GIUA_LUOT = 2500
+const NGHI_GIUA_LUOT = 6000      // giãn nhịp: tra dồn dập thì cổng bật hộp mã captcha ở màn tra cứu (21/11/2026)
 const cho = ms => new Promise(r => setTimeout(r, ms))
 const khoaKhongCo = (mst, l) => `hddt0:${chuanMst(mst)}|${l.loai}|${l.tabCon}|${l.tuNgay}|${l.denNgay}`
 const docLS = k => { try { return localStorage.getItem(k) } catch { return null } }
@@ -56,6 +56,10 @@ export default function TaiBangKeHoaDonPage() {
   const [phien, setPhien] = useState(null)
   const phienRef = useRef(null)
   const dungRef = useRef(false)
+  const choMaRef = useRef(null)        // resolve của lượt đang chờ nhân viên gõ mã captcha màn tra cứu
+  const [maTra, setMaTra] = useState(null)   // { anhMa, loi, ma }
+  const hoiMaTraCuu = (anhMa, loi) => new Promise(xong => { choMaRef.current = xong; setMaTra({ anhMa, loi, ma: '' }) })
+  const traMa = ma => { const x = choMaRef.current; choMaRef.current = null; setMaTra(null); if (x) x(ma) }
   const [biChan, setBiChan] = useState('')
   const saiMkRef = useRef(new Set())
 
@@ -276,7 +280,24 @@ export default function TaiBangKeHoaDonPage() {
     if (!v.ok) { capNhatLuot(i, { trangThai: 'loi', ghiChu: v.loi || 'Không vào được màn Tra cứu hóa đơn' }); return 'loi' }
     const ma = 'L' + Date.now().toString(36) + i
     const tu = Date.now()
-    const r = await TI.goi('chayLuot', { loai: l.loai, tabCon: l.tabCon, tuNgay: l.tuNgay, denNgay: l.denNgay, xuat: true, maLuot: ma })
+    const thamSo = { loai: l.loai, tabCon: l.tabCon, tuNgay: l.tuNgay, denNgay: l.denNgay, xuat: true, maLuot: ma }
+    let r = await TI.goi('chayLuot', thamSo)
+    // Cổng hỏi mã captcha khi tra cứu / xuất → hiện ảnh mã trên app, NHÂN VIÊN gõ, tiện ích điền + bấm "Xác nhận" của trang,
+    // rồi đi tiếp từ đúng chỗ. Không lách mã. Bỏ trống / dừng → lượt này bỏ.
+    for (let lan = 0; r.canMa && lan < 6; lan++) {
+      capNhatLuot(i, { ghiChu: 'Cổng hỏi mã captcha — gõ mã ở ô phía trên' })
+      let anh = r.anhMa, loiMa = ''
+      for (;;) {
+        const maGo = await hoiMaTraCuu(anh, loiMa)
+        if (!maGo) { capNhatLuot(i, { trangThai: 'bo', ghiChu: 'Không gõ mã captcha — bỏ lượt' }); return 'bo' }
+        const n = await TI.goi('nhapMaTraCuu', { ma: maGo, maLuot: ma })
+        if (n.biChan) { dungHan(n.loi); capNhatLuot(i, { trangThai: 'loi', ghiChu: n.loi }); return 'chan' }
+        if (n.ok) break
+        anh = n.anhMa || anh
+        loiMa = n.saiMa ? 'Sai mã — gõ lại mã mới' : (n.loi || 'Chưa qua được hộp mã')
+      }
+      r = await TI.goi('chayLuot', { ...thamSo, tuBuoc: r.buocMa === 'xuat' ? 'sau_xuat' : 'sau_tim' })
+    }
     const buocHong = (r.nhatKy || []).filter(x => !x.ok).map(x => `${x.buoc}: ${x.chiTiet}`).join(' · ')
     if (r.biChan) { dungHan(buocHong || r.loi); capNhatLuot(i, { trangThai: 'loi', ghiChu: buocHong }); return 'chan' }
     if (r.chuaDangNhap) { capNhatLuot(i, { trangThai: 'loi', ghiChu: 'Cổng chưa đăng nhập' }); return 'het_phien' }
@@ -333,7 +354,7 @@ export default function TaiBangKeHoaDonPage() {
     }
   }
 
-  function dungLai() { dungRef.current = true; capNhat({ loi: 'Đang dừng sau lượt hiện tại…' }) }
+  function dungLai() { dungRef.current = true; capNhat({ loi: 'Đang dừng sau lượt hiện tại…' }); if (choMaRef.current) traMa(null) }
 
   if (!sanSang) return <AppShell><div className="p-8 text-sm text-gray-400">Đang tải...</div></AppShell>
 
@@ -428,6 +449,15 @@ export default function TaiBangKeHoaDonPage() {
               <div className="text-xs text-gray-500">
                 Cổng chạy ngầm ở tab nền — anh/chị chỉ gõ mã ở ô trên. (Muốn xem cổng đang làm gì: <button type="button" className="underline" onClick={() => TI.xemCong()}>mở tab cổng</button>.)
               </div>
+            )}
+            {maTra && (
+              <form className="flex flex-wrap items-center gap-3 rounded border-2 border-amber-400 bg-amber-50 p-3" onSubmit={e => { e.preventDefault(); if (maTra.ma.trim()) traMa(maTra.ma.trim()) }}>
+                <div className="w-full text-sm font-medium text-amber-800">🔐 Cổng hỏi mã captcha để tra cứu — gõ mã rồi bấm Xác nhận{maTra.loi ? ` (${maTra.loi})` : ''}</div>
+                {maTra.anhMa && <img src={maTra.anhMa} alt="Mã captcha" className="h-14 bg-white border rounded px-2" />}
+                <input autoFocus className="border rounded px-3 py-2 text-lg tracking-widest w-40" placeholder="Gõ mã" value={maTra.ma} onChange={e => setMaTra(m => ({ ...m, ma: e.target.value }))} />
+                <button className="px-4 py-2 rounded bg-amber-600 text-white font-medium">Xác nhận</button>
+                <button type="button" className="px-3 py-2 rounded border bg-white" onClick={() => traMa(null)}>Bỏ lượt này</button>
+              </form>
             )}
             {phien.luot?.length > 0 && (
               <div className="overflow-auto max-h-96 border rounded bg-white">

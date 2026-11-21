@@ -130,7 +130,7 @@ async function dongPhien(phien) {
 // file trình duyệt vừa tải từ cổng về thư mục Tải về\Savitax-HDDT\<mã lượt>.xlsx để app tìm đúng file mà đọc.
 const CONG_HDDT = 'https://hoadondientu.gdt.gov.vn/*'
 const GOC_HDDT = 'https://hoadondientu.gdt.gov.vn'
-const HAM_TRANG = ['trangThai', 'moDangNhap', 'layMaMoi', 'guiMa', 'dangXuat', 'chayLuot', 'doTrang', 'dongThongBao', 'vaoTraCuu']
+const HAM_TRANG = ['trangThai', 'moDangNhap', 'layMaMoi', 'guiMa', 'dangXuat', 'chayLuot', 'doTrang', 'dongThongBao', 'vaoTraCuu', 'nhapMaTraCuu']
 const THU_MUC_TAI = 'Savitax-HDDT'
 
 async function tabHddt() {
@@ -223,7 +223,8 @@ async function hddt(tin, nguoiGui) {
   const ham = tin.viec === 'hddtDo' ? 'doTrang' : tin.viec === 'hddtChay' ? 'chayLuot' : tin.ham
   if (!HAM_TRANG.includes(ham)) return { ok: false, loi: 'Không hiểu yêu cầu' }
   const thamSo = tin.viec === 'hddtChay' ? tin.tuyChon : tin.thamSo
-  if (ham === 'chayLuot' && thamSo?.maLuot) choTai = { ma: String(thamSo.maLuot).replace(/[^\w-]/g, ''), het: Date.now() + 120000 }
+  // Đặt tên file cho lượt đang chạy — cả khi file về SAU lúc nhân viên gõ mã captcha của màn tra cứu (nhapMaTraCuu)
+  if ((ham === 'chayLuot' || ham === 'nhapMaTraCuu') && thamSo?.maLuot) choTai = { ma: String(thamSo.maLuot).replace(/[^\w-]/g, ''), het: Date.now() + 120000 }
   try {
     const ketQua = await goiTrang(tab, ham, thamSo)
     return { ok: true, ketQua, tab: { url: tab.url, tieuDe: tab.title } }
