@@ -316,6 +316,7 @@ hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công 
   qua, anh chốt 31/10). ⚠ Phông: `subset: true` của pdf-lib 1.17 + fontkit 1.1.1 làm HỎNG Tinos (mất chữ có dấu, đọc lại
   báo lỗi — bộ dựng cũ `lib/tokhaiPdf.js` dính lỗi này) → tự cắt bằng `lib/catPhong.js` (giữ nguyên số hiệu nét chữ,
   dựng 2 lượt), nhúng `subset: false`: ~60–80 KB/file, ảnh in giống hệt bản nhúng nguyên. ⛔ Bộ dựng cũ (cờ `DUNG_PDF`) vẫn TẮT.
+- **01/GTGT theo TT89/2026** (maTKhai **2032**, XML 3.0.x; bản cổng in CHARGEPOINT T10/2026, 21/11/2026): mẫu thứ ba `GTGT3` trong `lib/tokhaiPdfMau.js`, chọn theo maTKhai (không theo phiên bản). Khác bản QUANG: ô Mẫu số ghi TT89, [06]/[03 phụ lục] "tổ chức, cá nhân cung cấp dịch vụ làm thủ tục về thuế", bỏ [11b], thêm hàng e [32b] + 3 [34a], khối chữ ký 2 cột ("NGƯỜI TRỰC TIẾP THỰC HIỆN DỊCH VỤ…") + 7 mục Ghi chú sau dòng chữ ký số, phụ lục NQ 204 cột khác. Đáy vùng nội dung 812 (mẫu cũ 822); bảng phụ lục ngắt dòng như trình duyệt cổng (`ngat` `html`: sau "-", trước "–", cắt giữa chữ quá dài, gộp khoảng trắng). So với bản gốc: 13/13 trang, nội dung từng dòng khớp — chỉ khác chỗ cổng cắt đôi hàng qua trang. 05/KK-TNCN theo TT89 CHƯA có bản gốc → chỉ lưu XML.
 - **Hộ kinh doanh**: `clients.is_hkd` (ô tick ở hồ sơ công ty). Từ 28/10/2026 (anh chốt, `sql/41`):
   nộp **01/CNKD** (TT40/2021, gộp GTGT + TNCN chủ hộ, kỳ/hạn như 01/GTGT); **05/KK-TNCN và 01/GTGT CHỈ
   sinh lịch khi hộ đã TỪNG nộp loại đó** trên cổng (có người lao động…), không quyết toán năm; doanh
