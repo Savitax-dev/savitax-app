@@ -163,20 +163,13 @@ export default function TaiBangKeHoaDonPage() {
     const tt = await TI.goi('trangThai', { mst: p.cty.mst })
     if (tt.biChan) return dungHan(tt.biChan)
     if (tt.ok && tt.daDangNhap) {
-      // Đang đăng nhập đúng MST công ty này (hiện ở dải đầu trang) → chạy luôn. File tải về vẫn được kiểm MST lần nữa.
-      if (tt.dungTaiKhoan) { capNhat({ buoc: 'chay', loi: 'Cổng đang đăng nhập sẵn đúng MST này — chạy luôn.', taiKhoan: { ...p.taiKhoan, matKhau: '' } }); await chayHet(); return }
-      // Tài khoản khác / không rõ → đăng xuất bằng nút của trang cho chắc đúng tài khoản
-      capNhat({ buoc: 'dang_xuat_cu' })
-      const x = await TI.goi('dangXuat')
-      if (!x.ok) {
-        capNhat({ buoc: 'loi', loi: `Cổng đang đăng nhập sẵn (đầu trang: "${(tt.chuDauTrang || '').slice(0, 120)}") và tiện ích không tìm được nút Đăng xuất. Anh/chị bấm Đăng xuất trên cửa sổ cổng rồi bấm ▶ Tải lại — hoặc vào /thu-hoadon bấm "Dò trang" gửi kỹ thuật để chỉnh.` })
-        await TI.xemCong()
-        return
-      }
-      await cho(1500)
+      // Cổng đang đăng nhập sẵn → chạy luôn, KHÔNG đăng xuất (nút Đăng xuất của cổng khó nhận, đăng xuất hụt từng làm kẹt cả lượt).
+      // An toàn vẫn giữ: file đầu tiên tải về được kiểm MST — đăng nhập nhầm công ty thì DỪNG, không lưu gì (motLuot).
+      capNhat({ buoc: 'chay', loi: tt.dungTaiKhoan ? '' : 'Cổng đang đăng nhập sẵn — chạy luôn; file đầu tiên sẽ được kiểm đúng MST công ty.', taiKhoan: { ...p.taiKhoan, matKhau: '' } })
+      await chayHet()
+      return
     }
-    // Hộp đăng nhập của cổng đã điền sẵn tài khoản; tab cổng để ở trước — nhân viên gõ mã + bấm Đăng nhập NGAY TRÊN CỔNG
-    // (anh chốt 21/11/2026), app tự theo dõi rồi chạy tiếp. Vẫn gõ được mã trên app (ảnh mã chép sang).
+    // Cổng chạy ngầm ở tab nền: mở hộp đăng nhập của trang, điền sẵn tài khoản, chép ảnh mã sang app — nhân viên gõ mã trên app.
     const r = await TI.goi('moDangNhap', { tenDangNhap: p.taiKhoan.tenDangNhap, matKhau: p.taiKhoan.matKhau })
     if (r.biChan) return dungHan(r.loi)
     if (!r.ok) { capNhat({ buoc: 'loi', loi: r.loi }); return }
@@ -315,7 +308,15 @@ export default function TaiBangKeHoaDonPage() {
       const { byte, xoa } = await docFileTai(p.tayTaiVe, f.ten, f.duongDan)
       const doc = docBangKeCong(byte, XLSX)
       const k = kiemBangKe({ doc, luot: l, mstCty: p.cty.mst, soKetQua: r.soKetQua })
-      if (!k.ok) { capNhatLuot(i, { trangThai: 'loi', ghiChu: `KHÔNG LƯU: ${k.loi.join(' · ')} — file để lại ở Tải về\\${THU_MUC_TAI}\\${f.ten}` }); return 'loi' }
+      if (!k.ok) {
+        capNhatLuot(i, { trangThai: 'loi', ghiChu: `KHÔNG LƯU: ${k.loi.join(' · ')} — file để lại ở Tải về\\${THU_MUC_TAI}\\${f.ten}` })
+        // Cổng đang đăng nhập CÔNG TY KHÁC → dừng cả lượt chạy (các lượt sau cũng sẽ sai)
+        if (k.loi.some(x => /nhầm công ty/.test(x))) {
+          dungRef.current = true
+          capNhat({ loi: 'Cổng đang đăng nhập CÔNG TY KHÁC — đã dừng, không lưu gì. Đăng xuất trên tab cổng rồi bấm ▶ Tải lại.' })
+        }
+        return 'loi'
+      }
       const luu = await luuVaoCongTy({ tayCty: p.tayCty, nam: l.nam, duongDan: l.duongDan, tenFile: l.tenFile, byte })
       await xoa()
       capNhatLuot(i, { trangThai: 'da_luu', ghiChu: `${doc.soHoaDon} hóa đơn → ${luu.duongDan}${luu.ghiDe ? ' (thay bản tải trước)' : ''}${k.canhBao.length ? ' · ⚠ ' + k.canhBao.join(' · ') : ''}` })
@@ -418,9 +419,8 @@ export default function TaiBangKeHoaDonPage() {
               </form>
             )}
             {phien.buoc === 'cho_ma' && (
-              <div className="text-sm text-blue-800 bg-blue-100 rounded px-3 py-2">
-                👉 Tab cổng đã mở hộp đăng nhập, điền sẵn tài khoản. Anh/chị <b>gõ mã xác nhận và bấm Đăng nhập ngay trên cổng</b> — app tự nhận ra và chạy tiếp
-                (hoặc gõ mã ở ô trên). <button type="button" className="underline" onClick={() => TI.xemCong()}>Mở tab cổng</button>
+              <div className="text-xs text-gray-500">
+                Cổng chạy ngầm ở tab nền — anh/chị chỉ gõ mã ở ô trên. (Muốn xem cổng đang làm gì: <button type="button" className="underline" onClick={() => TI.xemCong()}>mở tab cổng</button>.)
               </div>
             )}
             {phien.luot?.length > 0 && (

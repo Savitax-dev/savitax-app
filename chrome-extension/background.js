@@ -151,28 +151,17 @@ function choTabTai(tabId, gioiHan = 30000) {
   })
 }
 
-// Mở (hoặc dùng lại) cửa sổ cổng. Cửa sổ nhỏ riêng, KHÔNG phải tab nền: tab nền bị trình duyệt hãm hoạt ảnh nên hộp thoại
-// của trang có thể không mở. Nhân viên nhìn thấy tiện ích đang bấm gì.
-// Dùng lại tab cổng nhân viên đang mở (anh chốt 21/11/2026: "không cần mở cổng mới"); chưa có thì mở MỘT tab cổng cạnh tab app.
+// Dùng lại tab cổng nhân viên đang mở; chưa có thì mở MỘT tab cổng NỀN cạnh tab app. CHẠY NGẦM (anh chốt 21/11/2026): không
+// bao giờ đưa tab cổng lên trước — ảnh mã xác nhận chép sang app, nhân viên gõ mã trên app. Lần thử đầu (cổng nằm ở tab nền,
+// nhân viên đứng ở tab app) bộ bấm vẫn đọc được chú thích nút + xuất đủ file.
 async function moCuaSoCong(nguoiGui) {
   let tab = await tabHddt()
   if (!tab) {
-    tab = await chrome.tabs.create({ url: GOC_HDDT + '/', active: true, ...(nguoiGui?.tab ? { windowId: nguoiGui.tab.windowId, index: nguoiGui.tab.index + 1 } : {}) })
+    tab = await chrome.tabs.create({ url: GOC_HDDT + '/', active: false, ...(nguoiGui?.tab ? { windowId: nguoiGui.tab.windowId, index: nguoiGui.tab.index + 1 } : {}) })
     await choTabTai(tab.id)
   }
   await chrome.storage.session.set({ hddtTab: tab.id })
   return tab
-}
-
-// Đưa cửa sổ cổng lên trước khi bấm hộ: tab khuất thì trình duyệt có thể không vẽ chú thích / hộp thoại (hoạt ảnh bị hãm)
-async function lenTruoc(tab) {
-  try { await chrome.windows.update(tab.windowId, { focused: true }); await chrome.tabs.update(tab.id, { active: true }) } catch { /* bỏ qua */ }
-}
-// Trả lại tab app (nhân viên cần gõ mã xác nhận trên app)
-async function veApp(nguoiGui) {
-  const t = nguoiGui?.tab
-  if (!t) return
-  try { await chrome.windows.update(t.windowId, { focused: true }); await chrome.tabs.update(t.id, { active: true }) } catch { /* bỏ qua */ }
 }
 
 async function diToi(tab, duongDan) {
@@ -236,10 +225,7 @@ async function hddt(tin, nguoiGui) {
   const thamSo = tin.viec === 'hddtChay' ? tin.tuyChon : tin.thamSo
   if (ham === 'chayLuot' && thamSo?.maLuot) choTai = { ma: String(thamSo.maLuot).replace(/[^\w-]/g, ''), het: Date.now() + 120000 }
   try {
-    // Đưa tab cổng lên trước khi bấm hộ — trừ lượt app chỉ hỏi tình trạng (đang chờ nhân viên gõ mã: đừng giật màn hình)
-    if (tin.viec === 'hddtGoi' && !tin.khongLenTruoc) await lenTruoc(tab)
     const ketQua = await goiTrang(tab, ham, thamSo)
-    if (tin.veApp) await veApp(nguoiGui)
     return { ok: true, ketQua, tab: { url: tab.url, tieuDe: tab.title } }
   } finally {
     if (ham === 'chayLuot') setTimeout(() => { if (choTai && choTai.ma === thamSo?.maLuot) choTai = null }, 60000)

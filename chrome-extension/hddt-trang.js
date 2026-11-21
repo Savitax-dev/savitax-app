@@ -168,6 +168,10 @@
       if (daDangNhap()) return { ok: true, daDangNhap: true }
       let hop = hopDangNhap()
       if (!hop) {
+        // Tab đang kẹt ở trang 403 / 404 của cổng → "Về trang chủ" trước
+        const ve = timNut(/^ve trang chu$/)
+        if (ve) { bam(ve); await cho(2500); if (daDangNhap()) return { ok: true, daDangNhap: true } }
+        await api.dongThongBao()
         const nut = nutMoDangNhap()
         if (!nut) return { ok: false, loi: 'Không thấy nút "Đăng nhập" trên trang — bấm "Dò trang" gửi em' }
         bam(nut)
