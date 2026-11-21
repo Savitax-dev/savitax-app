@@ -316,12 +316,18 @@
       const ghi = (buoc, ok, chiTiet = '') => nhatKy.push({ buoc, ok, chiTiet: String(chiTiet).slice(0, 400) })
       const dienNgay = async (el, gt) => {
         if (!el.readOnly) { datGiaTri(el, gt); await cho(150); phim(el, 'Enter', 13); el.blur(); await cho(250); return el.value }
-        bam(el); await cho(450)
-        const oLich = [...document.querySelectorAll('.ant-calendar-picker-container .ant-calendar-input, .ant-calendar-input')].filter(coKichThuoc).at(-1)
+        if (el.value === gt) return el.value                 // đã đúng sẵn — đừng mở lịch (mở/đóng thừa từng làm mất giá trị)
+        bam(el)
+        const oLich = await choDen(() => [...document.querySelectorAll('.ant-calendar-picker-container .ant-calendar-input, .ant-calendar-input')].filter(coKichThuoc).at(-1), 3000, 150)
         if (!oLich) return el.value + ' (không mở được lịch)'
         datGiaTri(oLich, gt); await cho(300)
-        phim(oLich, 'Enter', 13); await cho(450)
-        if (oLich.isConnected && coKichThuoc(oLich)) { phim(oLich, 'Escape', 27); await cho(300) }
+        phim(oLich, 'Enter', 13)
+        // Chờ ô ngày NHẬN giá trị rồi mới đóng lịch. Tab cổng chạy ngầm thì lịch đóng chậm; bản trước bấm Esc khi lịch chưa kịp
+        // đóng → Esc huỷ luôn ngày vừa chọn → cổng báo "Bạn chưa nhập Đến ngày" (Tháng 07, 21/11/2026).
+        const nhan = await choDen(() => el.value === gt, 2500, 150)
+        if (nhan) {
+          if (oLich.isConnected && coKichThuoc(oLich)) { document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); await cho(300) }
+        } else if (oLich.isConnected && coKichThuoc(oLich)) { phim(oLich, 'Escape', 27); await cho(300) }
         return el.value
       }
       const soKetQua = () => {
@@ -387,9 +393,20 @@
           const t = await chuThich(el)
           const k = boDau(t)
           daDoc.push((t || '(không chú thích)') + (el.disabled ? ' [tắt]' : ''))
-          if (!el.disabled && /xuat|excel|tai ve/.test(k) && !CAM.test(k) && !/xml|^in\b|in hoa don/.test(k)) { nutXuat = el; tenXuat = t; break }
+          if (/xuat|excel|tai ve/.test(k) && !CAM.test(k) && !/xml|^in\b|in hoa don/.test(k)) { nutXuat = el; tenXuat = t; break }
         }
         if (!nutXuat) { ghi('Tìm nút xuất', false, 'Các nút biểu tượng trong khung: ' + (daDoc.join(' ; ') || '(không có)')); return { ok: false, nhatKy } }
+        // Nút xuất đang KHOÁ (Tháng 08, 21/11/2026): chờ danh sách tải xong; bảng trống thì là không có hóa đơn
+        if (nutXuat.disabled) {
+          const mo = await choDen(() => !nutXuat.disabled, 15000, 500)
+          if (!mo) {
+            const hang = [...khung.querySelectorAll('table tbody tr')].filter(hien).filter(tr => !/placeholder|measure/.test(tr.className) && gon(tr.innerText)).length
+            const trong = !hang || /khong co du lieu|no data/.test(boDau(khung.innerText))
+            if (trong) { ghi('Tìm nút xuất', true, 'Nút xuất khoá + bảng trống → không có hóa đơn'); return { ok: true, soKetQua: 0, khongCo: true, nhatKy } }
+            ghi('Tìm nút xuất', false, `Nút "${tenXuat}" vẫn khoá sau 15 giây · ${so == null ? 'không đọc được số kết quả' : 'Có ' + so + ' kết quả'} · ${hang} hàng trên bảng · đã đọc: ${daDoc.join(' ; ')}`)
+            return { ok: false, nhatKy }
+          }
+        }
         ghi('Tìm nút xuất', true, tenXuat)
         bam(nutXuat, { chuThichDaDoc: tenXuat })
         await cho(1500)

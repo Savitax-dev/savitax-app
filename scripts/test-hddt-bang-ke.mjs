@@ -13,10 +13,10 @@ const kiem = (ten, a, b) => {
 
 console.log('Kỳ cần tải:')
 const HOM_NAY = new Date(2026, 10, 21)   // 21/11/2026
-kiem('khai quý, Q3 → 1 kỳ trọn quý', kyCanTai({ kyKhai: 'quy', ky: { nam: 2026, quy: 3 }, homNay: HOM_NAY }).ky.map(k => [k.tuNgay, k.denNgay, k.thuMucKy]),
-  [['01/07/2026', '30/09/2026', 'QUÝ 3']])
-kiem('khai quý, Q4 chưa hết → đến hôm nay', kyCanTai({ kyKhai: 'quy', ky: { nam: 2026, quy: 4 }, homNay: HOM_NAY }).ky.map(k => [k.tuNgay, k.denNgay, k.chuaHet]),
-  [['01/10/2026', '21/11/2026', true]])
+kiem('khai quý, Q3 → 3 tháng (cổng không cho tra quá 1 tháng), chung thư mục QUÝ 3', kyCanTai({ kyKhai: 'quy', ky: { nam: 2026, quy: 3 }, homNay: HOM_NAY }).ky.map(k => [k.tuNgay, k.denNgay, k.thuMucKy]),
+  [['01/07/2026', '31/07/2026', 'QUÝ 3'], ['01/08/2026', '31/08/2026', 'QUÝ 3'], ['01/09/2026', '30/09/2026', 'QUÝ 3']])
+kiem('khai quý, Q4 chưa hết → T10 + T11 đến hôm nay', kyCanTai({ kyKhai: 'quy', ky: { nam: 2026, quy: 4 }, homNay: HOM_NAY }).ky.map(k => [k.tuNgay, k.denNgay, k.chuaHet]),
+  [['01/10/2026', '31/10/2026', false], ['01/11/2026', '21/11/2026', true]])
 kiem('khai quý mà chọn tháng → báo', !!kyCanTai({ kyKhai: 'quy', ky: { nam: 2026, thang: 10 }, homNay: HOM_NAY }).loi, true)
 kiem('khai tháng, Q4 → T10, T11 (T12 chưa tới)', kyCanTai({ kyKhai: 'thang', ky: { nam: 2026, quy: 4 }, homNay: HOM_NAY }).ky.map(k => [k.tuNgay, k.denNgay, k.thuMucKy]),
   [['01/10/2026', '31/10/2026', 'THÁNG 10'], ['01/11/2026', '21/11/2026', 'THÁNG 11']])
@@ -32,9 +32,9 @@ kiem('Soát xét: bán ra MTT = bảng kê cổng bán ra', goiYTheoTen(tenBanMt
 
 console.log('Danh sách lượt:')
 const luot = danhSachLuot({ mst: '0300000001', kyList: kyCanTai({ kyKhai: 'quy', ky: { nam: 2026, quy: 3 }, homNay: HOM_NAY }).ky })
-kiem('quý × 2 chiều × 2 loại = 4 lượt', luot.length, 4)
+kiem('quý = 3 tháng × 2 chiều × 2 loại = 12 lượt', luot.length, 12)
 kiem('đường dẫn mua vào', luot[0].duongDan, ['2. HÓA ĐƠN MUA VÀO_BÁN RA', 'QUÝ 3', 'HĐ MUA VÀO'])
-kiem('lượt cuối là bán ra MTT', [luot[3].loai, luot[3].tabCon, luot[3].duongDan[2]], ['ban', 'mtt', 'HĐ BÁN RA'])
+kiem('lượt thứ 4 là bán ra MTT tháng 7', [luot[3].loai, luot[3].tabCon, luot[3].duongDan[2], luot[3].tuNgay], ['ban', 'mtt', 'HĐ BÁN RA', '01/07/2026'])
 
 console.log('Đọc + kiểm file cổng:')
 const fileCong = ({ tu = '01/07/2026', den = '30/09/2026', dong }) => {
@@ -50,7 +50,7 @@ const fileCong = ({ tu = '01/07/2026', den = '30/09/2026', dong }) => {
 const CTY = '0300000001'
 const d1 = docBangKeCong(fileCong({ dong: [{ ngay: '05/07/2026', ban: '0300000009', mua: CTY }, { ngay: '30/09/2026', ban: '0300000008', mua: CTY + '-001' }] }), XLSX)
 kiem('đọc: khoảng ngày + số hóa đơn', [d1.tuNgay, d1.denNgay, d1.soHoaDon], ['01/07/2026', '30/09/2026', 2])
-const lMua = luot[0]
+const lMua = { ...luot[0], tuNgay: '01/07/2026', denNgay: '30/09/2026' }
 kiem('mua vào đúng công ty (kể cả chi nhánh -001) → lưu', kiemBangKe({ doc: d1, luot: lMua, mstCty: CTY, soKetQua: 2 }).ok, true)
 kiem('số dòng khác "Có N kết quả" → không lưu', kiemBangKe({ doc: d1, luot: lMua, mstCty: CTY, soKetQua: 3 }).ok, false)
 const kNham = kiemBangKe({ doc: d1, luot: lMua, mstCty: '0399999999', soKetQua: 2 })

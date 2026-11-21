@@ -255,7 +255,13 @@ export default function TaiBangKeHoaDonPage() {
       i++
       if (i < phienRef.current.luot.length) await cho(NGHI_GIUA_LUOT)
     }
-    if (dangXuatKhiXong && !dungRef.current) { capNhat({ buoc: 'dang_xuat' }); await TI.goi('dangXuat', {}, { veApp: true }) }    const p = phienRef.current
+    if (dangXuatKhiXong && !dungRef.current) {
+      // Đăng xuất là phụ — tối đa 20 giây, hụt thì thôi (không được treo cả lượt ở "Đăng xuất cổng…")
+      capNhat({ buoc: 'dang_xuat' })
+      const x = await Promise.race([TI.goi('dangXuat'), cho(20000).then(() => ({ ok: false, loi: 'quá 20 giây' }))])
+      if (!x.ok) capNhat({ loi: 'Không tự đăng xuất được cổng (' + (x.loi || '') + ') — đăng xuất tay trên tab cổng nếu cần.' })
+    }
+    const p = phienRef.current
     capNhat({ buoc: dungRef.current ? 'dung' : 'xong' })
     const daLuu = p.luot.filter(l => ['da_luu', 'khong_co'].includes(l.trangThai)).length
     setTinhTrang(t => ({ ...t, [p.cty.id]: { daCo: daLuu, tong: p.luot.length, vuaChay: true } }))
