@@ -26,6 +26,7 @@ import SoatKy from '@/app/soatbaocao/soat-ky/page'
 import SoatNam from '@/app/soatbaocao/nam/page'
 import RuiRoCongTy from '@/app/ruirothue/page'
 import RuiRoPhanTich from '@/app/ruirothue/phan-tich/page'
+import TraCuuNcc from '@/app/ruirothue/tra-cuu-ncc/page'   // tra hàng loạt VietQR; "Tra chính xác" cần tiện ích → bản rời ẩn
 import HoSoChungTu from './khung/HoSoChungTu'   // phân hệ JS thuần (banRoi/hoSoChungTu), khung chỉ gắn vào
 import AppShell from './khung/AppShell'
 
@@ -51,6 +52,7 @@ const TUYEN = {
   '/ruirothue/huong-dan': HuongDanRuiRo,
   '/ruirothue': RuiRoCongTy,
   '/ruirothue/phan-tich': RuiRoPhanTich,
+  '/ruirothue/tra-cuu-ncc': TraCuuNcc,
   '/ho-so-chung-tu': HoSoChungTu,
 }
 

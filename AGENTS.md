@@ -387,6 +387,15 @@ SQL `sql/40_phantich_xem_phi.sql` (đã chạy). **KHÔNG đưa vào bản clone
 - Bộ kiểm (đều chạy offline, dữ liệu giả): `test-phantich-{thumuc,doc,kiemke,soatky,sotien,tangtruong,luong,pdf,thuong-hieu}`,
   `test-ruiro-{mau,thumuc}`, `test-soatbaocao-{mau,thumuc}`. Thử trên thư mục thật (CHỈ ĐỌC, anh cho phép từng công ty):
   `scripts/soat-thu-muc-that.mjs`, `soat-ruiro-thu-muc-that.mjs`, `soat-soatbaocao-thu-muc-that.mjs`.
+- **Tra cứu tình trạng MST** (tab 🔎 của Rủi ro thuế, tên cũ "Tra cứu NCC", `app/ruirothue/tra-cuu-ncc`, lõi `lib/phanTich/traNcc.js`, anh duyệt 19/11/2026): hóa đơn
+  mua vào (bảng kê mục 2 của thư mục, không có thì mục 7; hoặc file tải lên) → gom MST người bán → trạng thái MST + CQT quản lý,
+  xuất Excel. HAI nguồn: **VietQR** tra hàng loạt (trình duyệt gọi thẳng, không mã xác nhận, dữ liệu Cục Thuế trễ 1–2 tuần, KHÔNG
+  có CQT; chạy cả bản rời; ⚠ tra liền ~20 MST là bị khoá ~10 phút — 429 không có header CORS nên trình duyệt thấy như mất mạng →
+  trang tự chờ rồi tra tiếp, nhịp 3,5 giây/MST) và **tracuunnt.gdt.gov.vn** "Tra chính xác" qua tiện ích **1.3** — NHÂN VIÊN TỰ GÕ mã xác nhận, app
+  không đọc mã. ⛔ Đã loại, đừng thử lại: masothue.com (Cloudflare chặn mọi lượt không phải người — tra tự động = vượt lớp chặn),
+  `hoadondientu…:30000/category/public/dsdkts` của file Excel cũ (cổng 30000 đã đóng, VPS cũng "Connection refused" 19/11).
+  Kết quả nhớ trên máy (khoMay, khoá `ncc1|vietqr|` / `ncc1|gdt|`), KHÔNG lên Supabase. Bộ đọc trang kết quả tracuunnt (`docKetQuaTcnnt`, nhận
+  theo hàng tiêu đề) đã chạy đúng trên trang thật 21/11/2026. Tick nhiều MST → gõ mã lần lượt; link masothue đã bỏ (anh 21/11). Bộ kiểm: `node scripts/test-tra-ncc.mjs`.
 - ⏳ Chưa làm: màn Hóa đơn (danh sách từng hóa đơn từ file XML/PDF/HTML), đọc BCTC PDF ở Soát xét năm, đọc ảnh scan, bảng
   lương DOEL quý 2 chỉ đọc ra 1/2 người (anh để sau), mẫu 05/KK theo TT89/2026.
 
@@ -411,7 +420,9 @@ giao riêng cho đơn vị khác (bản quyền Savitax, khách đổi được 
   — đổi khuôn route thì sửa cả file này. Màn Soát xét / Rủi ro gọi thêm route máy chủ mới thì bản rời không có, phải thêm vào đây.
 - Kho bản rời: IndexedDB `savitax-hoso-ban-roi` (công ty, cài đặt); tay cầm thư mục + đệm đọc file dùng kho của app (`khoMay`).
   pdf.js chạy bằng worker nhúng (Blob) gắn sẵn ở `banRoi/vao.jsx` — `pdfChu.js` thấy có `workerPort` thì không nạp file worker.
-- Tra MST (`banRoi/khung/traMst.js`, api.vietqr.io) là chức năng DUY NHẤT cần mạng; chỉ gửi MST.
+- Chỉ hai chỗ cần mạng, đều chỉ gửi MST tới api.vietqr.io: tra MST khi thêm công ty (`banRoi/khung/traMst.js`) và tra hàng loạt ở
+  Rủi ro thuế → Tra cứu tình trạng MST. `@/lib/portalBridge` thay bằng `banRoi/shim/portalBridge.js` (không có tiện ích → nút "Tra chính xác" ẩn;
+  bản gốc đọc `process.env` lúc nạp, để nguyên là hỏng cả trang).
 - ⚠ `banRoi/vaChu.mjs` thay 11 câu chỉ-đúng-trong-app (phạm vi phòng / nhân viên, "dùng chung với Tờ khai") trong
   `CongTyCuaToi` / `ThanhCongTy` / `useHoSoCty` lúc gói — mỗi câu phải khớp ĐÚNG 1 lần, sửa chữ ở 3 file đó là `dung-ban-roi`
   dừng báo lỗi → sửa danh sách cho khớp. Script dựng cũng dừng nếu file ra còn tên đơn vị nguồn cũ.

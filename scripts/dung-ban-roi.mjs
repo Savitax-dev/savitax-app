@@ -25,6 +25,7 @@ const THAY = {
   '@/components/AppShell': 'banRoi/khung/AppShell.jsx',
   '@/components/ThanhTab': 'banRoi/shim/ThanhTab.jsx',      // bỏ tab Tăng trưởng & phí
   '@/components/phanTich/HanNopKy': 'banRoi/shim/HanNopKy.jsx', // hạn nộp tự tính, không có trạng thái nộp từ cổng
+  '@/lib/portalBridge': 'banRoi/shim/portalBridge.js',          // không có tiện ích Chrome → "Tra chính xác" (Tra cứu NCC) tự ẩn
 }
 
 const banRoi = {
@@ -37,7 +38,7 @@ const banRoi = {
       return { path: r.path, namespace: 'chu' }
     })
     b.onLoad({ filter: /.*/, namespace: 'chu' }, a => ({ contents: fs.readFileSync(a.path, 'utf8'), loader: 'text' }))
-    b.onResolve({ filter: /^(next\/navigation|next\/link|@\/lib\/supabase|@\/components\/AppShell|@\/components\/ThanhTab|@\/components\/phanTich\/HanNopKy)$/ }, a => ({ path: path.join(GOC, THAY[a.path]) }))
+    b.onResolve({ filter: /^(next\/navigation|next\/link|@\/lib\/supabase|@\/components\/AppShell|@\/components\/ThanhTab|@\/components\/phanTich\/HanNopKy|@\/lib\/portalBridge)$/ }, a => ({ path: path.join(GOC, THAY[a.path]) }))
     // Bí danh "@/…" của app (jsconfig) = thư mục gốc repo
     b.onResolve({ filter: /^@\// }, a => b.resolve('./' + a.path.slice(2), { resolveDir: GOC, kind: a.kind }))
     // Thay chữ chỉ-đúng-trong-app ở vài file dùng chung (banRoi/vaChu.mjs) — không sửa file gốc

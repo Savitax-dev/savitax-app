@@ -16,17 +16,21 @@
 // BẢN 1.2: yêu cầu có `theoChuyenHuong: true` thì đi theo chuyển hướng (bước SSO sang eTax của giấy nộp tiền)
 // và trả kèm `urlCuoi`. Trang đích vẫn phải thuộc 2 tên miền thuế. Mọi yêu cầu khác giữ redirect manual như cũ.
 // Cookie phiên cổng chỉ nằm trong bộ nhớ (chrome.storage.session), không ghi ra đĩa.
+//
+// BẢN 1.3 (19/11/2026): thêm tracuunnt.gdt.gov.vn — trang tra cứu thông tin người nộp thuế của Cục Thuế. App gửi yêu cầu mở
+// trang / lấy ảnh mã xác nhận / gửi form (MST + mã NHÂN VIÊN TỰ GÕ); tiện ích không đọc mã, không tự tra hàng loạt.
 
 import {
   docCookieCong, xoaCookieCong, datCookieCong, khoPhien, taoHangDoi,
 } from './phien.js'
 
-// Chỉ cho gọi đúng 2 tên miền của cơ quan thuế. Thiếu chặn này thì bất kỳ trang nào trên
+// Chỉ cho gọi đúng các tên miền của cơ quan thuế dưới đây. Thiếu chặn này thì bất kỳ trang nào trên
 // app.savitax.vn (kể cả trang bị chèn mã độc) cũng biến tiện ích thành máy chủ trung chuyển
 // gọi đi khắp nơi bằng máy của nhân viên.
 const MIEN_CHO_PHEP = [
   'https://dichvucong.gdt.gov.vn/',
   'https://thuedientu.gdt.gov.vn/',
+  'https://tracuunnt.gdt.gov.vn/',     // 1.3: tra trạng thái MST người bán (Rủi ro thuế → Tra cứu NCC), nhân viên tự gõ mã xác nhận
 ]
 
 const duocPhep = url => MIEN_CHO_PHEP.some(m => typeof url === 'string' && url.startsWith(m))
@@ -129,7 +133,7 @@ chrome.runtime.onMessageExternal.addListener((tin, nguoiGui, traLoi) => {
   }
 
   if (tin?.viec === 'ping') {
-    traLoi({ ok: true, phienBan: chrome.runtime.getManifest().version, coPhienAo: true, theoChuyenHuong: true })
+    traLoi({ ok: true, phienBan: chrome.runtime.getManifest().version, coPhienAo: true, theoChuyenHuong: true, traNnt: true })
     return false
   }
   if (tin?.viec === 'xoaCookie') { donCookie().then(traLoi); return true }

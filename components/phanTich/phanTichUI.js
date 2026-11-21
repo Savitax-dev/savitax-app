@@ -41,11 +41,14 @@ const MUC_RUI_RO = [
   { xem: 'bang', icon: '📋', nhan: 'Bảng 39 tiêu chí', mo: 'Số liệu, chênh lệch, tỷ lệ của từng tiêu chí' },
   { xem: 'chi-tiet', icon: '🔍', nhan: 'Chi tiết tiêu chí', mo: 'Nguồn số, nguyên nhân thường gặp, hồ sơ nên chuẩn bị, căn cứ' },
   { xem: 'nhieu-nam', icon: '📈', nhan: 'Nhiều năm', mo: 'Số liệu và chênh lệch qua các năm' },
+  // Trang riêng (không đọc thư mục theo kiểu bộ máy rủi ro) — lib/phanTich/traNcc.js, anh duyệt 19/11/2026
+  { xem: 'ncc', duong: '/ruirothue/tra-cuu-ncc', icon: '🔎', nhan: 'Tra cứu tình trạng MST', mo: 'Trạng thái MST người bán trong hóa đơn mua vào' },
 ]
 export function TabRuiRo({ giuCty, xem = '' }) {
   return <ThanhTab muc={MUC_RUI_RO.map(m => ({
     ...m, key: m.xem || 'ds', dangMo: xem === m.xem,
-    href: !m.xem ? '/ruirothue' : `/ruirothue/phan-tich?${giuCty ? `cty=${giuCty}&` : ''}xem=${m.xem}`,
+    href: m.duong ? `${m.duong}${giuCty ? `?cty=${giuCty}` : ''}`
+      : !m.xem ? '/ruirothue' : `/ruirothue/phan-tich?${giuCty ? `cty=${giuCty}&` : ''}xem=${m.xem}`,
   }))} />
 }
 

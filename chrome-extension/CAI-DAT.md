@@ -46,6 +46,10 @@ node -e "const c=require('crypto'),f=require('fs');const k=JSON.parse(f.readFile
 
 ## Cập nhật lên bản mới
 
+**Bản 1.3 (19/11/2026):** cần cho nút **Tra chính xác** ở Rủi ro thuế → Tra cứu tình trạng MST (trang tracuunnt.gdt.gov.vn của Cục Thuế,
+nhân viên tự gõ mã xác nhận). Bản này xin thêm quyền vào tracuunnt.gdt.gov.vn — sau khi Tải lại, nếu Chrome tắt tiện ích và hỏi
+quyền mới thì bấm cho phép. Các chức năng khác vẫn chạy với bản 1.2; tra hàng loạt (VietQR) không cần tiện ích.
+
 **Bản 1.2 (06/11/2026):** cần để tải **Giấy nộp tiền** (đi theo chuyển hướng khi vào eTax). Tải tờ khai vẫn chạy với bản 1.1.
 
 Chép đè thư mục rồi vào `chrome://extensions` nhấn nút **Tải lại** (mũi tên vòng) ở ô tiện ích. Mã
