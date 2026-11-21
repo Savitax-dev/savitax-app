@@ -176,10 +176,45 @@ export default function TaiBangKeHoaDonPage() {
       }
       await cho(1500)
     }
-    const r = await TI.goi('moDangNhap', { tenDangNhap: p.taiKhoan.tenDangNhap, matKhau: p.taiKhoan.matKhau }, { veApp: true })
+    // Hộp đăng nhập của cổng đã điền sẵn tài khoản; tab cổng để ở trước — nhân viên gõ mã + bấm Đăng nhập NGAY TRÊN CỔNG
+    // (anh chốt 21/11/2026), app tự theo dõi rồi chạy tiếp. Vẫn gõ được mã trên app (ảnh mã chép sang).
+    const r = await TI.goi('moDangNhap', { tenDangNhap: p.taiKhoan.tenDangNhap, matKhau: p.taiKhoan.matKhau })
     if (r.biChan) return dungHan(r.loi)
     if (!r.ok) { capNhat({ buoc: 'loi', loi: r.loi }); return }
+    if (r.daDangNhap) { capNhat({ buoc: 'chay', taiKhoan: { ...p.taiKhoan, matKhau: '' } }); await chayHet(); return }
     capNhat({ buoc: 'cho_ma', anhMa: r.anhMa, ma: '' })
+    theoDoiDangNhap()
+  }
+
+  // Đang chờ nhân viên gõ mã trên cổng: hỏi tình trạng mỗi 2 giây (không giật tab cổng lên trước)
+  async function theoDoiDangNhap() {
+    const bd = Date.now()
+    let loiCu = ''
+    while (phienRef.current?.buoc === 'cho_ma' && Date.now() - bd < 10 * 60 * 1000) {
+      await cho(2000)
+      if (phienRef.current?.buoc !== 'cho_ma') return
+      const tt = await TI.goi('trangThai', { mst: phienRef.current.cty.mst }, { khongLenTruoc: true })
+      if (phienRef.current?.buoc !== 'cho_ma') return
+      if (tt.biChan) return dungHan(tt.biChan)
+      if (tt.ok && tt.daDangNhap && !tt.coHop) {
+        capNhat({ buoc: 'chay', anhMa: null, loi: '', taiKhoan: { ...phienRef.current.taiKhoan, matKhau: '' } })
+        await chayHet()
+        return
+      }
+      const loi = tt.loiHop || ''
+      if (loi && loi !== loiCu) {
+        loiCu = loi
+        const k = loi.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').toLowerCase()
+        const saiMa = /captcha|ma xac nhan|ma kiem tra|ma bao ve/.test(k)
+        if (!saiMa && /mat khau|ten dang nhap|tai khoan|khong dung|khong chinh xac/.test(k)) {
+          saiMkRef.current.add(khoaThuMuc(phienRef.current.cty))
+          capNhat({ buoc: 'loi', loi: `Cổng báo: "${loi}". DỪNG — không thử lại (sai mật khẩu nhiều lần là khoá tài khoản của khách). Kiểm lại mật khẩu "Hóa đơn điện tử" ở hồ sơ công ty.` })
+          return
+        }
+        capNhat({ loi: saiMa ? 'Cổng báo sai mã xác nhận — gõ lại mã mới trên cổng' : 'Cổng báo: ' + loi })
+      }
+    }
+    if (phienRef.current?.buoc === 'cho_ma') capNhat({ buoc: 'loi', loi: 'Quá 10 phút chưa đăng nhập — bấm ▶ Tải để bắt đầu lại.' })
   }
 
   async function guiMa(e) {
@@ -198,6 +233,7 @@ export default function TaiBangKeHoaDonPage() {
     let anh = r.anhMa
     if (!anh) { const m = await TI.goi('layMaMoi', {}, { veApp: true }); anh = m.anhMa }
     capNhat({ buoc: 'cho_ma', ma: '', anhMa: anh || p.anhMa, loi: r.saiMa ? 'Sai mã xác nhận — gõ lại mã mới' : (r.loi || 'Đăng nhập chưa được') })
+    theoDoiDangNhap()
   }
 
   async function maKhac() {
@@ -377,8 +413,14 @@ export default function TaiBangKeHoaDonPage() {
                 <input autoFocus className="border rounded px-3 py-2 text-lg tracking-widest w-40" placeholder="Gõ mã" value={phien.ma} onChange={e => capNhat({ ma: e.target.value })} />
                 <button className="px-4 py-2 rounded bg-blue-600 text-white font-medium">Đăng nhập</button>
                 <button type="button" className="px-3 py-2 rounded border bg-white" onClick={maKhac}>↻ Mã khác</button>
-                <span className="text-xs text-gray-500">Mã chép từ hộp đăng nhập của cổng — anh/chị tự gõ.{phien.taiKhoan?.tuHoSo ? ' Tài khoản lấy từ hồ sơ công ty.' : ''}</span>
+                <span className="text-xs text-gray-500">Mã chép từ hộp đăng nhập của cổng.{phien.taiKhoan?.tuHoSo ? ' Tài khoản lấy từ hồ sơ công ty.' : ''}</span>
               </form>
+            )}
+            {phien.buoc === 'cho_ma' && (
+              <div className="text-sm text-blue-800 bg-blue-100 rounded px-3 py-2">
+                👉 Tab cổng đã mở hộp đăng nhập, điền sẵn tài khoản. Anh/chị <b>gõ mã xác nhận và bấm Đăng nhập ngay trên cổng</b> — app tự nhận ra và chạy tiếp
+                (hoặc gõ mã ở ô trên). <button type="button" className="underline" onClick={() => TI.xemCong()}>Mở tab cổng</button>
+              </div>
             )}
             {phien.luot?.length > 0 && (
               <div className="overflow-auto max-h-96 border rounded bg-white">

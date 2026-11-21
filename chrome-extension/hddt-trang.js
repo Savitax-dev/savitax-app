@@ -106,7 +106,15 @@
   // Chữ ở dải đầu trang (tên / MST tài khoản đang đăng nhập thường nằm ở đây)
   const chuDauTrang = () => [...document.querySelectorAll('header, .ant-layout-header, nav, [class*=header], [class*=Header]')]
     .filter(coKichThuoc).filter(el => el.getBoundingClientRect().top < 150).map(el => gon(el.innerText)).join(' ').slice(0, 500)
-  const daDangNhap = () => !nutMoDangNhap() && !hopDangNhap()
+  // Đang đăng nhập? Dấu hiệu chắc nhất là cookie phiên "jwt" của cổng có giá trị (CHỈ ĐỌC để biết trạng thái — tiện ích không dùng
+  // nó gọi gì). Không đọc được cookie thì đoán theo giao diện: không còn nút "Đăng nhập" + không có hộp đăng nhập.
+  // ⚠ Cửa sổ hẹp thì cổng gập menu vào nút ☰ → nút "Đăng nhập" bị ẩn → đoán theo giao diện sẽ báo NHẦM là đã đăng nhập (21/11/2026).
+  const coJwt = () => { const m = document.cookie.match(/(?:^|;\s*)jwt=([^;]*)/); return m ? m[1].length > 10 : null }
+  const daDangNhap = () => {
+    if (hopDangNhap()) return false
+    const j = coJwt()
+    return j != null ? j : !nutMoDangNhap()
+  }
 
   // Chép ảnh mã xác nhận đang hiện trên trang (trang đã tải sẵn — tiện ích KHÔNG gọi cổng lấy mã)
   const anhMa = async hop => {
@@ -145,7 +153,11 @@
       const chan = biChan()
       const dau = chuDauTrang()
       const so = String(mst || '').replace(/[^\d-]/g, '')
-      return { ok: true, daDangNhap: daDangNhap(), coHop: !!hopDangNhap(), duongDan: location.pathname, biChan: chan || null,
+      // Lỗi đang hiện trong hộp đăng nhập (nhân viên tự gõ mã + bấm Đăng nhập trên cổng → app đọc để biết sai mã hay sai mật khẩu)
+      const hop = hopDangNhap()
+      const loiHop = hop ? [...hop.querySelectorAll('.ant-form-explain, .ant-form-item-explain, .ant-alert, [class*=error]')].filter(coKichThuoc).map(x => gon(x.innerText)).filter(Boolean).join(' | ') : ''
+      const tbMoi = thongBao().join(' | ')
+      return { ok: true, daDangNhap: daDangNhap(), coHop: !!hop, loiHop: [loiHop, hop ? tbMoi : ''].filter(Boolean).join(' | '), duongDan: location.pathname, biChan: chan || null,
         chuDauTrang: dau, dungTaiKhoan: !!so && dau.replace(/[^\d-]/g, ' ').split(/\s+/).some(x => x === so || x.startsWith(so + '-')) }
     },
 
@@ -172,6 +184,17 @@
       for (let i = 0; i < 10 && !anh; i++) { anh = await anhMa(hop); if (!anh) await cho(400) }   // ảnh mã có thể tải sau hộp thoại
       if (!anh) return { ok: false, loi: 'Không thấy ảnh mã xác nhận trong hộp đăng nhập' }
       return { ok: true, anhMa: anh }
+    },
+
+    // Đóng các hộp THÔNG BÁO của cổng (vd "Hiện nay, có hiện tượng…" hiện ở trang chủ) — chỉ hộp không có ô nhập, bấm nút X của hộp
+    async dongThongBao() {
+      let dong = 0
+      for (const m of [...document.querySelectorAll('.ant-modal-wrap')].filter(coKichThuoc)) {
+        if (m.querySelector('input, textarea, select')) continue
+        const x = m.querySelector('.ant-modal-close')
+        if (x && coKichThuoc(x)) { bam(x); dong++; await cho(500) }
+      }
+      return { ok: true, dong }
     },
 
     // Bấm vào ảnh mã (hoặc nút làm mới cạnh ảnh) để trang tự lấy mã mới
@@ -265,7 +288,8 @@
         const chan0 = biChan()
         if (chan0) { ghi('Kiểm trang', false, 'Cổng đang báo: ' + chan0); return { ok: false, biChan: true, nhatKy } }
         if (!daDangNhap()) { ghi('Kiểm trang', false, 'Chưa đăng nhập cổng'); return { ok: false, chuaDangNhap: true, nhatKy } }
-        ghi('Kiểm trang', true, location.pathname)
+        const { dong } = await api.dongThongBao()
+        ghi('Kiểm trang', true, location.pathname + (dong ? ` · đóng ${dong} hộp thông báo` : ''))
 
         const tenTab = loai === 'ban' ? 'bán ra' : 'mua vào'
         const reTab = loai === 'ban' ? /ban ra/ : /mua vao/

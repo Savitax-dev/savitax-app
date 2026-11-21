@@ -130,7 +130,7 @@ async function dongPhien(phien) {
 // file trình duyệt vừa tải từ cổng về thư mục Tải về\Savitax-HDDT\<mã lượt>.xlsx để app tìm đúng file mà đọc.
 const CONG_HDDT = 'https://hoadondientu.gdt.gov.vn/*'
 const GOC_HDDT = 'https://hoadondientu.gdt.gov.vn'
-const HAM_TRANG = ['trangThai', 'moDangNhap', 'layMaMoi', 'guiMa', 'dangXuat', 'chayLuot', 'doTrang']
+const HAM_TRANG = ['trangThai', 'moDangNhap', 'layMaMoi', 'guiMa', 'dangXuat', 'chayLuot', 'doTrang', 'dongThongBao']
 const THU_MUC_TAI = 'Savitax-HDDT'
 
 async function tabHddt() {
@@ -153,20 +153,12 @@ function choTabTai(tabId, gioiHan = 30000) {
 
 // Mở (hoặc dùng lại) cửa sổ cổng. Cửa sổ nhỏ riêng, KHÔNG phải tab nền: tab nền bị trình duyệt hãm hoạt ảnh nên hộp thoại
 // của trang có thể không mở. Nhân viên nhìn thấy tiện ích đang bấm gì.
-// Tab cổng nhân viên mở sẵn trong cửa sổ chính → chuyển sang cửa sổ nhỏ riêng (giữ nguyên phiên đăng nhập), để khi đưa cửa sổ
-// cổng lên trước không che mất tab app.
-async function moCuaSoCong() {
+// Dùng lại tab cổng nhân viên đang mở (anh chốt 21/11/2026: "không cần mở cổng mới"); chưa có thì mở MỘT tab cổng cạnh tab app.
+async function moCuaSoCong(nguoiGui) {
   let tab = await tabHddt()
   if (!tab) {
-    const w = await chrome.windows.create({ url: GOC_HDDT + '/', type: 'popup', width: 1150, height: 820, left: 0, top: 0, focused: false })
-    tab = w.tabs[0]
+    tab = await chrome.tabs.create({ url: GOC_HDDT + '/', active: true, ...(nguoiGui?.tab ? { windowId: nguoiGui.tab.windowId, index: nguoiGui.tab.index + 1 } : {}) })
     await choTabTai(tab.id)
-  } else {
-    const w = await chrome.windows.get(tab.windowId, { populate: true })
-    if (w.type !== 'popup' || w.tabs.length > 1) {
-      const moi = await chrome.windows.create({ tabId: tab.id, type: 'popup', width: 1150, height: 820, left: 0, top: 0, focused: false })
-      tab = moi.tabs[0]
-    }
   }
   await chrome.storage.session.set({ hddtTab: tab.id })
   return tab
@@ -226,7 +218,7 @@ async function hddt(tin, nguoiGui) {
     }
   }
   if (tin.viec === 'hddtMo') {
-    const tab = await moCuaSoCong()
+    const tab = await moCuaSoCong(nguoiGui)
     return { ok: true, tab: { url: tab.url, tieuDe: tab.title } }
   }
   const tab = await tabHddt()
@@ -244,7 +236,8 @@ async function hddt(tin, nguoiGui) {
   const thamSo = tin.viec === 'hddtChay' ? tin.tuyChon : tin.thamSo
   if (ham === 'chayLuot' && thamSo?.maLuot) choTai = { ma: String(thamSo.maLuot).replace(/[^\w-]/g, ''), het: Date.now() + 120000 }
   try {
-    if (tin.viec === 'hddtGoi') await lenTruoc(tab)
+    // Đưa tab cổng lên trước khi bấm hộ — trừ lượt app chỉ hỏi tình trạng (đang chờ nhân viên gõ mã: đừng giật màn hình)
+    if (tin.viec === 'hddtGoi' && !tin.khongLenTruoc) await lenTruoc(tab)
     const ketQua = await goiTrang(tab, ham, thamSo)
     if (tin.veApp) await veApp(nguoiGui)
     return { ok: true, ketQua, tab: { url: tab.url, tieuDe: tab.title } }
