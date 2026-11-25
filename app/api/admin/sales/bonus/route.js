@@ -49,7 +49,7 @@ async function loadItemsOf(admin, quoteIds) {
   const ids = [...new Set((quoteIds || []).filter(Boolean))]
   if (!ids.length) return new Map()
   const rows = await fetchAll((a, b) => admin.from('sales_quote_items')
-    .select('quote_id, service, billing, amount, months, start_month, to_savitax')
+    .select('quote_id, service, billing, amount, months, start_month, to_savitax, tinh_hoa_hong')
     .in('quote_id', ids).order('id').range(a, b))
   const m = new Map()
   for (const it of rows) { if (!m.has(it.quote_id)) m.set(it.quote_id, []); m.get(it.quote_id).push(it) }

@@ -8,7 +8,7 @@ import { normalizePayment } from '@/lib/salesContract'
 import { monthVN } from '@/lib/salesItems'
 
 const PAY_COLS = 'id, quote_id, due_month, paid_month, gross, vat_rate, net, staff_id, note, created_at'
-const ITEM_COLS = 'sort_order, service, billing, amount, months, start_month, to_savitax'
+const ITEM_COLS = 'sort_order, service, billing, amount, months, start_month, to_savitax, tinh_hoa_hong'
 
 // Bảng mới (sql/54) chưa chạy thì trả danh sách rỗng kèm cờ — giao diện báo "chưa cài" chứ không văng lỗi.
 // Lật trang và sắp theo id: PostgREST cắt im lặng ở 1000 dòng, sắp theo cột trùng nhau thì vừa

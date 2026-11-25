@@ -212,6 +212,61 @@ console.log('\n8. Doanh số NVKD chỉ ăn THÁNG ĐẦU của phí hằng thá
   ])
   t('Kỳ 12/2026 có khoản một lần -> tính 4tr, bỏ 1,8tr phí tháng', salesDueInMonth(items, '2026-12'), 4000000)
 }
+console.log('')
+{
+  // Bảng Theo dõi hợp đồng là PHẦN VIỆC CỦA PHÒNG KINH DOANH (anh chốt 25/11/2026):
+  // "phòng kd đâu có nhiệm vụ thu" -> kỳ phí tháng từ kỳ 2 không được tính vào cần thu / còn thiếu.
+  const items = normalizeItems([I('Dịch vụ kế toán – thuế trọn gói', 'monthly', 8000000)])
+  const day = trackContract({ items, payments: [], upto: '2027-02' })
+  t('Xem đầy đủ: 4 kỳ, cần thu 32tr (công nợ toàn công ty)', [day.kys.length, day.canThu], [4, 32000000])
+  const kd = trackContract({ items, payments: [], upto: '2027-02', chiKyKinhDoanh: true })
+  t('Phòng Kinh doanh: CHỈ kỳ đầu, cần thu 8tr', [kd.kys.length, kd.canThu, kd.conLai], [1, 8000000, 8000000])
+  t('Ghi rõ còn 3 kỳ do phòng nghiệp vụ thu', kd.kyPhongKhac, 3)
+}
+{
+  // Kỳ vừa có phí tháng (phòng khác) vừa có BCTC (Phòng KD): chỉ lấy phần của Phòng KD.
+  const items = normalizeItems([
+    I('Dịch vụ kế toán – thuế trọn gói', 'monthly', 35000000),
+    I('Lập BCTC và quyết toán thuế năm', 'yearly', 254000000, { start_month: '2027-03' }),
+  ])
+  const kd = trackContract({ items, payments: [], upto: '2027-03', chiKyKinhDoanh: true })
+  const ba = kd.kys.find(k => k.month === '2027-03')
+  t('Kỳ 03/2027: Phòng KD cần thu 254tr', ba.due, 254000000)
+  t('Vẫn biết phòng nghiệp vụ thu thêm 35tr', ba.dueAll - ba.due, 35000000)
+  t('Chỉ còn 2 kỳ của Phòng KD (11/2026 và 03/2027)', kd.kys.map(k => k.month), ['2026-11', '2027-03'])
+}
+{
+  // Đã lỡ ghi lần thu cho kỳ của phòng khác thì VẪN hiện, không giấu tiền đã nhập.
+  const items = normalizeItems([I('Dịch vụ kế toán – thuế trọn gói', 'monthly', 8000000)])
+  const tra = [{ due_month: '2026-12', paid_month: '2026-12', net: 8000000 }]
+  const kd = trackContract({ items, payments: tra, upto: '2026-12', chiKyKinhDoanh: true })
+  t('Kỳ 12/2026 đã ghi thu -> vẫn hiện', kd.kys.map(k => k.month), ['2026-11', '2026-12'])
+}
+
+console.log('')
+{
+  // Khoản Savitax VẪN THU nhưng không tính hoa hồng Phòng Kinh doanh (anh chốt 25/11/2026).
+  const items = normalizeItems([
+    I('Dịch vụ kế toán – thuế trọn gói', 'once', 10000000),
+    I('Dịch vụ hoàn thuế (không tính hoa hồng KD)', 'once', 6000000, { tinh_hoa_hong: false }),
+  ])
+  t('Khoản không tính hoa hồng VẪN nằm trong cần thu', trackContract({ items, payments: [], upto: '2026-11' }).kys[0].due, 16000000)
+  t('Nhưng KHÔNG vào doanh số kinh doanh', salesDueInMonth(items, '2026-11'), 10000000)
+  const map = new Map([['q4', items]])
+  const tra = { quote_id: 'q4', due_month: '2026-11', paid_month: '2026-11', net: 16000000, staff_id: 'A' }
+  t('Thu đủ 16tr -> doanh số KD chỉ 10tr', salesNet(tra, map), 10000000)
+  t('Công nợ vẫn ghi nhận đủ 16tr', collectedInMonth([tra], '2026-11'), 16000000)
+}
+{
+  // Khoản khách trả thẳng bên thứ ba (MISA): không vào cần thu, cũng không vào doanh số.
+  const items = normalizeItems([
+    I('Dịch vụ kế toán – thuế trọn gói', 'once', 10000000),
+    I('Phần mềm kế toán MISA ASP — 3 năm', 'once', 8100000, { to_savitax: false }),
+  ])
+  t('MISA không vào cần thu', trackContract({ items, payments: [], upto: '2026-11' }).kys[0].due, 10000000)
+  t('MISA cũng không vào doanh số KD', salesDueInMonth(items, '2026-11'), 10000000)
+  t('Bỏ tick Savitax thu -> tự tắt luôn hoa hồng', items[1].tinh_hoa_hong, false)
+}
 t('Hợp đồng chưa tách dòng phí -> không nuốt tiền, tính hết',
   salesNet({ quote_id: 'x', due_month: '2026-12', net: 9000000 }, new Map()), 9000000)
 

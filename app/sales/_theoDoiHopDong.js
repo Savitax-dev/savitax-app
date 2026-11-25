@@ -32,7 +32,7 @@ export default function TheoDoiHopDong({ toast }) {
     const needle = qText.trim().toLowerCase()
     return (res.contracts || [])
       .filter(c => !needle || [c.quote_no, c.company_name, c.author_name].join(' ').toLowerCase().includes(needle))
-      .map(c => ({ ...c, track: trackContract({ items: c.items, payments: c.payments, upto }) }))
+      .map(c => ({ ...c, track: trackContract({ items: c.items, payments: c.payments, upto, chiKyKinhDoanh: true }) }))
   }, [res, qText, upto])
 
   const tong = useMemo(() => rows.reduce((a, c) => ({
@@ -83,10 +83,10 @@ export default function TheoDoiHopDong({ toast }) {
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
         <StatCard label="Hợp đồng theo dõi" value={rows.length} foot={'tính tới ' + mmyyyy(upto)} tone="red" />
-        <StatCard label="Cần thu" value={fmt(tong.canThu)} unit="đ" foot="chưa gồm VAT" tone="amb" />
+        <StatCard label="Cần thu" value={fmt(tong.canThu)} unit="đ" foot="phần của Phòng KD · chưa VAT" tone="amb" />
         <StatCard label="Đã thu" value={fmt(tong.daThu)} unit="đ" foot={tong.canThu ? Math.round(tong.daThu * 100 / tong.canThu) + '% số cần thu' : '—'} tone="grn" />
         <StatCard label="Còn thiếu" value={fmt(Math.max(0, tong.conLai))} unit="đ"
-          foot={tong.conLai > 0 ? rows.filter(c => c.track.conLai > 0).length + ' hợp đồng chưa thu đủ' : 'đã thu đủ'} tone="blue" />
+          foot={tong.conLai > 0 ? rows.filter(c => c.track.conLai > 0).length + ' hợp đồng chưa thu đủ' : 'đã thu đủ phần của Phòng KD'} tone="blue" />
         <StatCard label={'Doanh số KD tháng ' + mmyyyy(upto)} value={fmt(doanhSo)} unit="đ"
           foot={thuTrongThang > doanhSo ? 'tiền về ' + fmt(thuTrongThang) + ' đ · phí tháng từ kỳ 2 không tính' : 'phí tháng chỉ tính kỳ đầu'} tone="gold" />
       </div>
@@ -139,6 +139,15 @@ export default function TheoDoiHopDong({ toast }) {
                       <td></td>
                     </tr>
                   )}
+                  {c.track.kyPhongKhac > 0 && (
+                    <tr>
+                      <td></td>
+                      <td colSpan={7} className="l text-[11px] text-gray-500">
+                        Còn {c.track.kyPhongKhac} kỳ phí hằng tháng do <b>phòng nghiệp vụ</b> thu — không thuộc nhiệm vụ Phòng Kinh doanh nên không tính vào cần thu / còn thiếu ở đây.
+                      </td>
+                      <td></td>
+                    </tr>
+                  )}
                   {c.track.kys.map(k => (
                     <tr key={k.month}>
                       <td></td>
@@ -146,9 +155,9 @@ export default function TheoDoiHopDong({ toast }) {
                       <td className="num whitespace-nowrap">{mmyyyy(k.month)}</td>
                       <td className="num">
                         {fmtMoney(k.due)}
-                        {k.salesDue !== k.due && (
+                        {k.dueAll > k.due && (
                           <p className="text-[11px] font-normal text-gray-400">
-                            {k.salesDue > 0 ? 'doanh số KD ' + fmtMoney(k.salesDue) : 'không tính doanh số KD'}
+                            phòng nghiệp vụ thu thêm {fmtMoney(k.dueAll - k.due)}
                           </p>
                         )}
                       </td>

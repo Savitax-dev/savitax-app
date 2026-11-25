@@ -240,6 +240,16 @@ Khách tiềm năng + báo giá SVT.MB03 + báo cáo, dựng 2026-09-11 (commit 
   paid_month**. Số CẦN THU không lưu, tính thẳng từ bảng khoản phí (`trackContract` trong `lib/salesContract.js`)
   nên hợp đồng có phí tháng tự sinh kỳ mới mỗi tháng. Người lập nhập tiền VỀ TÀI KHOẢN (đã gồm VAT), server
   chia ra `net` chưa VAT — **không tin số trình duyệt gửi**.
+- **Hai cờ KHÁC NHAU trên dòng phí** (anh chốt 25/11/2026, `sql/56_sales_item_hoa_hong.sql`): `to_savitax` =
+  tiền có về tài khoản Savitax không (MISA khách trả thẳng → false) → ảnh hưởng **CẦN THU / công nợ** và ghi
+  chú trên file Word; `tinh_hoa_hong` = khoản này có tính hoa hồng Phòng Kinh doanh không → **chỉ** ảnh hưởng
+  doanh số / thưởng, khoản đó **vẫn thu tiền và vẫn nằm trong công nợ**. Đừng gộp làm một: gộp thì bỏ tick sẽ
+  mất khoản đó khỏi cần thu — sai tiền thật. Không `to_savitax` thì `normalizeItems` tự tắt `tinh_hoa_hong`.
+  Giao diện Bước 5: một cột "Ghi nhận" chứa 2 ô tick có nhãn (thêm cột riêng là bảng tràn ngang).
+- **Theo dõi hợp đồng = PHẦN VIỆC CỦA PHÒNG KINH DOANH** (anh chốt 25/11/2026: "phòng kd đâu có nhiệm vụ
+  thu"): tab gọi `trackContract({ chiKyKinhDoanh: true })` nên kỳ phí hằng tháng từ kỳ 2 trở đi **không** vào
+  cần thu / còn thiếu ở đây (kỳ đã ghi lần thu thì vẫn hiện, không giấu tiền đã nhập); mỗi hợp đồng có dòng
+  nhắc "còn N kỳ do phòng nghiệp vụ thu". Muốn xem công nợ ĐẦY ĐỦ thì gọi không có cờ đó.
 - **Doanh số NVKD chỉ ăn THÁNG ĐẦU** (anh chốt 21/11/2026): phí **hằng tháng** chỉ tính doanh số ở **kỳ đầu
   tiên** của hợp đồng (tháng = `start_month`), từ kỳ 2 trở đi vẫn theo dõi công nợ nhưng KHÔNG cộng cho nhân
   viên kinh doanh nữa; khoản **một lần / thu dồn / mỗi năm** tính HẾT dù rơi vào kỳ nào (BCTC năm, ghi tăng

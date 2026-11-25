@@ -501,7 +501,7 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
   const setItem = (i, k, v) => setItems(list => list.map((it, j) => j === i ? { ...it, [k]: v } : it))
   const addItem = () => setItems(list => [...list, {
     service: '', billing: 'monthly', amount: 0, months: null,
-    start_month: meta.quote_date?.slice(0, 7) || monthVN(), to_savitax: true, standard_amount: null, note: '',
+    start_month: meta.quote_date?.slice(0, 7) || monthVN(), to_savitax: true, tinh_hoa_hong: true, standard_amount: null, note: '',
   }])
   const fromFees = () => {
     if (items.length && !window.confirm('Dựng lại bảng khoản phí từ biểu phí? Các dòng đang có sẽ bị thay hết.')) return
@@ -703,6 +703,8 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
             <p className="text-xs text-gray-500 mb-2">
               Mỗi khoản thu một dòng. <b>Cách thu</b> quyết định tiền rơi vào tháng nào: khoản một lần chỉ tính ở tháng đã ghi,
               khoản hằng tháng tính mọi tháng. Số tiền chưa gồm VAT; chưa biết số thì để 0, chốt xong nhập lại.
+              <br /><b>Savitax thu</b>: bỏ tick cho khoản khách trả thẳng bên thứ ba (vd MISA) — vẫn in trên báo giá, không vào công nợ.
+              <b> Tính HH kinh doanh</b>: bỏ tick thì vẫn thu tiền và vẫn vào công nợ, chỉ không tính doanh số / hoa hồng Phòng Kinh doanh.
             </p>
             {!items.length ? (
               <div className="text-center py-6 border border-dashed border-[#D5E2ED] rounded-xl">
@@ -723,7 +725,7 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
                       <th>Cách thu</th>
                       <th>Số tiền</th>
                       <th>Tháng bắt đầu thu</th>
-                      <th>Về Savitax</th>
+                      <th title="Savitax thu: bỏ tick cho khoản khách trả thẳng bên thứ ba (vd MISA) — vẫn in trên báo giá, không vào công nợ. Tính HH KD: bỏ tick thì vẫn thu tiền và vẫn vào công nợ, chỉ không tính hoa hồng Phòng Kinh doanh.">Ghi nhận ⓘ</th>
                       <th></th>
                     </tr>
                   </thead>
@@ -732,7 +734,7 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
                       const lech = it.standard_amount != null && Number(it.amount) !== Number(it.standard_amount)
                       return (
                         <tr key={i}>
-                          <td className="l min-w-[260px]">
+                          <td className="l min-w-[200px]">
                             <input value={it.service} disabled={locked} onChange={e => setItem(i, 'service', e.target.value)}
                               placeholder="Tên dịch vụ" className="s-input !py-1.5" />
                             {(lech || it.note) && (
@@ -754,7 +756,7 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
                               </div>
                             )}
                           </td>
-                          <td className="min-w-[140px]">
+                          <td className="min-w-[120px]">
                             <NumInput value={it.amount} disabled={locked} onChange={v => setItem(i, 'amount', v)} className="s-input !py-1.5 num" />
                             {it.billing === 'multi' && <p className="text-[11px] text-gray-500 mt-0.5">= <span className="num">{fmtMoney(lineTotal(it))}</span></p>}
                           </td>
@@ -762,9 +764,22 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
                             <MonthInput value={it.start_month || ''} disabled={locked}
                               onChange={v => setItem(i, 'start_month', v)} className="s-input !py-1.5" />
                           </td>
-                          <td>
-                            <input type="checkbox" checked={it.to_savitax !== false} disabled={locked}
-                              onChange={e => setItem(i, 'to_savitax', e.target.checked)} className="accent-[#2A6CA8] w-4 h-4" />
+                          {/* Hai ô tick gộp một cột cho đỡ tràn ngang, mỗi ô có nhãn ngay cạnh:
+                              Savitax thu = tiền có về Savitax không (bỏ tick: khách trả thẳng bên thứ ba, vd MISA)
+                              Tính HH KD  = có tính hoa hồng Phòng Kinh doanh không (bỏ tick vẫn thu tiền như thường) */}
+                          <td className="l whitespace-nowrap">
+                            <label className="flex items-center gap-1.5 text-[11px] text-gray-600 cursor-pointer">
+                              <input type="checkbox" checked={it.to_savitax !== false} disabled={locked}
+                                onChange={e => setItem(i, 'to_savitax', e.target.checked)} className="accent-[#2A6CA8] w-4 h-4" />
+                              Savitax thu
+                            </label>
+                            <label className={'flex items-center gap-1.5 text-[11px] mt-1 cursor-pointer ' +
+                              (it.to_savitax !== false && it.tinh_hoa_hong === false ? 'text-amber-700 font-semibold' : 'text-gray-600')}>
+                              <input type="checkbox" checked={it.to_savitax !== false && it.tinh_hoa_hong !== false}
+                                disabled={locked || it.to_savitax === false}
+                                onChange={e => setItem(i, 'tinh_hoa_hong', e.target.checked)} className="accent-[#2A6CA8] w-4 h-4" />
+                              Tính HH KD
+                            </label>
                           </td>
                           <td>
                             {!locked && <button onClick={() => setItems(list => list.filter((_, j) => j !== i))}
@@ -785,6 +800,11 @@ function QuoteEditor({ editor, res, toast, onClose, onSavedNew }) {
             )}
             {thieuLyDo.length > 0 && (
               <p className="text-xs text-red-700 mt-2">Có {thieuLyDo.length} dòng báo khác biểu phí chưa ghi lý do: {thieuLyDo.map(x => x.service).join(', ')}</p>
+            )}
+            {items.some(it => it.to_savitax !== false && it.tinh_hoa_hong === false) && (
+              <p className="text-xs text-amber-800 mt-2">
+                Có {items.filter(it => it.to_savitax !== false && it.tinh_hoa_hong === false).length} khoản <b>không tính hoa hồng Phòng Kinh doanh</b> — vẫn thu tiền và vẫn theo dõi công nợ như thường.
+              </p>
             )}
             {totals.other.year1 > 0 && (
               <p className="text-xs text-gray-500 mt-2">

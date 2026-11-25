@@ -31,7 +31,7 @@ async function readBody(request) {
   return { payload: await request.json().catch(() => ({})), file: null }
 }
 
-const ITEM_COLS = 'id, sort_order, service, billing, amount, months, start_month, to_savitax, standard_amount, note'
+const ITEM_COLS = 'id, sort_order, service, billing, amount, months, start_month, to_savitax, tinh_hoa_hong, standard_amount, note'
 
 // Đọc bảng dòng phí của một báo giá. Bảng chưa cài (chưa chạy sql/53) thì coi như chưa tách dòng —
 // báo giá vẫn chạy theo monthly_final như trước, KHÔNG văng lỗi.

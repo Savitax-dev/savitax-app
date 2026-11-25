@@ -18,6 +18,7 @@ const bad = (t, d) => { loi++; console.log('  [LỖI]  ' + t + (d ? '  — ' + d
 console.log('1. Bảng mới đã có chưa (GET thật, không head)\n')
 const BANG = {
   sales_contract_payments: 'id, quote_id, due_month, paid_month, gross, vat_rate, net, staff_id, note, created_by, created_at, updated_at',
+  sales_quote_items: 'id, quote_id, service, billing, amount, start_month, to_savitax, tinh_hoa_hong',
   sales_bonus_settings: 'id, nguong_thu_viec, nguong_chinh_thuc, ty_le, vat_rate, updated_by, updated_at',
   sales_staff_bonus: 'staff_id, level, nguong, note, updated_by, updated_at',
   sales_bonus_reports: 'id, period, staff_id, doanh_so, nguong, ty_le, vuot, thuong, level, trang_thai, nguoi_duyet, luc_duyet, ghi_chu, chi_tiet, created_by, created_at, updated_at',
@@ -47,7 +48,7 @@ const { data: hd } = await s.from('sales_quotes')
   .eq('is_deleted', false).eq('contract_status', 'signed').order('quote_date', { ascending: false })
 const ids = (hd || []).map(q => q.id)
 const { data: dong } = ids.length
-  ? await s.from('sales_quote_items').select('quote_id, service, billing, amount, months, start_month, to_savitax').in('quote_id', ids)
+  ? await s.from('sales_quote_items').select('quote_id, service, billing, amount, months, start_month, to_savitax, tinh_hoa_hong').in('quote_id', ids)
   : { data: [] }
 const theoHd = new Map()
 for (const it of dong || []) { if (!theoHd.has(it.quote_id)) theoHd.set(it.quote_id, []); theoHd.get(it.quote_id).push(it) }
