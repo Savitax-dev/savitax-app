@@ -1,0 +1,89 @@
+// Giải thể công ty TNHH hai thành viên trở lên — Biên bản họp Hội đồng thành viên về việc giải thể (hồ sơ THUẾ — đóng mã số thuế).
+// BẢN SAO của GT_BBH_HDTV (Sở bước 1), chỉ khác dòng ký: hồ sơ thuế ký tên, đóng dấu, giáp lai (hướng dẫn in ký hồ sơ thuế của phòng).
+// Sửa câu chữ ở GT_BBH_HDTV.txt thì sửa y hệt bản này.
+@gian 60
+::cot 45/55
+#cb {ten_cty}
+#c --------------------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: ……/BBH-HĐTV
+||
+#ci …………….., ngày……/……/………
+::
+~
+# BIÊN BẢN HỌP CỦA HỘI ĐỒNG THÀNH VIÊN
+#cb Về việc giải thể doanh nghiệp
+~
+#l Tên công ty: **{ten_cty}**
+#l Mã số thuế: {ma_dn}{^ma_dn}[...]{/ma_dn}
+Địa chỉ trụ sở chính: {dia_chi_tru_so}
+tiến hành họp Hội đồng thành viên về việc giải thể doanh nghiệp theo nội dung như sau:
+#l - Thời gian bắt đầu: vào lúc … giờ … phút, ngày … tháng … năm ……….
+- Địa điểm họp: {dia_chi_tru_so}
+#l - Quy ước: {quy_uoc_phieu} đồng tương ứng 1 phiếu biểu quyết
+#l - Thành phần tham dự:
+{#thanh_vien}
+#l {stt}. {#la_ca_nhan}{danh_xung} {/la_ca_nhan}**{ho_ten}** - {vai_tro}
+{#nguoi_uq}
+#l Người đại diện theo ủy quyền: {nguoi_uq}
+{/nguoi_uq}
+#l Sở hữu phần vốn góp {von_gop} đồng, chiếm tỷ lệ {ty_le} vốn điều lệ
+#l Tương ứng: {so_phieu} phiếu biểu quyết
+#l Giấy chứng nhận phần vốn góp số ……………, cấp ngày ……/……/………
+{/thanh_vien}
+#l - Thư ký cuộc họp: {tk_ho_ten}
+#l - Chủ tọa cuộc họp: {ct_ho_ten}
+tuyên bố việc triệu tập họp Hội đồng thành viên, điều kiện và thể thức tiến hành họp Hội đồng thành viên phù hợp theo quy định của Luật Doanh nghiệp và Điều lệ công ty; số thành viên dự họp đạt 100% vốn điều lệ đủ điều kiện tiến hành họp Hội đồng thành viên.
+#lbk A. Nội dung cuộc họp:
+Hội đồng thành viên lấy ý kiến của các thành viên dự họp về việc:
+#l 1. Giải thể doanh nghiệp: **{ten_cty}**
+#l Mã số thuế: {ma_dn}{^ma_dn}…………………{/ma_dn}[>55]Ngày thành lập: {tt_ngay_thanh_lap}{^tt_ngay_thanh_lap}……/……/………{/tt_ngay_thanh_lap}
+#l Nơi cấp: {phong_dkkd}{^phong_dkkd}[...]{/phong_dkkd}
+Địa chỉ trụ sở chính: {dia_chi_tru_so}
+#l 2. Lý do giải thể: {tt_ly_do}
+#l 3. Thời hạn, thủ tục thanh lý các hợp đồng đã ký kết:
+- {tt_hop_dong}
+- Kể từ thời điểm quyết định giải thể, doanh nghiệp không ký kết hợp đồng mới không phải là hợp đồng nhằm thực hiện giải thể doanh nghiệp.
+- Không được chấm dứt thực hiện các hợp đồng đã có hiệu lực.
+#l 4. Thời hạn, thủ tục thanh toán các khoản nợ của doanh nghiệp:
+- {tt_no}
+- Kể từ thời điểm quyết định giải thể, doanh nghiệp không huy động vốn dưới mọi hình thức.
+#l 5. Xử lý các nghĩa vụ phát sinh từ hợp đồng lao động:
+{tt_lao_dong}
+6. Thanh lý tài sản sau khi thanh toán hết các khoản nợ và chi phí giải thể doanh nghiệp. {tt_tai_san}
+7. Các thành viên Hội đồng thành viên phải liên đới chịu trách nhiệm thanh toán số nợ chưa thanh toán, số thuế chưa nộp và các quyền lợi hợp pháp của người lao động chưa được giải quyết và chịu trách nhiệm cá nhân trước pháp luật về những hệ quả phát sinh của doanh nghiệp không chính xác, trung thực với hồ sơ giải thể nộp hồ sơ giải thể tại cơ quan đăng ký kinh doanh trong thời hạn 05 năm.
+8. Nghị quyết, quyết định này phải được đăng trên Cổng thông tin quốc gia về đăng ký doanh nghiệp và được niêm yết công khai tại trụ sở chính của doanh nghiệp và trụ sở các đơn vị phụ thuộc của doanh nghiệp, được gửi đến các chủ nợ kèm phương án giải quyết nợ, được gửi đến người lao động, được gửi đến người có quyền và nghĩa vụ, lợi ích có liên quan, gửi đến cơ quan Nhà nước.
+#lbk B. Ý kiến phát biểu của các thành viên dự họp:
+#l Phương thức biểu quyết: bỏ phiếu kín
+Hoàn toàn đồng ý về việc giải thể doanh nghiệp tại mục A nêu trên.
+#lbk C. Biểu quyết:
+#l - Tổng số phiếu biểu quyết hợp lệ: {tong_phieu} phiếu
+#l - Tổng số phiếu biểu quyết không hợp lệ: 0 phiếu
+- Tổng số phiếu tán thành: {tong_phieu} phiếu đạt tỷ lệ 100% trên tổng số phiếu biểu quyết của thành viên dự họp
+#l - Tổng số phiếu không tán thành: 0 phiếu
+#l - Tổng số phiếu không có ý kiến: 0 phiếu
+#lbk D. Hội đồng thành viên quyết định:
+#l - Thông qua việc giải thể doanh nghiệp tại mục A nêu trên.
+#l - Giao cho Người đại diện theo pháp luật tiến hành các thủ tục cần thiết theo quy định pháp luật.
+#lk Cuộc họp kết thúc vào lúc … giờ … phút cùng ngày.
+::cot 50/50
+#cb Thư ký cuộc họp
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {tk_ho_ten}
+||
+#cb Chủ tọa cuộc họp
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {ct_ho_ten}
+::

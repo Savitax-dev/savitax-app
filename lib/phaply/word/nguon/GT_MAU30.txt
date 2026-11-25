@@ -1,0 +1,44 @@
+// Giải thể công ty — Mẫu số 30: Thông báo về việc giải thể doanh nghiệp (TT 121/2026/TT-BTC) — Sở bước 2. Dùng chung 1TV / 2TV / CP.
+// Theo bản phòng pháp lý (4_GIẢI THỂ_CÔNG TY\3_HỒ SƠ SỞ BƯỚC 2\2_MAU_30_TT121). Bản phòng ghi "Kính gửi: Thuế cơ sở …" — Mẫu 30 nộp Phòng
+// ĐKKD nên ở đây in {phong_dkkd} (CHỜ phòng pháp lý xác nhận). Dòng "Ban hành kèm theo…" viết như Mẫu 2/3/4 (bản phòng: "có hiệu lực ngày").
+#ci Mẫu số 30
+#ci (Ban hành kèm theo Thông tư số 121/2026/TT-BTC ngày 21 tháng 8 năm 2026 của Bộ trưởng Bộ Tài chính)
+~
+::cot 45/55
+#cb {ten_cty}
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+==
+#ci Số: ……../TB
+||
+#ci …………….., ngày……/……/………
+::
+~
+# THÔNG BÁO
+#cb Về việc giải thể doanh nghiệp
+#cb ----------------------
+#c Kính gửi: {phong_dkkd}{^phong_dkkd}……………………………………………………………{/phong_dkkd}
+~
+Tên doanh nghiệp (ghi bằng chữ in hoa): **{ten_cty}**
+#l Mã số doanh nghiệp/ Mã số Thuế: {ma_dn}{^ma_dn}[...]{/ma_dn}
+Số Giấy chứng nhận đăng ký kinh doanh *(chỉ kê khai nếu không có mã số doanh nghiệp/mã số Thuế)*: ………… Ngày cấp ……/……/……… Nơi cấp: …………………
+~
+#cb Thông báo về việc giải thể doanh nghiệp như sau:
+Doanh nghiệp đã thanh toán hết các khoản nợ, nghĩa vụ tài sản khác và không trong quá trình giải quyết tranh chấp tại Toà án hoặc Trọng tài theo quy định tại khoản 2 Điều 207 Luật Doanh nghiệp. Đề nghị Quý Cơ quan cập nhật tình trạng pháp lý của doanh nghiệp trong Cơ sở dữ liệu quốc gia về đăng ký doanh nghiệp sang tình trạng đã giải thể.
+Doanh nghiệp cam kết hoàn toàn chịu trách nhiệm trước pháp luật về tính hợp pháp, chính xác và trung thực của nội dung Thông báo này.
+Người ký tại Thông báo này cam kết là người có quyền và nghĩa vụ thực hiện thủ tục đăng ký doanh nghiệp theo quy định của pháp luật và Điều lệ công ty.
+~
+::cot 40/60
+~
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#cb {dd_chuc_danh}
+#ci (Ký, ghi họ tên)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

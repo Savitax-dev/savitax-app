@@ -1,0 +1,66 @@
+// Giải thể công ty TNHH một thành viên — Quyết định giải thể của Chủ sở hữu (hồ sơ THUẾ — đóng mã số thuế).
+// BẢN SAO của GT_QD_CSH (Sở bước 1), chỉ khác dòng ký: hồ sơ thuế ký tên, đóng dấu, giáp lai (hướng dẫn in ký hồ sơ thuế của phòng).
+// Sửa câu chữ ở GT_QD_CSH.txt thì sửa y hệt bản này.
+@gian 60
+::cot 45/55
+#cb {ten_cty}
+#c --------------------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: ….. /QĐ-CSH
+||
+#ci ………….., ngày ….. tháng ….. năm ………
+::
+~
+# QUYẾT ĐỊNH
+#cb Về việc giải thể doanh nghiệp
+~
+#cb CHỦ SỞ HỮU
+~
+- Căn cứ Luật Doanh nghiệp số 59/2020/QH14 được Quốc hội thông qua ngày 17 tháng 06 năm 2020; Luật sửa đổi, bổ sung một số điều của Luật Doanh nghiệp ngày 17 tháng 06 năm 2025;
+- Căn cứ tình hình hoạt động của doanh nghiệp.
+~
+#cb QUYẾT ĐỊNH
+~
+#l **Điều 1.** Giải thể doanh nghiệp: **{ten_cty}**
+#l Mã số thuế: {ma_dn}{^ma_dn}…………………{/ma_dn}[>55]Ngày cấp: {tt_ngay_thanh_lap}{^tt_ngay_thanh_lap}……/……/………{/tt_ngay_thanh_lap}
+#l Nơi cấp: {phong_dkkd}{^phong_dkkd}[...]{/phong_dkkd}
+Địa chỉ trụ sở chính: {dia_chi_tru_so}
+#l **Điều 2.** Lý do giải thể: {tt_ly_do}
+#l **Điều 3.** Thời hạn, thủ tục thanh lý các hợp đồng đã ký kết:
+- {tt_hop_dong}
+- Kể từ thời điểm quyết định giải thể, doanh nghiệp không ký kết hợp đồng mới không phải là hợp đồng nhằm thực hiện giải thể doanh nghiệp.
+- Không được chấm dứt thực hiện các hợp đồng đã có hiệu lực.
+#l **Điều 4.** Thời hạn, thủ tục thanh toán các khoản nợ của doanh nghiệp:
+- {tt_no}
+- Kể từ thời điểm quyết định giải thể, doanh nghiệp không huy động vốn dưới mọi hình thức.
+#l **Điều 5.** Xử lý các nghĩa vụ phát sinh từ hợp đồng lao động:
+{tt_lao_dong}
+**Điều 6.** Thanh lý tài sản sau khi thanh toán hết các khoản nợ và chi phí giải thể doanh nghiệp. {tt_tai_san}
+**Điều 7.** Chủ sở hữu, Người đại diện theo pháp luật của công ty chịu trách nhiệm liên đới thanh toán số nợ chưa thanh toán, số thuế chưa nộp và các quyền lợi hợp pháp của người lao động chưa được giải quyết và chịu trách nhiệm cá nhân trước pháp luật về những hệ quả phát sinh của doanh nghiệp không chính xác, trung thực với hồ sơ giải thể nộp hồ sơ giải thể tại cơ quan đăng ký kinh doanh trong thời hạn 05 năm.
+**Điều 8.** Quyết định này phải được đăng trên Cổng thông tin quốc gia về đăng ký doanh nghiệp và được niêm yết công khai tại trụ sở chính của doanh nghiệp và trụ sở các đơn vị phụ thuộc của doanh nghiệp, được gửi đến các chủ nợ kèm phương án giải quyết nợ, được gửi đến người lao động, được gửi đến người có quyền và nghĩa vụ, lợi ích có liên quan, gửi đến cơ quan Nhà nước.
+#lk **Điều 9.** Quyết định này có hiệu lực từ ngày ký.
+::cot 45/55
+~
+||
+#cb CHỦ SỞ HỮU
+{#csh_la_to_chuc}
+#cb {csh_ho_ten}
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+#cb {csh_dai_dien_ten}
+{/csh_la_to_chuc}
+{^csh_la_to_chuc}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+#cb {csh_ho_ten}
+{/csh_la_to_chuc}
+::

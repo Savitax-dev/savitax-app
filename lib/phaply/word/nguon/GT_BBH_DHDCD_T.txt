@@ -1,0 +1,144 @@
+// Giải thể công ty cổ phần — Biên bản họp Đại hội đồng cổ đông về việc giải thể (hồ sơ THUẾ — đóng mã số thuế).
+// BẢN SAO của GT_BBH_DHDCD (Sở bước 1), chỉ khác dòng ký: hồ sơ thuế ký tên, đóng dấu, giáp lai (hướng dẫn in ký hồ sơ thuế của phòng).
+// Sửa câu chữ ở GT_BBH_DHDCD.txt thì sửa y hệt bản này.
+@gian 60
+::cot 45/55
+#cb {ten_cty}
+#c --------------------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: ……/BBH-ĐHĐCĐ
+||
+#ci …………….., ngày……/……/………
+::
+~
+# BIÊN BẢN HỌP ĐẠI HỘI ĐỒNG CỔ ĐÔNG
+#cb Về việc giải thể doanh nghiệp
+~
+#l Tên doanh nghiệp: **{ten_cty}**
+#l Mã số doanh nghiệp/Mã số thuế: {ma_dn}{^ma_dn}[...]{/ma_dn}
+Địa chỉ trụ sở chính: {dia_chi_tru_so}
+#l Tổ chức cuộc họp Đại hội đồng cổ đông của Công ty:
+#l Thời gian: … giờ … phút, ngày … tháng … năm ……….
+Địa điểm họp: {dia_chi_tru_so}
+#lbk I. Thành phần tham dự:
+- Tổng số cổ đông dự họp trực tiếp tại cuộc họp (hoặc thông qua người đại diện theo ủy quyền) là {so_co_dong} cổ đông, cụ thể bao gồm những cổ đông có thông tin sau đây:
+::bang vien 6^ 29< 17^ 13> 14> 21^ co=11
+STT | Tên cổ đông | Loại cổ phần | Số cổ phần | Số phiếu biểu quyết (A) | Tỷ lệ sở hữu phiếu biểu quyết [(A)/tổng số phiếu biểu quyết của Công ty]
+---
+{#co_dong}{stt} | {ho_ten}{#nguoi_uq} (người đại diện theo ủy quyền: {nguoi_uq}){/nguoi_uq} | {loai_co_phan} | {so_co_phan} | {so_co_phan} | {ty_le}{/co_dong}
+#cb TỔNG CỘNG | << | << | #rb {tong_co_phan} | #rb {tong_co_phan} | #cb 100%
+::
+- Cổ đông không tham dự họp Đại hội đồng cổ đông: Không có.
+#l - {ct_danh_xung} {ct_ho_ten} - Chủ tọa;
+#l - {tk_danh_xung} {tk_ho_ten} - Thư ký - Người ghi biên bản.
+\*Chủ tọa tuyên bố số cổ đông dự họp đại diện cho {tong_co_phan} phiếu biểu quyết của Công ty, chiếm 100% tổng số phiếu biểu quyết của Công ty, đủ điều kiện tiến hành cuộc họp Đại hội đồng cổ đông theo quy định pháp luật và Điều lệ Công ty.
+#lbk II. Chương trình và nội dung cuộc họp:
+#lk 2.1. Chương trình họp:
+#l a. Đón tiếp cổ đông và thực hiện đăng ký việc dự họp Đại hội đồng cổ đông.
+#l b. Khai mạc:
+#l - Tuyên bố khai mạc.
+#l - Giới thiệu thành phần tham dự và lý do cuộc họp.
+#l - Công bố chương trình họp và nội dung cuộc họp.
+#l - Thông qua chương trình họp và nội dung cuộc họp.
+#l c. Cử người làm thư ký cuộc họp.
+#l d. Bầu ban kiểm phiếu.
+#l e. Thảo luận, cho ý kiến về từng vấn đề trong nội dung chương trình họp.
+#l f. Cấp phiếu bầu cử, phiếu biểu quyết cho các cổ đông dự họp.
+#l g. Các cổ đông tiến hành bỏ phiếu.
+#l h. Kiểm phiếu.
+#l i. Công bố kết quả kiểm phiếu.
+#l j. Công bố các vấn đề được Đại hội đồng cổ đông biểu quyết thông qua.
+#l k. Công bố nội dung biên bản họp và nghị quyết Đại hội đồng cổ đông.
+#l l. Ký biên bản họp Đại hội đồng cổ đông.
+#l m. Bế mạc.
+#lk 2.2. Nội dung cuộc họp:
+Đại hội đồng cổ đông lấy ý kiến của các cổ đông dự họp về việc xem xét thông qua chủ trương giải thể **{ten_cty}**, lý do giải thể, phương án thanh lý hợp đồng, thanh toán các khoản nợ, xử lý nghĩa vụ lao động, thanh lý tài sản, trách nhiệm của Người quản lý doanh nghiệp và thủ tục niêm yết, công bố thông tin giải thể theo quy định của pháp luật.
+#lbk III. Diễn biến cuộc họp:
+#lk 3.1. Khai mạc:
+#l a. Chủ tọa tuyên bố khai mạc.
+#l b. Chủ tọa giới thiệu thành phần tham dự và lý do cuộc họp.
+#l c. Chủ tọa công bố chương trình họp và nội dung cuộc họp.
+d. Chủ tọa điều khiển, Ban tổ chức hỗ trợ và Đại hội đồng cổ đông đã thông qua chương trình họp và nội dung cuộc họp.
+3.2. Chủ tọa đã cử {tk_danh_xung} {tk_ho_ten} làm thư ký cuộc họp, chịu trách nhiệm kiểm phiếu và ghi nhận kết quả biểu quyết.
+3.3. Chủ tọa đã điều khiển cuộc họp để các cổ đông thảo luận, cho ý kiến về vấn đề họp trong nội dung chương trình họp. Các ý kiến phát biểu của từng cổ đông về vấn đề họp trong nội dung chương trình họp:
+a. Về thủ tục triệu tập họp Đại hội đồng cổ đông Công ty, tất cả {so_co_dong} cổ đông dự họp đều đã đồng ý rằng:
+- Đã nhận được thông báo mời họp và chương trình họp Đại hội đồng cổ đông từ Công ty theo đúng quy định của Điều lệ Công ty và quy định pháp luật;
+- Đã nhận được từ Công ty dự thảo nghị quyết của Đại hội đồng cổ đông theo đúng quy định của Điều lệ Công ty và quy định pháp luật.
+b. Về thể thức tiến hành họp Đại hội đồng cổ đông Công ty, tất cả {so_co_dong} cổ đông dự họp đều đã:
+- Đồng ý rằng đã được Công ty đăng ký dự họp Đại hội đồng cổ đông theo đúng quy định của Điều lệ Công ty và quy định pháp luật;
+#l - Đồng thuận với việc cử {tk_danh_xung} {tk_ho_ten} làm thư ký cuộc họp của Chủ tọa;
+- Đồng ý rằng Chủ tọa đã giới thiệu đúng và đầy đủ thành phần tham dự cuộc họp Đại hội đồng cổ đông;
+- Đồng ý rằng lý do cuộc họp và nội dung cuộc họp được Chủ tọa trình bày tại cuộc họp là phù hợp với chương trình họp, các tài liệu khác kèm theo thông báo mời họp mà các cổ đông đã được nhận từ Công ty, phù hợp với quy định của Điều lệ Công ty và quy định pháp luật.
+c. Vấn đề được thảo luận tại cuộc họp và ý kiến của cổ đông về vấn đề sau:
+Thảo luận về chủ trương giải thể **{ten_cty}** và lý do giải thể, phương án giải thể, thanh lý hợp đồng, xử lý nợ, nghĩa vụ lao động, tài sản, trách nhiệm của Người quản lý và công bố thông tin giải thể doanh nghiệp như sau:
+#l - Thông tin công ty cần giải thể: **{ten_cty}**
+#l Mã số thuế: {ma_dn}{^ma_dn}…………………{/ma_dn}[>55]Ngày thành lập: {tt_ngay_thanh_lap}{^tt_ngay_thanh_lap}……/……/………{/tt_ngay_thanh_lap}
+#l Nơi cấp: {phong_dkkd}{^phong_dkkd}[...]{/phong_dkkd}
+Địa chỉ trụ sở chính: {dia_chi_tru_so}
+#l - Lý do giải thể: {tt_ly_do}
+#l - Thời hạn, thủ tục thanh lý các hợp đồng đã ký kết:
+\* {tt_hop_dong}
+\* Kể từ thời điểm quyết định giải thể, doanh nghiệp không ký kết hợp đồng mới không phải là hợp đồng nhằm thực hiện giải thể doanh nghiệp.
+\* Không được chấm dứt thực hiện các hợp đồng đã có hiệu lực.
+#l - Thời hạn, thủ tục thanh toán các khoản nợ của doanh nghiệp:
+\* {tt_no}
+\* Kể từ thời điểm quyết định giải thể, doanh nghiệp không huy động vốn dưới mọi hình thức.
+#l - Xử lý các nghĩa vụ phát sinh từ hợp đồng lao động:
+{tt_lao_dong}
+- Thanh lý tài sản sau khi thanh toán hết các khoản nợ và chi phí giải thể doanh nghiệp. {tt_tai_san}
+- Các thành viên Hội đồng quản trị, người đại diện theo pháp luật phải liên đới chịu trách nhiệm thanh toán số nợ chưa thanh toán, số thuế chưa nộp và các quyền lợi hợp pháp của người lao động chưa được giải quyết và chịu trách nhiệm cá nhân trước pháp luật về những hệ quả phát sinh của doanh nghiệp không chính xác, trung thực với hồ sơ giải thể nộp hồ sơ giải thể tại cơ quan đăng ký kinh doanh trong thời hạn 05 năm.
+- Quyết định giải thể phải được đăng trên Cổng thông tin quốc gia về đăng ký doanh nghiệp và được niêm yết công khai tại trụ sở chính của doanh nghiệp và trụ sở các đơn vị phụ thuộc của doanh nghiệp, được gửi đến các chủ nợ kèm phương án giải quyết nợ, được gửi đến người lao động, được gửi đến người có quyền và nghĩa vụ, lợi ích có liên quan, gửi đến cơ quan Nhà nước.
+\*Tóm tắt ý kiến của các cổ đông dự họp về vấn đề giải thể nêu trên: Các cổ đông dự họp đều nhất trí, thống nhất hoàn toàn với chủ trương giải thể, lý do giải thể, phương án thanh lý hợp đồng, thanh toán các khoản nợ, xử lý nghĩa vụ lao động, thanh lý tài sản, trách nhiệm của Người quản lý doanh nghiệp và thủ tục niêm yết, công bố thông tin giải thể theo quy định của pháp luật nêu trên.
+#l 3.4. Ban tổ chức cấp phiếu bầu cử, phiếu biểu quyết cho các cổ đông dự họp.
+3.5. Các cổ đông đã tiến hành bầu cử trực tiếp tại cuộc họp bằng hình thức bầu dồn phiếu, thông qua việc tự mình điền, ký tên vào phiếu bầu cử một cách độc lập. Ngoài ra các cổ đông đã biểu quyết trực tiếp tại cuộc họp, thông qua việc tự mình điền, ký tên vào phiếu biểu quyết (thẻ biểu quyết) một cách độc lập. Sau đó gửi lại phiếu bầu cử và phiếu biểu quyết cho Thư ký.
+#l 3.6. Thư ký tiến hành kiểm phiếu.
+#l 3.7. Chủ tọa công bố kết quả kiểm phiếu cho toàn bộ thành phần tham dự được biết.
+#l 3.8. Thư ký công bố nội dung biên bản họp và nghị quyết Đại hội đồng cổ đông.
+#l 3.9. Các cổ đông, chủ tọa và thư ký cùng ký biên bản họp Đại hội đồng cổ đông.
+#l 3.10. Chủ tọa và thư ký cùng ký biên bản họp Đại hội đồng cổ đông.
+#l 3.11. Chủ tọa phát biểu bế mạc.
+#l 3.12. Cuộc họp kết thúc.
+#lbk IV. Kết quả biểu quyết tại cuộc họp:
+Về việc giải thể **{ten_cty}** và lý do giải thể, phương án giải thể, thanh lý hợp đồng, xử lý nợ, nghĩa vụ lao động, tài sản, trách nhiệm của Người quản lý và công bố thông tin giải thể doanh nghiệp như đã trình bày tại điểm c Tiểu mục 3.3 Mục III.
+#l - Phương thức biểu quyết: Biểu quyết trực tiếp tại cuộc họp.
+- Tổng số phiếu biểu quyết hợp lệ: {tong_co_phan} phiếu / {tong_co_phan}, đạt tỷ lệ 100% trên tổng số phiếu biểu quyết của tất cả cổ đông dự họp.
+- Tổng số phiếu biểu quyết không hợp lệ: 0 phiếu, đạt tỷ lệ 0% trên tổng số phiếu biểu quyết của tất cả cổ đông dự họp.
+- Tổng số phiếu biểu quyết tán thành: {tong_co_phan} phiếu / {tong_co_phan}, đạt tỷ lệ 100% trên tổng số phiếu biểu quyết của tất cả cổ đông dự họp.
+- Tổng số phiếu biểu quyết không tán thành: 0 phiếu, đạt tỷ lệ 0% trên tổng số phiếu biểu quyết của tất cả cổ đông dự họp.
+- Tổng số phiếu biểu quyết không có ý kiến: 0 phiếu, đạt tỷ lệ 0% trên tổng số phiếu biểu quyết của tất cả cổ đông dự họp.
+#lbk V. Vấn đề được thông qua:
+- Đại hội đồng cổ đông đã thông qua việc giải thể **{ten_cty}** và lý do giải thể, phương án giải thể, thanh lý hợp đồng, xử lý nợ, nghĩa vụ lao động, tài sản, trách nhiệm của Người quản lý và công bố thông tin giải thể doanh nghiệp như đã trình bày tại điểm c Tiểu mục 3.3 Mục III.
+- Giao cho Người đại diện theo pháp luật tiến hành các thủ tục cần thiết theo quy định pháp luật.
+#lk Cuộc họp kết thúc vào lúc … giờ … phút cùng ngày.
+::cot 50/50
+#cb Thư ký cuộc họp
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {tk_ho_ten}
+||
+#cb Chủ tọa cuộc họp
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {ct_ho_ten}
+::
+~
+~
+#cbk PHỤ LỤC
+#cbk DANH SÁCH ĐĂNG KÝ CỔ ĐÔNG DỰ HỌP CUỘC HỌP ĐẠI HỘI ĐỒNG CỔ ĐÔNG NGÀY ……/……/………
+#cik (Kèm theo Biên bản họp Đại hội đồng cổ đông số ……/BBH-ĐHĐCĐ ngày ……/……/………)
+::bang vien 8^ 46< 23> 23> co=11
+STT | Tên cổ đông dự họp | Số cổ phần | Phiếu biểu quyết
+---
+{#co_dong}{stt} | {ho_ten} | {so_co_phan} | {so_co_phan}{/co_dong}
+#cb TỔNG CỘNG | << | #rb {tong_co_phan} | #rb {tong_co_phan}
+::

@@ -1,0 +1,43 @@
+// Giải thể công ty — Công văn đề nghị khóa mã số thuế (hồ sơ thuế). Dùng chung 1TV / 2TV / CP.
+// Theo bản phòng pháp lý (4_GIẢI THỂ_CÔNG TY\2_THUẾ\1_CÁC HỒ SƠ CỐ ĐỊNH PHẢI CÓ\8_CV_KHOA_MST). Người ban hành quyết định giải thể:
+// 1TV = chủ sở hữu, 2TV = Chủ tịch HĐTV, CP = Chủ tịch HĐQT. Lý do in sẵn {tt_ly_do}; phần cam kết để chỗ chấm viết tay như bản phòng.
+::cot 45/55
+#cb {ten_cty}
+#l12 Trụ sở: {dia_chi_tru_so}
+#l12 MSDN: {ma_dn}
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: 01/DNKMST
+||
+#ci …………….., ngày….. tháng….. năm………
+::
+~
+# CÔNG VĂN ĐỀ NGHỊ KHÓA MÃ SỐ THUẾ
+#c Kính gửi: {co_quan_thue}{^co_quan_thue}……………………………………………………………{/co_quan_thue}
+~
+#l Căn cứ Quyết định giải thể số: {tt_so_qd}{^tt_so_qd}…………………{/tt_so_qd} ngày {tt_ngay_qd}{^tt_ngay_qd}…………………{/tt_ngay_qd}
+#l Do **{#la_1tv}{csh_ho_ten}{/la_1tv}{^la_1tv}{ct_ho_ten}{/la_1tv}** ban hành.
+Chúng tôi kính mong {co_quan_thue}{^co_quan_thue}……………………………{/co_quan_thue} khóa mã số thuế theo quy định của pháp luật.
+#l - Lý do: {tt_ly_do}
+#l - Doanh nghiệp cam kết: [...]
+#l [...]
+#l [...]
+#l [...]
+Doanh nghiệp chịu trách nhiệm hoàn toàn trước pháp luật về tính chính xác, trung thực của nội dung công văn này.
+~
+::cot 40/60
+~
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#cb {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

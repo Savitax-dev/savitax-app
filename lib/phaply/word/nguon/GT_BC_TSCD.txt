@@ -1,0 +1,43 @@
+// Giải thể công ty — Báo cáo thanh lý tài sản cố định (hồ sơ thuế). Dùng chung 1TV / 2TV / CP.
+// Theo bản phòng pháp lý (4_GIẢI THỂ_CÔNG TY\2_THUẾ\1_CÁC HỒ SƠ CỐ ĐỊNH PHẢI CÓ\14_BCTLTSCĐ). Ô "Còn tài sản cố định" bật → thay câu cam kết
+// bằng chỗ kê viết tay.
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c ----------------------
+#ri …………….., ngày….. tháng ….. năm………
+~
+# BÁO CÁO THANH LÝ TÀI SẢN CỐ ĐỊNH
+#c Kính gửi: {co_quan_thue}{^co_quan_thue}……………………………………………………………{/co_quan_thue}
+~
+#l Tên doanh nghiệp: **{ten_cty}**
+#l Mã số doanh nghiệp: {ma_dn}{^ma_dn}…………………{/ma_dn}[>55]Ngày thành lập: {tt_ngay_thanh_lap}{^tt_ngay_thanh_lap}……/……/………{/tt_ngay_thanh_lap}
+#l Nơi cấp: {phong_dkkd}{^phong_dkkd}[...]{/phong_dkkd}
+Địa chỉ trụ sở: {dia_chi_tru_so}
+#l Giấy CNĐKDN số *(chỉ kê khai nếu không có mã số doanh nghiệp/mã số thuế)*: [...]
+#l - Căn cứ quyết định giải thể của doanh nghiệp ngày {tt_ngay_qd}{^tt_ngay_qd}……/……/………{/tt_ngay_qd}
+#l Nay doanh nghiệp chúng tôi gửi văn bản này đến {co_quan_thue}{^co_quan_thue}……………………………{/co_quan_thue}
+{^tt_co_tscd}
+Cam kết doanh nghiệp không có tài sản cố định nào còn lại tại thời điểm làm thủ tục giải thể.
+{/tt_co_tscd}
+{#tt_co_tscd}
+Báo cáo việc thanh lý tài sản cố định tại thời điểm làm thủ tục giải thể như sau:
+#l [...]
+#l [...]
+#l [...]
+#l [...]
+{/tt_co_tscd}
+- Chúng tôi hoàn toàn chịu trách nhiệm trước pháp luật về nội dung của văn bản này.
+~
+::cot 40/60
+~
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#cb {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

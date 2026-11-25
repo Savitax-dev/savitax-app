@@ -1,0 +1,36 @@
+// Giải thể công ty — Cam kết không hoạt động xuất nhập khẩu, bản DỰ PHÒNG: phần nội dung cam kết để chỗ chấm viết tay (hồ sơ thuế).
+// Đi kèm GT_CK_XNK (cùng dieuKien tt_khong_xnk). Theo bản phòng pháp lý (…\2_CÁC HỒ SƠ CHỈ SOẠN KHI KHÔNG PHÁT SINH…\8_CK_XNK_duphong).
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập – Tự do – Hạnh phúc
+#c ----------------------
+~
+# CAM KẾT KHÔNG HOẠT ĐỘNG XUẤT NHẬP KHẨU
+#c Kính gửi: {co_quan_thue}{^co_quan_thue}……………………………………………………………{/co_quan_thue}
+~
+#l Tên doanh nghiệp: **{ten_cty}**
+#l Mã số thuế: {ma_dn}{^ma_dn}…………………{/ma_dn}[>55]Ngày thành lập: {tt_ngay_thanh_lap}{^tt_ngay_thanh_lap}……/……/………{/tt_ngay_thanh_lap}
+#l Nơi cấp: {phong_dkkd}{^phong_dkkd}[...]{/phong_dkkd}
+Địa chỉ trụ sở: {dia_chi_tru_so}
+#l Ngành nghề: {tt_linh_vuc}{^tt_linh_vuc}[...]{/tt_linh_vuc}
+#l [...]
+#l [...]
+#l [...]
+#l [...]
+#l [...]
+#l [...]
+Doanh nghiệp xin cam đoan những lời khai báo trên hoàn toàn là sự thật, nếu có sai trái Doanh nghiệp xin hoàn toàn chịu trách nhiệm trước pháp luật.
+#l Chân thành cảm ơn.
+~
+::cot 40/60
+~
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#cb {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

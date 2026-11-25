@@ -1,0 +1,35 @@
+// Giải thể công ty — Cam kết đã giải quyết chế độ cho người lao động (hồ sơ thuế). Dùng chung 1TV / 2TV / CP.
+// Theo bản phòng pháp lý (4_GIẢI THỂ_CÔNG TY\2_THUẾ\1_CÁC HỒ SƠ CỐ ĐỊNH PHẢI CÓ\10_CK_NLĐ). Ngành nghề = ô {tt_linh_vuc}.
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập – Tự do – Hạnh phúc
+#c ----------------------
+#ri …………….., ngày…… tháng …… năm ………
+~
+# CAM KẾT ĐÃ GIẢI QUYẾT CHẾ ĐỘ CHO NGƯỜI LAO ĐỘNG
+#c Kính gửi: {co_quan_thue}{^co_quan_thue}……………………………………………………………{/co_quan_thue}
+~
+#l Tên doanh nghiệp: **{ten_cty}**
+#l Mã số thuế: {ma_dn}{^ma_dn}…………………{/ma_dn}[>55]Ngày cấp: {tt_ngay_thanh_lap}{^tt_ngay_thanh_lap}……/……/………{/tt_ngay_thanh_lap}
+#l Nơi cấp: {phong_dkkd}{^phong_dkkd}[...]{/phong_dkkd}
+Địa chỉ trụ sở: {dia_chi_tru_so}
+#l Ngành nghề: {tt_linh_vuc}{^tt_linh_vuc}[...]{/tt_linh_vuc}
+Bằng văn bản này, Doanh nghiệp chúng tôi xin cam kết với {co_quan_thue}{^co_quan_thue}……………………………{/co_quan_thue}
+Doanh nghiệp đã giải quyết chế độ cho người lao động theo đúng pháp luật về lao động.
+Công ty đã hoàn thành việc thanh toán toàn bộ các khoản lương, thưởng, trợ cấp, bảo hiểm xã hội, bảo hiểm thất nghiệp, bảo hiểm y tế và các quyền lợi khác cho người lao động theo đúng quy định pháp luật.
+Không còn tranh chấp lao động nào đang diễn ra tại thời điểm làm thủ tục giải thể.
+Doanh nghiệp xin cam đoan những lời khai báo trên hoàn toàn là sự thật, nếu có sai trái Doanh nghiệp xin hoàn toàn chịu trách nhiệm trước pháp luật.
+#l Chân thành cảm ơn.
+~
+::cot 40/60
+~
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#cb {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

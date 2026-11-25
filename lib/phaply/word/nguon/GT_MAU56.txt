@@ -1,0 +1,42 @@
+// Giải thể công ty — "Mẫu 56": công văn đề nghị Hải quan xác nhận hoàn thành nghĩa vụ nộp thuế (hồ sơ thuế). Dùng chung 1TV / 2TV / CP.
+// Theo bản phòng pháp lý (4_GIẢI THỂ_CÔNG TY\2_THUẾ\1_CÁC HỒ SƠ CỐ ĐỊNH PHẢI CÓ\6_MAU_56). Chi cục Hải quan = ô {tt_hai_quan};
+// địa chỉ / điện thoại liên hệ + người nhận = nhân viên phụ trách (uq_). Bản dự phòng để trống nơi nhận: GT_MAU56_TRONG.
+::cot 45/55
+#cb {ten_cty}
+#c --------------------
+||
+#cb CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: …../CV
+#c12 V/v đề nghị xác nhận hoàn thành nghĩa vụ nộp thuế
+||
+#ci …………….., ngày…… tháng …… năm ………
+::
+~
+#c Kính gửi: {tt_hai_quan}{^tt_hai_quan}……………………………………………………………{/tt_hai_quan}
+~
+Căn cứ Khoản 01 Điều 41 Thông tư số 86/2026/TT-BTC ngày 30/6/2026 của Bộ trưởng Bộ Tài chính quy định về quản lý thuế đối với hàng hóa xuất khẩu, nhập khẩu.
+#l Tên công ty: **{ten_cty}**
+Địa chỉ *(đối với Công ty là địa chỉ ghi trên giấy chứng nhận đăng ký kinh doanh)*: {dia_chi_tru_so}
+#l Địa chỉ liên hệ: {uq_dia_chi_lien_lac}{^uq_dia_chi_lien_lac}[...]{/uq_dia_chi_lien_lac}
+#l Điện thoại liên hệ: {uq_dien_thoai} - Người nhận: {uq_ho_ten}
+Đề nghị {tt_hai_quan}{^tt_hai_quan}……………………………………{/tt_hai_quan} xác nhận hoàn thành nghĩa vụ nộp thuế cho **{ten_cty}**, mã số thuế: {ma_dn}{^ma_dn}…………………{/ma_dn}
+#l Lý do xác nhận hoàn thành nghĩa vụ nộp thuế: để giải thể Công ty.
+~
+::cot 45/55
+#lb12 Nơi nhận:
+#l12 - Như trên;
+#l12 - Lưu: VT.
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#cb {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

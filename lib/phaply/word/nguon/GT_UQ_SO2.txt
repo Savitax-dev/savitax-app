@@ -1,0 +1,47 @@
+// Giải thể công ty — Giấy ủy quyền nộp hồ sơ giải thể tại Phòng ĐKKD (Sở bước 2). Dùng chung 1TV / 2TV / CP.
+// Bản sao của GT_UQ_SO (Sở bước 1) — cùng chữ (bản phòng 3_HỒ SƠ SỞ BƯỚC 2\1_GUQ giống hệt bước 1); sửa một bản nhớ sửa bản kia.
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+#ri …………….., ngày……/……/………
+~
+# GIẤY ỦY QUYỀN
+~
+#l Đơn vị ủy quyền: **{ten_cty}**
+#l Mã số doanh nghiệp: {ma_dn}{^ma_dn}[...]{/ma_dn}
+#l Trụ sở: {dia_chi_tru_so}
+#l Đại diện: **{dd_ho_ten}**[>60]Chức danh: {dd_chuc_danh}
+#l Số điện thoại: {dd_dien_thoai}
+Bằng giấy này, chúng tôi ủy quyền cho:
+#l {uq_danh_xung}: **{uq_ho_ten}**
+#l {uq_giay_to_ngan} số: {uq_so_giay_to}[>55]Ngày cấp: {uq_ngay_cap}
+#l Nơi cấp: {uq_noi_cap}
+#l Địa chỉ liên lạc: {uq_dia_chi_lien_lac}
+#l Số điện thoại: {uq_dien_thoai}
+Để thực hiện thay chúng tôi với các nội dung như sau:
+Thay mặt người đại diện theo pháp luật liên hệ {phong_dkkd} để:
++ Nộp hồ sơ giải thể **{ten_cty}**;
++ Nhận thông báo sửa đổi, bổ sung hồ sơ, rút hồ sơ, ký nhận kết quả.
+- Chúng tôi xin chịu trách nhiệm trước pháp luật về mọi cam kết do Bên được ủy quyền nhân danh chúng tôi thực hiện trong phạm vi ủy quyền nêu trên.
+- Chúng tôi công nhận đã hiểu rõ quyền, nghĩa vụ và lợi ích hợp pháp của mình và hậu quả pháp lý của việc ủy quyền.
+- Thời hạn ủy quyền: kể từ ngày ký cho đến khi bên được ủy quyền hoàn thành các thủ tục nêu trên./.
+~
+::cot 45/55
+#cb NGƯỜI ĐƯỢC ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+~
+#cb {uq_ho_ten}
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#cb {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+#cb {dd_ho_ten}
+::

@@ -1,0 +1,53 @@
+// Giải thể công ty — Mẫu số 01/ĐNKHT: Văn bản từ chối nhận lại số tiền nộp thừa (TT 89/2026/TT-BTC). Dùng chung 1TV / 2TV / CP.
+// Theo bản phòng pháp lý (4_GIẢI THỂ_CÔNG TY\2_THUẾ\1_CÁC HỒ SƠ CỐ ĐỊNH PHẢI CÓ\16_MAU_01_DNKHT): chỉ in sẵn tên + MST; bảng khoản nộp thừa,
+// lý do, tài liệu gửi kèm để trống viết tay. Bản phòng không có dòng ngày tháng trên chữ ký — giữ nguyên.
+::cot 60/40
+~
+||
+#ci12 Mẫu số: **01/ĐNKHT**
+#ci12 (Kèm theo Thông tư số 89/2026/TT-BTC ngày 30 tháng 6 năm 2026 của Bộ trưởng Bộ Tài chính)
+::
+~
+#cb CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+~
+#cb VĂN BẢN TỪ CHỐI NHẬN LẠI SỐ TIỀN NỘP THỪA
+#c Kính gửi: {co_quan_thue}{^co_quan_thue}……………………………………………………………{/co_quan_thue}
+~
+#l **[01] Tên người nộp thuế:** {ten_cty}
+#l [02] Mã số thuế: {ma_dn}{^ma_dn}[...]{/ma_dn}
+#l **[03] Tên tổ chức, cá nhân cung cấp dịch vụ làm thủ tục về thuế (nếu có):** [...]
+#l [04] Mã số thuế: [...]
+#l [05] Hợp đồng dịch vụ làm thủ tục về thuế: Số [..78] ngày [...]
+~
+#lt 1. Thông tin về khoản nộp thừa của người nộp thuế từ chối nhận lại:
+::bang vien 7^ 18^ 10^ 9^ 15^ 20^ 9^ 12^ co=11
+#c STT | #c Nội dung khoản nộp thừa | #c Chương | #c Tiểu mục | #c Cơ quan quản lý thu | #c Địa bàn hành chính | #c Loại tiền | #c Số tiền nộp thừa
+#ci (1) | #ci (2) | #ci (3) | #ci (4) | #ci (5) | #ci (6) | #ci (7) | #ci (8)
+---
+  |   |   |   |   |   |   |
+  |   |   |   |   |   |   |
+  |   |   |   |   |   |   |
+  |   |   |   |   |   |   |
+  | #cb TỔNG CỘNG: // #ci (Chi tiết theo từng loại tiền) | << | << | << | << |   |
+::
+~
+#lt 2. Lý do đề nghị từ chối nhận lại số tiền nộp thừa:
+#l [...]
+#l [...]
+#lt 3. Thông tin, tài liệu gửi kèm (ghi rõ tên tài liệu, bản chính, bản sao):
+#l [...]
+#l [...]
+~
+::cot 45/55
+~
+||
+#cb NGƯỜI NỘP THUẾ hoặc ĐẠI DIỆN HỢP PHÁP
+#cb CỦA NGƯỜI NỘP THUẾ
+#ci (Ký, ghi rõ họ tên; chức vụ và đóng dấu (nếu có)/Ký điện tử/Xác nhận điện tử)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

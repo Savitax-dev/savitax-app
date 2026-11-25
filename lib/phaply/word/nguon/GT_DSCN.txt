@@ -1,0 +1,51 @@
+// Giải thể công ty — Danh sách chủ nợ và số nợ đã thanh toán (Sở bước 2). Dùng chung 1TV / 2TV / CP. Khổ ngang.
+// Theo bản phòng pháp lý (4_GIẢI THỂ_CÔNG TY\3_HỒ SƠ SỞ BƯỚC 2\4_DSCN): 8 loại nợ cố định, mặc định "Không có". Ô "Có chủ nợ phải kê" bật →
+// các ô để trống viết tay (chưa có kiểu ô "bảng" để nhập danh sách chủ nợ). Người lập biểu = nhân viên phụ trách (uq_).
+// Bản phòng để khối chữ ký rơi sang trang 2 — ở đây thu gọn để bảng + chữ ký nằm cùng một trang.
+@ngang
+@le 15/12/20/15
+@gian 60
+::cot 45/55
+#cb {ten_cty}
+#c ----------------------
+#c Số: 01/DSCN
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c ----------------------
+::
+~
+# DANH SÁCH CHỦ NỢ VÀ SỐ NỢ ĐÃ THANH TOÁN
+::bang vien 18< 13^ 13^ 10^ 11^ 11^ 10^ 14^ co=11
+Loại nợ | Tên chủ nợ | Địa chỉ chủ nợ | Số nợ | Thời hạn thanh toán | Địa điểm thanh toán | Phương thức thanh toán | Ghi chú
+---
+Nợ lương | {^tt_co_chu_no}Không có{/tt_co_chu_no} |   |   |   |   |   |
+Nợ trợ cấp thôi việc | {^tt_co_chu_no}Không có{/tt_co_chu_no} |   |   |   |   |   |
+Nợ trợ cấp thất nghiệp | {^tt_co_chu_no}Không có{/tt_co_chu_no} |   |   |   |   |   |
+Nợ trợ cấp y tế | {^tt_co_chu_no}Không có{/tt_co_chu_no} |   |   |   |   |   |
+Nợ bảo hiểm xã hội | {^tt_co_chu_no}Không có{/tt_co_chu_no} |   |   |   |   |   |
+Nợ thuế | {^tt_co_chu_no}Không có{/tt_co_chu_no} |   |   |   |   |   |
+Các khoản nợ khác | {^tt_co_chu_no}Không có{/tt_co_chu_no} |   |   |   |   |   |
+Quyền lợi khác của người lao động theo thỏa ước lao động tập thể và HĐLĐ đã ký kết | {^tt_co_chu_no}Không có{/tt_co_chu_no} |   |   |   |   |   |
+::
+~
+#lk Doanh nghiệp cam kết chịu trách nhiệm về tính trung thực của nội dung kê khai.
+::cot 45/55
+~
+#cb Người lập biểu
+~
+~
+~
+~
+#cb {uq_ho_ten}
+||
+#ci …………….., ngày….. tháng….. năm………
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#cb {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+#cb {dd_ho_ten}
+::
