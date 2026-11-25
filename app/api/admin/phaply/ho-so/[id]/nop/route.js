@@ -37,7 +37,7 @@ export async function GET(request, { params }) {
   if (nop.error) return loi(500, nop.error.message)
   const ten = new Map((nv.data || []).map(s => [s.id, s.full_name]))
   const goiY = ent.data ? await goiYCoQuan(admin, ent.data.tru_so_ma_tinh, null) : {}
-  const { data: dd } = hs.entity_id ? await admin.from('legal_entity_people').select('nguoi:legal_people(ho_ten)').eq('entity_id', hs.entity_id).eq('vai_tro', 'dai_dien').order('thu_tu').limit(1) : { data: [] }
+  const { data: dd } = hs.entity_id ? await admin.from('legal_entity_people').select('nguoi:legal_people!person_id(ho_ten)').eq('entity_id', hs.entity_id).eq('vai_tro', 'dai_dien').order('thu_tu').limit(1) : { data: [] }
   return Response.json({
     ky: (ky.data || []).map(k => ({ ...k, ten_nguoi: ten.get(k.signed_by) || '' })),
     nop: (nop.data || []).map(s => ({ ...s, ten_nguoi: ten.get(s.created_by) || '' })),

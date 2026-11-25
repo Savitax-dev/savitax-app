@@ -113,7 +113,8 @@ try {
       vai_tro: [{ vai_tro: 'dai_dien', chuc_danh: 'Giám đốc' }, { vai_tro: 'thanh_vien', von_gop: 600000000, thoi_han_gop: '90 ngày' }] })
     const { data: pp } = await admin.from('legal_people').select('cccd_front_path, cccd_back_path').eq('id', pid).single()
     kiem('không gắn được ảnh của hồ sơ khác, gắn được ảnh của hồ sơ này', !pp.cccd_front_path && pp.cccd_back_path === `${id}/abc-sau.jpg`, JSON.stringify(pp))
-    kiem('xem ảnh ngoài thư mục hồ sơ → 400', (await L(`/api/admin/phaply/ho-so/${id}/cccd?path=${encodeURIComponent('hoso-khac/x.jpg')}`)).status === 400)
+    // demo: tài khoản không thuộc phòng pháp lý bị chặn xem ảnh trước (403, sửa 17/11/2026) — cả hai đều là KHÔNG xem được
+    kiem('xem ảnh ngoài thư mục hồ sơ → 400 / 403', [400, 403].includes((await L(`/api/admin/phaply/ho-so/${id}/cccd?path=${encodeURIComponent('hoso-khac/x.jpg')}`)).status))
     // trả lại chủ tịch cho Thử Thị Hai (lần lưu trên bỏ dấu chủ tịch của người Một — đúng ý, kiểm phía dưới không phụ thuộc)
   }
 
@@ -123,7 +124,8 @@ try {
   if (z.status === 200) {
     const zip = new PizZip(z.buf)
     const ten = Object.keys(zip.files)
-    kiem('đủ file trong bộ + hướng dẫn in ký', ten.length === mauCuaBo('so', '2tv').length + 1, ten.join(', '))
+    kiem('đủ file trong bộ + hướng dẫn in ký', ten.length === mauCuaBo('so', '2tv').filter(m => !m.dieuKien).length + 1,   // tờ có điều kiện (thành viên là tổ chức…) không có ở hồ sơ này
+      ten.join(', '))
     const dl = zip.file(ten.find(t => /Điều lệ/.test(t)) || '')
     const xml = dl ? new PizZip(dl.asNodeBuffer()).file('word/document.xml').asText().replace(/<[^>]+>/g, '') : ''
     kiem('Điều lệ có tên công ty + thành viên + ngành', xml.includes('CÔNG TY TNHH THỬ PHÁP NHÂN') && xml.includes('THỬ THỊ HAI') && xml.includes('Trừ quảng cáo thuốc lá'))

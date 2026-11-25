@@ -27,6 +27,8 @@ export async function GET(request, { params }) {
   const laHuongDan = ma === 'HUONG_DAN' && dot !== 'ban_giao'   // tờ hướng dẫn in ký riêng (18/11/2026)
   try {
     const { files, huongDan, dauVao } = await dungBoWord(auth.admin, hs, dot, { ma })
+    // tải lẻ một tờ: không thuộc bộ / loại hình, hoặc không đúng trường hợp (dieuKien) → 404
+    if (ma && !laHuongDan && !files.length) return loi(404, 'Mẫu này không có trong bộ hồ sơ của hồ sơ này')
     await ghiNhatKy(auth.admin, id, 'edit', null, null, auth.caller.staffId, `Xuất Word: ${ma || 'cả bộ'} (${tenBo(bt, dot).toLowerCase()})`)
     const goc = tenFile(`${hs.code} ${dauVao.cty.ten || hs.title || ''}`)
     if (laHuongDan) return taiVe(huongDan.buf, `${goc} - ${huongDan.ten}`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')

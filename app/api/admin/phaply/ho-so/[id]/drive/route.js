@@ -53,7 +53,7 @@ export async function POST(request, { params }) {
       }
     }
     if (noiDung.has('cccd') && hs.entity_id) {
-      const { data: vt } = await admin.from('legal_entity_people').select('vai_tro, nguoi:legal_people(id, ho_ten, cccd_front_path, cccd_back_path)').eq('entity_id', hs.entity_id)
+      const { data: vt } = await admin.from('legal_entity_people').select('vai_tro, nguoi:legal_people!person_id(id, ho_ten, cccd_front_path, cccd_back_path)').eq('entity_id', hs.entity_id)
       const nguoi = new Map()
       for (const v of vt || []) if (v.nguoi && (v.nguoi.cccd_front_path || v.nguoi.cccd_back_path)) {
         if (!nguoi.has(v.nguoi.id)) nguoi.set(v.nguoi.id, { ...v.nguoi, vai: [] })

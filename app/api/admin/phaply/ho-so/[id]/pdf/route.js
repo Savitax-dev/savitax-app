@@ -30,6 +30,8 @@ export async function GET(request, { params }) {
   const laHuongDan = ma === 'HUONG_DAN' && dot !== 'ban_giao'   // tờ hướng dẫn in ký riêng (18/11/2026)
   try {
     const { files, huongDan, dauVao } = await dungBoWord(auth.admin, hs, dot, { ma })
+    // tải lẻ một tờ: không thuộc bộ / loại hình, hoặc không đúng trường hợp (dieuKien) → 404
+    if (ma && !laHuongDan && !files.length) return loi(404, 'Mẫu này không có trong bộ hồ sơ của hồ sơ này')
     // tờ hướng dẫn in ký: PDF riêng, KHÔNG gộp vào bộ trình ký (bộ gộp là thứ khách in ra ký)
     const kemHd = huongDan && (!ma || laHuongDan)
     const ds = await doiPdf(kemHd ? [huongDan, ...files] : files)
