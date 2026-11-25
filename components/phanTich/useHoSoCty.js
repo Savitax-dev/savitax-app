@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import {
   coHoTro, chonThuMucChinh, layThuMucChinh, dsThuMucNamCu, themThuMucNamCu, boThuMucNamCu, quyenDoc,
-  khoaDem, layDem, ghiDem,
+  khoaDem, layDem, ghiDem, quyenThuMucTreo, CHU_TREO_QUYEN,
 } from '@/lib/phanTich/khoMay'
 import { quetCongTy, gopNamTroRieng } from '@/lib/phanTich/thuMuc'
 import { docToKhaiCuaNam, docBangKeCuaNam, docBangLuongCuaNam, docC12CuaNam, docSaoKeCuaNam, docSoTienCuaNam } from '@/lib/phanTich/docHoSo'
@@ -89,11 +89,18 @@ export function useHoSoCty(ctyId, { docNamTruoc = false, docLuong = false, chiQu
     }
     let huy = false
     ;(async () => {
-      const tm = await layThuMucChinh(ctyId)
-      const cu = await dsThuMucNamCu(ctyId)
-      const dsCu = []
-      for (const tay of cu) dsCu.push({ tay, ten: tay.name, coQuyen: await quyenDoc(tay) })
-      if (!huy) { setThuMuc(tm); setNamCu(dsCu); setDaChuyen(tm.daChuyen || '') }
+      // Lỗi / Chrome treo ở bước này mà không báo thì màn đứng trắng (25/11/2026) — luôn để lại một dòng báo
+      try {
+        const tm = await layThuMucChinh(ctyId)
+        const cu = await dsThuMucNamCu(ctyId)
+        const dsCu = []
+        for (const tay of cu) dsCu.push({ tay, ten: tay.name, coQuyen: await quyenDoc(tay) })
+        if (huy) return
+        setThuMuc(tm); setNamCu(dsCu); setDaChuyen(tm.daChuyen || '')
+        if (tm.trangThai === 'treo' || quyenThuMucTreo()) setLoi(CHU_TREO_QUYEN)
+      } catch (e) {
+        if (!huy) setLoi('Không đọc được thư mục đã trỏ trên máy: ' + (e?.message || e))
+      }
     })()
     return () => { huy = true }
   }, [ctyId, lanDoc])
@@ -212,6 +219,7 @@ export function useHoSoCty(ctyId, { docNamTruoc = false, docLuong = false, chiQu
     const dsCu = []
     for (const x of namCu) dsCu.push({ ...x, coQuyen: await quyenDoc(x.tay, { xinQuyen: true }) })
     setThuMuc(tm); setNamCu(dsCu)
+    if (quyenThuMucTreo()) setLoi(CHU_TREO_QUYEN)
   }, [ctyId, namCu])
   const themNamCu = useCallback(async () => {
     try { await themThuMucNamCu(ctyId); setLanDoc(n => n + 1) } catch (e) { if (e?.name !== 'AbortError') setLoi(e.message) }
@@ -220,7 +228,8 @@ export function useHoSoCty(ctyId, { docNamTruoc = false, docLuong = false, chiQu
 
   const cacNam = quet ? Object.keys(quet.nam).map(Number).sort((a, b) => b - a) : []
   const qn = quet?.nam?.[nam] || null
-  const canCho = (thuMuc && ['can_xin_lai', 'bi_tu_choi'].includes(thuMuc.trangThai)) || namCu.some(x => !x.coQuyen)
+  // Chrome treo thì nút "Cho phép đọc" cũng vô ích — chỉ hiện dòng báo đỏ
+  const canCho = !quyenThuMucTreo() && ((thuMuc && ['can_xin_lai', 'bi_tu_choi'].includes(thuMuc.trangThai)) || namCu.some(x => !x.coQuyen))
 
   return {
     ctyId, dsCty, dsDaTai, cty, mstCty, loi: loiDs || loi, setLoi, lanDoc, lucDoc, hoTro, thuMuc, namCu, quet, nam, setNam, cacNam, qn,

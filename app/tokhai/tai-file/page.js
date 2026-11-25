@@ -21,7 +21,7 @@ import { OTong } from '@/components/tokhaiUI'
 import { kiemTraTienIch } from '@/lib/portalBridge'
 import { chayTaiFile } from '@/lib/tokhaiTaiFileClient'
 import {
-  coHoTro, chonThuMucCongTy, layThuMucCongTy, quenThuMucCongTy, soatThuMucCongTy,
+  coHoTro, chonThuMucCongTy, layThuMucCongTy, quenThuMucCongTy, soatThuMucCongTy, quyenThuMucTreo, CHU_TREO_QUYEN,
 } from '@/lib/tokhaiLuuDia'
 
 const ngayChu = d => d.toISOString().slice(0, 10)
@@ -132,7 +132,8 @@ export default function TrangTaiFile() {
         ra[id] = { ...kq, soat: kq.trangThai === 'san_sang' ? await soatThuMucCongTy(kq.tay) : null }
       }
       if (!huy && Object.keys(ra).length) setThuMucCty(p => ({ ...ra, ...p }))
-    })()
+      if (!huy && quyenThuMucTreo()) setLoi(CHU_TREO_QUYEN)
+    })().catch(e => { if (!huy) setLoi('Không đọc được thư mục đã chọn trên máy: ' + (e?.message || e)) })
     return () => { huy = true }
   }, [dsHienId, hoTro])
 
@@ -288,6 +289,14 @@ export default function TrangTaiFile() {
         <div className="space-y-1">
           <p className="text-gray-400">chưa chọn</p>
           {nut('Chọn thư mục', () => bamChonThuMuc(c), true)}
+        </div>
+      )
+    }
+    if (tm.trangThai === 'treo') {
+      return (
+        <div className="space-y-1">
+          <p className="font-mono text-gray-700 break-all leading-tight">{tm.ten}</p>
+          <p className="text-red-700" title={CHU_TREO_QUYEN}>Chrome không trả lời — đóng hẳn Chrome rồi mở lại</p>
         </div>
       )
     }

@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import { OTongSinhDong, ChipMau, KieuBang } from '@/components/phanTich/phanTichUI'
-import { coHoTro, chonThuMucChinh, layThuMucChinh, dsThuMucNamCu } from '@/lib/phanTich/khoMay'
+import { coHoTro, chonThuMucChinh, layThuMucChinh, dsThuMucNamCu, quyenThuMucTreo, CHU_TREO_QUYEN } from '@/lib/phanTich/khoMay'
 
 const VAI_TRO = { chinh: 'Phụ trách chính', phu: 'Phụ trách phụ', phong: 'Trong phòng', quan_tri: 'Quản trị' }
 const THU_MUC = {
@@ -20,6 +20,7 @@ const THU_MUC = {
   bi_tu_choi: { nhan: 'Bị từ chối', mau: 'do' },
   nam_rieng: { nhan: 'Đã trỏ thư mục năm', mau: 'xanhDuong' },
   chua_chon: { nhan: 'Chưa trỏ', mau: 'xam' },
+  treo: { nhan: 'Chrome không trả lời', mau: 'do' },
 }
 
 export default function CongTyCuaToi({ tieuDe, bieuTuong, tab, nutMo }) {
@@ -59,8 +60,10 @@ export default function CongTyCuaToi({ tieuDe, bieuTuong, tab, nutMo }) {
         }
         ra[id] = { trangThai: kq.trangThai, ten: kq.ten || '' }
       }
-      if (!huy) setThuMuc(ra)
-    })()
+      if (huy) return
+      setThuMuc(ra)
+      if (quyenThuMucTreo()) setLoi(CHU_TREO_QUYEN)
+    })().catch(e => { if (!huy) setLoi('Không đọc được thư mục đã trỏ trên máy: ' + (e?.message || e)) })
     return () => { huy = true }
   }, [idCty, hoTro])
 
