@@ -423,6 +423,24 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
 - Bộ kiểm: `node scripts/test-phaply-tien.mjs` (offline) · `node --env-file=.env.local scripts/test-phaply-api.mjs` (demo + máy chủ thử;
   CHỈ cấp phiên cho tài khoản đăng nhập ĐÃ CÓ — `generateLink` với email chưa có sẽ TẠO tài khoản mới) · `node scripts/test-phaply-word.mjs`.
 - Mẫu Word thành lập mới (19 mẫu, pháp lý đã chốt 17/11): `templates/phaply/word/README.md`, từ điển trường DUY NHẤT `lib/phaply/word/duLieu.js`.
+- **Bộ biểu mẫu mới 25/11/2026** (phòng gửi `PHONGPHAPLY_BIEUMAU`: Điều lệ bổ sung, hộ kinh doanh, đơn vị phụ thuộc, tạm ngừng / hoạt động lại,
+  giải thể, thay đổi). **Biến thể thủ tục** = `bienThe(procedure_code, entity_type)` (`lib/phaply/boHoSo.js`: `tlm_hkd`, `tlm_dvpt`, `giai_the_dvpt`…)
+  → MỘT bảng `BO` "thủ tục nào có những bộ nào" (giải thể: so1 / thue / so2) — xuất Word / PDF / Drive / trình ký / còn thiếu / hướng dẫn in
+  ký đều đọc từ đó, đừng viết cứng `['so','thue']`. **Hồ sơ đơn vị phụ thuộc gắn CÔNG TY MẸ** (entity_id = công ty mẹ): mẫu chọn theo loại
+  hình công ty mẹ (`loaiHinhMau`), lọc thêm theo loại đơn vị (`donVi` ở danh mục). Danh mục mẫu: `danhMuc.js` (TLM) + mỗi nhóm thủ tục MỘT
+  file `lib/phaply/word/mauThuTuc/<nhóm>.js` (mẫu + ô thông tin + lưu ý in ký) và MỘT file dữ liệu giả `scripts/phaply-du-lieu-gia/<nhóm>.mjs`.
+  Mục danh mục: `thuTuc` (biến thể), `dieuKien(duLieu)` (tờ chỉ có khi đúng trường hợp — VD cam kết "không phát sinh…"), `thayBang`
+  (đổi sang mẫu thay thế — Điều lệ 1TV chủ sở hữu là tổ chức), `an` (chỉ để thay thế), `duLieuThu` (bộ dữ liệu giả cho bộ kiểm — BẮT BUỘC
+  với mẫu ngoài TLM). Số thứ tự file đánh theo bộ SAU khi lọc `dieuKien`.
+- **Thông tin thủ tục** (`legal_cases.thong_tin` jsonb, sql/61): khuôn ô khai MỘT chỗ (`lib/phaply/thongTin.js` + `thongTin` của file nhóm)
+  → tab "Thông tin thủ tục" tự dựng form, máy chủ `locThongTin` khi lưu (PATCH phap-nhan `action: 'thong_tin'`), mẫu nhận `{tt_<ô>}`
+  (sinh cho MỌI ô của thủ tục, kể cả ô `chi` loại đơn vị khác — thẻ rỗng), ô `bat_buoc` vào "Còn thiếu". Không cần cột DB mới cho ô mới.
+  Cột sẵn của hồ sơ vào mẫu: tạm ngừng từ/đến, hoạt động lại từ → `{tn_tu}` `{tn_den}` `{hdl_tu}` (+ `_ngay/_thang/_nam`); nội dung thay
+  đổi (`noi_dung_thay_doi`, `lib/phaply/nhom.js`) → cờ `{#td_tang_von}`…
+- Người là TỔ CHỨC (`legal_people.la_to_chuc`, sql/61) làm chủ sở hữu / thành viên / cổ đông + **người đại diện theo ủy quyền**
+  (`dai_dien_uy_quyen`, `cua_person_id` = tổ chức nào); nhiều người đại diện theo pháp luật (`ds_dai_dien`, `quyen_han` in vào Điều lệ).
+  Mẫu 6/7 tách phần I cá nhân / phần II tổ chức (`thanh_vien_cn/_tc`, `co_dong_cn/_tc`, `uq_tv`).
+- Bộ kiểm Word: thẻ nằm trong danh sách RỖNG ở một bộ dữ liệu giả được soi bằng bộ khác; thẻ không bộ nào soi tới = lỗi.
 - GĐ 2 (17/11/2026, `sql/57_phap_ly_phap_nhan.sql`): doanh nghiệp (cột thêm vào `legal_entities`), người `legal_people` (cả hồ sơ cá nhân
   của nhân viên pháp lý: `staff_id`, trang `/phaply/toi` → người được ủy quyền ở Giấy ủy quyền nộp sở = người PHỤ TRÁCH hồ sơ), vai trò
   `legal_entity_people` (một người nhiều vai trò = nhiều dòng; Chủ tịch HĐTV/HĐQT chỉ một), ngành `legal_entity_industries`.

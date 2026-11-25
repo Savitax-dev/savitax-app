@@ -1,0 +1,46 @@
+// Mẫu số 3 (Phụ lục II) — Giấy đề nghị đăng ký TẠM NGỪNG kinh doanh của hộ kinh doanh. Chữ theo bản trắng chính thức (Mẫu số 3-Pl2),
+// cách trình bày theo bản phòng pháp lý (PHONGPHAPLY_BIEUMAU\7_TẠM NGỪNG\TẠM NGỪNG HỘ KINH DOANH\2_MẪU 03): giữ CẢ HAI mục như mẫu,
+// điền mục 1 (tạm ngừng), mục 2 (tiếp tục kinh doanh) để chỗ chấm. Hoạt động lại: TN_HDL_MAU03_HKD (điền mục 2, mục 1 chỗ chấm).
+// Chưa in chú thích cuối trang "Chủ hộ kinh doanh ký trực tiếp vào phần này" (bộ dựng chưa hỗ trợ chú thích — như MAU01_HKD).
+@co 12
+#rb Mẫu số 3
+::cot 42/58
+#cb {ten_cty}
+#c ----------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: …………
+||
+#ci {tru_so_tinh}{^tru_so_tinh}……………..{/tru_so_tinh}, ngày…… tháng…… năm……
+::
+~
+# GIẤY ĐỀ NGHỊ
+#cb Đăng ký tạm ngừng kinh doanh/tiếp tục kinh doanh trước thời hạn đã đăng ký của hộ kinh doanh
+~
+#c Kính gửi: {tt_co_quan_dk}{^tt_co_quan_dk}{phong_dkkd}{^phong_dkkd}…………………………………{/phong_dkkd}{/tt_co_quan_dk}
+~
+#t Tên hộ kinh doanh *(ghi bằng chữ in hoa)*: **{ten_cty}**
+#t Mã số hộ kinh doanh: {ma_dn}{^ma_dn}[...]{/ma_dn}
+#t Đăng ký tạm ngừng kinh doanh/tiếp tục kinh doanh trước thời hạn đã đăng ký như sau:
+#tk 1. Trường hợp tạm ngừng kinh doanh thì ghi:
+#t Thời gian tạm ngừng kinh doanh: kể từ ngày {tn_tu}{^tn_tu}……/……/………{/tn_tu} đến hết ngày {tn_den}{^tn_den}……/……/………{/tn_den}
+#t Lý do tạm ngừng kinh doanh: {tt_ly_do}{^tt_ly_do}[...]{/tt_ly_do}
+#tk 2. Trường hợp tiếp tục kinh doanh trước thời hạn đã đăng ký thì ghi:
+#t Thời gian tiếp tục kinh doanh: kể từ ngày ……… tháng ……… năm ………
+#t Lý do tiếp tục kinh doanh: [...]
+#t Hộ kinh doanh cam kết về tính hợp pháp, chính xác, trung thực và hoàn toàn chịu trách nhiệm trước pháp luật về nội dung của Giấy đề nghị này.
+~
+::cot 45/55
+~
+||
+#cb CHỦ HỘ KINH DOANH
+#ci (Ký và ghi họ tên)
+~
+~
+~
+~
+#cb {csh_ho_ten}
+::

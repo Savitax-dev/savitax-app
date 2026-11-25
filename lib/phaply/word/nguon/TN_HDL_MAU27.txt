@@ -1,0 +1,57 @@
+// Mẫu số 27 (TT 68/2025/TT-BTC) — Thông báo về việc TIẾP TỤC KINH DOANH TRƯỚC THỜI HẠN đã thông báo của doanh nghiệp
+// (hoạt động lại; 1TV / 2TV / CP dùng chung). Phòng pháp lý chốt dùng chung Mẫu 27 với tạm ngừng nhưng CHƯA gửi bản hoạt động lại
+// → dựng theo bố cục bản tạm ngừng của phòng (TN_MAU27): chỉ giữ mục của đúng trường hợp (mục 2.a "Đối với doanh nghiệp").
+// ⚠ Câu chữ mục 2 chưa đối chiếu được với bản trắng chính thức Mẫu 27 (chưa có trong bộ mẫu chính thức) — phòng soát lại.
+// Ngày tiếp tục kinh doanh lấy từ cột hồ sơ hoat_dong_lai_tu; để trống thì in chỗ chấm.
+@co 12
+@gian 60
+#c Mẫu số 27
+#ci (Ban hành kèm theo Thông tư số 68/2025/TT-BTC ngày 01 tháng 7 năm 2025
+#ci của Bộ trưởng Bộ Tài chính)
+~
+::cot 42/58
+#cb {ten_cty}
+#c ----------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: …………
+||
+#ci …………….., ngày……/……/………
+::
+~
+# THÔNG BÁO
+#cb Về việc tiếp tục kinh doanh trước thời hạn đã thông báo
+~
+#c Kính gửi: {phong_dkkd}{^phong_dkkd}…………………………………{/phong_dkkd}
+~
+Tên doanh nghiệp *(ghi bằng chữ in hoa)*: **{ten_cty}**
+Mã số doanh nghiệp/Mã số thuế: {ma_dn}{^ma_dn}[...]{/ma_dn}
+#bk 2. Trường hợp tiếp tục kinh doanh/hoạt động trước thời hạn đã thông báo:
+#bk a) Đối với doanh nghiệp:
+Thông báo tiếp tục kinh doanh kể từ ngày {hdl_tu_ngay}{^hdl_tu_ngay}……{/hdl_tu_ngay} tháng {hdl_tu_thang}{^hdl_tu_thang}……{/hdl_tu_thang} năm {hdl_tu_nam}{^hdl_tu_nam}………{/hdl_tu_nam}
+Sau khi doanh nghiệp tiếp tục kinh doanh, đề nghị Quý Cơ quan chuyển tình trạng của tất cả các chi nhánh/văn phòng đại diện/địa điểm kinh doanh của doanh nghiệp trong Cơ sở dữ liệu quốc gia về đăng ký doanh nghiệp sang tình trạng “Đang hoạt động”.
+#bk Thông tin người đại diện theo pháp luật của doanh nghiệp:
+Họ, chữ đệm và tên: {dd_ho_ten}
+Ngày, tháng, năm sinh: {dd_ngay_sinh}
+Giới tính: {dd_gioi_tinh}
+Số định danh cá nhân: {dd_so_giay_to}
+Số điện thoại: {dd_dien_thoai}{^dd_dien_thoai}[...]{/dd_dien_thoai}
+Địa chỉ thư điện tử: {dd_email}{^dd_email}[...]{/dd_email}
+Địa chỉ liên hệ: {dd_dia_chi_lien_lac}
+Doanh nghiệp cam kết hoàn toàn chịu trách nhiệm trước pháp luật về tính hợp pháp, chính xác và trung thực của nội dung Thông báo này.
+#k Người ký tại Thông báo này cam kết là người có quyền và nghĩa vụ thực hiện thủ tục đăng ký doanh nghiệp theo quy định của pháp luật và Điều lệ công ty.
+::cot 40/60
+~
+||
+~
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#ci (Ký và ghi họ tên)
+~
+~
+~
+#cb {dd_ho_ten}
+::

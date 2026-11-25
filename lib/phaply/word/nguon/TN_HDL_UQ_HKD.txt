@@ -1,0 +1,55 @@
+// Giấy ủy quyền — TIẾP TỤC KINH DOANH TRƯỚC THỜI HẠN (hoạt động lại) hộ kinh doanh. Phòng chưa gửi bản hoạt động lại → chép
+// bản tạm ngừng (TN_UQ_HKD), chỉ đổi nội dung thủ tục ở Điều 1.
+@co 12
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+#ri …………….., ngày……/……/………
+~
+# GIẤY ỦY QUYỀN
+~
+#bk BÊN ỦY QUYỀN (BÊN A)
+#l {csh_danh_xung}{^csh_danh_xung}Ông/Bà{/csh_danh_xung}: {csh_ho_ten}
+#l Số định danh cá nhân: {csh_so_giay_to}[>55]Ngày cấp: {csh_ngay_cap}
+#l Nơi cấp: {csh_noi_cap}
+Địa chỉ thường trú: {csh_dia_chi_thuong_tru}
+#bk BÊN ĐƯỢC ỦY QUYỀN (BÊN B)
+#l {uq_danh_xung}{^uq_danh_xung}Ông/Bà{/uq_danh_xung}: {uq_ho_ten}
+#l Số định danh cá nhân: {uq_so_giay_to}[>55]Ngày cấp: {uq_ngay_cap}
+#l Nơi cấp: {uq_noi_cap}
+Địa chỉ thường trú: {uq_dia_chi_thuong_tru}
+Địa chỉ liên lạc: {uq_dia_chi_lien_lac}
+#bk ĐIỀU 1: NỘI DUNG VÀ PHẠM VI ỦY QUYỀN
+- Liên hệ với cơ quan, tổ chức, cá nhân có thẩm quyền để tiến hành các thủ tục đăng ký tiếp tục kinh doanh trước thời hạn đã đăng ký của hộ kinh doanh gồm: nộp hồ sơ đăng ký tiếp tục kinh doanh trước thời hạn, đóng lệ phí, nhận các thông báo, nhận bản chính Giấy chứng nhận đăng ký hộ kinh doanh và nhận các kết quả liên quan từ cơ quan đăng ký kinh doanh, căn cứ theo quy định pháp luật.
+- Liên hệ với cơ quan thuế có thẩm quyền để tiến hành thủ tục có liên quan về thuế đối với hộ kinh doanh nêu trên. Kê khai và nộp toàn bộ các khoản thuế, phí, lệ phí theo quy định pháp luật.
+Trong phạm vi ủy quyền, bên được ủy quyền được lập, ký các giấy tờ cần thiết, được quyền nộp và nhận hồ sơ (bao gồm nộp hồ sơ bổ sung, chỉnh sửa hồ sơ nếu có), rút hồ sơ, nộp các khoản phí, lệ phí và quyết định mọi vấn đề có liên quan nội dung được ủy quyền nêu trên và thực hiện các quyền và nghĩa vụ theo quy định pháp luật.
+- Thù lao ủy quyền: Không.
+#bk ĐIỀU 2: THỜI HẠN ỦY QUYỀN
+Giấy ủy quyền này có hiệu lực kể từ ngày ký đến khi người được ủy quyền hoàn thành các công việc nêu trên.
+#bk ĐIỀU 3: NGHĨA VỤ CỦA CÁC BÊN
+Bên A và Bên B chịu trách nhiệm trước pháp luật về những lời cam đoan sau đây:
+1. Bên A chịu trách nhiệm cho Bên B thực hiện trong phạm vi ủy quyền.
+2. Việc giao kết Giấy này hoàn toàn tự nguyện, không bị lừa dối hoặc ép buộc.
+3. Thực hiện đúng và đầy đủ tất cả các thỏa thuận đã ghi trong Giấy ủy quyền này.
+#bk ĐIỀU 4: ĐIỀU KHOẢN CUỐI CÙNG
+1. Hai bên công nhận đã hiểu rõ quyền, nghĩa vụ và lợi ích hợp pháp của mình, ý nghĩa và hậu quả pháp lý của việc giao kết Giấy ủy quyền này.
+2. Hai bên đã tự đọc Giấy ủy quyền, đã hiểu và đồng ý tất cả các điều khoản ghi trong Giấy ủy quyền này.
+3. Giấy này có hiệu lực từ ngày hai bên ký./.
+~
+::cot 50/50
+#cb BÊN ĐƯỢC ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {uq_ho_ten}
+||
+#cb BÊN ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {csh_ho_ten}
+::
