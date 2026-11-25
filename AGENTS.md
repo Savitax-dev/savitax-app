@@ -324,6 +324,15 @@ hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công 
   báo lỗi — bộ dựng cũ `lib/tokhaiPdf.js` dính lỗi này) → tự cắt bằng `lib/catPhong.js` (giữ nguyên số hiệu nét chữ,
   dựng 2 lượt), nhúng `subset: false`: ~60–80 KB/file, ảnh in giống hệt bản nhúng nguyên. ⛔ Bộ dựng cũ (cờ `DUNG_PDF`) vẫn TẮT.
 - **01/GTGT theo TT89/2026** (maTKhai **2032**, XML 3.0.x; bản cổng in CHARGEPOINT T10/2026, 21/11/2026): mẫu thứ ba `GTGT3` trong `lib/tokhaiPdfMau.js`, chọn theo maTKhai (không theo phiên bản). Khác bản QUANG: ô Mẫu số ghi TT89, [06]/[03 phụ lục] "tổ chức, cá nhân cung cấp dịch vụ làm thủ tục về thuế", bỏ [11b], thêm hàng e [32b] + 3 [34a], khối chữ ký 2 cột ("NGƯỜI TRỰC TIẾP THỰC HIỆN DỊCH VỤ…") + 7 mục Ghi chú sau dòng chữ ký số, phụ lục NQ 204 cột khác. Đáy vùng nội dung 812 (mẫu cũ 822); bảng phụ lục ngắt dòng như trình duyệt cổng (`ngat` `html`: sau "-", trước "–", cắt giữa chữ quá dài, gộp khoảng trắng). So với bản gốc: 13/13 trang, nội dung từng dòng khớp — chỉ khác chỗ cổng cắt đôi hàng qua trang. 05/KK-TNCN theo TT89 CHƯA có bản gốc → chỉ lưu XML.
+- **Tờ khai bổ sung TT89 + bảng tự co cột** (25/11/2026, bản cổng in BS T10/2026: ÁNH DƯƠNG 2032, KIM HOÀN NTO 842 — anh gửi bản IN LẠI qua
+  "Microsoft Print To PDF" lên giấy Letter: tọa độ × 1,065 là về A4, sai số ~0,7pt). **01/KHBS + 01-1/KHBS theo TT89 in khổ DỌC** (TT80 ngang):
+  cùng bảng HTML, cổng thu cả trang 0,977 → `lib/tokhaiKhbs.js` `KHO.doc` vẽ trên trang ẢO rồi `embedPage` vào A4; [07]/[09] "tổ chức, cá
+  nhân cung cấp dịch vụ làm thủ tục về thuế"; phần B là BẢNG (`DsThuHoiHoan`); cổng in "sản suất" (sai chính tả của cổng — chép y); 01-1 chỉ
+  "Đơn vị tiền:", cam đoan "về số liệu đã khai", dòng chi tiết rỗng = hàng trống cao 7,1 (TT80 in "-", KHÔNG in "0"). Khớp: 01-1 66/66 dòng,
+  01/KHBS trừ hàng cổng cắt đôi qua trang. **Bảng phụ lục giảm thuế TT80 TỰ CO CỘT theo nội dung** (`tuCoCot`, lề ô 3,25 — trước dùng cột
+  cố định của QUANG nên KIM HOÀN ra 12 trang thay vì 8); phụ lục TT89 cột CỐ ĐỊNH (CHARGEPOINT = ÁNH DƯƠNG). ⏳ Bảng TỜ KHAI chính TT89 cũng
+  co cột theo số dài nhất (ÁNH DƯƠNG số 10 chữ số → cột giữa lệch 5–7pt so với cột đo từ CHARGEPOINT 11 chữ số) — 2 mẫu chưa đủ suy ra
+  quy tắc (thuật toán dongCot KHÔNG khớp bảng này); cần thêm bản cổng in có số dài/ngắn khác nhau.
 - **03/TNDN (maTKhai 892) + phụ lục 03-1A, 03-3A + 01/KHBS** và **BCTC TT200 (maTKhai 402: B01 hoạt động liên tục + B02 + B03
   trực tiếp)** — bản cổng in ca TEN NOODLES năm 2025 BSL1 (21/11/2026). Tờ khai 03/TNDN khai báo ở `lib/tokhaiPdfTndn.js` (dùng khung
   tờ khai chung + `apDung`/`caoDau`/`camDoan`/`ghiChu` hàm); phụ lục + BCTC vẽ bằng **bộ biểu chung `lib/tokhaiPdfBieu.js`** (trang,
