@@ -38,10 +38,15 @@ function theVaPhamVi(text) {
   return { ds }
 }
 
+// true / false · 'rong' = thẻ nằm trong danh sách RỖNG ở bộ dữ liệu này (không soi được — phải có bộ dữ liệu khác soi tới)
 function coTruong(duLieu, { ten, pham_vi }) {
   // docxtemplater tìm từ phạm vi trong cùng ra ngoài
   const tang = [duLieu]
-  for (const s of pham_vi) { const v = tang[tang.length - 1]?.[s] ?? duLieu[s]; tang.push(Array.isArray(v) ? v[0] || {} : duLieu) }
+  for (const s of pham_vi) {
+    const v = tang[tang.length - 1]?.[s] ?? duLieu[s]
+    if (Array.isArray(v) && !v.length) return 'rong'
+    tang.push(Array.isArray(v) ? v[0] : duLieu)
+  }
   return tang.some(o => o && Object.prototype.hasOwnProperty.call(o, ten))
 }
 
@@ -56,10 +61,13 @@ for (const m of dsMau) {
   const pv = theVaPhamVi(chuTrongDocx(buf))
   if (pv.loi) { console.log(`✗ ${m.ma}: ${pv.loi}`); loi++; continue }
   const ghiChu = []
+  const daSoi = new Set()   // thẻ đã soi được ở ít nhất một bộ dữ liệu
   // mỗi loại hình chạy MỌI bộ dữ liệu giả khai ở DANH_MUC.duLieuThu (VD 1TV: chủ sở hữu cá nhân + chủ sở hữu là tổ chức)
   for (const lh of m.loaiHinh.flatMap(l => [].concat(m.duLieuThu?.[l] || l)).filter(k => DU_LIEU_GIA[k])) {
     const duLieu = chuanBiDuLieu(DU_LIEU_GIA[lh])
-    const thieu = [...new Set(pv.ds.filter(t => !coTruong(duLieu, t)).map(t => [...t.pham_vi, t.ten].join('.')))]
+    const kq = pv.ds.map(t => [t, coTruong(duLieu, t)])
+    kq.forEach(([t, v]) => v === true && daSoi.add([...t.pham_vi, t.ten].join('.')))
+    const thieu = [...new Set(kq.filter(([, v]) => v === false).map(([t]) => [...t.pham_vi, t.ten].join('.')))]
     if (thieu.length) { console.log(`✗ ${m.ma} [${lh}] thẻ không có trong từ điển: ${thieu.join(', ')}`); loi++; continue }
     let out
     try { out = dienMau(buf, duLieu, { choTrong: THIEU }) } catch (e) {
@@ -73,6 +81,8 @@ for (const m of dsMau) {
     if (trong) ghiChu.push(`${lh}: ${trong} ô thiếu dữ liệu`)
     writeFileSync(join(ra, `${m.ma}_${lh}.docx`), out); soFile++
   }
+  const chuaSoi = [...new Set(pv.ds.map(t => [...t.pham_vi, t.ten].join('.')))].filter(k => !daSoi.has(k))
+  if (chuaSoi.length) { console.log(`✗ ${m.ma} thẻ trong danh sách rỗng ở MỌI bộ dữ liệu giả (không kiểm được): ${chuaSoi.join(', ')}`); loi++; continue }
   console.log(`✓ ${m.ma.padEnd(11)} ${pv.ds.length} thẻ · ${m.loaiHinh.join('/')}${ghiChu.length ? ' · ' + ghiChu.join(', ') : ''}`)
 }
 

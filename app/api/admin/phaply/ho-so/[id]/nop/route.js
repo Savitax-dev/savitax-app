@@ -6,7 +6,7 @@
 import { requirePhapLy, xemDuoc, suaDuoc, loi } from '@/lib/phaply/quyen'
 import { COT_HO_SO, ghiNhatKy } from '@/lib/phaply/hoSoMayChu'
 import { mauCuaBo } from '@/lib/phaply/word/danhMuc'
-import { bienThe, coBo, loaiHinhMau } from '@/lib/phaply/boHoSo'
+import { bienThe, coBo, loaiHinhMau, DVPT } from '@/lib/phaply/boHoSo'
 import { choTheoNop, lanKeTiep, maSoHopLe, CO_QUAN, KET_QUA, coQuanLabel, ketQuaLabel } from '@/lib/phaply/nop'
 import { goiYCoQuan } from '@/lib/phaply/phapNhanMayChu'
 import { coDrive } from '@/lib/phaply/drive'
@@ -31,7 +31,7 @@ export async function GET(request, { params }) {
     admin.from('legal_case_signing').select('*').eq('case_id', id),
     admin.from('legal_case_submissions').select('*').eq('case_id', id).order('ngay_nop').order('created_at').order('id'),
     admin.from('legal_case_files').select('*').eq('case_id', id).order('created_at', { ascending: false }).order('id'),
-    hs.entity_id ? admin.from('legal_entities').select('tax_code, ngay_cap_gcn, noi_cap_gcn, phong_dkkd, tru_so_ma_tinh').eq('id', hs.entity_id).maybeSingle() : Promise.resolve({ data: null }),
+    hs.entity_id ? admin.from('legal_entities').select('entity_type, tax_code, ngay_cap_gcn, noi_cap_gcn, phong_dkkd, tru_so_ma_tinh').eq('id', hs.entity_id).maybeSingle() : Promise.resolve({ data: null }),
     admin.from('staff').select('id, full_name'),
   ])
   if (nop.error) return loi(500, nop.error.message)
@@ -47,6 +47,8 @@ export async function GET(request, { params }) {
       goi_y_nguoi_nhan: dd?.[0]?.nguoi?.ho_ten || hs.contact_name || '', muc_mac_dinh: mucMacDinh(hs.procedure_code) },
     dieu_kien_dong: await docDieuKienDong(admin, hs),
     drive: coDrive(hs.procedure_code), pdf: coPdf(), sua_duoc: suaDuoc(auth, hs), loai_hinh: hs.entity_type,
+    // các bộ trình ký theo biến thể thủ tục (lib/phaply/boHoSo.js); lh_mau = loại hình chọn mẫu (đơn vị phụ thuộc → công ty mẹ)
+    bt: bienThe(hs.procedure_code, hs.entity_type), lh_mau: loaiHinhMau(hs.entity_type, ent.data?.entity_type), don_vi: DVPT.includes(hs.entity_type) ? hs.entity_type : null,
   })
 }
 

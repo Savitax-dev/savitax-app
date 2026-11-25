@@ -1,0 +1,65 @@
+// Quyết định cử người đại diện theo ủy quyền — công ty TNHH một thành viên, chủ sở hữu là TỔ CHỨC (mô hình Chủ tịch công ty).
+// Tổ chức chủ sở hữu ban hành. Theo mẫu phòng pháp lý gửi 25/11/2026 ("2_MAU_CU DAI DIEN THEO UY QUYEN_MO HINH CTCT GD TGD").
+// Hai khối người cố định của bản gốc → MỘT vòng lặp {#dai_dien_uq} (1–3 người đều in). Số quyết định, ngày, thời hạn ủy quyền,
+// thù lao: không có dữ liệu → để chấm viết tay.
+@co 12
+@gian 60
+::cot 45/55
+#cb {csh_ho_ten}
+#c --------------------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập – Tự do – Hạnh phúc
+#c --------------------
+==
+#c Số: ……/QĐ-……
+||
+#ci ………….., ngày ….. tháng ….. năm ………
+::
+~
+# QUYẾT ĐỊNH
+#cb Về việc cử người đại diện theo ủy quyền thực hiện quyền của chủ sở hữu tại {ten_cty}
+~
+#cb {csh_ho_ten}
+~
+- Căn cứ Luật Doanh nghiệp số 59/2020/QH14 được Quốc hội thông qua ngày 17 tháng 06 năm 2020; Luật sửa đổi bổ sung một số điều của Luật Doanh nghiệp ngày 17/06/2025;
+- Căn cứ Điều lệ {csh_ho_ten}.
+~
+#cbk QUYẾT ĐỊNH:
+**Điều 1.** Cử người đại diện theo ủy quyền thực hiện quyền của chủ sở hữu tại {ten_cty} như sau:
+#bk 1. Ủy quyền cho:
+{#dai_dien_uq}
+#l - {danh_xung}: **{ho_ten}**[>55]Giới tính: {gioi_tinh}
+#l Sinh ngày: {ngay_sinh}[>35]Dân tộc: {dan_toc}[>55]Quốc tịch: {quoc_tich}
+#l {giay_to_so}: {so_giay_to}[>55]Ngày cấp: {ngay_cap}
+#l Nơi cấp: {noi_cap}
+#l Địa chỉ thường trú: {dia_chi_thuong_tru}
+#l Địa chỉ liên lạc: {dia_chi_lien_lac}
+{/dai_dien_uq}
+Làm người đại diện theo ủy quyền thực hiện quyền của chủ sở hữu tại {ten_cty}.
+#bk 2. Tỷ lệ phần vốn góp được ủy quyền quản lý:
+{#dai_dien_uq}
+- {danh_xung} **{ho_ten}** thay mặt {csh_ho_ten} quản lý {ty_le_uq} phần vốn góp, tương ứng {von_uy_quyen} đồng *(**Bằng chữ:** {von_uy_quyen_chu})*, chiếm tỷ lệ {ty_le_uq_vdl} vốn điều lệ của {ten_cty}.
+{/dai_dien_uq}
+#bk 3. Thời hạn ủy quyền:
+{#dai_dien_uq}
+- Thời hạn ủy quyền đại diện cho {danh_xung} **{ho_ten}** là: ……………………; thời điểm bắt đầu đại diện: {thoi_diem_dai_dien}.
+{/dai_dien_uq}
+**4.** Quyền và nghĩa vụ của người đại diện theo ủy quyền tại {ten_cty}: chịu trách nhiệm quản lý, bảo toàn nguồn vốn của {csh_ho_ten} tại {ten_cty}; thực hiện các quyền lợi và nghĩa vụ liên quan tới phần vốn góp được ủy quyền đại diện tại {ten_cty}.
+**5.** Thù lao và các khoản lợi ích khác mà người đại diện theo ủy quyền tại {ten_cty} được hưởng *(nếu có)*: [...]
+**Điều 2.** Quyết định này có hiệu lực kể từ ngày ký. Quyết định này sẽ chấm dứt hiệu lực khi có Quyết định khác thay thế của {csh_ho_ten} hoặc chấm dứt theo quy định pháp luật.
+**Điều 3.** Người đại diện theo ủy quyền tại {ten_cty}, các cá nhân và phòng ban có liên quan chịu trách nhiệm thi hành Quyết định này./.
+~
+::cot 45/55
+#l ***Nơi nhận:***
+#l11 - Như Điều 3;
+#l11 - Lưu: VT.
+||
+#cb {csh_dai_dien_chuc_danh}
+#ci (Ký, ghi rõ họ tên, đóng dấu)
+~
+~
+~
+~
+#cb {csh_dai_dien_ten}
+::

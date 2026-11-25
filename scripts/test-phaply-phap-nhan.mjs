@@ -38,7 +38,8 @@ function tachDb(hs) {
   else them('dai_dien', hs.dai_dien)
   ;(hs.dai_dien_uy_quyen || []).forEach((p, i) => them('dai_dien_uy_quyen', p, { von_uy_quyen: p.von_uy_quyen, thoi_diem_dai_dien: p.thoi_diem_dai_dien, cua_person_id: p.cua_person_id, chuc_danh: null }, i))
   if (hs.giam_doc && hs.giam_doc !== hs.dai_dien) them('giam_doc', hs.giam_doc)
-  them('chu_so_huu', hs.chu_so_huu); them('ke_toan', hs.ke_toan); them('thu_ky', hs.thu_ky)
+  them('chu_so_huu', hs.chu_so_huu); them('ke_toan', hs.ke_toan); them('thu_ky', hs.thu_ky); them('nguoi_dung_dau', hs.nguoi_dung_dau)
+  ;(hs.thanh_vien_ho || []).forEach((p, i) => them('thanh_vien_ho', p, { chuc_danh: null }, i))
   // thứ tự lưu đảo ngược để chắc hoSoDauVao sắp lại theo thu_tu
   ;[...(hs.thanh_vien || [])].reverse().forEach((v, j, a) => them('thanh_vien', v, { von_gop: String(v.von_gop), thoi_han_gop: v.thoi_han_gop, chu_tich: !!v.chu_tich, chuc_danh: null }, a.length - 1 - j))
   ;[...(hs.co_dong || [])].reverse().forEach((v, j, a) => them('co_dong', v, { so_co_phan: v.so_co_phan, thoi_han_gop: v.thoi_han_gop, chu_tich: !!v.chu_tich, chuc_danh: null }, a.length - 1 - j))
@@ -59,12 +60,13 @@ const chuanHoa = hs => {
 for (const [lh, goc0] of Object.entries(DU_LIEU_GIA)) {
   const goc = chuanHoa(goc0)
   // bộ giả dùng thư ký = nhân viên pháp lý; DB lưu thư ký như một vai trò riêng → khứ hồi vẫn phải khớp
-  const dv = hoSoDauVao(tachDb(goc))
+  // biến thể thủ tục + thông tin thủ tục nằm ở HỒ SƠ (legal_cases), không qua pháp nhân — route gắn thêm như xuatBo
+  const dv = { ...hoSoDauVao(tachDb(goc)), bien_the: goc.bien_the, don_vi_loai: goc.don_vi_loai, thong_tin: goc.thong_tin }
   const a = chuanBiDuLieu(goc), b = chuanBiDuLieu(dv)
   // thẻ bàn giao (bg_, sv_) lấy từ hồ sơ legal_cases + pháp nhân Savitax, không qua dữ liệu pháp nhân — kiểm ở test-phaply-ban-giao
   const lech = Object.keys({ ...a, ...b }).filter(k => !/^(bg|sv)_/.test(k) && JSON.stringify(a[k]) !== JSON.stringify(b[k]))
   ok(!lech.length, `${lh}: khứ hồi lệch ${lech.length} thẻ: ${lech.slice(0, 8).map(k => `${k}=${JSON.stringify(a[k])}→${JSON.stringify(b[k])}`).join(' | ')}`)
-  ok(conThieu(dv).filter(t => t.chan).length === 0, `${lh}: hồ sơ giả đủ dữ liệu mà vẫn báo thiếu: ${conThieu(dv).filter(t => t.chan).map(t => t.muc).join('; ')}`)
+  ok(conThieu(dv, { bt: goc.bien_the }).filter(t => t.chan).length === 0, `${lh}: hồ sơ giả đủ dữ liệu mà vẫn báo thiếu: ${conThieu(dv, { bt: goc.bien_the }).filter(t => t.chan).map(t => t.muc).join('; ')}`)
 }
 
 // Gợi ý cơ quan bị ghi đè bằng tay → lấy bản tay

@@ -5,12 +5,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Modal, Field, inputCls, btnPrimary, btnGhost, api, dmy, dmyTime } from '../../_ui'
 import { mauCuaBo } from '@/lib/phaply/word/danhMuc'
+import { dsBo, tenBo } from '@/lib/phaply/boHoSo'
 import { CO_QUAN, KET_QUA, coQuanLabel, hanTheoDoi, soNgayToiHan } from '@/lib/phaply/nop'
 import { THU_MUC } from '@/lib/phaply/drive'
 import { homNayVN } from '@/lib/phaply/hoSo'
 
-const TEN_BO = { so: 'Hồ sơ thành lập — nộp Phòng ĐKKD', thue: 'Hồ sơ pháp lý ban đầu' }
-const LOAI_CO_MAU = ['1tv', '2tv', 'cp']
 
 export default function TabNop({ id, sua, toast, taiLaiHoSo }) {
   const [d, setD] = useState(null)
@@ -33,7 +32,7 @@ export default function TabNop({ id, sua, toast, taiLaiHoSo }) {
     <div className="space-y-4">
       <NopHoSo d={d} sua={coSua} goi={goi} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {LOAI_CO_MAU.includes(d.loai_hinh) && ['so', 'thue'].map(dot => <TrinhKy key={dot} dot={dot} d={d} sua={coSua} goi={goi} />)}
+        {d.lh_mau && dsBo(d.bt).filter(b => mauCuaBo(b.dot, d.lh_mau, d.bt, d.don_vi).length).map(({ dot }) => <TrinhKy key={dot} dot={dot} d={d} sua={coSua} goi={goi} />)}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <KetQuaGcn d={d} sua={coSua} goi={goi} />
@@ -49,12 +48,12 @@ export default function TabNop({ id, sua, toast, taiLaiHoSo }) {
 
 // ─── Trình ký ─────────────────────────────────────────────────────────────────────────────────────────────
 function TrinhKy({ dot, d, sua, goi }) {
-  const bo = mauCuaBo(dot, d.loai_hinh)
+  const bo = mauCuaBo(dot, d.lh_mau, d.bt, d.don_vi)
   const da = new Map(d.ky.filter(k => k.dot === dot).map(k => [k.ma, k]))
   const xong = bo.filter(m => da.has(m.ma)).length
   return (
     <div className="p-panel">
-      <div className="p-panel-h flex justify-between gap-2"><span>Trình ký — {TEN_BO[dot]}</span>
+      <div className="p-panel-h flex justify-between gap-2"><span>Trình ký — {tenBo(d.bt, dot)}</span>
         <span className={'text-xs px-2 py-0.5 rounded-full ' + (xong === bo.length ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600')}>{xong}/{bo.length} tờ đã ký</span></div>
       <table className="p-tbl w-full"><tbody>
         {bo.map(m => {
@@ -62,7 +61,7 @@ function TrinhKy({ dot, d, sua, goi }) {
           return (
             <tr key={m.ma}>
               <td className="l w-8"><input type="checkbox" checked={!!k} disabled={!sua} onChange={e => goi({ action: 'ky', dot, ma: m.ma, da_ky: e.target.checked })} aria-label={'Đã ký ' + m.ten} /></td>
-              <td className="l">{m.ten}<div className="text-xs text-gray-500">{m.nguoiKy[d.loai_hinh]}</div></td>
+              <td className="l">{m.ten}<div className="text-xs text-gray-500">{m.nguoiKy[d.lh_mau]}</div></td>
               <td className="r text-xs text-gray-500 whitespace-nowrap">{k ? `${dmyTime(k.signed_at)}${k.ten_nguoi ? ' · ' + k.ten_nguoi : ''}` : ''}</td>
             </tr>
           )
@@ -247,7 +246,7 @@ function BanGiao({ d, id, sua, goi, toast }) {
   return (
     <div className="p-panel">
       <div className="p-panel-h flex items-center justify-between gap-2"><span>Bàn giao cho khách</span>
-        {LOAI_CO_MAU.includes(d.loai_hinh) && <span className="flex gap-1.5"><button className="p-btn p-btn-sm" disabled={dang || !f.muc.length} onClick={() => taiBbbg()}>{dang ? '…' : '⬇ Biên bản (.docx)'}</button>
+        {d.lh_mau && mauCuaBo('ban_giao', d.lh_mau).length > 0 && <span className="flex gap-1.5"><button className="p-btn p-btn-sm" disabled={dang || !f.muc.length} onClick={() => taiBbbg()}>{dang ? '…' : '⬇ Biên bản (.docx)'}</button>
           {d.pdf && <button className="p-btn p-btn-sm" disabled={dang || !f.muc.length} onClick={() => taiBbbg('pdf')}>{dang ? '…' : '.pdf'}</button>}</span>}</div>
       <div className="p-4 space-y-3">
         <div className="grid grid-cols-2 gap-3">

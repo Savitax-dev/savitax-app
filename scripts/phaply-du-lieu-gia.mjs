@@ -1,3 +1,7 @@
+import tamNgung from './phaply-du-lieu-gia/tamNgung.mjs'
+import giaiThe from './phaply-du-lieu-gia/giaiThe.mjs'
+import giaiTheDvptHkd from './phaply-du-lieu-gia/giaiTheDvptHkd.mjs'
+import thayDoi from './phaply-du-lieu-gia/thayDoi.mjs'
 // Dữ liệu GIẢ (tên, số giấy tờ, địa chỉ đều bịa) cho bộ kiểm mẫu Word phân hệ Pháp lý — 1 hồ sơ mỗi loại hình.
 const NC = 'Cục Cảnh sát Quản lý hành chính về trật tự xã hội'
 const hcm = (so_nha, xa) => ({ so_nha, xa, tinh: 'Thành phố Hồ Chí Minh', quoc_gia: 'Việt Nam' })
@@ -81,3 +85,33 @@ DU_LIEU_GIA['2tv_tc'] = { ...DU_LIEU_GIA['2tv'], ds_dai_dien: DD_2TV, dai_dien: 
 // CP — 3 người đại diện theo pháp luật (Chủ tịch HĐQT, Giám đốc, người thứ 3)
 const DD_CP = [{ ...EM, chuc_danh: 'Chủ tịch Hội đồng quản trị' }, { ...DUNG, chuc_danh: 'Giám đốc' }, { ...CUONG, chuc_danh: 'Phó Giám đốc', quyen_han: 'Đại diện công ty trong các giao dịch với ngân hàng.' }]
 DU_LIEU_GIA['cp_nhieu_dd'] = { ...DU_LIEU_GIA.cp, ds_dai_dien: DD_CP, dai_dien: DD_CP[0], giam_doc: DD_CP[1] }
+// CP — một cổ đông là TỔ CHỨC (thay cổ đông thứ 4), người đại diện theo ủy quyền: Nguyễn Văn An
+DU_LIEU_GIA['cp_tc'] = { ...DU_LIEU_GIA.cp,
+  co_dong: [...DU_LIEU_GIA.cp.co_dong.slice(0, 3), { ...TO_CHUC, so_co_phan: 8000, thoi_han_gop: DU_LIEU_GIA.cp.co_dong[3].thoi_han_gop }, DU_LIEU_GIA.cp.co_dong[4]],
+  dai_dien_uy_quyen: [UQ(AN, 80000000)] }
+
+// ── Hộ kinh doanh (1b) — chủ hộ = chu_so_huu, thành viên hộ gia đình = thanh_vien_ho ──
+DU_LIEU_GIA.hkd = { loai_hinh: 'hkd', bien_the: 'tlm_hkd',
+  cty: { ten: 'Hộ kinh doanh Mẫu Thử An Bình', tru_so: hcm('15 Đường Mẫu Số 3', 'Phường Xuân Hòa'), dien_thoai: '0909000111', email: '',
+    von_dieu_le: 100000000, so_lao_dong: 2, nganh: [nganh[0]] },
+  chu_so_huu: AN, thanh_vien_ho: [BINH], uy_quyen: NHAN_VIEN, phong_dkkd: 'Phòng Kinh tế Ủy ban nhân dân phường Xuân Hòa', ban_giao: DU_LIEU_GIA['1tv'].ban_giao,
+  thong_tin: { chu_the: 'ho_gia_dinh', pp_thue: 'khoan', co_quan_dk: 'Phòng Kinh tế Ủy ban nhân dân phường Xuân Hòa' } }
+
+// hộ kinh doanh của MỘT cá nhân, kê khai thuế, không kinh doanh tại trụ sở
+DU_LIEU_GIA.hkd_cn = { ...DU_LIEU_GIA.hkd, thanh_vien_ho: [], thong_tin: { chu_the: 'ca_nhan', pp_thue: 'ke_khai', khong_tai_tru_so: true, co_quan_dk: 'Ủy ban nhân dân phường Xuân Hòa' } }
+
+// ── Đơn vị phụ thuộc (1c) — hồ sơ gắn CÔNG TY MẸ; thông tin đơn vị ở thong_tin, người đứng đầu = nguoi_dung_dau ──
+const dvpt = (goc, loai, ten) => ({ ...DU_LIEU_GIA[goc], bien_the: 'tlm_dvpt', don_vi_loai: loai, nguoi_dung_dau: CUONG,
+  thong_tin: { ten, dia_chi: hcm('300 Đường Mẫu Số 5', 'Phường Bình Thạnh'), dien_thoai: '0283333333', email: 'donvi@vidu.vn',
+    nganh: [nganh[0], nganh[1]], hach_toan: 'phu_thuoc', so_lao_dong: 5 } })
+DU_LIEU_GIA.cn_1tv = dvpt('1tv', 'chi_nhanh', 'Chi nhánh Công ty TNHH Thương mại Dịch vụ An Phát - Bình Thạnh')
+DU_LIEU_GIA.cn_2tv = dvpt('2tv', 'chi_nhanh', 'Chi nhánh Công ty TNHH Công nghệ Bình Minh - Bình Thạnh')
+DU_LIEU_GIA.cn_cp = dvpt('cp', 'chi_nhanh', 'Chi nhánh Công ty Cổ phần Thương mại Cửu Long - Bình Thạnh')
+DU_LIEU_GIA.vpdd_1tv = dvpt('1tv', 'vpdd', 'Văn phòng đại diện Công ty TNHH Thương mại Dịch vụ An Phát')
+DU_LIEU_GIA.vpdd_2tv = dvpt('2tv', 'vpdd', 'Văn phòng đại diện Công ty TNHH Công nghệ Bình Minh')
+DU_LIEU_GIA.vpdd_cp = dvpt('cp', 'vpdd', 'Văn phòng đại diện Công ty Cổ phần Thương mại Cửu Long')
+DU_LIEU_GIA.ddkd_1tv = dvpt('1tv', 'ddkd', 'Địa điểm kinh doanh Công ty TNHH Thương mại Dịch vụ An Phát')
+
+// ── Nhóm thủ tục khác (tạm ngừng, giải thể, thay đổi…) — mỗi nhóm một file ở scripts/phaply-du-lieu-gia/ ──
+const H = { AN, BINH, CUONG, DUNG, EM, KE_TOAN, NHAN_VIEN, TO_CHUC, UQ, hcm, nguoi, nganh, dvpt }
+for (const f of [tamNgung, giaiThe, giaiTheDvptHkd, thayDoi]) Object.assign(DU_LIEU_GIA, f(DU_LIEU_GIA, H))

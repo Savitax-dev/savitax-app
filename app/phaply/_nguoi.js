@@ -71,9 +71,37 @@ const dinhNgay = s => { const d = s.replace(/\D/g, '').slice(0, 8); return [d.sl
 
 // value: dòng legal_people (hoặc một phần) · onChange(nguoiMoi)
 // noiBat: Set khoá trường cần tô nổi (đọc CCCD lệch khi kiểm chéo)
-export function NguoiForm({ value, onChange, disabled, noiBat }) {
+function ToChucForm({ p, set, disabled, noiBat }) {
+  const o = (lb, k, them = {}) => (
+    <Field label={lb} className={them.cls}>
+      <input className={inputCls + (noiBat?.has(k) ? ' !border-amber-500 !bg-amber-50' : '')} value={p[k] || ''} disabled={disabled} placeholder={them.ph}
+        onChange={e => set(k, them.ngay ? dinhNgay(e.target.value) : e.target.value)} />
+    </Field>
+  )
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+        {o('Tên tổ chức', 'ho_ten', { cls: 'col-span-2 md:col-span-4', ph: 'CÔNG TY …' })}
+        {o('Mã số doanh nghiệp / Số QĐ thành lập', 'ma_so_dn', { cls: 'col-span-2' })}
+        {o('Ngày cấp', 'ngay_cap_dn', { ngay: true, ph: 'dd/mm/yyyy' })}
+        {o('Nơi cấp', 'noi_cap_dn', { cls: 'col-span-2 md:col-span-5', ph: 'Phòng Đăng ký kinh doanh thuộc Sở Tài chính …' })}
+        {o('Người đại diện theo pháp luật của tổ chức', 'dai_dien_ten', { cls: 'col-span-2 md:col-span-3' })}
+        {o('Chức danh', 'dai_dien_chuc_danh', { cls: 'col-span-2 md:col-span-1', ph: 'Giám đốc' })}
+        {o('Điện thoại', 'dien_thoai', { cls: 'col-span-1' })}
+        {o('Email', 'email', { cls: 'col-span-1' })}
+      </div>
+      <div className={noiBat?.has('thuong_tru') ? 'rounded-lg ring-2 ring-amber-400 p-2 bg-amber-50/40' : ''}>
+        <DiaChiChon nhan="Trụ sở chính" value={p.thuong_tru} disabled={disabled} onChange={v => set('thuong_tru', v)} />
+      </div>
+    </div>
+  )
+}
+
+export function NguoiForm({ value, onChange, disabled, noiBat, choToChuc }) {
   const p = value || {}
   const set = (k, v) => onChange({ ...p, [k]: v })
+  // Người là TỔ CHỨC (chủ sở hữu / thành viên / cổ đông là doanh nghiệp — sql/61): tên tổ chức, mã số DN, nơi cấp, trụ sở, người đại diện
+  if (choToChuc && p.la_to_chuc) return <ToChucForm p={p} set={set} disabled={disabled} noiBat={noiBat} />
   const canCuoc = !p.loai_giay_to || /căn cước/i.test(p.loai_giay_to)
   const o = (lb, k, them = {}) => (
     <Field label={lb} className={them.cls}>

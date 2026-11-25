@@ -6,6 +6,8 @@ import { docPhapNhan, locCotCty, locCotNguoi, locVaiTro, ghepDiaChi, goiYCoQuan 
 import { hoSoDauVao, conThieu } from '@/lib/phaply/phapNhan'
 import { coDrive, linkThuMuc } from '@/lib/phaply/drive'
 import { coPdf } from '@/lib/phaply/pdf'
+import { bienThe, dsBo, loaiHinhMau, DVPT } from '@/lib/phaply/boHoSo'
+import { locThongTin, thieuThongTin, oCua } from '@/lib/phaply/thongTin'
 
 async function moHoSo(auth, id) {
   const { data: hs } = await auth.admin.from('legal_cases').select(COT_HO_SO).eq('id', id).maybeSingle()
@@ -21,10 +23,17 @@ export async function GET(request, { params }) {
   try {
     const d = await docPhapNhan(auth.admin, hs)
     const dauVao = hoSoDauVao({ ...d, entity: d.entity || { entity_type: hs.entity_type } })
+    // biến thể thủ tục (tlm / tlm_hkd / tlm_dvpt / giai_the…) → các bộ hồ sơ + ô thông tin riêng (lib/phaply/boHoSo.js, thongTin.js)
+    const bt = bienThe(hs.procedure_code, hs.entity_type)
+    const donVi = DVPT.includes(hs.entity_type) ? hs.entity_type : null
+    const tt = hs.thong_tin || {}
+    const thieuTt = thieuThongTin(bt, donVi, tt).map(muc => ({ nhom: 'Thông tin thủ tục', muc, chan: true }))
+    const thieu = Object.fromEntries(dsBo(bt).map(({ dot }) => [dot, [...conThieu(dauVao, { dot: dot === 'thue' ? 'thue' : 'so', bt }), ...thieuTt]]))
     return Response.json({
+      bt, don_vi: donVi, lh_mau: loaiHinhMau(hs.entity_type, d.entity?.entity_type), thong_tin: tt, co_thong_tin: oCua(bt, donVi).length > 0,
       entity: d.entity, vai_tro: d.vaiTro.map(({ nguoi, ...v }) => ({ ...v, nguoi: anAnh(auth, nguoi) })),
       nganh: d.nganh, uy_quyen: anAnh(auth, d.uyQuyen), goi_y: d.goiY,
-      thieu: { so: conThieu(dauVao, { dot: 'so' }), thue: conThieu(dauVao, { dot: 'thue' }) },
+      thieu,
       sua_duoc: suaDuoc(auth, hs),
       drive: { co: coDrive(hs.procedure_code), url: linkThuMuc(hs.drive_folder_id), luc: hs.drive_saved_at },
       pdf: coPdf(),
@@ -39,6 +48,7 @@ const anAnh = (auth, p) => (!p || auth.q.cccd ? p : { ...p, cccd_front_path: p.c
 //   nguoi    { nguoi: {id?, ...}, vai_tro: [...] } thêm / sửa một người + đặt lại vai trò của người đó trong doanh nghiệp
 //   bo_nguoi { person_id }                      gỡ người khỏi doanh nghiệp (xoá người nếu không còn gắn đâu)
 //   nganh    { nganh: [{ma, ten, chi_tiet, chinh}] } thay toàn bộ ngành nghề (thứ tự theo mảng)
+//   thong_tin { thong_tin: {...} }              ô thông tin riêng của thủ tục (legal_cases.thong_tin, lọc theo lib/phaply/thongTin.js)
 export async function PATCH(request, { params }) {
   const auth = await requirePhapLy()
   if (!auth.ok) return loi(auth.status, auth.error)
@@ -50,6 +60,17 @@ export async function PATCH(request, { params }) {
   const b = await request.json().catch(() => ({}))
 
   try {
+    // thông tin riêng của thủ tục — lưu ở HỒ SƠ (không phải pháp nhân), chỉ khoá đã khai, đúng kiểu
+    if (b.action === 'thong_tin') {
+      const bt = bienThe(hs.procedure_code, hs.entity_type)
+      const donVi = DVPT.includes(hs.entity_type) ? hs.entity_type : null
+      const moi = { ...(hs.thong_tin || {}), ...locThongTin(bt, donVi, b.thong_tin || {}) }
+      const { error } = await admin.from('legal_cases').update({ thong_tin: moi, updated_at: new Date().toISOString() }).eq('id', id)
+      if (error) throw new Error(error.message)
+      await ghiNhatKy(admin, id, 'edit', null, null, caller.staffId, 'Sửa thông tin thủ tục: ' + Object.keys(b.thong_tin || {}).join(', '))
+      return Response.json({ ok: true })
+    }
+
     // pháp nhân của hồ sơ (tạo nếu chưa có)
     let entityId = hs.entity_id
     if (!entityId) {
@@ -102,6 +123,9 @@ export async function PATCH(request, { params }) {
       const { data: cu } = await admin.from('legal_entity_people').select('vai_tro, thu_tu, person_id').eq('entity_id', entityId)
       const thuTuCu = new Map((cu || []).filter(r => r.person_id === pid).map(r => [r.vai_tro, r.thu_tu]))
       const maxTheoVai = v => Math.max(-1, ...(cu || []).filter(r => r.vai_tro === v).map(r => r.thu_tu))
+      // người đại diện theo ủy quyền: tổ chức được đại diện phải là người (tổ chức) của CHÍNH doanh nghiệp này
+      const trongDn = new Set((cu || []).map(r => r.person_id))
+      for (const v of vaiTro) if (v.cua_person_id && (!trongDn.has(v.cua_person_id) || v.cua_person_id === pid)) return loi(400, 'Tổ chức được đại diện không thuộc doanh nghiệp này')
       await admin.from('legal_entity_people').delete().eq('entity_id', entityId).eq('person_id', pid)
       const { error: e2 } = await admin.from('legal_entity_people').insert(vaiTro.map(v => ({
         ...v, entity_id: entityId, person_id: pid, thu_tu: thuTuCu.has(v.vai_tro) ? thuTuCu.get(v.vai_tro) : maxTheoVai(v.vai_tro) + 1,

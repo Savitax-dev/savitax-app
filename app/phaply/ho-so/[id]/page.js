@@ -11,7 +11,7 @@ import { tachKhoanThu } from '@/lib/phaply/tien'
 import {
   Modal, Field, NumInput, inputCls, btnPrimary, btnGhost, useToast, api, fmt, fmtMoney, dmy, dmyTime, StatCard, BuocChip, ChoChip,
 } from '../../_ui'
-import PhapNhan, { TAB_PHAP_NHAN } from './_phapNhan'
+import PhapNhan, { tabPhapNhan } from './_phapNhan'
 import TabNop from './_nop'
 import ThongTinThuTuc from './_lichSu'
 import { NHOM, nhomCuaThuTuc } from '@/lib/phaply/nhom'
@@ -49,7 +49,7 @@ export default function HoSoPage() {
   if (d.loi) return <AppShell><div className="pl-ui p-8 text-sm text-gray-600">{d.loi} · <Link className="underline" href="/phaply">Về danh sách</Link>{toastNode}</div></AppShell>
 
   const hs = d.ho_so, q = d.q || {}, sua = d.sua_duoc, daDong = hs.stage >= BUOC_DONG
-  const tabs = [['thong_tin', 'Thông tin'], ['viec', 'Việc cần làm'], ...TAB_PHAP_NHAN, ['nop', 'Trình ký & nộp'], ...(q.tien ? [['tien', 'Công nợ']] : []), ['lich_su', 'Lịch sử & ghi chú']]
+  const tabs = [['thong_tin', 'Thông tin'], ['viec', 'Việc cần làm'], ...tabPhapNhan(hs.procedure_code, hs.entity_type), ['nop', 'Trình ký & nộp'], ...(q.tien ? [['tien', 'Công nợ']] : []), ['lich_su', 'Lịch sử & ghi chú']]
 
   const chuyenBuoc = n => {
     if (!sua || daDong || n === hs.stage) return

@@ -1,0 +1,90 @@
+// Mẫu số 1 (Phụ lục II) — Giấy đề nghị đăng ký hộ kinh doanh. Chữ theo bản trắng chính thức, cách trình bày theo bản phòng
+// pháp lý đã làm thật (PHONGPHAPLY_BIEUMAU\3_TLM_HỘ KINH DOANH\2_MAU01_v1.pdf):
+// - ngày tháng ghi tỉnh/thành của trụ sở; thông tin chủ hộ thẳng cột dấu ":"; khối "Dân tộc … Nơi ở hiện tại" đóng khung, ĐIỀN SẴN;
+// - "Nơi ở hiện tại" = địa chỉ liên lạc của chủ hộ; cam kết chỉ giữ vế đúng chủ thể (cá nhân: "Bản thân"); câu trụ sở bỏ khi
+//   "Không kinh doanh tại trụ sở".
+// - Bảng mục 7: chủ thể "Các thành viên hộ gia đình" → hàng 1 là chủ hộ, sau đó thành viên; cột 6–9 để trống khi giấy tờ là căn
+//   cước (chú thích 5 của mẫu). Chủ thể "Cá nhân" → một hàng trống như bản phòng.
+// - Chưa in chú thích cuối trang 1–6 của mẫu (bộ dựng chưa hỗ trợ chú thích; MAU2 cũng bỏ).
+@co 12
+#rb Mẫu số 1
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+#ri {tru_so_tinh}{^tru_so_tinh}……………..{/tru_so_tinh}, ngày….. tháng….. năm…..
+~
+# GIẤY ĐỀ NGHỊ ĐĂNG KÝ HỘ KINH DOANH
+#c Kính gửi: {tt_co_quan_dk}{^tt_co_quan_dk}{phong_dkkd}{^phong_dkkd}…………………………………{/phong_dkkd}{/tt_co_quan_dk}
+~
+#t Tôi là *(ghi họ tên bằng chữ in hoa)*: {csh_ho_ten}
+#t Sinh ngày[>45]: {csh_ngay_sinh}
+#t Giới tính[>45]: {csh_gioi_tinh}
+#t Số định danh cá nhân[>45]: {csh_so_giay_to}
+#t Điện thoại[>45]: {csh_dien_thoai}{^csh_dien_thoai}[...]{/csh_dien_thoai}
+#t Thư điện tử *(nếu có)*[>45]: {csh_email}{^csh_email}[...]{/csh_email}
+#ti Trường hợp việc kết nối giữa Cơ sở dữ liệu về đăng ký hộ kinh doanh với Cơ sở dữ liệu quốc gia về dân cư bị gián đoạn thì đề nghị kê khai thêm các thông tin cá nhân dưới đây:
+::bang vien 100<
+[>4]Dân tộc: {csh_dan_toc}{^csh_dan_toc}…………………………{/csh_dan_toc}[>45]Quốc tịch: {csh_quoc_tich}{^csh_quoc_tich}[...]{/csh_quoc_tich} // Nơi thường trú: // [>4]Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {csh_tt_so_nha} // [>4]Xã/Phường/Đặc khu: {csh_tt_xa} // [>4]Tỉnh/Thành phố trực thuộc trung ương: {csh_tt_tinh} // Nơi ở hiện tại: // [>4]Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {csh_ll_so_nha} // [>4]Xã/Phường/Đặc khu: {csh_ll_xa} // [>4]Tỉnh/Thành phố trực thuộc trung ương: {csh_ll_tinh}
+::
+~
+#cb Đăng ký hộ kinh doanh do tôi là chủ hộ với các nội dung sau:
+#btk 1. Tên hộ kinh doanh:
+#t Tên hộ kinh doanh viết bằng tiếng Việt *(ghi bằng chữ in hoa)*: {ten_cty}
+#t Tên hộ kinh doanh viết bằng tiếng nước ngoài *(nếu có)*: {ten_cty_nn}{^ten_cty_nn}[...]{/ten_cty_nn}
+#t Tên hộ kinh doanh viết tắt *(nếu có)*: {ten_cty_viet_tat}{^ten_cty_viet_tat}[...]{/ten_cty_viet_tat}
+#btk 2. Trụ sở của hộ kinh doanh:
+#t Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {tru_so_so_nha}
+#t Xã/Phường/Đặc khu: {tru_so_xa}
+#t Tỉnh/Thành phố trực thuộc trung ương: {tru_so_tinh}
+#t Điện thoại: {cty_dien_thoai}{^cty_dien_thoai}………………………………{/cty_dien_thoai}[>55]Fax *(nếu có)*: {cty_fax}{^cty_fax}[...]{/cty_fax}
+#t Thư điện tử *(nếu có)*: {cty_email}{^cty_email}…………………………{/cty_email}[>55]Website *(nếu có)*: {cty_website}{^cty_website}[...]{/cty_website}
+#t [x:tt_khong_tai_tru_so]  Không kinh doanh tại trụ sở (*đánh dấu X vào ô này nếu hộ kinh doanh không có địa điểm kinh doanh cố định*)
+#btk 3. Ngành, nghề kinh doanh:
+::bang vien 8^ 60< 14^ 18^
+STT | Tên ngành | Mã ngành | Ngành, nghề kinh doanh chính
+---
+{#nganh}{stt} | {ten} | {ma} | {chinh}{/nganh}
+::
+~
+#btk 4. Vốn kinh doanh:
+#t Tổng số *(bằng số, bằng chữ, VNĐ)*: {#von_dieu_le_chu}{von_dieu_le} VNĐ ({von_dieu_le_chu}){/von_dieu_le_chu}{^von_dieu_le_chu}[...]{/von_dieu_le_chu}
+#btk 5. Thông tin đăng ký thuế:
+#t 5.1. Địa chỉ nhận thông báo thuế *(chỉ kê khai nếu địa chỉ nhận thông báo thuế khác địa chỉ trụ sở)*:
+#t Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: [...]
+#t Xã/Phường/Đặc khu: [...]
+#t Tỉnh/Thành phố trực thuộc trung ương: [...]
+#t Điện thoại *(nếu có)*: {cty_dien_thoai}{^cty_dien_thoai}…………………………{/cty_dien_thoai}[>55]Thư điện tử *(nếu có)*: {cty_email}{^cty_email}[...]{/cty_email}
+#t 5.2. Ngày bắt đầu hoạt động *(trường hợp hộ kinh doanh dự kiến bắt đầu hoạt động kể từ ngày được cấp Giấy chứng nhận đăng ký hộ kinh doanh thì không cần kê khai nội dung này)*: {tt_ngay_bat_dau}{^tt_ngay_bat_dau}…../…../…….{/tt_ngay_bat_dau}
+#t 5.3. Tổng số lao động *(dự kiến)*: {so_lao_dong}{^so_lao_dong}[...]{/so_lao_dong}
+#tk 5.4. Phương pháp tính thuế GTGT *(chọn 1 trong 2 phương pháp)*:
+#t [x:tt_pp_thue_ke_khai]  Phương pháp kê khai[>50][x:tt_pp_thue_khoan]  Phương pháp khoán
+#tk **6. Chủ thể thành lập hộ kinh doanh:** *(đánh dấu X vào ô thích hợp)*
+#t [x:tt_chu_the_ca_nhan]  Cá nhân[>50][x:tt_chu_the_ho_gia_dinh]  Các thành viên hộ gia đình
+#btk 7. Thông tin về các thành viên hộ gia đình đăng ký hộ kinh doanh:
+::bang vien 6^ 16^ 13^ 15^ 7^ 7^ 6^ 10^ 11^ 9^ co=10
+STT | Họ tên | Ngày, tháng, năm sinh | Số định danh cá nhân | Giới tính | Quốc tịch | Dân tộc | Nơi thường trú | Nơi ở hiện tại | Chữ ký
+1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
+---
+{#tt_chu_the_ho_gia_dinh}1 | {csh_ho_ten} | {csh_ngay_sinh} | {csh_so_giay_to} | {csh_gioi_tinh} | {csh_qt_bang} | {csh_dt_bang} | {#csh_qt_bang}{csh_dia_chi_thuong_tru}{/csh_qt_bang} | {#csh_qt_bang}{csh_dia_chi_lien_lac}{/csh_qt_bang} | {/tt_chu_the_ho_gia_dinh}
+{#thanh_vien_ho}{stt_ho} | {ho_ten} | {ngay_sinh} | {so_giay_to} | {gioi_tinh} | {qt_bang} | {dt_bang} | {#qt_bang}{dia_chi_thuong_tru}{/qt_bang} | {#qt_bang}{dia_chi_lien_lac}{/qt_bang} | {/thanh_vien_ho}
+{^tt_chu_the_ho_gia_dinh} | #c | #c | #c | #c | #c | #c | #c | #c | {/tt_chu_the_ho_gia_dinh}
+::
+~
+#t Tôi xin cam kết:
+#t - {#tt_chu_the_ho_gia_dinh}Bản thân và các thành viên hộ gia đình đăng ký hộ kinh doanh{/tt_chu_the_ho_gia_dinh}{^tt_chu_the_ho_gia_dinh}Bản thân{/tt_chu_the_ho_gia_dinh} đồng ý chia sẻ thông tin cá nhân được lưu giữ tại Cơ sở dữ liệu quốc gia về dân cư cho Cơ quan đăng ký kinh doanh cấp xã, Cơ quan quản lý nhà nước về đăng ký kinh doanh để phục vụ công tác quản lý nhà nước về đăng ký hộ kinh doanh theo quy định;
+#t - {#tt_chu_the_ho_gia_dinh}Bản thân và các thành viên hộ gia đình đăng ký hộ kinh doanh{/tt_chu_the_ho_gia_dinh}{^tt_chu_the_ho_gia_dinh}Bản thân{/tt_chu_the_ho_gia_dinh} không thuộc diện pháp luật cấm kinh doanh; không đồng thời là chủ hộ kinh doanh, thành viên hộ gia đình đăng ký hộ kinh doanh khác; không là chủ doanh nghiệp tư nhân;
+{^tt_khong_tai_tru_so}
+#t - Trụ sở thuộc quyền sử dụng hợp pháp của hộ kinh doanh và được sử dụng đúng mục đích theo quy định của pháp luật;
+{/tt_khong_tai_tru_so}
+#tk - Hoàn toàn chịu trách nhiệm trước pháp luật về tính hợp pháp, chính xác và trung thực của nội dung đăng ký trên.
+::cot 45/55
+~
+||
+#cb CHỦ HỘ KINH DOANH
+#ci (Ký và ghi họ tên)
+~
+~
+~
+~
+#cb {csh_ho_ten}
+::

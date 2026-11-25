@@ -1,0 +1,78 @@
+// Văn bản cử người đại diện theo ủy quyền phần vốn góp / cổ phần — thành viên (TNHH 2TV) hoặc cổ đông sáng lập (CP) là TỔ CHỨC.
+// Hai bên: tổ chức góp vốn (Bên ủy quyền, tiền tố tc_ = tổ chức ĐẦU TIÊN trong danh sách) — người đại diện theo ủy quyền của tổ
+// chức đó (vòng lặp {#tc_uq}, 1–3 người). Theo mẫu phòng pháp lý gửi 25/11/2026 ("MẪU VĂN BẢN CỬ NGƯỜI ĐẠI DIỆN PHẦN VỐN GÓP").
+// Câu chữ đổi theo loại hình: 2TV "thành viên / phần vốn góp", CP "cổ đông / cổ phần". Số / ngày nghị quyết – quyết định nội bộ
+// của tổ chức, thời hạn ủy quyền: không có dữ liệu → chấm viết tay.
+@co 12
+@gian 60
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập – Tự do – Hạnh phúc
+#c --------------------
+#ri ………….., ngày ….. tháng ….. năm ………
+~
+# VĂN BẢN CỬ NGƯỜI ĐẠI DIỆN THEO ỦY QUYỀN
+~
+- Căn cứ Luật Doanh nghiệp số 59/2020/QH14 được Quốc hội thông qua ngày 17 tháng 06 năm 2020; Luật sửa đổi bổ sung một số điều của Luật Doanh nghiệp ngày 17/06/2025;
+- Căn cứ Điều lệ của {tc_ho_ten};
+- Căn cứ Nghị quyết/Quyết định số ………… ngày ………… của ……………………………… {tc_ho_ten} về việc cử người đại diện theo ủy quyền thực hiện quyền của {#la_2tv}thành viên{/la_2tv}{#la_cp}cổ đông{/la_cp} tại {ten_cty}.
+~
+#bk BÊN ỦY QUYỀN:
+#l Tên tổ chức: **{tc_ho_ten}**
+Mã số doanh nghiệp: {tc_ma_so_dn} do {tc_noi_cap_dn} cấp lần đầu ngày {tc_ngay_cap_dn};
+Địa chỉ trụ sở chính: {tc_dia_chi_thuong_tru};
+#l Người đại diện theo pháp luật: **{tc_dai_dien_ten}** – Chức vụ: {tc_dai_dien_chuc_danh};
+#l Điện thoại: {tc_dien_thoai}[>55]Email: {tc_email}
+~
+#bk BÊN NHẬN ỦY QUYỀN:
+{#tc_uq}
+#l {stt}. Họ và tên: **{ho_ten}**[>55]Giới tính: {gioi_tinh}
+#l Sinh ngày: {ngay_sinh}[>55]Quốc tịch: {quoc_tich}
+#l {giay_to_so}: {so_giay_to}[>55]Ngày cấp: {ngay_cap}
+#l Nơi cấp: {noi_cap}
+#l Địa chỉ thường trú: {dia_chi_thuong_tru}
+#l Địa chỉ liên lạc: {dia_chi_lien_lac}
+{/tc_uq}
+~
+#cbk NỘI DUNG ỦY QUYỀN
+#bk ĐIỀU 1. NỘI DUNG VÀ PHẠM VI ỦY QUYỀN
+Bên ủy quyền ủy quyền cho Bên nhận ủy quyền thực hiện các công việc sau đây:
+1. Bên nhận ủy quyền đại diện theo ủy quyền cho {#la_2tv}phần vốn góp {tc_von} đồng{/la_2tv}{#la_cp}số cổ phần có tổng mệnh giá {tc_von} đồng{/la_cp} (chiếm {tc_ty_le} vốn điều lệ) của {tc_ho_ten} tại {ten_cty}, tỷ lệ {#la_2tv}phần vốn góp{/la_2tv}{#la_cp}cổ phần{/la_cp} được ủy quyền:
+{#tc_uq}
+- {danh_xung} **{ho_ten}** thay mặt Bên ủy quyền quản lý {ty_le_uq} {#la_2tv}phần vốn góp{/la_2tv}{#la_cp}số cổ phần{/la_cp} của Bên ủy quyền, tương ứng {von_uy_quyen} đồng *(**Bằng chữ:** {von_uy_quyen_chu})*, chiếm tỷ lệ {ty_le_uq_vdl} vốn điều lệ của {ten_cty}.
+{/tc_uq}
+2. Tương ứng với tỷ lệ {#la_2tv}phần vốn góp{/la_2tv}{#la_cp}cổ phần{/la_cp} được đại diện, Bên nhận ủy quyền chịu trách nhiệm quản lý, bảo toàn toàn bộ nguồn vốn của {tc_ho_ten} tại {ten_cty}; thực hiện các quyền lợi và nghĩa vụ liên quan tới {#la_2tv}phần vốn góp{/la_2tv}{#la_cp}cổ phần{/la_cp} được ủy quyền đại diện tại {ten_cty}.
+#bk ĐIỀU 2. THỜI HẠN ỦY QUYỀN
+Thời hạn ủy quyền đại diện là:
+{#tc_uq}
+- Thời hạn ủy quyền đại diện cho {danh_xung} **{ho_ten}** là: ……………………; thời điểm bắt đầu đại diện: {thoi_diem_dai_dien}.
+{/tc_uq}
+#bk ĐIỀU 3. NGHĨA VỤ CỦA CÁC BÊN
+Bên ủy quyền và Bên nhận ủy quyền chịu trách nhiệm trước pháp luật về những lời cam đoan sau đây:
+1. Bên ủy quyền chịu trách nhiệm khi Bên nhận ủy quyền thực hiện các công việc trong phạm vi ủy quyền.
+2. Bên nhận ủy quyền thực hiện công việc theo ủy quyền phải thông báo cho Bên ủy quyền về việc thực hiện các công việc nêu trên.
+3. Việc giao kết văn bản này hoàn toàn tự nguyện, không bị lừa dối hoặc ép buộc.
+4. Hai bên cam kết thực hiện đúng và đầy đủ tất cả các thỏa thuận đã ghi trong văn bản này.
+#bk ĐIỀU 4. ĐIỀU KHOẢN CUỐI CÙNG
+1. Hai bên đã hiểu rõ quyền, nghĩa vụ và lợi ích hợp pháp của mình, ý nghĩa và hậu quả pháp lý của việc giao kết văn bản này.
+2. Hai bên đã tự đọc, đã hiểu và đồng ý tất cả các điều khoản ghi trong văn bản này, và ký vào văn bản này.
+3. Văn bản này có hiệu lực từ ngày hai bên ký./.
+~
+::cot 50/50
+#cb ĐẠI DIỆN BÊN ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên, đóng dấu)
+~
+~
+~
+~
+#cb {tc_dai_dien_ten}
+||
+#cb BÊN NHẬN ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên)
+{#tc_uq}
+~
+~
+~
+~
+#cb {ho_ten}
+{/tc_uq}
+::

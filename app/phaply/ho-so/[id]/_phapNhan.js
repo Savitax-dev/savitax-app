@@ -7,10 +7,18 @@ import Link from 'next/link'
 import { Modal, Field, NumInput, inputCls, btnPrimary, btnGhost, api, fmt } from '../../_ui'
 import { NguoiForm, DiaChiChon, noiDiaChiNgan } from '../../_nguoi'
 import { VAI_TRO, VAI_TRO_THEO_LOAI, CHUC_DANH, THOI_HAN_GOP } from '@/lib/phaply/phapNhan'
-import { mauCuaBo, LUU_Y_IN_KY } from '@/lib/phaply/word/danhMuc'
+import { mauCuaBo, luuYInKy } from '@/lib/phaply/word/danhMuc'
 import { inTyLe } from '@/lib/phaply/word/duLieu'
+import { bienThe, dsBo } from '@/lib/phaply/boHoSo'
+import { oCua } from '@/lib/phaply/thongTin'
 
 export const TAB_PHAP_NHAN = [['doanh_nghiep', 'Doanh nghiệp'], ['nguoi', 'Người & CCCD'], ['nganh', 'Ngành nghề'], ['word', 'Còn thiếu & xuất Word']]
+// Thủ tục có ô thông tin riêng (hộ kinh doanh, đơn vị phụ thuộc…) → thêm tab "Thông tin thủ tục" ngay sau Doanh nghiệp
+export function tabPhapNhan(procedureCode, entityType) {
+  const bt = bienThe(procedureCode, entityType)
+  if (!(oCua(bt, entityType).length)) return TAB_PHAP_NHAN
+  return [TAB_PHAP_NHAN[0], ['thu_tuc', 'Thông tin thủ tục'], ...TAB_PHAP_NHAN.slice(1)]
+}
 
 export default function PhapNhan({ id, tab, sua, loaiHinh, toast, taiLaiHoSo }) {
   const [d, setD] = useState(null)
@@ -20,7 +28,7 @@ export default function PhapNhan({ id, tab, sua, loaiHinh, toast, taiLaiHoSo }) 
     setD(r.data)
   }, [id])
   useEffect(() => { load() }, [load])
-  if (!TAB_PHAP_NHAN.some(([k]) => k === tab)) return null
+  if (tab !== 'thu_tuc' && !TAB_PHAP_NHAN.some(([k]) => k === tab)) return null
   if (!d) return <div className="p-panel p-6 text-sm text-gray-400">Đang tải…</div>
   if (d.loi) return <div className="p-panel p-6 text-sm text-red-700">{d.loi}</div>
   const coSua = sua && d.sua_duoc
@@ -38,6 +46,7 @@ export default function PhapNhan({ id, tab, sua, loaiHinh, toast, taiLaiHoSo }) 
       {tab === 'doanh_nghiep' && <DoanhNghiep d={d} lh={lh} sua={coSua} goi={goi} />}
       {tab === 'nguoi' && <Nguoi d={d} lh={lh} sua={coSua} goi={goi} id={id} toast={toast} />}
       {tab === 'nganh' && <Nganh d={d} sua={coSua} goi={goi} />}
+      {tab === 'thu_tuc' && <ThongTinThuTuc d={d} sua={coSua} goi={goi} />}
       {tab === 'word' && <XuatWord d={d} id={id} lh={lh} toast={toast} sua={coSua} taiLai={load} />}
     </div>
   )
@@ -66,6 +75,7 @@ function DoanhNghiep({ d, lh, sua, goi }) {
     phone: e.phone || '', email: e.email || '', fax: e.fax || '', website: e.website || '',
     von_dieu_le: Number(e.von_dieu_le) || 0, menh_gia: Number(e.menh_gia) || (lh === 'cp' ? 10000 : 0), so_lao_dong: e.so_lao_dong ?? '',
     mo_hinh: e.mo_hinh || 'chu_tich', csh_la_to_chuc: !!e.csh_la_to_chuc, co_ndt_nuoc_ngoai: !!e.co_ndt_nuoc_ngoai,
+    thoi_han_hoat_dong: e.thoi_han_hoat_dong || '', so_lan_hop_hdtv: e.so_lan_hop_hdtv || '', dia_chi_cn_vpdd: e.dia_chi_cn_vpdd || '',
     phong_dkkd: e.phong_dkkd || '', co_quan_thue: e.co_quan_thue || '', dien_thue_san: !!e.dien_thue_san,
     thue: { ...(e.thue || {}) }, so_sach: { ...(e.so_sach || {}) }, khau_hao: e.khau_hao || '', quy_uoc_phieu: Number(e.quy_uoc_phieu) || 0,
   })
@@ -115,8 +125,12 @@ function DoanhNghiep({ d, lh, sua, goi }) {
           {lh === 'cp' && <Field label="Mệnh giá cổ phần"><NumInput value={f.menh_gia} disabled={!sua} onChange={v => set('menh_gia', v)} /></Field>}
           {lh === 'cp' && <Field label="Tổng số cổ phần"><input className={inputCls + ' num text-right'} disabled value={f.menh_gia ? fmt(Math.round(f.von_dieu_le / f.menh_gia)) : ''} /></Field>}
           {o('Số lao động dự kiến', 'so_lao_dong', { so: true })}
+          <Field label="Thời hạn hoạt động (Điều lệ)" hint="để trống = 50 năm"><input className={inputCls} list="pl-thoi-han" value={f.thoi_han_hoat_dong} disabled={!sua} placeholder="50 năm" onChange={ev => set('thoi_han_hoat_dong', ev.target.value)} />
+            <datalist id="pl-thoi-han"><option value="50 năm" /><option value="vô thời hạn" /></datalist></Field>
+          {lh === '2tv' && <Field label="HĐTV họp mấy lần / năm" hint="để trống = 01"><input className={inputCls} value={f.so_lan_hop_hdtv} disabled={!sua} placeholder="01" onChange={ev => set('so_lan_hop_hdtv', ev.target.value)} /></Field>}
           {lh !== '1tv' && <Field label="Biên bản họp: mấy đồng = 1 phiếu" hint="mặc định 10.000"><NumInput value={f.quy_uoc_phieu} disabled={!sua} onChange={v => set('quy_uoc_phieu', v)} placeholder="10.000" /></Field>}
         </div>
+        <Field label="Địa chỉ chi nhánh, văn phòng đại diện (Điều lệ Điều 3 — nếu có)"><input className={inputCls} value={f.dia_chi_cn_vpdd} disabled={!sua} onChange={ev => set('dia_chi_cn_vpdd', ev.target.value)} /></Field>
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           {lh === '1tv' && hop('Chủ sở hữu là tổ chức', f.csh_la_to_chuc, v => set('csh_la_to_chuc', v))}
           {lh === '1tv' && f.csh_la_to_chuc && chon('Mô hình tổ chức', f.mo_hinh, [['chu_tich', 'Chủ tịch công ty'], ['hdtv', 'Hội đồng thành viên']], v => set('mo_hinh', v))}
@@ -211,7 +225,11 @@ function Nguoi({ d, lh, sua, goi, id, toast }) {
                     <tr key={v.id} className={sua ? 'p-click' : ''} onClick={() => sua && p && setMo({ nguoi: p.nguoi, vai_tro: p.vai_tro })}>
                       <td className="l"><b>{v.nguoi?.ho_ten || '(chưa có tên)'}</b>{v.chu_tich ? <span className="ml-2 text-xs px-1.5 rounded bg-amber-100">Chủ tịch</span> : null}
                         {v.chuc_danh ? <span className="ml-2 text-xs text-gray-500">{v.chuc_danh}</span> : null}
-                        <div className="text-xs text-gray-500">{v.nguoi?.loai_giay_to || 'Giấy tờ'} {v.nguoi?.so_giay_to || '—'} · {noiDiaChiNgan(v.nguoi?.thuong_tru) || 'chưa có thường trú'}</div></td>
+                        {v.nguoi?.la_to_chuc
+                          ? <div className="text-xs text-gray-500"><span className="px-1 rounded bg-sky-100 text-sky-800">Tổ chức</span> MSDN {v.nguoi?.ma_so_dn || '—'} · đại diện: {v.nguoi?.dai_dien_ten || '—'} · {noiDiaChiNgan(v.nguoi?.thuong_tru) || 'chưa có trụ sở'}</div>
+                          : <div className="text-xs text-gray-500">{v.nguoi?.loai_giay_to || 'Giấy tờ'} {v.nguoi?.so_giay_to || '—'} · {noiDiaChiNgan(v.nguoi?.thuong_tru) || 'chưa có thường trú'}</div>}
+                        {k === 'dai_dien_uy_quyen' && <div className="text-xs text-sky-800">Đại diện cho {nguoi.find(n => n.nguoi?.id === v.cua_person_id)?.nguoi?.ho_ten || '(chưa chọn tổ chức)'}{v.von_uy_quyen ? ' · vốn ' + fmt(v.von_uy_quyen) + ' đ' : ''}</div>}
+                        {k === 'dai_dien' && v.quyen_han && <div className="text-xs text-gray-600">Quyền hạn: {v.quyen_han}</div>}</td>
                       <td className="r num whitespace-nowrap">{k === 'thanh_vien' ? fmt(v.von_gop) + ' đ' : k === 'co_dong' ? fmt(v.so_co_phan) + ' CP' : ''}
                         {vdl && k === 'thanh_vien' ? <div className="text-xs text-gray-500">{inTyLe(100 * (Number(v.von_gop) || 0) / vdl)}</div> : null}
                         {vdl && k === 'co_dong' ? <div className="text-xs text-gray-500">{inTyLe(100 * (Number(v.so_co_phan) || 0) * menh / vdl)}</div> : null}</td>
@@ -226,6 +244,7 @@ function Nguoi({ d, lh, sua, goi, id, toast }) {
       })}
       {sua && <div className="text-xs text-gray-500">Một người giữ nhiều vai trò (VD chủ sở hữu kiêm giám đốc, đại diện pháp luật): mở người đó và tích thêm vai trò — không nhập hai lần. Giám đốc trống = lấy người đại diện theo pháp luật.</div>}
       {mo && <SuaNguoi mo={mo} choPhep={choPhep} goi={goi} id={id} toast={toast} onClose={() => setMo(null)}
+        toChuc={nguoi.filter(n => n.nguoi?.la_to_chuc && n.nguoi.id !== mo.nguoi?.id).map(n => ({ id: n.nguoi.id, ten: n.nguoi.ho_ten }))}
         von={{ vdl, menh, tvKhac: tongTv - (Number(mo.vai_tro.find(x => x.vai_tro === 'thanh_vien')?.von_gop) || 0), cpKhac: tongCp - (Number(mo.vai_tro.find(x => x.vai_tro === 'co_dong')?.so_co_phan) || 0) }} />}
     </div>
   )
@@ -242,7 +261,10 @@ function ConVon({ tong, rieng, vdl }) {
   )
 }
 
-function SuaNguoi({ mo, choPhep, goi, id, toast, onClose, von = {} }) {
+// Vai trò tổ chức được giữ (chủ sở hữu / thành viên / cổ đông là doanh nghiệp — sql/61); người đại diện, giám đốc… phải là cá nhân
+const VAI_TO_CHUC = ['chu_so_huu', 'thanh_vien', 'co_dong']
+
+function SuaNguoi({ mo, choPhep, goi, id, toast, onClose, von = {}, toChuc = [] }) {
   const [canhBao, setCanhBao] = useState([])
   const [p, setP] = useState(mo.nguoi)
   const [vt, setVt] = useState(() => Object.fromEntries(mo.vai_tro.map(v => [v.vai_tro, { ...v }])))
@@ -264,17 +286,35 @@ function SuaNguoi({ mo, choPhep, goi, id, toast, onClose, von = {} }) {
         <button className={btnGhost} onClick={onClose}>Huỷ</button>
         <button className={btnPrimary} disabled={dang || !p.ho_ten?.trim() || !Object.keys(vt).length} onClick={luu}>Lưu</button></>}>
       <div className="space-y-4">
-        <TaiCccd caseId={id} p={p} setP={setP} toast={toast} canhBao={canhBao} setCanhBao={setCanhBao} />
-        <NguoiForm value={p} onChange={setP} noiBat={new Set(canhBao.map(c => c.truong))} />
+        {choPhep.some(k => VAI_TO_CHUC.includes(k)) && (
+          <label className="flex items-center gap-2 text-sm rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
+            <input type="checkbox" checked={!!p.la_to_chuc} onChange={e => { const on = e.target.checked; setP(o => ({ ...o, la_to_chuc: on })); if (on) setVt(o => Object.fromEntries(Object.entries(o).filter(([k]) => VAI_TO_CHUC.includes(k)))) }} />
+            <span><b>Đây là tổ chức</b> (công ty / tổ chức làm chủ sở hữu, thành viên hoặc cổ đông) — nhập mã số doanh nghiệp, trụ sở, người đại diện của tổ chức; sau đó thêm <b>người đại diện theo ủy quyền</b> của tổ chức này.</span>
+          </label>
+        )}
+        {!p.la_to_chuc && <TaiCccd caseId={id} p={p} setP={setP} toast={toast} canhBao={canhBao} setCanhBao={setCanhBao} />}
+        <NguoiForm value={p} onChange={setP} noiBat={new Set(canhBao.map(c => c.truong))} choToChuc />
         <div className="border-t pt-3">
           <div className="text-sm font-semibold mb-2">Vai trò trong doanh nghiệp</div>
           <div className="space-y-2">
-            {choPhep.map(k => (
+            {choPhep.filter(k => p.la_to_chuc ? VAI_TO_CHUC.includes(k) : true).filter(k => k !== 'dai_dien_uy_quyen' || toChuc.length || vt[k]).map(k => (
               <div key={k} className="rounded-lg border border-gray-200 px-3 py-2">
                 <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!vt[k]} onChange={e => bat(k, e.target.checked)} />{VAI_TRO[k]}</label>
                 {vt[k] && ['dai_dien', 'giam_doc'].includes(k) && (
                   <Field label="Chức danh" className="mt-2"><input className={inputCls} list="pl-chuc-danh" value={vt[k].chuc_danh || ''} onChange={e => setV(k, 'chuc_danh', e.target.value)} placeholder="Giám đốc" />
                     <datalist id="pl-chuc-danh">{CHUC_DANH.map(c => <option key={c} value={c} />)}</datalist></Field>
+                )}
+                {vt[k] && k === 'dai_dien' && (
+                  <Field label="Quyền và nghĩa vụ (chỉ cần với người đại diện thứ 2 trở đi, không phải Chủ tịch / Giám đốc — in vào Điều lệ)" className="mt-2">
+                    <textarea className={inputCls} rows={2} value={vt[k].quyen_han || ''} onChange={e => setV(k, 'quyen_han', e.target.value)} placeholder="VD: Ký hợp đồng mua bán có giá trị dưới …; đại diện công ty làm việc với cơ quan thuế" /></Field>
+                )}
+                {vt[k] && k === 'dai_dien_uy_quyen' && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                    <Field label="Đại diện cho tổ chức"><select className={inputCls} value={vt[k].cua_person_id || ''} onChange={e => setV(k, 'cua_person_id', e.target.value || null)}>
+                      <option value="">— chọn tổ chức —</option>{toChuc.map(t => <option key={t.id} value={t.id}>{t.ten}</option>)}</select></Field>
+                    <Field label="Vốn được ủy quyền đại diện (đồng)"><NumInput value={vt[k].von_uy_quyen} onChange={v => setV(k, 'von_uy_quyen', v)} /></Field>
+                    <Field label="Thời điểm đại diện"><input className={inputCls} value={vt[k].thoi_diem_dai_dien || ''} onChange={e => setV(k, 'thoi_diem_dai_dien', e.target.value)} placeholder="Kể từ ngày được cấp GCN ĐKDN" /></Field>
+                  </div>
                 )}
                 {vt[k] && k === 'thanh_vien' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
@@ -407,13 +447,73 @@ function Nganh({ d, sua, goi }) {
   )
 }
 
-// ─── Còn thiếu & xuất Word ────────────────────────────────────────────────────────────────────────────────
-const TEN_DOT = { so: 'Hồ sơ thành lập — nộp Phòng ĐKKD', thue: 'Hồ sơ pháp lý ban đầu — sau khi có GPKD' }
+// ─── Thông tin thủ tục (legal_cases.thong_tin — khuôn ô ở lib/phaply/thongTin.js, form tự dựng theo khuôn) ──────────────────
+function ThongTinThuTuc({ d, sua, goi }) {
+  const ds = oCua(d.bt, d.don_vi)
+  const dau = () => d.thong_tin || {}
+  const [f, setF] = useState(dau)
+  useEffect(() => { setF(dau()) }, [d.thong_tin]) // eslint-disable-line react-hooks/exhaustive-deps
+  const set = (k, v) => setF(o => ({ ...o, [k]: v }))
+  const doi = JSON.stringify(f) !== JSON.stringify(dau())
+  const o1 = o => {
+    const v = f[o.k] ?? (o.kieu === 'chon' ? o.md : undefined)
+    if (o.kieu === 'co') return <label key={o.k} className="flex items-center gap-2 text-sm md:col-span-2"><input type="checkbox" disabled={!sua} checked={!!v} onChange={e => set(o.k, e.target.checked)} />{o.nhan}</label>
+    if (o.kieu === 'dia_chi') return <div key={o.k} className="md:col-span-2"><DiaChiChon nhan={o.nhan} value={v} disabled={!sua} onChange={x => set(o.k, x)} /></div>
+    if (o.kieu === 'nganh') return <NganhDonVi key={o.k} o={o} v={v || []} nganhMe={d.nganh || []} sua={sua} onChange={x => set(o.k, x)} />
+    return (
+      <Field key={o.k} label={o.nhan + (o.bat_buoc ? ' *' : '')} className={o.kieu === 'dai' ? 'md:col-span-2' : ''}>
+        {o.kieu === 'chon' ? <select className={inputCls} disabled={!sua} value={v || ''} onChange={e => set(o.k, e.target.value)}>{o.chon.map(([g, n]) => <option key={g} value={g}>{n}</option>)}</select>
+          : o.kieu === 'so' ? <NumInput value={v} disabled={!sua} onChange={x => set(o.k, x)} />
+          : o.kieu === 'dai' ? <textarea className={inputCls} rows={3} disabled={!sua} value={v || ''} onChange={e => set(o.k, e.target.value)} />
+          : <input className={inputCls} disabled={!sua} value={v || ''} placeholder={o.kieu === 'ngay' ? 'dd/mm/yyyy' : o.goiY || ''} onChange={e => set(o.k, e.target.value)} />}
+      </Field>
+    )
+  }
+  return (
+    <div className="p-panel">
+      <div className="p-panel-h">Thông tin riêng của thủ tục{d.don_vi ? ' — đơn vị phụ thuộc' : ''}</div>
+      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">{ds.map(o1)}</div>
+      {d.don_vi && <div className="px-4 text-xs text-gray-500">Doanh nghiệp, người đại diện, chủ sở hữu / thành viên / cổ đông lấy từ <b>công ty mẹ</b> (tab Doanh nghiệp, Người & CCCD). Người đứng đầu đơn vị thêm ở tab Người & CCCD với vai trò “Người đứng đầu”.</div>}
+      {sua && <div className="px-4 py-3 flex justify-end gap-2">
+        {doi && <button className={btnGhost} onClick={() => setF(dau())}>Bỏ thay đổi</button>}
+        <button className={btnPrimary} disabled={!doi} onClick={() => goi({ action: 'thong_tin', thong_tin: f }, 'Đã lưu thông tin thủ tục')}>Lưu</button>
+      </div>}
+    </div>
+  )
+}
 
+// Ngành của đơn vị phụ thuộc: chọn trong ngành của công ty mẹ (đơn vị chỉ hoạt động trong phạm vi ngành công ty mẹ đã đăng ký)
+function NganhDonVi({ o, v, nganhMe, sua, onChange }) {
+  const co = new Map(v.map(n => [n.ma, n]))
+  const bat = (n, on) => onChange(on ? [...v, { ma: n.ma, ten: n.ten, chi_tiet: n.chi_tiet || '', chinh: !v.length }] : v.filter(x => x.ma !== n.ma))
+  const chinh = ma => onChange(v.map(x => ({ ...x, chinh: x.ma === ma })))
+  return (
+    <div className="md:col-span-2">
+      <div className="text-sm font-medium mb-1">{o.nhan} <span className="text-xs text-gray-500">— tick trong ngành của công ty mẹ ({v.length}/{nganhMe.length})</span></div>
+      {!nganhMe.length ? <div className="text-xs text-amber-800">Công ty mẹ chưa có ngành nghề (tab Ngành nghề).</div> : (
+        <table className="p-tbl w-full"><tbody>
+          {nganhMe.map(n => (
+            <tr key={n.ma + n.ten}>
+              <td className="l w-8"><input type="checkbox" disabled={!sua} checked={co.has(n.ma)} onChange={e => bat(n, e.target.checked)} /></td>
+              <td className="l num w-16">{n.ma}</td>
+              <td className="l">{n.ten}</td>
+              <td className="r w-24">{co.has(n.ma) && <label className="text-xs flex items-center gap-1 justify-end"><input type="radio" disabled={!sua} checked={!!co.get(n.ma)?.chinh} onChange={() => chinh(n.ma)} />chính</label>}</td>
+            </tr>
+          ))}
+        </tbody></table>
+      )}
+    </div>
+  )
+}
+
+// ─── Còn thiếu & xuất Word ────────────────────────────────────────────────────────────────────────────────
 function XuatWord({ d, id, lh, toast, sua, taiLai }) {
   const [dang, setDang] = useState(null)
   const [luuDrive, setLuuDrive] = useState(false)
-  if (!['1tv', '2tv', 'cp'].includes(lh)) return <div className="p-panel p-4 text-sm text-gray-500">Mẫu Word hiện chỉ có cho công ty TNHH 1TV, 2TV và cổ phần.</div>
+  const lhm = d.lh_mau || lh
+  if (!lhm) return <div className="p-panel p-4 text-sm text-gray-500">Đơn vị phụ thuộc: hồ sơ phải gắn với công ty mẹ (TNHH 1TV, 2TV hoặc cổ phần) để chọn mẫu.</div>
+  const bo = dsBo(d.bt || 'tlm').filter(b => mauCuaBo(b.dot, lhm, d.bt, d.don_vi).length)
+  if (!bo.length) return <div className="p-panel p-4 text-sm text-gray-500">Thủ tục này chưa có mẫu Word.</div>
   // kieu: 'word' | 'pdf' (PDF đổi ở VPS — chậm hơn vài giây)
   const tai = async (dot, ma, kieu = 'word') => {
     setDang(dot + (ma || '') + kieu)
@@ -440,19 +540,19 @@ function XuatWord({ d, id, lh, toast, sua, taiLai }) {
       <div className="lg:col-span-2 p-panel px-4 py-3 flex items-center gap-3 flex-wrap">
         <span className="text-sm font-semibold">☁ Drive phòng pháp lý</span>
         {dv.co ? (<>
-          <span className="text-xs text-gray-500 flex-1 min-w-[200px]">Lưu cả 2 bộ Word (4. SOẠN HỒ SƠ) + ảnh CCCD (2. THU THẬP THÔNG TIN) vào thư mục của hồ sơ; lưu lại thì ghi đè file cùng tên.
+          <span className="text-xs text-gray-500 flex-1 min-w-[200px]">Lưu các bộ Word (4. SOẠN HỒ SƠ) + ảnh CCCD (2. THU THẬP THÔNG TIN) vào thư mục của hồ sơ; lưu lại thì ghi đè file cùng tên.
             {dv.luc ? ` Lần lưu gần nhất: ${new Date(dv.luc).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}.` : ' Chưa lưu lần nào.'}</span>
           {dv.url && <a className="p-btn p-btn-sm" href={dv.url} target="_blank" rel="noopener noreferrer">Mở thư mục ↗</a>}
           {sua && <button className={btnPrimary + ' p-btn-sm'} disabled={luuDrive || !!dang} onClick={guiDrive}>{luuDrive ? 'Đang lưu… (có thể tới 1 phút)' : 'Lưu lên Drive'}</button>}
         </>) : <span className="text-xs text-gray-500">Chưa cấu hình thư mục Drive cho thủ tục này{process.env.NEXT_PUBLIC_DEMO_MODE === '1' ? ' (bản demo không lưu Drive)' : ''}.</span>}
       </div>
-      {['so', 'thue'].map(dot => {
+      {bo.map(({ dot, ten }) => {
         const thieu = d.thieu?.[dot] || []
         const chan = thieu.filter(t => t.chan), nhac = thieu.filter(t => !t.chan)
         return (
           <div key={dot} className="p-panel">
             <div className="p-panel-h flex items-center justify-between gap-2">
-              <span>{TEN_DOT[dot]}</span>
+              <span>{ten}</span>
               <span className="flex gap-1.5">
                 <button className={btnPrimary + ' p-btn-sm'} disabled={!!dang} onClick={() => tai(dot)}>{dang === dot + 'word' ? 'Đang dựng…' : '⬇ Cả bộ Word'}</button>
                 {d.pdf && <button className={btnPrimary + ' p-btn-sm'} disabled={!!dang} onClick={() => tai(dot, null, 'pdf')} title="Từng PDF + 1 file gộp cả bộ để in">{dang === dot + 'pdf' ? 'Đang đổi PDF…' : '⬇ Cả bộ PDF'}</button>}
@@ -467,10 +567,10 @@ function XuatWord({ d, id, lh, toast, sua, taiLai }) {
               ) : <div className="text-sm rounded-lg bg-green-50 px-3 py-2 text-green-800">✓ Đủ dữ liệu chính.</div>}
               {nhac.length > 0 && <ul className="text-xs text-gray-500 list-disc ml-5">{nhac.map(t => <li key={t.muc}>{t.muc}</li>)}</ul>}
               <table className="p-tbl w-full"><tbody>
-                {mauCuaBo(dot, lh).map(m => (
+                {mauCuaBo(dot, lhm, d.bt, d.don_vi).map((m, i) => (
                   <tr key={m.ma}>
-                    <td className="l num w-8">{String(m.thuTu).padStart(2, '0')}</td>
-                    <td className="l">{m.ten}<div className="text-xs text-gray-500">{m.nguoiKy[lh]}</div></td>
+                    <td className="l num w-8">{String(i + 1).padStart(2, '0')}</td>
+                    <td className="l">{m.ten}<div className="text-xs text-gray-500">{m.nguoiKy[lhm]}{m.dieuKien ? ' · chỉ có khi đúng trường hợp' : ''}</div></td>
                     <td className="r whitespace-nowrap"><button className="p-btn p-btn-sm" disabled={!!dang} onClick={() => tai(dot, m.ma)}>{dang === dot + m.ma + 'word' ? '…' : '.docx'}</button>
                       {d.pdf && <button className="p-btn p-btn-sm ml-1" disabled={!!dang} onClick={() => tai(dot, m.ma, 'pdf')}>{dang === dot + m.ma + 'pdf' ? '…' : '.pdf'}</button>}</td>
                   </tr>
@@ -485,7 +585,7 @@ function XuatWord({ d, id, lh, toast, sua, taiLai }) {
                     {d.pdf && <button className="p-btn p-btn-sm" disabled={!!dang} onClick={() => tai(dot, 'HUONG_DAN', 'pdf')}>{dang === dot + 'HUONG_DANpdf' ? '…' : '.pdf'}</button>}
                   </span>
                 </div>
-                <ul className="list-disc ml-5 mt-1 text-sky-900">{(LUU_Y_IN_KY[dot]?.[lh] || []).map(l => <li key={l}>{l}</li>)}</ul>
+                <ul className="list-disc ml-5 mt-1 text-sky-900">{luuYInKy(d.bt || 'tlm', dot, lhm).map(l => <li key={l}>{l}</li>)}</ul>
                 <div className="text-xs text-sky-800 mt-1">Tờ hướng dẫn liệt kê từng file, ai ký, ký ở đâu, kèm họ tên người ký — có sẵn trong file .zip cả bộ (file 00).</div>
               </div>
             </div>
