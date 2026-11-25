@@ -4,6 +4,7 @@
 // Phần I chỉ cổ đông cá nhân; phần II cổ đông là tổ chức + người đại diện theo ủy quyền (trống thì một hàng trống).
 @ngang
 @co 10
+@gian 60
 @le 15/15/15/15
 #ci Mẫu số 7
 ~
@@ -47,10 +48,8 @@
 ~
 ||
 #ci ……, ngày……tháng……năm……
-#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
-#cb CỦA DOANH NGHIỆP
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT CỦA DOANH NGHIỆP
 #ci (Ký và ghi họ tên)
-~
 ~
 ~
 ~

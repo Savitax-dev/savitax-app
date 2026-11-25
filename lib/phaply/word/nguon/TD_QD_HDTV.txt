@@ -1,0 +1,122 @@
+// Quyết định của Hội đồng thành viên (TNHH 2TV) về việc thay đổi nội dung đăng ký doanh nghiệp. Theo bản phòng (2_QUYẾT ĐỊNH HỘI
+// ĐỒNG THÀNH VIÊN.pdf): căn cứ Biên bản họp HĐTV; Chủ tịch HĐTV ký "TM. Hội đồng thành viên". Gom nội dung vào Điều 1 như TD_QD_CSH
+// (thân chung — sửa câu chữ thì sửa cả 3 file).
+::cot 45/55
+#cb {ten_cty}
+#c --------------------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: ……/QĐ-HĐTV
+||
+#ci …………., ngày….…/….../……..
+::
+~
+# QUYẾT ĐỊNH
+#cb Về việc: Thay đổi nội dung đăng ký doanh nghiệp
+~
+#cb HỘI ĐỒNG THÀNH VIÊN
+~
+- Căn cứ Luật Doanh nghiệp số 59/2020/QH14 được Quốc hội thông qua ngày 17 tháng 06 năm 2020; Luật sửa đổi bổ sung một số điều của Luật Doanh nghiệp ngày 17 tháng 6 năm 2025;
+- Căn cứ Điều lệ {ten_cty};
+- Căn cứ Biên bản họp số ...../BBH-HĐTV của Hội đồng thành viên thông qua ngày …../…../…...... về việc thay đổi nội dung đăng ký doanh nghiệp.
+~
+#cb QUYẾT ĐỊNH
+~
+#bk Điều 1. Thông qua việc thay đổi nội dung đăng ký doanh nghiệp của {ten_cty} như sau:
+{#td_ten}
+#bk - Thay đổi tên doanh nghiệp như sau:
+#l Tên doanh nghiệp viết bằng tiếng Việt sau khi thay đổi *(ghi bằng chữ in hoa)*: **{tt_ten_moi}**
+{#tt_ten_moi_nn}
+#l Tên doanh nghiệp viết bằng tiếng nước ngoài sau khi thay đổi: **{tt_ten_moi_nn}**
+{/tt_ten_moi_nn}
+{#tt_ten_moi_viet_tat}
+#l Tên doanh nghiệp viết tắt sau khi thay đổi: **{tt_ten_moi_viet_tat}**
+{/tt_ten_moi_viet_tat}
+{/td_ten}
+{#td_dia_chi}
+#bk - Thay đổi địa chỉ trụ sở chính như sau:
+#l Thay đổi địa chỉ từ: {dia_chi_tru_so}
+#l sang địa chỉ: **{tt_tru_so_moi}, Việt Nam**
+#l Địa chỉ trụ sở chính sau khi thay đổi:
+#l Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {tt_tru_so_moi_so_nha}
+#l Xã/Phường/Đặc khu: {tt_tru_so_moi_xa}
+#l Tỉnh/Thành phố trực thuộc trung ương: {tt_tru_so_moi_tinh}
+{/td_dia_chi}
+{#td_dai_dien}
+#bk - Thay đổi người đại diện theo pháp luật của công ty như sau:
+#l Thay đổi từ {dd_danh_xung} **{dd_ho_ten}** sang {#tt_dm_gioi_tinh_nam}Ông{/tt_dm_gioi_tinh_nam}{#tt_dm_gioi_tinh_nu}Bà{/tt_dm_gioi_tinh_nu}{^tt_dm_gioi_tinh}Ông/Bà{/tt_dm_gioi_tinh} **{tt_dm_ho_ten}**
+#l Người đại diện theo pháp luật sau khi thay đổi: **{tt_dm_ho_ten}**
+#l Ngày, tháng, năm sinh: {tt_dm_ngay_sinh}[>55]Giới tính: {tt_dm_gioi_tinh}
+#l Số định danh cá nhân: {tt_dm_so_giay_to}
+#l Chức danh: {tt_dm_chuc_danh}
+#l Địa chỉ liên lạc: {tt_dm_dia_chi}
+{/td_dai_dien}
+{#td_tang_von}
+#bk - Tăng vốn điều lệ như sau:
+#l Vốn điều lệ đã đăng ký: {tt_von_cu}{^tt_von_cu}{von_dieu_le}{/tt_von_cu} đồng *({#tt_von_cu}{tt_von_cu_chu} đồng{/tt_von_cu}{^tt_von_cu}{von_dieu_le_chu}{/tt_von_cu})*
+#l Vốn điều lệ sau khi tăng: **{tt_von_moi} đồng** *({tt_von_moi_chu} đồng)*
+#l Hình thức tăng vốn: {tt_hinh_thuc_von}
+#l Thời điểm thay đổi vốn: {tt_thoi_diem_von}
+{/td_tang_von}
+{#td_giam_von}
+#bk - Giảm vốn điều lệ như sau:
+#l Vốn điều lệ đã đăng ký: {tt_von_cu}{^tt_von_cu}{von_dieu_le}{/tt_von_cu} đồng *({#tt_von_cu}{tt_von_cu_chu} đồng{/tt_von_cu}{^tt_von_cu}{von_dieu_le_chu}{/tt_von_cu})*
+#l Vốn điều lệ sau khi giảm: **{tt_von_moi} đồng** *({tt_von_moi_chu} đồng)*
+#l Hình thức giảm vốn: {tt_hinh_thuc_von}
+#l Thời điểm thay đổi vốn: {tt_thoi_diem_von}
+#l Công ty cam kết bảo đảm thanh toán đủ các khoản nợ và các nghĩa vụ tài sản khác sau khi giảm vốn.
+{/td_giam_von}
+{#td_thanh_vien}
+{#tt_tv_kieu_tang_von}
+#bk - Tiếp nhận thành viên mới do tăng vốn điều lệ:
+#l {#tt_nb_gioi_tinh_nam}Ông{/tt_nb_gioi_tinh_nam}{#tt_nb_gioi_tinh_nu}Bà{/tt_nb_gioi_tinh_nu}{^tt_nb_gioi_tinh}Ông/Bà{/tt_nb_gioi_tinh} **{tt_nb_ho_ten}**[>55]Ngày sinh: {tt_nb_ngay_sinh}
+#l Số định danh cá nhân: {tt_nb_so_giay_to}
+#l Địa chỉ thường trú: {tt_nb_dia_chi}
+#l Phần vốn góp, tỷ lệ phần vốn góp của các thành viên sau khi thay đổi theo Danh sách thành viên (Mẫu số 6) kèm theo.
+{/tt_tv_kieu_tang_von}
+{/td_thanh_vien}
+{#td_nganh}
+#bk - Bổ sung ngành, nghề kinh doanh sau:
+::bang vien 8^ 60< 12^ 20^
+#c STT | #c Tên ngành, nghề kinh doanh được bổ sung | #c Mã ngành | #c Ngành, nghề kinh doanh chính
+---
+{#tt_nganh_them}{stt} | {ten} | #c {ma} | #c {chinh}{/tt_nganh_them}
+::
+~
+#bk - Bỏ ngành, nghề kinh doanh sau:
+::bang vien 8^ 60< 12^ 20^
+#c STT | #c Tên ngành, nghề kinh doanh được bỏ khỏi danh sách đã đăng ký | #c Mã ngành | #c Ghi chú
+---
+{#tt_nganh_bo}{stt} | {ten} | #c {ma} | {/tt_nganh_bo}
+::
+~
+#bk - Sửa đổi chi tiết ngành, nghề kinh doanh sau:
+::bang vien 8^ 60< 12^ 20^
+#c STT | #c Tên ngành, nghề kinh doanh được sửa đổi chi tiết | #c Mã ngành | #c Ngành, nghề kinh doanh chính
+---
+{#tt_nganh_sua}{stt} | {ten} | #c {ma} | #c {chinh}{/tt_nganh_sua}
+::
+~
+{/td_nganh}
+**Điều 2.** Giao cho Người đại diện theo pháp luật tiến hành các thủ tục cần thiết theo quy định của pháp luật.
+**Điều 3.** Người đại diện theo pháp luật của công ty, các thành viên công ty có trách nhiệm thi hành Quyết định này.
+**Điều 4.** Quyết định này có hiệu lực kể từ ngày ký.
+~
+::cot 50/50
+#bi Nơi nhận:
+#l - Như Điều 2 (để thực hiện);
+#l - Phòng ĐKKD - Sở Tài chính (để đăng ký);
+#l - Lưu: VT.
+||
+#cb TM. HỘI ĐỒNG THÀNH VIÊN
+#cb CHỦ TỊCH HỘI ĐỒNG THÀNH VIÊN
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {ct_ho_ten}
+::

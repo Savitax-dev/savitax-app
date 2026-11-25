@@ -30,7 +30,7 @@ export async function GET(request, { params }) {
     const thieuTt = thieuThongTin(bt, donVi, tt).map(muc => ({ nhom: 'Thông tin thủ tục', muc, chan: true }))
     const thieu = Object.fromEntries(dsBo(bt).map(({ dot }) => [dot, [...conThieu(dauVao, { dot: dot === 'thue' ? 'thue' : 'so', bt }), ...thieuTt]]))
     return Response.json({
-      bt, don_vi: donVi, lh_mau: loaiHinhMau(hs.entity_type, d.entity?.entity_type), thong_tin: tt, co_thong_tin: oCua(bt, donVi).length > 0,
+      bt, don_vi: donVi, lh_mau: loaiHinhMau(hs.entity_type, d.entity?.entity_type), thong_tin: tt, noi_dung_thay_doi: hs.noi_dung_thay_doi || [], co_thong_tin: oCua(bt, donVi).length > 0,
       entity: d.entity, vai_tro: d.vaiTro.map(({ nguoi, ...v }) => ({ ...v, nguoi: anAnh(auth, nguoi) })),
       nganh: d.nganh, uy_quyen: anAnh(auth, d.uyQuyen), goi_y: d.goiY,
       thieu,

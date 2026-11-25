@@ -1,0 +1,38 @@
+// Cam kết không hoạt động xuất nhập khẩu — chấm dứt hoạt động CHI NHÁNH (hồ sơ thuế). Chỉ vào bộ khi hồ sơ tick "Chi nhánh không hoạt
+// động xuất nhập khẩu". Theo bản phòng pháp lý (2_CHI NHÁNH\1_HS_THUE\5_CK_KHONG_XNK): không có tên công ty ở đầu trang, thông tin công ty
+// (mã số thuế, ngày cấp, nơi cấp, trụ sở, ngành nghề chính) rồi thông tin chi nhánh. Khác bản phòng: thêm dòng ngày tháng.
+@co 12
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+#ri …………….., ngày….. tháng….. năm………
+~
+# CAM KẾT KHÔNG HOẠT ĐỘNG XUẤT NHẬP KHẨU
+#c Kính gửi: {tt_cqt_quan_ly}{^tt_cqt_quan_ly}{co_quan_thue}{^co_quan_thue}……………………………………………………………{/co_quan_thue}{/tt_cqt_quan_ly}
+~
+#l Tên doanh nghiệp: **{ten_cty}**
+#l Mã số thuế: {ma_dn}{^ma_dn}……………………{/ma_dn}[>55]Ngày cấp: {tt_dn_ngay_cap}{^tt_dn_ngay_cap}……/……/………{/tt_dn_ngay_cap}
+#l Nơi cấp: {tt_dn_noi_cap}{^tt_dn_noi_cap}{phong_dkkd}{^phong_dkkd}[...]{/phong_dkkd}{/tt_dn_noi_cap}
+Địa chỉ trụ sở: {dia_chi_tru_so}
+Ngành nghề: {#nganh}{#chinh}{ten}{/chinh}{/nganh}
+#l Chúng tôi có chi nhánh là:
+#lb {tt_ten}
+#l Mã số thuế: {tt_ma_so}{^tt_ma_so}……………………{/tt_ma_so}[>55]Ngày cấp: {tt_ngay_cap}{^tt_ngay_cap}……/……/………{/tt_ngay_cap}
+#l Nơi cấp: {tt_noi_cap}{^tt_noi_cap}{phong_dkkd}{^phong_dkkd}[...]{/phong_dkkd}{/tt_noi_cap}
+Địa chỉ chi nhánh: {tt_dia_chi}{^tt_dia_chi}[...]{/tt_dia_chi}
+Bằng văn bản này, Doanh nghiệp chúng tôi xin cam kết với {tt_cqt_quan_ly}{^tt_cqt_quan_ly}{co_quan_thue}{^co_quan_thue}………………………………{/co_quan_thue}{/tt_cqt_quan_ly} từ khi thành lập đến nay chi nhánh nêu trên không hoạt động xuất nhập khẩu.
+Doanh nghiệp xin cam đoan những lời khai báo trên hoàn toàn là sự thật, nếu có sai trái Doanh nghiệp xin hoàn toàn chịu trách nhiệm trước pháp luật.
+#k Chân thành cảm ơn.
+::cot 40/60
+~
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#c {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

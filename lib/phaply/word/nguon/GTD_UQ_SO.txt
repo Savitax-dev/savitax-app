@@ -1,0 +1,53 @@
+// Giấy ủy quyền nộp hồ sơ CHẤM DỨT HOẠT ĐỘNG đơn vị phụ thuộc (chi nhánh / VPĐD / ĐĐKD) tại Phòng ĐKKD. Dùng chung 1TV / 2TV / CP.
+// Theo bản phòng pháp lý (1_ĐỊA ĐIỂM KINH DOANH_SỞ\1_GUQ, 2_CHI NHÁNH\2_HS_SO\1_GUQ, 3_VPĐD\2_SO\1_GUQ — ba bản chỉ khác tên loại
+// đơn vị): bên ủy quyền là DOANH NGHIỆP, người được ủy quyền = nhân viên pháp lý (in sẵn). Khác bản phòng: "CCCD số" → "Số định danh
+// cá nhân" (như UQ_SO); số điện thoại công ty in khi hồ sơ có (bản VPĐD có, bản chi nhánh / ĐĐKD không).
+// {phong_dkkd} = Phòng ĐKKD nơi ĐẶT ĐƠN VỊ (có thể khác tỉnh với trụ sở công ty — VD bản ĐĐKD phòng nộp Hà Nội).
+@co 12
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+#ri …………….., ngày……/……/………
+~
+# GIẤY ỦY QUYỀN
+~
+#l Đơn vị ủy quyền: **{ten_cty}**
+#l Mã số doanh nghiệp: {ma_dn}{^ma_dn}[...]{/ma_dn}
+Trụ sở: {dia_chi_tru_so}
+#l Đại diện: **{dd_ho_ten}**[>55]Chức danh: {dd_chuc_danh}{^dd_chuc_danh}[...]{/dd_chuc_danh}
+{#cty_dien_thoai}
+#l Số điện thoại: {cty_dien_thoai}
+{/cty_dien_thoai}
+Bằng giấy này, chúng tôi ủy quyền cho:
+#l {uq_danh_xung}{^uq_danh_xung}Ông/Bà{/uq_danh_xung}: **{uq_ho_ten}**
+#l Số định danh cá nhân: {uq_so_giay_to}[>55]Ngày cấp: {uq_ngay_cap}
+#l Nơi cấp: {uq_noi_cap}
+Địa chỉ liên lạc: {uq_dia_chi_lien_lac}
+#l Số điện thoại: {uq_dien_thoai}{^uq_dien_thoai}[...]{/uq_dien_thoai}
+Để thực hiện thay chúng tôi với các nội dung như sau:
+- Thay mặt người đại diện theo pháp luật liên hệ {phong_dkkd}{^phong_dkkd}…………………………………{/phong_dkkd} để:
++ Nộp hồ sơ chấm dứt hoạt động **{tt_ten}**;
++ Nhận thông báo sửa đổi, bổ sung hồ sơ, rút hồ sơ, ký nhận kết quả.
+- Chúng tôi xin chịu trách nhiệm trước pháp luật về mọi cam kết do Bên được ủy quyền nhân danh chúng tôi thực hiện trong phạm vi ủy quyền nêu trên.
+- Chúng tôi công nhận đã hiểu rõ quyền, nghĩa vụ và lợi ích hợp pháp của mình và hậu quả pháp lý của việc ủy quyền.
+- Thời hạn ủy quyền: kể từ ngày ký cho đến khi hoàn tất các thủ tục về chấm dứt hoạt động {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd} nêu trên./.
+~
+::cot 45/55
+#cb NGƯỜI ĐƯỢC ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+~
+#cb {uq_ho_ten}
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#c {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+#cb {dd_ho_ten}
+::

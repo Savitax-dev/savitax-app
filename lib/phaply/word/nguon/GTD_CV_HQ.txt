@@ -1,0 +1,49 @@
+// Công văn đề nghị Hải quan xác nhận hoàn thành nghĩa vụ nộp thuế (Mẫu số 56) — chấm dứt hoạt động chi nhánh / VPĐD (hồ sơ thuế).
+// Chỉ vào bộ khi hồ sơ tick "Có công văn gửi Hải quan" (mặc định có). Theo bản "Mẫu 56" phòng pháp lý (3_VPĐD\1_THUE\5_MAU_56): căn cứ
+// khoản 1 Điều 41 Thông tư 86/2026/TT-BTC; địa chỉ + điện thoại liên hệ = Savitax / nhân viên phụ trách (Hải quan gửi văn bản xác nhận
+// về đây). Bản chi nhánh của phòng (2_CHI NHÁNH\1_HS_THUE\7_CV_GUI_HAIQUAN) căn cứ khoản 61 Điều 1 TT 121/2025 (sửa Điều 140 TT 38/2015)
+// và kê đủ thông tin chi nhánh — gộp theo Mẫu 56 (văn bản mới hơn), giữ thêm dòng mã số thuế công ty.
+// Bản DỰ PHÒNG để trống nơi nhận: GTD_CV_HQ_DP.
+@co 12
+@gian 60
+::cot 45/55
+#cb {ten_cty}
+#c ----------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: ……/CV
+#c V/v đề nghị xác nhận hoàn thành
+#c nghĩa vụ nộp thuế
+||
+#ci …………….., ngày….. tháng….. năm………
+::
+~
+#c Kính gửi: {tt_hai_quan}{^tt_hai_quan}……………………………………………………………{/tt_hai_quan}
+~
+Căn cứ khoản 1 Điều 41 Thông tư số 86/2026/TT-BTC ngày 30/6/2026 của Bộ trưởng Bộ Tài chính quy định về quản lý thuế đối với hàng hóa xuất khẩu, nhập khẩu.
+#l Tên công ty: **{ten_cty}**
+#l Mã số thuế: {ma_dn}{^ma_dn}[...]{/ma_dn}
+Địa chỉ *(đối với Công ty là địa chỉ ghi trên giấy chứng nhận đăng ký kinh doanh)*: {dia_chi_tru_so}
+#l Địa chỉ liên hệ: {sv_dia_chi}{^sv_dia_chi}[...]{/sv_dia_chi}
+#l Điện thoại liên hệ: {uq_dien_thoai}{^uq_dien_thoai}…………………{/uq_dien_thoai} - Người nhận: {uq_ho_ten}{^uq_ho_ten}[...]{/uq_ho_ten}
+Đề nghị {tt_hai_quan}{^tt_hai_quan}………………………………………{/tt_hai_quan} xác nhận hoàn thành nghĩa vụ nộp thuế cho **{tt_ten}**, mã số thuế: {tt_ma_so}{^tt_ma_so}……………………{/tt_ma_so}.
+#k Lý do xác nhận hoàn thành nghĩa vụ nộp thuế: để chấm dứt hoạt động {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}.
+::cot 42/58
+~
+#lb12 Nơi nhận:
+#l12 - Như trên;
+#l12 - Lưu: VT.
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#c {dd_chuc_danh}
+#ci (Ký, ghi rõ họ tên và đóng dấu)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

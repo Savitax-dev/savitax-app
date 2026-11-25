@@ -1,0 +1,216 @@
+// Mẫu số 12 — Giấy đề nghị đăng ký thay đổi nội dung GCN ĐKDN / Thông báo thay đổi nội dung đăng ký doanh nghiệp (TT 121/2026/TT-BTC,
+// Phụ lục I). Chữ theo bản trắng chính thức; cách làm theo phòng pháp lý (bảng chỉ tiêu 25/11/2026): "chỉ điền những chỉ tiêu cần
+// thay đổi, những chỉ tiêu không thay đổi sẽ ẩn/xóa đi" → mỗi trang của mẫu là một khối {#td_…} theo nội dung thay đổi đã chọn.
+// Bỏ hẳn (Savitax không làm): tách / sáp nhập, đất đảo-biên giới (nhà đầu tư nước ngoài), thành viên hợp danh, vốn đầu tư DNTN,
+// người đại diện theo ủy quyền của tổ chức nước ngoài, cổ đông là nhà đầu tư nước ngoài, mục C hiệu đính. Chưa in chú thích cuối trang.
+// Người ký theo ô "Người ký" (như Giấy ủy quyền).
+#cb MẪU SỐ 12
+#ci (Ban hành kèm theo Thông tư số 121/2026/TT-BTC ngày 21 tháng 8 năm 2026
+#ci của Bộ trưởng Bộ Tài chính)
+~
+::cot 40/60
+#cb {ten_cty}
+#c -------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c ---------------
+==
+#c Số: …………..
+||
+#ci ……, ngày…… tháng…… năm ……
+::
+~
+# GIẤY ĐỀ NGHỊ
+#cb Đăng ký thay đổi nội dung Giấy chứng nhận đăng ký doanh nghiệp/
+#cb Thông báo thay đổi nội dung đăng ký doanh nghiệp
+~
+#c Kính gửi: {tt_kinh_gui}{^tt_kinh_gui}{phong_dkkd}{/tt_kinh_gui}
+~
+#l Tên doanh nghiệp *(ghi bằng chữ in hoa)*: **{ten_cty}**
+#l Mã số doanh nghiệp/Mã số thuế: {ma_dn}
+~
+#bk A. ĐĂNG KÝ THAY ĐỔI NỘI DUNG ĐĂNG KÝ DOANH NGHIỆP/THÔNG BÁO THAY ĐỔI NỘI DUNG ĐĂNG KÝ DOANH NGHIỆP
+{#td_ten}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI TÊN DOANH NGHIỆP
+Tên doanh nghiệp viết bằng tiếng Việt sau khi thay đổi *(ghi bằng chữ in hoa)*: **{tt_ten_moi}**
+Tên doanh nghiệp viết bằng tiếng nước ngoài sau khi thay đổi *(nếu có)*: {tt_ten_moi_nn}{^tt_ten_moi_nn}[...]{/tt_ten_moi_nn}
+Tên doanh nghiệp viết tắt sau khi thay đổi *(nếu có)*: {tt_ten_moi_viet_tat}{^tt_ten_moi_viet_tat}[...]{/tt_ten_moi_viet_tat}
+{/td_ten}
+{#td_dia_chi}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI ĐỊA CHỈ TRỤ SỞ CHÍNH
+#l Địa chỉ trụ sở chính sau khi thay đổi:
+#l Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {tt_tru_so_moi_so_nha}
+#l Xã/Phường/Đặc khu: {tt_tru_so_moi_xa}
+#l Tỉnh/Thành phố trực thuộc trung ương: {tt_tru_so_moi_tinh}
+#l Điện thoại: {tt_ts_dien_thoai}{^tt_ts_dien_thoai}{cty_dien_thoai}{^cty_dien_thoai}[..45]{/cty_dien_thoai}{/tt_ts_dien_thoai}[>50]Số fax *(nếu có)*: {cty_fax}{^cty_fax}[...]{/cty_fax}
+#l Thư điện tử *(nếu có)*: {tt_ts_email}{^tt_ts_email}{cty_email}{^cty_email}[..45]{/cty_email}{/tt_ts_email}[>50]Website *(nếu có)*: {cty_website}{^cty_website}[...]{/cty_website}
+[x:tt_dc_thue_cung] Đồng thời thay đổi địa chỉ nhận thông báo thuế *(Đánh dấu X vào ô vuông nếu doanh nghiệp thay đổi địa chỉ nhận thông báo thuế tương ứng với địa chỉ trụ sở chính)*.
+- Doanh nghiệp nằm trong *(Doanh nghiệp phải đánh dấu X vào ô vuông tương ứng với khu công nghệ cao nếu nộp hồ sơ tới Ban quản lý khu công nghệ cao)*:
+#t Khu công nghiệp [ ][>40]Khu chế xuất [ ][>65]Khu kinh tế [ ]
+#t Khu công nghệ cao [ ]
+Doanh nghiệp/chủ doanh nghiệp tư nhân cam kết trụ sở doanh nghiệp thuộc quyền sử dụng hợp pháp của doanh nghiệp/chủ doanh nghiệp tư nhân và được sử dụng đúng mục đích theo quy định của pháp luật.
+{/td_dia_chi}
+{#td_thanh_vien}
+{#la_2tv}
+{^tt_tv_kieu_cn_noi_bo}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI THÀNH VIÊN CÔNG TY TNHH
+Trường hợp thay đổi thành viên công ty TNHH: *(kê khai Danh sách thành viên công ty TNHH theo Mẫu số 6 Phụ lục I ban hành kèm theo Thông tư này)* **Gửi kèm.**
+{/tt_tv_kieu_cn_noi_bo}
+{/la_2tv}
+{/td_thanh_vien}
+{#td_tang_von}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI VỐN ĐIỀU LỆ, PHẦN VỐN GÓP, TỶ LỆ PHẦN VỐN GÓP
+#bk 1. Đăng ký thay đổi vốn điều lệ của công ty:
+Vốn điều lệ đã đăng ký *(bằng số, bằng chữ, VNĐ)*: {tt_von_cu}{^tt_von_cu}{von_dieu_le}{/tt_von_cu} đồng *({#tt_von_cu}{tt_von_cu_chu} đồng{/tt_von_cu}{^tt_von_cu}{von_dieu_le_chu}{/tt_von_cu})*
+Vốn điều lệ sau khi thay đổi *(bằng số, bằng chữ, VNĐ)*: **{tt_von_moi} đồng** *({tt_von_moi_chu} đồng)*
+#l Giá trị tương đương theo đơn vị tiền nước ngoài *(nếu có, ghi bằng số, loại ngoại tệ)*: [...]
+Có hiển thị thông tin về giá trị tương đương theo đơn vị tiền tệ nước ngoài trên Giấy chứng nhận đăng ký doanh nghiệp hay không? Có [ ] Không [ ]
+#l Thời điểm thay đổi vốn: {tt_thoi_diem_von}
+#l Hình thức tăng, giảm vốn: {tt_hinh_thuc_von}
+#lk Nguồn vốn điều lệ sau khi thay đổi vốn điều lệ:
+::bang vien 40< 40^ 20^
+#c Loại nguồn vốn | #c Số tiền *(bằng số; VNĐ và giá trị tương đương theo đơn vị tiền nước ngoài, nếu có)* | #c Tỷ lệ (%)
+---
+Vốn ngân sách nhà nước | #c | #c
+Vốn tư nhân | {tt_von_moi} | 100%
+Vốn nước ngoài | #c | #c
+Vốn khác | #c | #c
+#b Tổng cộng | #cb {tt_von_moi} | #cb 100%
+::
+#lk Tài sản góp vốn sau khi thay đổi vốn điều lệ:
+::bang vien 8^ 47< 30^ 15^
+#c STT | #c Tài sản góp vốn | #c Giá trị vốn của từng tài sản trong vốn điều lệ *(bằng số, VNĐ)* | #c Tỷ lệ (%)
+---
+#c 1 | Đồng Việt Nam | #c {tt_von_moi} | #c 100%
+#c 2 | Ngoại tệ tự do chuyển đổi *(ghi rõ loại ngoại tệ, số tiền được góp bằng mỗi loại ngoại tệ)* | #c | #c
+#c 3 | Vàng | #c | #c
+#c 4 | Quyền sử dụng đất | #c | #c
+#c 5 | Quyền sở hữu trí tuệ | #c | #c
+#c 6 | Các tài sản khác *(ghi rõ loại tài sản, số lượng và giá trị còn lại của mỗi loại tài sản)* | #c | #c
+#cb Tổng số | << | #cb {tt_von_moi} | #cb 100%
+::
+{#la_cp}
+#lk Thông tin về cổ phần: Mệnh giá cổ phần: {menh_gia} đồng
+::bang vien 8^ 37< 17^ 21^ 17^
+#c STT | #c Loại cổ phần | #c Số lượng | #c Giá trị *(bằng số, VNĐ)* | #c Tỉ lệ so với vốn điều lệ (%)
+---
+#c 1 | Cổ phần phổ thông | #c {tt_so_cp_moi} | #c {tt_von_moi} | #c 100%
+#c 2 | Cổ phần ưu đãi biểu quyết | #c | #c | #c
+#c 3 | Cổ phần ưu đãi cổ tức | #c | #c | #c
+#c 4 | Cổ phần ưu đãi hoàn lại | #c | #c | #c
+#c 5 | Các cổ phần ưu đãi khác | #c | #c | #c
+#cb Tổng số | << | #cb {tt_so_cp_moi} | #cb {tt_von_moi} | #cb 100%
+::
+{/la_cp}
+{#la_2tv}
+**2. Đăng ký thay đổi phần vốn góp, tỷ lệ phần vốn góp công ty TNHH:** **Gửi kèm.** Kê khai phần vốn góp, tỷ lệ phần vốn góp mới của thành viên công ty TNHH hai thành viên trở lên theo Mẫu số 6 Phụ lục I ban hành kèm theo Thông tư này. *(Đối với thành viên có phần vốn góp không thay đổi, trong danh sách thành viên không bắt buộc phải có chữ ký của thành viên đó).*
+{/la_2tv}
+{/td_tang_von}
+{#td_giam_von}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI VỐN ĐIỀU LỆ, PHẦN VỐN GÓP, TỶ LỆ PHẦN VỐN GÓP
+#bk 1. Đăng ký thay đổi vốn điều lệ của công ty:
+Vốn điều lệ đã đăng ký *(bằng số, bằng chữ, VNĐ)*: {tt_von_cu}{^tt_von_cu}{von_dieu_le}{/tt_von_cu} đồng *({#tt_von_cu}{tt_von_cu_chu} đồng{/tt_von_cu}{^tt_von_cu}{von_dieu_le_chu}{/tt_von_cu})*
+Vốn điều lệ sau khi thay đổi *(bằng số, bằng chữ, VNĐ)*: **{tt_von_moi} đồng** *({tt_von_moi_chu} đồng)*
+#l Thời điểm thay đổi vốn: {tt_thoi_diem_von}
+#l Hình thức tăng, giảm vốn: {tt_hinh_thuc_von}
+#lk Nguồn vốn điều lệ sau khi thay đổi vốn điều lệ:
+::bang vien 40< 40^ 20^
+#c Loại nguồn vốn | #c Số tiền *(bằng số, VNĐ)* | #c Tỷ lệ (%)
+---
+Vốn tư nhân | {tt_von_moi} | 100%
+#b Tổng cộng | #cb {tt_von_moi} | #cb 100%
+::
+#lk Tài sản góp vốn sau khi thay đổi vốn điều lệ:
+::bang vien 8^ 47< 30^ 15^
+#c STT | #c Tài sản góp vốn | #c Giá trị vốn của từng tài sản trong vốn điều lệ *(bằng số, VNĐ)* | #c Tỷ lệ (%)
+---
+#c 1 | Đồng Việt Nam | #c {tt_von_moi} | #c 100%
+#cb Tổng số | << | #cb {tt_von_moi} | #cb 100%
+::
+{#la_cp}
+#l Thông tin về cổ phần: Mệnh giá cổ phần: {menh_gia} đồng; cổ phần phổ thông: {tt_so_cp_moi} cổ phần, giá trị {tt_von_moi} đồng, 100% vốn điều lệ.
+{/la_cp}
+Doanh nghiệp cam kết bảo đảm thanh toán đủ các khoản nợ và các nghĩa vụ tài sản khác sau khi giảm vốn.
+{/td_giam_von}
+{#la_2tv}
+{#td_thanh_vien}
+{#tt_tv_kieu_cn_noi_bo}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI VỐN ĐIỀU LỆ, PHẦN VỐN GÓP, TỶ LỆ PHẦN VỐN GÓP
+**2. Đăng ký thay đổi phần vốn góp, tỷ lệ phần vốn góp công ty TNHH:** **Gửi kèm.** Kê khai phần vốn góp, tỷ lệ phần vốn góp mới của thành viên công ty TNHH hai thành viên trở lên theo Mẫu số 6 Phụ lục I ban hành kèm theo Thông tư này. *(Đối với thành viên có phần vốn góp không thay đổi, trong danh sách thành viên không bắt buộc phải có chữ ký của thành viên đó).*
+{/tt_tv_kieu_cn_noi_bo}
+{/td_thanh_vien}
+{/la_2tv}
+{#td_nganh}
+~
+#cbk THÔNG BÁO THAY ĐỔI NGÀNH, NGHỀ KINH DOANH
+#lk 1. Bổ sung ngành, nghề kinh doanh sau:
+::bang vien 8^ 57< 13^ 22^
+#c STT | #c Tên ngành, nghề kinh doanh được bổ sung | #c Mã ngành | #c Ngành, nghề kinh doanh chính
+---
+{#tt_nganh_them}{stt} | {ten} | #c {ma} | #c {chinh}{/tt_nganh_them}
+::
+~
+#lk 2. Bỏ ngành, nghề kinh doanh sau:
+::bang vien 8^ 57< 13^ 22^
+#c STT | #c Tên ngành, nghề kinh doanh được bỏ khỏi danh sách đã đăng ký | #c Mã ngành | #c Ghi chú
+---
+{#tt_nganh_bo}{stt} | {ten} | #c {ma} | {/tt_nganh_bo}
+::
+~
+#lk 3. Sửa đổi chi tiết ngành, nghề kinh doanh sau:
+::bang vien 8^ 57< 13^ 22^
+#c STT | #c Tên ngành, nghề kinh doanh được sửa đổi chi tiết | #c Mã ngành | #c Ngành, nghề kinh doanh chính
+---
+{#tt_nganh_sua}{stt} | {ten} | #c {ma} | #c {chinh}{/tt_nganh_sua}
+::
+~
+Doanh nghiệp cam kết đáp ứng điều kiện tiếp cận thị trường đối với các ngành nghề thuộc Danh mục ngành, nghề hạn chế tiếp cận thị trường đối với nhà đầu tư nước ngoài theo quy định của pháp luật về đầu tư.
+{/td_nganh}
+{#la_cp}
+{#td_thanh_vien}
+~
+#cbk THÔNG BÁO THAY ĐỔI CỔ ĐÔNG SÁNG LẬP
+Trường hợp thay đổi cổ đông sáng lập *(kê khai theo Mẫu số 7 Phụ lục I ban hành kèm theo Thông tư này)*: **Gửi kèm** *(Đối với cổ đông sáng lập có phần vốn góp không thay đổi, trong danh sách cổ đông sáng lập không bắt buộc phải có chữ ký của cổ đông sáng lập đó)*.
+{/td_thanh_vien}
+{/la_cp}
+{#td_thanh_vien}
+~
+#cbk THÔNG BÁO THAY ĐỔI THÔNG TIN VỀ CHỦ SỞ HỮU HƯỞNG LỢI CỦA DOANH NGHIỆP
+Trường hợp doanh nghiệp có sự thay đổi thông tin về chủ sở hữu hưởng lợi của doanh nghiệp đã kê khai với Cơ quan đăng ký kinh doanh cấp tỉnh thì doanh nghiệp kê khai theo Mẫu số 10 Phụ lục I ban hành kèm theo Thông tư này: **Gửi kèm.**
+{/td_thanh_vien}
+{^td_thanh_vien}
+{#tt_doi_cshhl}
+~
+#cbk THÔNG BÁO THAY ĐỔI THÔNG TIN VỀ CHỦ SỞ HỮU HƯỞNG LỢI CỦA DOANH NGHIỆP
+Trường hợp doanh nghiệp có sự thay đổi thông tin về chủ sở hữu hưởng lợi của doanh nghiệp đã kê khai với Cơ quan đăng ký kinh doanh cấp tỉnh thì doanh nghiệp kê khai theo Mẫu số 10 Phụ lục I ban hành kèm theo Thông tư này: **Gửi kèm.**
+{/tt_doi_cshhl}
+{/td_thanh_vien}
+{#td_cap_nhat}
+~
+#bk B. BỔ SUNG, CẬP NHẬT THÔNG TIN ĐĂNG KÝ DOANH NGHIỆP
+{tt_cap_nhat}
+{/td_cap_nhat}
+~
+[x:tt_xac_nhan] Đề nghị Quý Cơ quan cấp Giấy xác nhận thay đổi nội dung đăng ký doanh nghiệp cho doanh nghiệp đối với các thông tin thay đổi nêu trên. *(Đánh dấu X vào ô vuông nếu doanh nghiệp có nhu cầu được cấp Giấy xác nhận thay đổi nội dung đăng ký doanh nghiệp).*
+Trường hợp hồ sơ đăng ký doanh nghiệp hợp lệ, đề nghị Quý Cơ quan đăng công bố nội dung đăng ký doanh nghiệp trên Cổng thông tin quốc gia về đăng ký doanh nghiệp.
+Doanh nghiệp cam kết hoàn toàn chịu trách nhiệm trước pháp luật về tính hợp pháp, chính xác và trung thực của nội dung Thông báo này.
+Người ký tại Thông báo này cam kết là người có quyền và nghĩa vụ thực hiện thủ tục đăng ký doanh nghiệp theo quy định của pháp luật và Điều lệ công ty.
+~
+::cot 40/60
+~
+||
+#cb {#tt_nguoi_ky_dd}NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT{/tt_nguoi_ky_dd}{#tt_nguoi_ky_ct}{#la_1tv}CHỦ TỊCH CÔNG TY{/la_1tv}{#la_2tv}CHỦ TỊCH HỘI ĐỒNG THÀNH VIÊN{/la_2tv}{#la_cp}CHỦ TỊCH HỘI ĐỒNG QUẢN TRỊ{/la_cp}{/tt_nguoi_ky_ct}{#tt_nguoi_ky_dm}NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT{/tt_nguoi_ky_dm}{#tt_nguoi_ky_nb}CHỦ SỞ HỮU{/tt_nguoi_ky_nb}
+#ci (Ký và ghi họ tên)
+~
+~
+~
+~
+#cb {#tt_nguoi_ky_dd}{dd_ho_ten}{/tt_nguoi_ky_dd}{#tt_nguoi_ky_ct}{#la_1tv}{csh_ho_ten}{/la_1tv}{^la_1tv}{ct_ho_ten}{/la_1tv}{/tt_nguoi_ky_ct}{#tt_nguoi_ky_dm}{tt_dm_ho_ten}{/tt_nguoi_ky_dm}{#tt_nguoi_ky_nb}{tt_nb_ho_ten}{/tt_nguoi_ky_nb}
+::

@@ -1,0 +1,59 @@
+// TD_MAU7 — bản cho hồ sơ THAY ĐỔI: chép nguyên MAU7.txt (bản Thành lập mới, theo bản phòng) — danh sách lấy từ dữ liệu ĐANG LƯU ở tab
+// Người, nhân viên cập nhật danh sách SAU thay đổi trước khi xuất. Khác MAU7: cỡ chữ văn bản 12 (bảng vẫn cỡ 9). Sửa MAU7 thì xem sửa theo.
+// Mẫu số 7 — Danh sách cổ đông sáng lập công ty cổ phần. Theo bản phòng pháp lý đã nộp (CP, 09–10/2026).
+// Cập nhật 25/11/2026 theo Mẫu số 7 Phụ lục I TT 121/2026/TT-BTC (bỏ dòng "Ban hành kèm theo TT 68/2025"). Khổ ngang, 19 cột; cột 18 cổ đông ký, Giám đốc ký cuối.
+// Mọi cổ phần của cổ đông sáng lập là cổ phần phổ thông → cột 12–13 = cột 9–10; cột "……" (14–15) để trống.
+// Phần I chỉ cổ đông cá nhân; phần II cổ đông là tổ chức + người đại diện theo ủy quyền (trống thì một hàng trống).
+@ngang
+@co 10
+@gian 60
+@le 15/15/15/15
+#ci Mẫu số 7
+~
+#cb12 DANH SÁCH CỔ ĐÔNG SÁNG LẬP CÔNG TY CỔ PHẦN
+#cb {ten_cty}
+#b I. Cổ đông sáng lập là cá nhân
+::bang vien 24^ 51^ 50^ 34^ 58^ 36^ 30^ 51^ 39^ 58^ 28^ 37^ 58^ 28^ 30^ 34^ 42^ 42^ 30^ co=7
+#c STT | #c Tên cổ đông sáng lập | #c Ngày, tháng, năm sinh | #c Giới tính | #c Loại giấy tờ, số, ngày cấp, cơ quan cấp Giấy tờ pháp lý của cá nhân | #c Quốc tịch | #c Dân tộc | #c Địa chỉ liên lạc | #c Vốn góp | << | << | << | << | << | << | << | #c Thời hạn góp vốn | #c Chữ ký của cổ đông sáng lập | #c Ghi chú (nếu có)
+^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | #c Tổng số cổ phần | << | #c Tỷ lệ ( % ) | #c Loại cổ phần | << | << | << | #c Loại tài sản, số lượng, giá trị tài sản góp vốn | ^^ | ^^ | ^^
+^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | #c Số lượng | #c Giá trị | ^^ | #c Phổ thông | << | #c …….. | << | ^^ | ^^ | ^^ | ^^
+^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | #c Số lượng | #c Giá trị | #c Số lượng | #c Giá trị | ^^ | ^^ | ^^ | ^^
+#cb 1 | #cb 2 | #cb 3 | #cb 4 | #cb 5 | #cb 6 | #cb 7 | #cb 8 | #cb 9 | #cb 10 | #cb 11 | #cb 12 | #cb 13 | #cb 14 | #cb 15 | #cb 16 | #cb 17 | #cb 18 | #cb 19
+---
+{#co_dong_cn}{stt} | {ho_ten} | {ngay_sinh} | {gioi_tinh} | {giay_to_ngan} số: // {so_giay_to} // Ngày cấp: // {ngay_cap} // Nơi cấp: // {noi_cap} | {qt_bang} | {dt_bang} | {dia_chi_lien_lac} | {so_co_phan} | {gia_tri_co_phan} | {ty_le} | {so_co_phan} | {gia_tri_co_phan} | #c | #c | {loai_tai_san} | {thoi_han_gop} | #c | {/co_dong_cn}
+{^co_cd_cn} | | | | | | | | | | | | | | | | | | {/co_cd_cn}
+::
+~
+#bk II. Cổ đông sáng lập là tổ chức
+#bk 1. Thông tin cổ đông
+::bang vien 24^ 51^ 46^ 99^ 39^ 32^ 40^ 39^ 58^ 30^ 37^ 64^ 30^ 170^ co=7
+#c STT | #c Tên cổ đông sáng lập | #c Địa chỉ trụ sở chính | #c Số, ngày cấp, nơi cấp Giấy chứng nhận đăng ký doanh nghiệp; Quyết định thành lập hoặc giấy tờ có giá trị pháp lý tương đương | #c Vốn góp | << | << | << | << | << | << | << | #c Thời hạn góp vốn | #c Ghi chú (nếu có)
+^^ | ^^ | ^^ | ^^ | #c Tổng số cổ phần | << | #c Tỷ lệ ( % ) | #c Loại cổ phần | << | << | << | #c Loại tài sản, số lượng, giá trị tài sản góp vốn | ^^ | ^^
+^^ | ^^ | ^^ | ^^ | #c Số lượng | #c Giá trị | ^^ | #c Phổ thông | << | #c …….. | << | ^^ | ^^ | ^^
+^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | #c Số lượng | #c Giá trị | #c Số lượng | #c Giá trị | ^^ | ^^ | ^^
+#cb 1 | #cb 2 | #cb 3 | #cb 4 | #cb 5 | #cb 6 | #cb 7 | #cb 8 | #cb 9 | #cb 10 | #cb 11 | #cb 12 | #cb 13 | #cb 14
+---
+{#co_dong_tc}{stt} | {ho_ten} | {dia_chi_thuong_tru} | Mã số doanh nghiệp: {ma_so_dn} // Ngày cấp: {ngay_cap_dn} // Nơi cấp: {noi_cap_dn} | {so_co_phan} | {gia_tri_co_phan} | {ty_le} | {so_co_phan} | {gia_tri_co_phan} | #c | #c | {loai_tai_san} | {thoi_han_gop} | {#nguoi_uq}Người đại diện theo ủy quyền: {nguoi_uq}{/nguoi_uq} | {/co_dong_tc}
+{^co_cd_tc} | | | | | | | | | | | | | {/co_cd_tc}
+::
+~
+#bk 2. Thông tin người đại diện theo pháp luật/ủy quyền của cổ đông
+::bang vien 24^ 51^ 50^ 50^ 34^ 56^ 36^ 30^ 51^ 65^ 30^ 40^ 64^ 179^ co=7
+#c STT | #c Tên cổ đông sáng lập | #c Tên người đại diện theo pháp luật/người đại diện theo uỷ quyền | #c Ngày, tháng, năm sinh | #c Giới tính | #c Số, ngày cấp, cơ quan cấp Giấy tờ pháp lý của cá nhân | #c Quốc tịch | #c Dân tộc | #c Địa chỉ liên lạc | #c Vốn được ủy quyền | << | << | #c Chữ ký của người đại diện theo pháp luật/người đại diện theo uỷ quyền¹² | #c Ghi chú (nếu có)
+^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | ^^ | #l Tổng giá trị vốn được đại diện *( bằng số; VNĐ và giá trị tương đương theo đơn vị tiền nước ngoài, nếu có)* | #c Tỷ lệ (%) | #c Thời điểm đại diện phần vốn | ^^ | ^^
+#cb 1 | #cb 2 | #cb 3 | #cb 4 | #cb 5 | #cb 6 | #cb 7 | #cb 8 | #cb 9 | #cb 10 | #cb 11 | #cb 12 | #cb 13 | #cb 14
+---
+{#uq_tv}{stt} | {ten_tv} | {ho_ten} | {ngay_sinh} | {gioi_tinh} | {giay_to_ngan} số: // {so_giay_to} // Ngày cấp: // {ngay_cap} // Nơi cấp: // {noi_cap} | {qt_bang} | {dt_bang} | {dia_chi_lien_lac} | {von_uy_quyen} | {ty_le_uq} | {thoi_diem_dai_dien} | #c | {/uq_tv}
+{^co_uq_tv} | | | | | | | | | | | | | {/co_uq_tv}
+::
+::cot 60/40
+~
+||
+#ci ……, ngày……tháng……năm……
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT CỦA DOANH NGHIỆP
+#ci (Ký và ghi họ tên)
+~
+~
+~
+#cb {dd_ho_ten}
+::

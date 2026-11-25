@@ -1,0 +1,74 @@
+// Giấy ủy quyền nộp hồ sơ THAY ĐỔI đăng ký doanh nghiệp tại Phòng ĐKKD — dùng chung 1TV / 2TV / CP. Khuôn như UQ_SO (bản phòng,
+// pháp lý chốt 17/11/2026: không địa chỉ người ủy quyền) + câu nộp hồ sơ đổi thành "đăng ký thay đổi nội dung đăng ký doanh nghiệp".
+// Người ủy quyền theo ô "Người ký" (bảng chỉ tiêu của phòng): người đại diện theo pháp luật hiện tại · Chủ tịch công ty / HĐTV /
+// HĐQT (đổi người đại diện) · người đại diện mới · chủ sở hữu mới (đổi chủ sở hữu 1TV).
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+#ri …………….., ngày……/……/………
+~
+# GIẤY ỦY QUYỀN
+~
+{#tt_nguoi_ky_dd}
+#l {dd_danh_xung}: **{dd_ho_ten}**
+#l Số định danh cá nhân: {dd_so_giay_to}[>55]Ngày cấp: {dd_ngay_cap}
+#l Nơi cấp: {dd_noi_cap}
+#l Số điện thoại: {dd_dien_thoai}
+{/tt_nguoi_ky_dd}
+{#tt_nguoi_ky_ct}
+{#la_1tv}
+#l {csh_danh_xung}: **{csh_ho_ten}**
+#l Số định danh cá nhân: {csh_so_giay_to}[>55]Ngày cấp: {csh_ngay_cap}
+#l Nơi cấp: {csh_noi_cap}
+#l Số điện thoại: {csh_dien_thoai}
+{/la_1tv}
+{^la_1tv}
+#l {ct_danh_xung}: **{ct_ho_ten}**
+#l Số định danh cá nhân: {ct_so_giay_to}[>55]Ngày cấp: {ct_ngay_cap}
+#l Nơi cấp: {ct_noi_cap}
+#l Số điện thoại: {ct_dien_thoai}
+{/la_1tv}
+{/tt_nguoi_ky_ct}
+{#tt_nguoi_ky_dm}
+#l {#tt_dm_gioi_tinh_nam}Ông{/tt_dm_gioi_tinh_nam}{#tt_dm_gioi_tinh_nu}Bà{/tt_dm_gioi_tinh_nu}{^tt_dm_gioi_tinh}Ông/Bà{/tt_dm_gioi_tinh}: **{tt_dm_ho_ten}**
+#l Số định danh cá nhân: {tt_dm_so_giay_to}[>55]Ngày cấp: {tt_dm_ngay_cap}
+#l Nơi cấp: {tt_dm_noi_cap}
+#l Số điện thoại: {tt_dm_dien_thoai}
+{/tt_nguoi_ky_dm}
+{#tt_nguoi_ky_nb}
+#l {#tt_nb_gioi_tinh_nam}Ông{/tt_nb_gioi_tinh_nam}{#tt_nb_gioi_tinh_nu}Bà{/tt_nb_gioi_tinh_nu}{^tt_nb_gioi_tinh}Ông/Bà{/tt_nb_gioi_tinh}: **{tt_nb_ho_ten}**
+#l Số định danh cá nhân: {tt_nb_so_giay_to}[>55]Ngày cấp: {tt_nb_ngay_cap}
+#l Nơi cấp: {tt_nb_noi_cap}
+#l Số điện thoại: {tt_nb_dien_thoai}
+{/tt_nguoi_ky_nb}
+Bằng giấy này, chúng tôi ủy quyền cho:
+#l {uq_danh_xung}: **{uq_ho_ten}**
+#l Số định danh cá nhân: {uq_so_giay_to}[>55]Ngày cấp: {uq_ngay_cap}
+#l Nơi cấp: {uq_noi_cap}
+#l Số điện thoại: {uq_dien_thoai}
+#l Địa chỉ liên lạc: {uq_dia_chi_lien_lac}
+Để thực hiện thay chúng tôi với các nội dung như sau:
+- Thay mặt {#tt_nguoi_ky_nb}chủ sở hữu{/tt_nguoi_ky_nb}{^tt_nguoi_ky_nb}người đại diện theo pháp luật{/tt_nguoi_ky_nb} của **{ten_cty}** (mã số doanh nghiệp: {ma_dn}) liên hệ {tt_kinh_gui}{^tt_kinh_gui}{phong_dkkd}{/tt_kinh_gui} để:
++ Nộp hồ sơ đăng ký thay đổi nội dung đăng ký doanh nghiệp, nhận thông báo sửa đổi, bổ sung hồ sơ, rút hồ sơ;
++ Nhận kết quả, ký nhận Giấy chứng nhận đăng ký doanh nghiệp / Giấy xác nhận về việc thay đổi nội dung đăng ký doanh nghiệp.
+- Chúng tôi xin chịu trách nhiệm trước pháp luật về mọi cam kết do Bên được ủy quyền nhân danh chúng tôi thực hiện trong phạm vi ủy quyền nêu trên.
+- Chúng tôi công nhận đã hiểu rõ quyền, nghĩa vụ và lợi ích hợp pháp của mình và hậu quả pháp lý của việc ủy quyền.
+- Thời hạn ủy quyền: kể từ ngày ký cho đến khi bên được ủy quyền hoàn thành các thủ tục nêu trên./.
+~
+::cot 50/50
+#cb NGƯỜI ĐƯỢC ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {uq_ho_ten}
+||
+#cb NGƯỜI ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {#tt_nguoi_ky_dd}{dd_ho_ten}{/tt_nguoi_ky_dd}{#tt_nguoi_ky_ct}{#la_1tv}{csh_ho_ten}{/la_1tv}{^la_1tv}{ct_ho_ten}{/la_1tv}{/tt_nguoi_ky_ct}{#tt_nguoi_ky_dm}{tt_dm_ho_ten}{/tt_nguoi_ky_dm}{#tt_nguoi_ky_nb}{tt_nb_ho_ten}{/tt_nguoi_ky_nb}
+::

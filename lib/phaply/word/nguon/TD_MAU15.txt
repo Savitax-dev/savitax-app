@@ -1,0 +1,69 @@
+// Mẫu số 15 — Giấy đề nghị đăng ký thay đổi chủ sở hữu công ty TNHH một thành viên (TT 121/2026/TT-BTC, Phụ lục I). Chữ theo bản
+// trắng chính thức. Chủ sở hữu MỚI = nhóm ô "Bên nhận chuyển nhượng / chủ sở hữu mới" (tt_nb_…); chủ sở hữu CŨ = chủ sở hữu đang
+// lưu ở hồ sơ (csh_). Bảng chỉ tiêu của phòng: chủ sở hữu mới + chủ sở hữu cũ cùng ký.
+// Chỉ in mục 1 (chủ sở hữu mới là CÁ NHÂN); mục 2 (chủ sở hữu mới là tổ chức — mô hình + bảng người đại diện theo ủy quyền) chưa
+// làm: chưa có dữ liệu tổ chức mới. Bỏ dòng đất đảo-biên giới (chỉ khi có nhà đầu tư nước ngoài).
+#cb MẪU SỐ 15
+#ci (Ban hành kèm theo Thông tư số 121/2026/TT-BTC ngày 21 tháng 8 năm 2026
+#ci của Bộ trưởng Bộ Tài chính)
+~
+::cot 40/60
+#cb {ten_cty}
+#c -------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c ---------------
+==
+#c Số: …………..
+||
+#ci ……, ngày…… tháng…… năm ……
+::
+~
+# GIẤY ĐỀ NGHỊ
+#cb Đăng ký thay đổi chủ sở hữu công ty TNHH một thành viên
+~
+#c Kính gửi: {tt_kinh_gui}{^tt_kinh_gui}{phong_dkkd}{/tt_kinh_gui}
+~
+#l Tên doanh nghiệp *(ghi bằng chữ in hoa)*: **{ten_cty}**
+#l Mã số doanh nghiệp/Mã số thuế: {ma_dn}
+~
+#bk Đăng ký thay đổi chủ sở hữu công ty TNHH một thành viên với thông tin sau khi thay đổi như sau:
+#bk 1. Đối với chủ sở hữu là cá nhân
+#l Họ, chữ đệm và tên chủ sở hữu *(ghi bằng chữ in hoa)*: **{tt_nb_ho_ten}**
+#l Ngày, tháng, năm sinh: {tt_nb_ngay_sinh}
+#l Giới tính: {tt_nb_gioi_tinh}
+#l Số định danh cá nhân: {tt_nb_so_giay_to}
+#l Địa chỉ liên lạc:
+#t Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {tt_nb_dia_chi_so_nha}
+#t Xã/Phường/Đặc khu: {tt_nb_dia_chi_xa}
+#t Tỉnh/Thành phố trực thuộc trung ương: {tt_nb_dia_chi_tinh}
+#t Quốc gia: Việt Nam
+#l Điện thoại *(nếu có)*: {tt_nb_dien_thoai}{^tt_nb_dien_thoai}[..45]{/tt_nb_dien_thoai}[>50]Thư điện tử *(nếu có)*: {tt_nb_email}{^tt_nb_email}[...]{/tt_nb_email}
+*Trường hợp không có số định danh cá nhân hoặc việc kết nối giữa Cơ sở dữ liệu quốc gia về đăng ký doanh nghiệp với Cơ sở dữ liệu quốc gia về dân cư bị gián đoạn thì đề nghị kê khai các thông tin cá nhân dưới đây:*
+#l Dân tộc: [..45] Quốc tịch: [...]
+Số Hộ chiếu *(đối với cá nhân Việt Nam không có số định danh cá nhân)*/Số Hộ chiếu nước ngoài hoặc giấy tờ có giá trị thay thế hộ chiếu nước ngoài *(đối với cá nhân là người nước ngoài)*: [...]
+#l Ngày cấp: [..45] Nơi cấp: [...]
+#l Nơi thường trú: [...]
+~
+Trường hợp hồ sơ đăng ký doanh nghiệp hợp lệ, đề nghị Quý Cơ quan đăng công bố nội dung đăng ký doanh nghiệp trên Cổng thông tin quốc gia về đăng ký doanh nghiệp.
+Doanh nghiệp cam kết hoàn toàn chịu trách nhiệm trước pháp luật về tính hợp pháp, chính xác và trung thực của nội dung Giấy đề nghị này.
+Người ký tại Giấy đề nghị này cam kết là người có quyền và nghĩa vụ thực hiện thủ tục đăng ký doanh nghiệp theo quy định của pháp luật và Điều lệ công ty.
+~
+::cot 50/50
+#cb CHỦ SỞ HỮU MỚI
+#ci (Ký và ghi họ tên)
+~
+~
+~
+~
+#cb {tt_nb_ho_ten}
+||
+#cb CHỦ SỞ HỮU CŨ
+#ci (Ký và ghi họ tên)
+~
+~
+~
+~
+#cb {csh_ho_ten}
+::

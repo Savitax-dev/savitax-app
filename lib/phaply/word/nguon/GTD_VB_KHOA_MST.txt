@@ -1,0 +1,47 @@
+// Văn bản đề nghị xác nhận không phát sinh thuế và khóa mã số thuế — chấm dứt hoạt động chi nhánh / VPĐD (hồ sơ thuế). Dùng chung
+// 1TV / 2TV / CP. Theo bản phòng pháp lý (2_CHI NHÁNH\1_HS_THUE\9_VB_KHOA_MST, 3_VPĐD\1_THUE\6_VB_KMST): thông tin công ty, thông tin
+// đơn vị, căn cứ quyết định chấm dứt rồi lời đề nghị. Bản VPĐD đặt thông tin đơn vị sau lời đề nghị — gộp theo thứ tự bản chi nhánh.
+@co 12
+::cot 42/58
+#cb {ten_cty}
+#c ----------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: ……/XN
+||
+#ci …………….., ngày……/……/………
+::
+~
+# VĂN BẢN ĐỀ NGHỊ XÁC NHẬN KHÔNG PHÁT SINH THUẾ
+# VÀ KHÓA MÃ SỐ THUẾ
+#c Kính gửi: {tt_cqt_quan_ly}{^tt_cqt_quan_ly}{co_quan_thue}{^co_quan_thue}……………………………………………………………{/co_quan_thue}{/tt_cqt_quan_ly}
+~
+Tôi **{dd_ho_ten}** là {dd_chuc_danh}{^dd_chuc_danh}người đại diện theo pháp luật{/dd_chuc_danh} của **{ten_cty}**
+#l Mã số doanh nghiệp: {ma_dn}{^ma_dn}……………………{/ma_dn}[>55]Ngày cấp: {tt_dn_ngay_cap}{^tt_dn_ngay_cap}……/……/………{/tt_dn_ngay_cap}
+#l Nơi cấp: {tt_dn_noi_cap}{^tt_dn_noi_cap}{phong_dkkd}{^phong_dkkd}[...]{/phong_dkkd}{/tt_dn_noi_cap}
+Địa chỉ trụ sở: {dia_chi_tru_so}
+#l Tên {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}: **{tt_ten}**
+#l Mã số {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}: {tt_ma_so}{^tt_ma_so}……………………{/tt_ma_so}[>55]Ngày cấp: {tt_ngay_cap}{^tt_ngay_cap}……/……/………{/tt_ngay_cap}
+#l Nơi cấp: {tt_noi_cap}{^tt_noi_cap}{phong_dkkd}{^phong_dkkd}[...]{/phong_dkkd}{/tt_noi_cap}
+Địa chỉ {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}: {tt_dia_chi}{^tt_dia_chi}[...]{/tt_dia_chi}
+#l Người đứng đầu {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}: {ndd_ho_ten}{^ndd_ho_ten}[...]{/ndd_ho_ten}
+#l Căn cứ quyết định chấm dứt hoạt động {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} ngày: ……/……/………
+Nay doanh nghiệp chúng tôi gửi văn bản này đến {tt_cqt_quan_ly}{^tt_cqt_quan_ly}{co_quan_thue}{^co_quan_thue}………………………………{/co_quan_thue}{/tt_cqt_quan_ly} để xác nhận {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} Công ty chúng tôi không phát sinh thuế và tiến hành khóa mã số thuế {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} để chúng tôi tiếp tục thực hiện thủ tục chấm dứt hoạt động tại **{tt_ten}**.
+Chúng tôi hoàn toàn chịu trách nhiệm trước pháp luật về nội dung của văn bản này.
+#k Trân trọng kính chào.
+::cot 40/60
+~
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#c {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

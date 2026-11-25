@@ -3,6 +3,7 @@
 // mục 4 ("Thông tin đại lý thuế", "Hợp đồng đại lý thuế"), dòng chứng chỉ ("Chứng chỉ hành nghề số") và dòng ký
 // ("(Ký, ghi họ tên và đóng dấu)") — chờ chuyên viên pháp lý chốt. Ô "Doanh nghiệp, hợp tác xã" đánh dấu sẵn.
 @co 12
+@gian 70
 @le 20/15/25/15
 #c Mẫu số: **08-MST**
 #c (Kèm theo Thông tư số 90/2026/TT-BTC ngày 30/6/2026 của Bộ trưởng Bộ Tài chính)

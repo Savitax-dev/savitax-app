@@ -449,17 +449,21 @@ function Nganh({ d, sua, goi }) {
 
 // ─── Thông tin thủ tục (legal_cases.thong_tin — khuôn ô ở lib/phaply/thongTin.js, form tự dựng theo khuôn) ──────────────────
 function ThongTinThuTuc({ d, sua, goi }) {
-  const ds = oCua(d.bt, d.don_vi)
   const dau = () => d.thong_tin || {}
   const [f, setF] = useState(dau)
   useEffect(() => { setF(dau()) }, [d.thong_tin]) // eslint-disable-line react-hooks/exhaustive-deps
   const set = (k, v) => setF(o => ({ ...o, [k]: v }))
   const doi = JSON.stringify(f) !== JSON.stringify(dau())
+  // khi: 'td_<nội dung thay đổi>' (chọn lúc tạo hồ sơ) hoặc khoá ô có/không khác — chỉ hiện ô khi điều kiện đúng
+  const hien = o => !o.khi || (o.khi.startsWith('td_') ? (d.noi_dung_thay_doi || []).includes(o.khi.slice(3)) : !!f[o.khi])
+  const ds = oCua(d.bt, d.don_vi).filter(hien)
   const o1 = o => {
     const v = f[o.k] ?? (o.kieu === 'chon' ? o.md : undefined)
     if (o.kieu === 'co') return <label key={o.k} className="flex items-center gap-2 text-sm md:col-span-2"><input type="checkbox" disabled={!sua} checked={!!v} onChange={e => set(o.k, e.target.checked)} />{o.nhan}</label>
     if (o.kieu === 'dia_chi') return <div key={o.k} className="md:col-span-2"><DiaChiChon nhan={o.nhan} value={v} disabled={!sua} onChange={x => set(o.k, x)} /></div>
-    if (o.kieu === 'nganh') return <NganhDonVi key={o.k} o={o} v={v || []} nganhMe={d.nganh || []} sua={sua} onChange={x => set(o.k, x)} />
+    if (o.kieu === 'nganh') return d.bt === 'tlm_dvpt'
+      ? <NganhDonVi key={o.k} o={o} v={v || []} nganhMe={d.nganh || []} sua={sua} onChange={x => set(o.k, x)} />
+      : <NganhTuDo key={o.k} o={o} v={v || []} sua={sua} onChange={x => set(o.k, x)} />
     return (
       <Field key={o.k} label={o.nhan + (o.bat_buoc ? ' *' : '')} className={o.kieu === 'dai' ? 'md:col-span-2' : ''}>
         {o.kieu === 'chon' ? <select className={inputCls} disabled={!sua} value={v || ''} onChange={e => set(o.k, e.target.value)}>{o.chon.map(([g, n]) => <option key={g} value={g}>{n}</option>)}</select>
@@ -478,6 +482,28 @@ function ThongTinThuTuc({ d, sua, goi }) {
         {doi && <button className={btnGhost} onClick={() => setF(dau())}>Bỏ thay đổi</button>}
         <button className={btnPrimary} disabled={!doi} onClick={() => goi({ action: 'thong_tin', thong_tin: f }, 'Đã lưu thông tin thủ tục')}>Lưu</button>
       </div>}
+    </div>
+  )
+}
+
+// Ngành nhập tự do (thay đổi: ngành bổ sung / bỏ / sửa…) — mã + tên + chi tiết, đánh dấu ngành chính
+function NganhTuDo({ o, v, sua, onChange }) {
+  const doi = (i, k, x) => onChange(v.map((n, j) => (j === i ? { ...n, [k]: x } : n)))
+  return (
+    <div className="md:col-span-2">
+      <div className="text-sm font-medium mb-1">{o.nhan} <span className="text-xs text-gray-500">({v.length})</span></div>
+      {v.length > 0 && <table className="p-tbl w-full"><tbody>
+        {v.map((n, i) => (
+          <tr key={i}>
+            <td className="l w-24"><input className={inputCls} disabled={!sua} value={n.ma || ''} placeholder="Mã" onChange={e => doi(i, 'ma', e.target.value)} /></td>
+            <td className="l"><input className={inputCls} disabled={!sua} value={n.ten || ''} placeholder="Tên ngành" onChange={e => doi(i, 'ten', e.target.value)} />
+              <input className={inputCls + ' mt-1'} disabled={!sua} value={n.chi_tiet || ''} placeholder="Chi tiết (nếu có)" onChange={e => doi(i, 'chi_tiet', e.target.value)} /></td>
+            <td className="r w-28 whitespace-nowrap"><label className="text-xs inline-flex items-center gap-1"><input type="checkbox" disabled={!sua} checked={!!n.chinh} onChange={e => doi(i, 'chinh', e.target.checked)} />chính</label>
+              {sua && <button className="p-btn p-btn-sm ml-1" onClick={() => onChange(v.filter((_, j) => j !== i))}>✕</button>}</td>
+          </tr>
+        ))}
+      </tbody></table>}
+      {sua && <button className="p-btn p-btn-sm mt-1" onClick={() => onChange([...v, { ma: '', ten: '', chi_tiet: '', chinh: false }])}>+ Thêm ngành</button>}
     </div>
   )
 }

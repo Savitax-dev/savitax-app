@@ -4,6 +4,7 @@
 // Phần I chỉ thành viên cá nhân; phần II thành viên là tổ chức + người đại diện theo ủy quyền (trống thì một hàng trống).
 @ngang
 @co 10
+@gian 60
 @le 15/15/15/15
 #cb Mẫu số 6
 #cb13 DANH SÁCH THÀNH VIÊN CÔNG TY TRÁCH NHIỆM HỮU HẠN HAI THÀNH VIÊN TRỞ LÊN
@@ -44,7 +45,6 @@
 #cb ……, ngày……tháng……năm……
 #cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
 #ci (Ký và ghi họ tên)
-~
 ~
 ~
 ~

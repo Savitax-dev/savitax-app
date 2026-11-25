@@ -1,0 +1,200 @@
+// Mẫu số 2 (Phụ lục II) — Giấy đề nghị đăng ký thay đổi nội dung đăng ký hộ kinh doanh. Chữ theo bản trắng chính thức; cách trình
+// bày theo 2 bản phòng (bổ sung ngành, tăng vốn — 5_THAY ĐỔI_… / THAY ĐỔI_HỘ KINH DOANH). Bản phòng giữ mọi trang trống, mỗi trang một
+// nội dung; ở đây chỉ in trang của nội dung thay đổi đã chọn (cờ td_…) như cách phòng làm Mẫu 12 công ty, KHÔNG ép sang trang.
+// Mục C (cấp đổi giấy chứng nhận — hộ đăng ký trước 01/07/2025) in khi tick ô "cap_doi" (mặc định có, cả 2 bản phòng đều kê khai),
+// điền theo thông tin ĐANG LƯU của hộ. Bảng thành viên hộ gia đình: hàng 1 là chủ hộ (đổi chủ hộ → chủ hộ MỚI), sau đó các thành viên
+// đang lưu ở tab Người (cập nhật danh sách SAU thay đổi trước khi xuất). Cột 6–9 trống khi giấy tờ là căn cước (chú thích của mẫu).
+// Chưa in chú thích cuối trang của mẫu.
+#rb Mẫu số 2
+::cot 40/60
+#cb {ten_cty}
+#c -------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c ---------------
+==
+#c Số: …………..
+||
+#ci ……, ngày…… tháng…… năm ……
+::
+~
+# GIẤY ĐỀ NGHỊ
+#cb Đăng ký thay đổi nội dung đăng ký hộ kinh doanh
+#ci (Dùng trong trường hợp đăng ký thay đổi nội dung đăng ký hộ kinh doanh, đăng ký cập nhật, bổ sung,
+#ci hiệu đính thông tin đăng ký hộ kinh doanh, đăng ký cấp đổi Giấy chứng nhận đăng ký hộ kinh doanh)
+~
+#c Kính gửi: {tt_co_quan_dk}{^tt_co_quan_dk}{phong_dkkd}{^phong_dkkd}…………………………………{/phong_dkkd}{/tt_co_quan_dk}
+~
+#l Tên hộ kinh doanh *(ghi bằng chữ in hoa)*: **{ten_cty}**
+#l Mã số hộ kinh doanh/Mã số đăng ký hộ kinh doanh/Mã số thuế: {ma_dn}
+~
+#bk A. ĐĂNG KÝ THAY ĐỔI NỘI DUNG ĐĂNG KÝ HỘ KINH DOANH
+Hộ kinh doanh đăng ký thay đổi nội dung đăng ký hộ kinh doanh như sau:
+{#td_ten}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI TÊN HỘ KINH DOANH
+Tên hộ kinh doanh viết bằng tiếng Việt sau khi thay đổi *(ghi bằng chữ in hoa)*: **{tt_ten_moi}**
+Tên hộ kinh doanh viết bằng tiếng nước ngoài sau khi thay đổi *(nếu có)*: {tt_ten_moi_nn}{^tt_ten_moi_nn}[...]{/tt_ten_moi_nn}
+Tên hộ kinh doanh viết tắt sau khi thay đổi *(nếu có)*: {tt_ten_moi_viet_tat}{^tt_ten_moi_viet_tat}[...]{/tt_ten_moi_viet_tat}
+{/td_ten}
+{#td_dia_chi}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI TRỤ SỞ CỦA HỘ KINH DOANH
+#l Trụ sở của hộ kinh doanh sau khi thay đổi:
+#l Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {tt_tru_so_moi_so_nha}
+#l Xã/Phường/Đặc khu: {tt_tru_so_moi_xa}
+#l Tỉnh/Thành phố trực thuộc trung ương: {tt_tru_so_moi_tinh}
+#l Điện thoại: {tt_ts_dien_thoai}{^tt_ts_dien_thoai}{cty_dien_thoai}{^cty_dien_thoai}[..45]{/cty_dien_thoai}{/tt_ts_dien_thoai}[>50]Fax *(nếu có)*: {cty_fax}{^cty_fax}[...]{/cty_fax}
+#l Thư điện tử *(nếu có)*: {tt_ts_email}{^tt_ts_email}{cty_email}{^cty_email}[..45]{/cty_email}{/tt_ts_email}[>50]Website *(nếu có)*: {cty_website}{^cty_website}[...]{/cty_website}
+[x:tt_khong_tai_tru_so] Không kinh doanh tại trụ sở *(đánh dấu X vào ô này nếu hộ kinh doanh không có địa điểm kinh doanh cố định)*
+{^tt_khong_tai_tru_so}
+Hộ kinh doanh cam kết trụ sở của hộ kinh doanh thuộc quyền sử dụng hợp pháp của hộ kinh doanh và được sử dụng đúng mục đích theo quy định của pháp luật.
+{/tt_khong_tai_tru_so}
+{/td_dia_chi}
+{#td_chu_so_huu}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI CHỦ HỘ KINH DOANH
+#l Thay đổi chủ hộ kinh doanh do *(đánh dấu X vào ô thích hợp)*:
+#t [x:tt_chu_ho_do_uy_quyen] Thành viên hộ gia đình uỷ quyền cho thành viên khác làm chủ hộ kinh doanh
+#t [x:tt_chu_ho_do_chet] Chủ hộ kinh doanh chết hoặc bị Tòa án tuyên bố đã chết, mất tích, bị hạn chế hoặc mất năng lực hành vi dân sự, có khó khăn trong nhận thức, làm chủ hành vi
+#bk 1. Chủ hộ kinh doanh trước khi thay đổi:
+#l Họ và tên *(ghi họ tên bằng chữ in hoa)*: **{csh_ho_ten}**
+#l Sinh ngày: {csh_ngay_sinh}[>50]Giới tính: {csh_gioi_tinh}
+#l Số định danh cá nhân *(nếu có)*: {csh_so_giay_to}
+#l Điện thoại *(nếu có)*: {csh_dien_thoai}{^csh_dien_thoai}[..45]{/csh_dien_thoai}[>50]Thư điện tử *(nếu có)*: {csh_email}{^csh_email}[...]{/csh_email}
+#bk 2. Chủ hộ kinh doanh sau khi thay đổi:
+#l Họ và tên *(ghi họ tên bằng chữ in hoa)*: **{tt_ch_ho_ten}**
+#l Sinh ngày: {tt_ch_ngay_sinh}[>50]Giới tính: {tt_ch_gioi_tinh}
+#l Số định danh cá nhân *(nếu có)*: {tt_ch_so_giay_to}
+#l Điện thoại *(nếu có)*: {tt_ch_dien_thoai}{^tt_ch_dien_thoai}[..45]{/tt_ch_dien_thoai}[>50]Thư điện tử *(nếu có)*: {tt_ch_email}{^tt_ch_email}[...]{/tt_ch_email}
+*Trường hợp việc kết nối giữa Cơ sở dữ liệu về đăng ký hộ kinh doanh với Cơ sở dữ liệu quốc gia về dân cư bị gián đoạn thì đề nghị kê khai thêm: Dân tộc, Quốc tịch, Nơi thường trú, Nơi ở hiện tại.*
+{/td_chu_so_huu}
+{#td_thanh_vien}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI THÀNH VIÊN HỘ GIA ĐÌNH ĐĂNG KÝ HỘ KINH DOANH
+#lk Danh sách các thành viên hộ gia đình đăng ký hộ kinh doanh sau khi thay đổi:
+::bang vien 6^ 16^ 13^ 15^ 7^ 7^ 6^ 10^ 11^ 9^ co=10
+STT | Họ tên | Ngày, tháng, năm sinh | Số định danh cá nhân | Giới tính | Quốc tịch | Dân tộc | Nơi thường trú | Nơi ở hiện tại | Chữ ký
+1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
+---
+{#td_chu_so_huu}1 | {tt_ch_ho_ten} | {tt_ch_ngay_sinh} | {tt_ch_so_giay_to} | {tt_ch_gioi_tinh} | #c | #c | #c | #c | {/td_chu_so_huu}
+{^td_chu_so_huu}1 | {csh_ho_ten} | {csh_ngay_sinh} | {csh_so_giay_to} | {csh_gioi_tinh} | {csh_qt_bang} | {csh_dt_bang} | {#csh_qt_bang}{csh_dia_chi_thuong_tru}{/csh_qt_bang} | {#csh_qt_bang}{csh_dia_chi_lien_lac}{/csh_qt_bang} | {/td_chu_so_huu}
+{#thanh_vien_ho}{stt_ho} | {ho_ten} | {ngay_sinh} | {so_giay_to} | {gioi_tinh} | {qt_bang} | {dt_bang} | {#qt_bang}{dia_chi_thuong_tru}{/qt_bang} | {#qt_bang}{dia_chi_lien_lac}{/qt_bang} | {/thanh_vien_ho}
+::
+~
+{/td_thanh_vien}
+{#td_tang_von}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI VỐN KINH DOANH
+Vốn kinh doanh sau khi thay đổi *(bằng số, bằng chữ, VNĐ)*: **{tt_von_moi} đồng** *({tt_von_moi_chu} đồng)*
+#l Thời điểm thay đổi vốn: {tt_thoi_diem_von}{^tt_thoi_diem_von}[...]{/tt_thoi_diem_von}
+#l Hình thức tăng, giảm vốn: {tt_hinh_thuc_von}
+{/td_tang_von}
+{#td_giam_von}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI VỐN KINH DOANH
+Vốn kinh doanh sau khi thay đổi *(bằng số, bằng chữ, VNĐ)*: **{tt_von_moi} đồng** *({tt_von_moi_chu} đồng)*
+#l Thời điểm thay đổi vốn: {tt_thoi_diem_von}{^tt_thoi_diem_von}[...]{/tt_thoi_diem_von}
+#l Hình thức tăng, giảm vốn: {tt_hinh_thuc_von}
+{/td_giam_von}
+{#td_nganh}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI NGÀNH, NGHỀ KINH DOANH
+#lk 1. Bổ sung ngành, nghề kinh doanh sau:
+::bang vien 8^ 57< 13^ 22^
+#c STT | #c Tên ngành, nghề kinh doanh được bổ sung | #c Mã ngành | #c Ngành, nghề kinh doanh chính
+---
+{#tt_nganh_them}{stt} | {ten} | #c {ma} | #c {chinh}{/tt_nganh_them}
+::
+~
+#lk 2. Bỏ ngành, nghề kinh doanh sau:
+::bang vien 8^ 57< 13^ 22^
+#c STT | #c Tên ngành, nghề kinh doanh được bỏ khỏi danh sách đã đăng ký | #c Mã ngành | #c Ngành, nghề kinh doanh chính
+---
+{#tt_nganh_bo}{stt} | {ten} | #c {ma} | #c {chinh}{/tt_nganh_bo}
+::
+~
+#lk 3. Sửa đổi ngành, nghề kinh doanh chính:
+::bang vien 8^ 72< 20^
+#c STT | #c Tên ngành, nghề kinh doanh | #c Mã ngành
+---
+{#tt_nganh_sua}{stt} | {ten} | #c {ma}{/tt_nganh_sua}
+::
+~
+*Lưu ý: Trường hợp hộ kinh doanh thay đổi ngành, nghề kinh doanh từ ngành này sang ngành khác, hộ kinh doanh kê khai đồng thời tại Mục 1, 2 nêu trên, cụ thể như sau: kê khai ngành, nghề kinh doanh được bổ sung tại Mục 1; kê khai ngành, nghề kinh doanh được bỏ tại Mục 2.*
+{/td_nganh}
+{#tt_doi_thue}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI NỘI DUNG ĐĂNG KÝ THUẾ
+#lk Đăng ký bổ sung, thay đổi các chỉ tiêu đăng ký thuế như sau:
+::bang vien 34< 33< 33<
+#c Chỉ tiêu | #c Thông tin đăng ký cũ | #c Thông tin đăng ký mới
+---
+{tt_thue_chi_tieu} | {tt_thue_cu} | {tt_thue_moi}
+::
+~
+{/tt_doi_thue}
+{#td_cap_nhat}
+~
+#bk B. ĐĂNG KÝ CẬP NHẬT, BỔ SUNG, HIỆU ĐÍNH THÔNG TIN ĐĂNG KÝ HỘ KINH DOANH
+Hộ kinh doanh đăng ký cập nhật, bổ sung, hiệu đính thông tin đăng ký hộ kinh doanh như sau:
+{tt_cap_nhat}
+{/td_cap_nhat}
+{#tt_cap_doi}
+~
+#bk C. ĐĂNG KÝ CẤP ĐỔI SANG GIẤY CHỨNG NHẬN ĐĂNG KÝ HỘ KINH DOANH
+*Trường hợp hộ kinh doanh được cấp giấy chứng nhận đăng ký kinh doanh hoặc giấy chứng nhận đăng ký hộ kinh doanh trước ngày Nghị định số 168/2025/NĐ-CP ngày 30/6/2025 của Chính phủ về đăng ký doanh nghiệp có hiệu lực thi hành thực hiện quy định tại Điều 123 Nghị định số 168/2025/NĐ-CP thì kê khai thông tin theo giấy chứng nhận đăng ký kinh doanh hoặc giấy chứng nhận đăng ký hộ kinh doanh và giấy chứng nhận đăng ký thuế đã được cấp tại Mục này.*
+#l 1. Tên hộ kinh doanh *(ghi bằng chữ in hoa)*: **{ten_cty}**
+#l 2. Trụ sở của hộ kinh doanh:
+#l Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {tru_so_so_nha}
+#l Xã/Phường/Đặc khu: {tru_so_xa}
+#l Tỉnh/Thành phố trực thuộc trung ương: {tru_so_tinh}
+#l Điện thoại: {cty_dien_thoai}{^cty_dien_thoai}[..45]{/cty_dien_thoai}[>50]Fax *(nếu có)*: {cty_fax}{^cty_fax}[...]{/cty_fax}
+#l Thư điện tử *(nếu có)*: {cty_email}{^cty_email}[..45]{/cty_email}[>50]Website *(nếu có)*: {cty_website}{^cty_website}[...]{/cty_website}
+#lk 3. Ngành, nghề kinh doanh:
+::bang vien 8^ 60< 14^ 18^
+#c STT | #c Tên ngành | #c Mã ngành | #c Ngành, nghề kinh doanh chính
+---
+{#nganh}{stt} | {ten} | #c {ma} | #c {chinh}{/nganh}
+::
+~
+#l 4. Vốn kinh doanh:
+#l Tổng số *(bằng số, bằng chữ, VNĐ)*: {von_dieu_le} đồng *({von_dieu_le_chu})*
+#lk 5. Thông tin đăng ký thuế:
+::bang vien 8^ 92<
+#c STT | #c Các chỉ tiêu thông tin đăng ký thuế
+---
+#c 5.1 | Địa chỉ nhận thông báo thuế *(chỉ kê khai nếu địa chỉ nhận thông báo thuế khác địa chỉ trụ sở)*: // Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: [...] // Xã/Phường/Đặc khu: [...] // Tỉnh/Thành phố trực thuộc trung ương: [...] // Điện thoại *(nếu có)*: {cty_dien_thoai}{^cty_dien_thoai}[..45]{/cty_dien_thoai}[>50]Fax *(nếu có)*: [...] // Thư điện tử *(nếu có)*: [...]
+#c 5.2 | Tổng số lao động: {so_lao_dong}
+::
+~
+#lk 6. Chủ thể thành lập hộ kinh doanh *(đánh dấu X vào ô thích hợp)*:
+#t {#co_thanh_vien_ho}[ ]{/co_thanh_vien_ho}{^co_thanh_vien_ho}[X]{/co_thanh_vien_ho} Cá nhân[>50][x:co_thanh_vien_ho] Các thành viên hộ gia đình
+#lk 7. Thông tin về các thành viên hộ gia đình đăng ký hộ kinh doanh:
+::bang vien 6^ 16^ 13^ 15^ 7^ 7^ 6^ 10^ 11^ 9^ co=10
+STT | Họ tên | Ngày, tháng, năm sinh | Số định danh cá nhân | Giới tính | Quốc tịch | Dân tộc | Nơi thường trú | Nơi ở hiện tại | Chữ ký
+1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
+---
+{#co_thanh_vien_ho}1 | {csh_ho_ten} | {csh_ngay_sinh} | {csh_so_giay_to} | {csh_gioi_tinh} | {csh_qt_bang} | {csh_dt_bang} | {#csh_qt_bang}{csh_dia_chi_thuong_tru}{/csh_qt_bang} | {#csh_qt_bang}{csh_dia_chi_lien_lac}{/csh_qt_bang} | {/co_thanh_vien_ho}
+{#thanh_vien_ho}{stt_ho} | {ho_ten} | {ngay_sinh} | {so_giay_to} | {gioi_tinh} | {qt_bang} | {dt_bang} | {#qt_bang}{dia_chi_thuong_tru}{/qt_bang} | {#qt_bang}{dia_chi_lien_lac}{/qt_bang} | {/thanh_vien_ho}
+{^co_thanh_vien_ho} | #c | #c | #c | #c | #c | #c | #c | #c | {/co_thanh_vien_ho}
+::
+{/tt_cap_doi}
+~
+Hộ kinh doanh cam kết về tính hợp pháp, chính xác, trung thực và hoàn toàn chịu trách nhiệm trước pháp luật về nội dung của Giấy đề nghị này.
+{#td_thanh_vien}
+Chủ hộ kinh doanh và các thành viên hộ gia đình đăng ký hộ kinh doanh cam kết đồng ý cho Cơ quan quản lý nhà nước về đăng ký kinh doanh và Cơ quan đăng ký kinh doanh khai thác, sử dụng, lưu giữ và cung cấp thông tin dữ liệu cá nhân lưu giữ trong Cơ sở dữ liệu quốc gia về dân cư để phục vụ công tác đăng ký hộ kinh doanh và các công tác khác theo quy định.
+{/td_thanh_vien}
+~
+::cot 45/55
+~
+||
+#cb CHỦ HỘ KINH DOANH
+#ci (Ký và ghi họ tên)
+~
+~
+~
+~
+#cb {#td_chu_so_huu}{tt_ch_ho_ten}{/td_chu_so_huu}{^td_chu_so_huu}{csh_ho_ten}{/td_chu_so_huu}
+::

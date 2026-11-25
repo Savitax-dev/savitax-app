@@ -1,0 +1,37 @@
+// Giấy ủy quyền làm việc với cơ quan thuế — CHẤM DỨT HỘ KINH DOANH (hồ sơ thuế). Chủ hộ (csh_) ủy quyền; người được ủy quyền để CHẤM
+// viết tay. Theo bản phòng pháp lý (6_GIẢI THỂ_HỘ KINH DOANH\1. Thuế\1_GUQ): cơ quan thuế in sẵn — ô "Cơ quan thuế quản lý" của hồ sơ,
+// trống = cơ quan thuế của hộ, cũng trống = chỗ chấm. Bản DỰ PHÒNG để trống cơ quan thuế: GTH_UQ_THUE_DP (nội dung giống hệt).
+// Khác bản phòng: "CCCD số" → "Số định danh cá nhân" cho chủ hộ (như UQ_HKD); chủ hộ có chữ ký + họ tên in sẵn.
+@co 12
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+#ri …………….., ngày……/……/………
+~
+# GIẤY ỦY QUYỀN
+~
+#l {csh_danh_xung}{^csh_danh_xung}Ông/Bà{/csh_danh_xung}: **{csh_ho_ten}**
+#l Số định danh cá nhân: {csh_so_giay_to}[>55]Ngày cấp: {csh_ngay_cap}
+#l Nơi cấp: {csh_noi_cap}
+Bằng giấy này, chúng tôi ủy quyền cho:
+#l Ông/Bà: [...]
+#l CCCD số: [..50] Ngày cấp: [...]
+#l Nơi cấp: [...]
+Để thực hiện thay chúng tôi với các nội dung như sau:
+- Thay mặt chủ hộ kinh doanh liên hệ {tt_cqt_quan_ly}{^tt_cqt_quan_ly}{co_quan_thue}{^co_quan_thue}……………………………………………{/co_quan_thue}{/tt_cqt_quan_ly} để:
++ Nộp hồ sơ giải thể hộ kinh doanh.
+Giấy ủy quyền này có hiệu lực đến khi người được ủy quyền hoàn thành tất cả các thủ tục trên.
+Chúng tôi xin chịu trách nhiệm trước pháp luật về mọi cam kết do Bên được ủy quyền nhân danh chúng tôi thực hiện trong phạm vi ủy quyền nêu trên. Chúng tôi công nhận đã hiểu rõ quyền, nghĩa vụ và lợi ích hợp pháp của mình và hậu quả pháp lý của việc ủy quyền.
+~
+::cot 50/50
+#cb NGƯỜI ĐƯỢC ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên)
+||
+#cb NGƯỜI ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {csh_ho_ten}
+::

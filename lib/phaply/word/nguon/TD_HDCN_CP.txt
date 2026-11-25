@@ -1,0 +1,85 @@
+// Hợp đồng chuyển nhượng cổ phần (CP). Bên A = nhóm ô "Bên chuyển nhượng" (tt_cn_), Bên B = "Bên nhận chuyển nhượng" (tt_nb_).
+// Theo bản phòng (2_MẪU HỢP ĐỒNG CHUYỂN NHƯỢNG / 2_…CỔ PHẦN.pdf): 7 điều, lập 03 bản, Tổng giám đốc / Giám đốc ký xác nhận.
+// Một hợp đồng = một cặp chuyển nhượng. Khác bản phòng: "Thẻ Căn cước số" → "Số định danh cá nhân".
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+~
+# HỢP ĐỒNG CHUYỂN NHƯỢNG CỔ PHẦN
+#c Số: …./HDCNCP
+~
+#l Hôm nay, ngày ….. tháng ..... năm ..........
+#l Tại Văn phòng: **{ten_cty}**
+Trụ sở: {dia_chi_tru_so}
+#l Chúng tôi, gồm:
+#bk Bên chuyển nhượng (Bên A):
+#l {#tt_cn_gioi_tinh_nam}Ông{/tt_cn_gioi_tinh_nam}{#tt_cn_gioi_tinh_nu}Bà{/tt_cn_gioi_tinh_nu}{^tt_cn_gioi_tinh}Ông/Bà{/tt_cn_gioi_tinh}: **{tt_cn_ho_ten}**
+#l Giới tính: {tt_cn_gioi_tinh}
+#l Sinh ngày: {tt_cn_ngay_sinh}[>45]Quốc tịch: Việt Nam
+#l Số định danh cá nhân: {tt_cn_so_giay_to}[>55]Ngày cấp: {tt_cn_ngay_cap}
+#l Nơi cấp: {tt_cn_noi_cap}
+Thường trú: {tt_cn_dia_chi}
+#bk Bên nhận chuyển nhượng (Bên B):
+#l {#tt_nb_gioi_tinh_nam}Ông{/tt_nb_gioi_tinh_nam}{#tt_nb_gioi_tinh_nu}Bà{/tt_nb_gioi_tinh_nu}{^tt_nb_gioi_tinh}Ông/Bà{/tt_nb_gioi_tinh}: **{tt_nb_ho_ten}**
+#l Giới tính: {tt_nb_gioi_tinh}
+#l Sinh ngày: {tt_nb_ngay_sinh}[>45]Quốc tịch: Việt Nam
+#l Số định danh cá nhân: {tt_nb_so_giay_to}[>55]Ngày cấp: {tt_nb_ngay_cap}
+#l Nơi cấp: {tt_nb_noi_cap}
+Thường trú: {tt_nb_dia_chi}
+#bk Điều 1: Trong thời gian qua:
+Bên A là cổ đông sở hữu {tt_cn_cp_truoc} cổ phần tại **{ten_cty}**, tương đương giá trị cổ phần là {tt_cn_von_truoc} đồng, chiếm {tt_cn_ty_le_truoc} vốn điều lệ công ty theo Giấy chứng nhận đăng ký doanh nghiệp số {ma_dn} do {phong_dkkd} cấp ngày {tt_ngay_gcn}.
+#bk Điều 2:
+Nay Bên A đồng ý chuyển nhượng số cổ phần là **{tt_cn_so_cp} cổ phần**, chiếm tỷ lệ {tt_cn_ty_le} vốn điều lệ cho Bên B và Bên B đồng ý nhận chuyển nhượng cổ phần là {tt_cn_so_cp} cổ phần của Bên A với giá chuyển nhượng là **{tt_cn_gia} đồng**, với hình thức chuyển nhượng là {tt_cn_hinh_thuc}.
+Việc giao nhận toàn bộ số vốn nêu trên do hai bên tự thực hiện ngay tại thời điểm ký hợp đồng trước sự chứng kiến của người đại diện theo pháp luật của công ty.
+#bk Điều 3:
+- Hai bên A và B có nghĩa vụ thực hiện các vấn đề liên quan đến việc chuyển nhượng cổ phần để {ten_cty} hoàn tất thủ tục đăng ký kinh doanh theo quy định của pháp luật.
+- Bên B có trách nhiệm kế thừa toàn bộ các quyền và nghĩa vụ của Bên A với tư cách là CỔ ĐÔNG của {ten_cty} kể từ ngày hoàn tất việc chuyển nhượng cổ phần.
+#bk Điều 4:
+Sau khi hoàn tất việc chuyển nhượng vốn, mọi sự tranh chấp phát sinh nếu có, hai bên cùng nhau thương lượng giải quyết theo nguyên tắc tôn trọng quyền lợi của nhau.
+Trong trường hợp không giải quyết được thì một trong hai bên có quyền khởi kiện để yêu cầu tòa án có thẩm quyền giải quyết theo quy định của pháp luật hiện hành. {ten_cty}, cơ quan đăng ký kinh doanh không có trách nhiệm giải quyết các tranh chấp phát sinh nếu có.
+#bk Điều 5:
+Hai bên A và B cùng cam kết những thông tin về nhân thân, cổ phần chuyển nhượng đã ghi trên hợp đồng là đúng sự thật. Cổ phần chuyển nhượng không có tranh chấp, không bị kê biên để đảm bảo thi hành án.
+Việc giao kết hợp đồng là hoàn toàn tự nguyện, không bị lừa dối hoặc ép buộc. Bên B đã xem xét kỹ, biết rõ về phần cổ phần nhận chuyển nhượng nêu trên và giấy tờ pháp lý liên quan. Hai bên A và B có trách nhiệm thực hiện đúng và đầy đủ các nội dung đã thỏa thuận trong hợp đồng.
+#bk Điều 6:
+Hai bên đã đọc, đã hiểu và đồng ý tất cả các điều khoản ghi trong Hợp đồng trước khi ký tên vào hợp đồng. Đại diện pháp luật của công ty chỉ ký tên xác nhận khi việc hai bên đã hoàn tất việc chuyển nhượng theo nội dung hợp đồng.
+#bk Điều 7:
+Hợp đồng này có hiệu lực kể từ ngày ký và được lập thành 03 bản có giá trị như nhau, mỗi bên giữ 01 bản, và 01 bản lưu lại công ty.
+~
+::cot 50/50
+#cb BÊN A
+#cb Bên chuyển nhượng
+#ci Đã nhận đủ {tt_cn_gia} đồng
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {tt_cn_ho_ten}
+||
+#cb BÊN B
+#cb Bên nhận chuyển nhượng
+#ci Đã thanh toán đủ {tt_cn_gia} đồng
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {tt_nb_ho_ten}
+::
+~
+::cot 20/60/20
+~
+||
+#ci …........, ngày…...tháng…..năm…......
+#cb Xác nhận của đại diện theo pháp luật của doanh nghiệp
+#cb Các bên đã hoàn tất việc chuyển nhượng theo Hợp đồng
+#cb {dd_chuc_danh}{^dd_chuc_danh}Người đại diện theo pháp luật{/dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+||
+~
+::

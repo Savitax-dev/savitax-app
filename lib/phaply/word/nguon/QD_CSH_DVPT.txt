@@ -1,6 +1,7 @@
 // Quyết định của chủ sở hữu thành lập chi nhánh / văn phòng đại diện — công ty TNHH một thành viên (ĐĐKD không cần quyết định).
 // Theo bản phòng pháp lý (2_TLM_ĐƠN VỊ PHỤ THUỘC: 3_QD_CSH bản chi nhánh + bản VPĐD). Chi nhánh kê bảng ngành; VPĐD ghi nội dung hoạt động.
 // Chủ sở hữu là tổ chức: chỗ ký ghi tên tổ chức + người đại diện của tổ chức ký, đóng dấu.
+@gian 70
 ::cot 45/55
 #cb {ten_cty}
 #c --------------------

@@ -22,7 +22,7 @@ for (const ma of ['DL_1TV', 'DL_2TV', 'DL_CP']) {
   d.forEach((l, i) => { if (/^#cbkp? Chương/.test(l)) ok(/^#cbk /.test(d[i + 1]), `${ma}: tên chương sau "${l.slice(-12)}" giữ cùng trang`, d[i + 1]) })
   ok(!/^#b Điều/m.test(doc(ma)), `${ma}: mọi tiêu đề Điều giữ cùng trang với đoạn sau`)
 }
-const BANG_NGANG = ['MAU6', 'MAU7', 'MAU10'] // bảng 14–19 cột khổ ngang: chữ trong bảng nhỏ hơn, cỡ chữ văn bản vẫn theo mẫu
+const BANG_NGANG = ['MAU6', 'MAU7', 'MAU10', 'TD_MAU6', 'TD_MAU7', 'TD_MAU10'] // bảng 14–19 cột khổ ngang: chữ trong bảng nhỏ hơn, cỡ chữ văn bản vẫn theo mẫu
 for (const f of readdirSync(NGUON).filter(f => f.endsWith('.txt'))) {
   const ma = f.slice(0, -4), co = (doc(ma).match(/^@co (\d+)$/m) || [, '12'])[1]
   if (!BANG_NGANG.includes(ma)) ok(co === '12', `${ma} cỡ chữ 12`, co)

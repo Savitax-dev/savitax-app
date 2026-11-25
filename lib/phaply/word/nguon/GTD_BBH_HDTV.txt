@@ -1,0 +1,73 @@
+// Biên bản họp Hội đồng thành viên về việc chấm dứt hoạt động đơn vị phụ thuộc (chi nhánh / VPĐD / ĐĐKD) — công ty TNHH hai thành viên
+// trở lên. Bộ phòng gửi 25/11/2026 KHÔNG kèm biên bản, nhưng Quyết định HĐTV của phòng căn cứ "Biên bản họp số …/BBH-HĐTV" và hồ sơ
+// chấm dứt đơn vị phụ thuộc của công ty 2TV phải kèm bản sao biên bản họp → soạn theo bố cục BBH_HDTV (bản phòng nộp 09/2026: A nội dung
+// · B ý kiến · C biểu quyết · D quyết định). Danh sách dự họp lặp theo thành viên; số phiếu = vốn góp ÷ quy ước (duLieu.js).
+@co 12
+::cot 45/55
+#cb {ten_cty}
+#c --------------------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: ……/BBH-HĐTV
+||
+#ci …………….., ngày……/……/………
+::
+~
+# BIÊN BẢN HỌP CỦA HỘI ĐỒNG THÀNH VIÊN
+#cb Về việc: Chấm dứt hoạt động {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd}
+~
+#l Tên công ty: **{ten_cty}**
+#l Mã số doanh nghiệp: {ma_dn}{^ma_dn}[...]{/ma_dn}
+Địa chỉ trụ sở chính: {dia_chi_tru_so}
+#l - Thời gian bắt đầu: vào lúc …… giờ …… phút, ngày …… tháng …… năm ………
+- Địa điểm họp: {dia_chi_tru_so}
+#li Quy ước: {quy_uoc_phieu} đồng tương đương 1 phiếu biểu quyết
+#l - Thành phần tham dự:
+{#thanh_vien}
+#l {stt}. {danh_xung}{^danh_xung}Ông/Bà{/danh_xung}: **{ho_ten}**{#la_to_chuc} (người đại diện theo ủy quyền: {nguoi_uq}){/la_to_chuc} - {vai_tro}
+#l Sở hữu phần vốn góp {von_gop} đồng, chiếm {ty_le} vốn điều lệ.
+{/thanh_vien}
+#l - Chủ tọa cuộc họp: {ct_danh_xung} {ct_ho_ten}
+#l - Thư ký cuộc họp: {tk_danh_xung} {tk_ho_ten}
+- {ct_danh_xung} {ct_ho_ten} - Chủ tịch Hội đồng thành viên tuyên bố việc triệu tập họp Hội đồng thành viên, điều kiện, thể thức tiến hành họp Hội đồng thành viên phù hợp theo quy định của Luật Doanh nghiệp, Điều lệ công ty; số thành viên dự họp đạt 100% vốn điều lệ, đủ điều kiện tiến hành họp Hội đồng thành viên.
+#lbk A. Nội dung cuộc họp:
+Hội đồng thành viên lấy ý kiến của các thành viên dự họp về việc chấm dứt hoạt động {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd} của Công ty:
+#l - Tên: **{tt_ten}**
+#l - {#la_ddkd}Mã số địa điểm kinh doanh{/la_ddkd}{^la_ddkd}Mã số thuế{/la_ddkd}: {tt_ma_so}{^tt_ma_so}[...]{/tt_ma_so}
+- Địa chỉ: {tt_dia_chi}{^tt_dia_chi}[...]{/tt_dia_chi}
+#l - Người đứng đầu: {ndd_ho_ten}{^ndd_ho_ten}[...]{/ndd_ho_ten}
+- Lý do chấm dứt hoạt động: {tt_ly_do}{^tt_ly_do}[...]{/tt_ly_do}
+#lbk B. Ý kiến phát biểu của các thành viên dự họp:
+#l Phương thức biểu quyết: bỏ phiếu kín
+Hoàn toàn đồng ý về việc chấm dứt hoạt động {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd} tại mục A nêu trên.
+#lbk C. Biểu quyết:
+#l - Tổng số phiếu biểu quyết hợp lệ: {tong_phieu} phiếu.
+#l - Tổng số phiếu biểu quyết không hợp lệ: 0 phiếu.
+- Tổng số phiếu tán thành: {tong_phieu}/{tong_phieu} phiếu, đạt tỷ lệ 100% trên tổng số phiếu biểu quyết của thành viên dự họp.
+#l - Tổng số phiếu không tán thành: 0 phiếu.
+#l - Tổng số phiếu không có ý kiến: 0 phiếu.
+#lbk D. Hội đồng thành viên quyết định:
+- Thông qua việc chấm dứt hoạt động {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd} tại mục A nêu trên với 100% tổng số phiếu biểu quyết tán thành.
+- Công ty chịu trách nhiệm thực hiện các hợp đồng, thanh toán các khoản nợ, nghĩa vụ tài sản khác, tiếp tục sử dụng lao động hoặc giải quyết đủ quyền lợi hợp pháp cho người lao động đã làm việc tại {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd}.
+- Giao cho {dd_danh_xung} **{dd_ho_ten}** (người đại diện theo pháp luật) tiến hành các thủ tục cần thiết theo quy định của pháp luật.
+#k Cuộc họp kết thúc vào lúc …… giờ …… phút cùng ngày.
+::cot 50/50
+#cb Thư ký cuộc họp
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {tk_ho_ten}
+||
+#cb Chủ tọa cuộc họp
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {ct_ho_ten}
+::

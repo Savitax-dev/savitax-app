@@ -1,0 +1,64 @@
+// Mẫu số 13 — Giấy đề nghị đăng ký thay đổi người đại diện theo pháp luật (TT 121/2026/TT-BTC, Phụ lục I). Chữ theo bản trắng
+// chính thức. Người đại diện SAU thay đổi = nhóm ô "Người đại diện mới" (tt_dm_…). Số định danh của Chủ tịch chỉ kê khai khi ủy
+// quyền làm thủ tục (Savitax luôn ủy quyền → in sẵn). Người ký: bảng chỉ tiêu của phòng — Chủ tịch công ty / HĐTV / HĐQT (cũ;
+// chủ tịch đồng thời là người đại diện bị thay thì chủ tịch MỚI ký — app in chủ tịch hiện tại, chủ tịch mới thì sửa tay).
+// Chưa in khối "Trường hợp không có số định danh cá nhân…" chi tiết (người Việt có căn cước) — để dòng chấm viết tay.
+#cb MẪU SỐ 13
+#ci (Ban hành kèm theo Thông tư số 121/2026/TT-BTC ngày 21 tháng 8 năm 2026
+#ci của Bộ trưởng Bộ Tài chính)
+~
+::cot 40/60
+#cb {ten_cty}
+#c -------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c ---------------
+==
+#c Số: …………..
+||
+#ci ……, ngày…… tháng…… năm ……
+::
+~
+# GIẤY ĐỀ NGHỊ
+#cb Đăng ký thay đổi người đại diện theo pháp luật
+~
+#c Kính gửi: {tt_kinh_gui}{^tt_kinh_gui}{phong_dkkd}{/tt_kinh_gui}
+~
+#l Tên doanh nghiệp *(ghi bằng chữ in hoa)*: **{ten_cty}**
+#l Mã số doanh nghiệp/Mã số thuế: {ma_dn}
+Số định danh cá nhân của Chủ tịch hội đồng thành viên/Chủ tịch công ty/Chủ tịch hội đồng quản trị *(Chỉ kê khai trong trường hợp ủy quyền thực hiện thủ tục đăng ký doanh nghiệp)*: {#la_1tv}{csh_so_giay_to}{/la_1tv}{^la_1tv}{ct_so_giay_to}{/la_1tv}
+~
+#bk Đăng ký thay đổi người đại diện theo pháp luật với các nội dung sau:
+#bk Người đại diện theo pháp luật sau khi thay đổi:
+#l Họ, chữ đệm và tên *(ghi bằng chữ in hoa)*: **{tt_dm_ho_ten}**
+#l Ngày, tháng, năm sinh: {tt_dm_ngay_sinh}
+#l Giới tính: {tt_dm_gioi_tinh}
+#l Số định danh cá nhân: {tt_dm_so_giay_to}
+#l Chức danh: {tt_dm_chuc_danh}
+#l Địa chỉ liên lạc:
+#t Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {tt_dm_dia_chi_so_nha}
+#t Xã/Phường/Đặc khu: {tt_dm_dia_chi_xa}
+#t Tỉnh/Thành phố trực thuộc trung ương: {tt_dm_dia_chi_tinh}
+#t Quốc gia: Việt Nam
+#l Điện thoại *(nếu có)*: {tt_dm_dien_thoai}{^tt_dm_dien_thoai}[..45]{/tt_dm_dien_thoai}[>50]Thư điện tử *(nếu có)*: {tt_dm_email}{^tt_dm_email}[...]{/tt_dm_email}
+*Trường hợp không có số định danh cá nhân hoặc việc kết nối giữa Cơ sở dữ liệu quốc gia về đăng ký doanh nghiệp với Cơ sở dữ liệu quốc gia về dân cư bị gián đoạn thì đề nghị kê khai các thông tin cá nhân dưới đây:*
+#l Dân tộc: [..45] Quốc tịch: [...]
+Số Hộ chiếu *(đối với cá nhân Việt Nam không có số định danh cá nhân)*/Số Hộ chiếu nước ngoài hoặc giấy tờ có giá trị thay thế hộ chiếu nước ngoài *(đối với cá nhân là người nước ngoài)*: [...]
+#l Ngày cấp: [..45] Nơi cấp: [...]
+#l Nơi thường trú: [...]
+~
+Trường hợp hồ sơ đăng ký doanh nghiệp hợp lệ, đề nghị Quý Cơ quan đăng công bố nội dung đăng ký doanh nghiệp trên Cổng thông tin quốc gia về đăng ký doanh nghiệp.
+Doanh nghiệp cam kết hoàn toàn chịu trách nhiệm trước pháp luật về tính hợp pháp, chính xác và trung thực của nội dung Giấy đề nghị này.
+~
+::cot 40/60
+~
+||
+#cb {#la_1tv}CHỦ TỊCH CÔNG TY{/la_1tv}{#la_2tv}CHỦ TỊCH HỘI ĐỒNG THÀNH VIÊN{/la_2tv}{#la_cp}CHỦ TỊCH HỘI ĐỒNG QUẢN TRỊ{/la_cp}
+#ci (Ký và ghi họ tên)
+~
+~
+~
+~
+#cb {#la_1tv}{csh_ho_ten}{/la_1tv}{^la_1tv}{ct_ho_ten}{/la_1tv}
+::

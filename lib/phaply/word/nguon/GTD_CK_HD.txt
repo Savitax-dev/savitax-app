@@ -1,0 +1,39 @@
+// Cam kết chưa mua, chưa phát hành và sử dụng hóa đơn — chấm dứt hoạt động CHI NHÁNH (hồ sơ thuế). Chỉ vào bộ khi hồ sơ tick "Chi
+// nhánh chưa sử dụng hóa đơn". Theo bản phòng pháp lý (2_CHI NHÁNH\1_HS_THUE\10_CK_KHONG_HOADON). Khác bản phòng: "hoạch toán" → "hạch
+// toán" (câu hạch toán phụ thuộc chỉ in khi ô "Hình thức hạch toán" là phụ thuộc — mặc định); "giải thể chi nhánh" → "chấm dứt hoạt động
+// chi nhánh" (đúng tên thủ tục).
+@co 12
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+#ri …………….., ngày….. tháng….. năm………
+~
+# CAM KẾT CHƯA MUA, CHƯA PHÁT HÀNH VÀ SỬ DỤNG HÓA ĐƠN
+#c Kính gửi: {tt_cqt_quan_ly}{^tt_cqt_quan_ly}{co_quan_thue}{^co_quan_thue}……………………………………………………………{/co_quan_thue}{/tt_cqt_quan_ly}
+~
+#l Tên doanh nghiệp: **{ten_cty}**
+#l Giấy ĐKKD số: {ma_dn}{^ma_dn}……………………{/ma_dn}[>55]Ngày cấp: {tt_dn_ngay_cap}{^tt_dn_ngay_cap}……/……/………{/tt_dn_ngay_cap}
+#l Nơi cấp: {tt_dn_noi_cap}{^tt_dn_noi_cap}{phong_dkkd}{^phong_dkkd}[...]{/phong_dkkd}{/tt_dn_noi_cap}
+Địa chỉ trụ sở: {dia_chi_tru_so}
+#l Đại diện pháp luật: **{dd_ho_ten}** - Chức vụ: {dd_chuc_danh}{^dd_chuc_danh}[...]{/dd_chuc_danh}
+Chúng tôi có chi nhánh là **{tt_ten}**
+#l Số ĐKKD: {tt_ma_so}{^tt_ma_so}……………………{/tt_ma_so}[>55]Ngày cấp: {tt_ngay_cap}{^tt_ngay_cap}……/……/………{/tt_ngay_cap}
+#l Nơi cấp: {tt_noi_cap}{^tt_noi_cap}{phong_dkkd}{^phong_dkkd}[...]{/phong_dkkd}{/tt_noi_cap}
+Địa chỉ chi nhánh: {tt_dia_chi}{^tt_dia_chi}[...]{/tt_dia_chi}
+Công ty xin cam kết từ khi thành lập đến nay chưa mua, chưa phát hành và sử dụng hóa đơn, không cấp phát hóa đơn cho chi nhánh.
+Chi nhánh {#tt_hach_toan_phu_thuoc}hạch toán phụ thuộc nên {/tt_hach_toan_phu_thuoc}chưa in, phát hành và sử dụng bất kỳ loại hóa đơn nào.
+Vì vậy, tôi làm cam kết này trình lên {tt_cqt_quan_ly}{^tt_cqt_quan_ly}{co_quan_thue}{^co_quan_thue}………………………………{/co_quan_thue}{/tt_cqt_quan_ly} xác nhận, để làm thủ tục chấm dứt hoạt động chi nhánh.
+#k Tôi cam kết chịu trách nhiệm trước pháp luật về tính hợp pháp, chính xác và trung thực của nội dung như trên.
+::cot 40/60
+~
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#c {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

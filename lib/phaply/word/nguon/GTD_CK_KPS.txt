@@ -1,0 +1,61 @@
+// Công văn cam kết (không phát sinh hoạt động) — chấm dứt hoạt động chi nhánh / VPĐD (hồ sơ thuế). Dùng chung 1TV / 2TV / CP.
+// Văn phòng đại diện: LUÔN có (3_VPĐD\1_THUE\8_CV_CAMKET — 7 cam kết: chỉ đại diện giao dịch, không kinh doanh…). Chi nhánh: chỉ khi
+// hồ sơ tick "Cam kết không phát sinh" (cơ quan thuế yêu cầu bổ sung — 2_CHI NHÁNH\1_HS_THUE\11_CK_khongphatsinh_…_bosung, 6 cam kết).
+// Hai bản phòng khác phần đầu (bản chi nhánh kê người nộp thuế là chi nhánh, bản VPĐD kê công ty) → gộp theo bản VPĐD: thông tin công
+// ty + câu "Công ty đã nộp hồ sơ chấm dứt hoạt động …"; lời kết theo bản chi nhánh. Bỏ "ở TP.HCM" cứng trong bản VPĐD.
+@co 12
+::cot 42/58
+#cb {ten_cty}
+#c ----------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: ……/CK
+||
+#ci …………….., ngày….. tháng….. năm………
+::
+~
+# CÔNG VĂN CAM KẾT
+#c Kính gửi: {tt_cqt_quan_ly}{^tt_cqt_quan_ly}{co_quan_thue}{^co_quan_thue}……………………………………………………………{/co_quan_thue}{/tt_cqt_quan_ly}
+~
+#l Tên công ty: **{ten_cty}**
+#l Mã số thuế: {ma_dn}{^ma_dn}……………………{/ma_dn}[>55]Ngày cấp: {tt_dn_ngay_cap}{^tt_dn_ngay_cap}……/……/………{/tt_dn_ngay_cap}
+#l Nơi cấp: {tt_dn_noi_cap}{^tt_dn_noi_cap}{phong_dkkd}{^phong_dkkd}[...]{/phong_dkkd}{/tt_dn_noi_cap}
+Trụ sở: {dia_chi_tru_so}
+Công ty đã nộp hồ sơ chấm dứt hoạt động **{tt_ten}** (Mã số thuế: {tt_ma_so}{^tt_ma_so}……………………{/tt_ma_so}; Địa chỉ: {tt_dia_chi}{^tt_dia_chi}………………………………………{/tt_dia_chi}) vì lý do: {tt_ly_do}{^tt_ly_do}………………………………………{/tt_ly_do}
+Nay Công ty chúng tôi cam kết **{tt_ten}** từ khi thành lập đến nay:
+{#la_vpdd}
+#l - Văn phòng chỉ đại diện công ty giao dịch, không hoạt động kinh doanh;
+#l - Không kinh doanh trên sàn thương mại điện tử;
+#l - Không có nghĩa vụ nộp báo cáo thuế;
+#l - Tất cả chi phí đều đưa về công ty mẹ {ten_cty};
+#l - Không phát sinh lao động, chi trả lương;
+#l - Không phát sinh tài sản, hàng hóa;
+#l - Không hoạt động kinh doanh, không phát sinh doanh thu.
+{/la_vpdd}
+{^la_vpdd}
+#l - Không phát sinh doanh thu;
+#l - Không đăng ký hóa đơn, không xuất hóa đơn;
+#l - Không sử dụng tài khoản ngân hàng;
+#l - Không hoạt động xuất nhập khẩu, không nợ thuế hải quan;
+#l - Không phát sinh hoạt động kinh doanh thương mại điện tử;
+#l - Không có tài sản cố định.
+{/la_vpdd}
+Doanh nghiệp chúng tôi xin cam kết về tính chính xác, trung thực của hồ sơ và chịu trách nhiệm trước pháp luật về nội dung của văn bản này.
+Rất mong nhận được sự hướng dẫn, giúp đỡ, tạo điều kiện để doanh nghiệp hoàn thành nghĩa vụ theo quy định pháp luật.
+#k Xin trân trọng cảm ơn.
+::cot 40/60
+~
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#c {dd_chuc_danh}
+#ci (Ký tên, đóng dấu)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

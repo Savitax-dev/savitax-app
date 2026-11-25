@@ -1,0 +1,64 @@
+// Mẫu số 28 (TT 68/2025/TT-BTC) — Thông báo về việc chấm dứt hoạt động chi nhánh / văn phòng đại diện / địa điểm kinh doanh.
+// Chữ theo bản trắng chính thức (Mẫu số 28-Pl1), cách điền theo bản phòng pháp lý (1_ĐỊA ĐIỂM KINH DOANH_SỞ\2_MAU_28,
+// 2_CHI NHÁNH\2_HS_SO\2_MAU28, 3_VPĐD\2_SO\2_MAU_28): phòng chỉ giữ đúng loại đơn vị ở tiêu đề / các mục (bỏ "chi nhánh/văn phòng đại
+// diện/địa điểm kinh doanh"), dòng "Số Giấy chứng nhận đăng ký kinh doanh" để chấm, mục 3 "Chi nhánh chủ quản" để chấm (chỉ điền khi
+// chấm dứt ĐĐKD trực thuộc chi nhánh — ô "Chi nhánh chủ quản" của hồ sơ). Khối ký: người đại diện theo pháp luật + chức danh (như phòng;
+// bản chính thức ghi "…/NGƯỜI ĐỨNG ĐẦU CHI NHÁNH" cho trường hợp ĐĐKD trực thuộc chi nhánh).
+@co 12
+@gian 60
+#c Mẫu số 28
+#ci (Ban hành kèm theo Thông tư số 68/2025/TT-BTC ngày 01 tháng 7 năm 2025
+#ci của Bộ trưởng Bộ Tài chính)
+~
+::cot 42/58
+#cb {ten_cty}
+#c ----------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: …………
+||
+#ci …………….., ngày….. tháng….. năm………
+::
+~
+# THÔNG BÁO
+#cb Về việc chấm dứt hoạt động {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd}
+~
+#c Kính gửi: {phong_dkkd}{^phong_dkkd}…………………………………{/phong_dkkd}
+~
+Tên doanh nghiệp *(ghi bằng chữ in hoa)*: **{ten_cty}**
+Mã số doanh nghiệp/Mã số thuế: {ma_dn}{^ma_dn}[...]{/ma_dn}
+Số Giấy chứng nhận đăng ký kinh doanh *(chỉ kê khai nếu không có mã số doanh nghiệp/mã số thuế)*: …………… Ngày cấp ……/……/……… Nơi cấp: ………………
+Thông báo chấm dứt hoạt động {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd} sau:
+#l 1. Tên {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd} *(ghi bằng chữ in hoa)*: **{tt_ten}**
+#l Mã số {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd}: {tt_ma_so}{^tt_ma_so}[...]{/tt_ma_so}
+#l 2. Địa chỉ {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd}:
+Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {tt_dia_chi_so_nha}{^tt_dia_chi_so_nha}[...]{/tt_dia_chi_so_nha}
+#l Xã/Phường/Đặc khu: {tt_dia_chi_xa}{^tt_dia_chi_xa}[...]{/tt_dia_chi_xa}
+#l Tỉnh/Thành phố trực thuộc trung ương: {tt_dia_chi_tinh}{^tt_dia_chi_tinh}[...]{/tt_dia_chi_tinh}
+#l Điện thoại *(nếu có)*: {tt_dien_thoai}{^tt_dien_thoai}………………………………{/tt_dien_thoai}[>50]Fax *(nếu có)*: [...]
+#l Email *(nếu có)*: {tt_email}{^tt_email}………………………………{/tt_email}[>50]Website *(nếu có)*: [...]
+3. Chi nhánh chủ quản *(chỉ kê khai đối với trường hợp đăng ký chấm dứt hoạt động của địa điểm kinh doanh trực thuộc chi nhánh)*:
+#l Tên chi nhánh: {tt_cn_chu_quan_ten}{^tt_cn_chu_quan_ten}[...]{/tt_cn_chu_quan_ten}
+#l Địa chỉ chi nhánh: {tt_cn_chu_quan_dia_chi}{^tt_cn_chu_quan_dia_chi}[...]{/tt_cn_chu_quan_dia_chi}
+#l Mã số chi nhánh/Mã số thuế của chi nhánh: {tt_cn_chu_quan_ma}{^tt_cn_chu_quan_ma}[...]{/tt_cn_chu_quan_ma}
+#l 4. Lý do chấm dứt hoạt động: {tt_ly_do}{^tt_ly_do}[...]{/tt_ly_do}
+#l Doanh nghiệp cam kết:
+- Chịu trách nhiệm thực hiện các hợp đồng, thanh toán các khoản nợ, nghĩa vụ tài sản khác, tiếp tục sử dụng lao động hoặc giải quyết đủ quyền lợi hợp pháp cho người lao động đã làm việc tại {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd};
+- Hoàn toàn chịu trách nhiệm trước pháp luật về tính hợp pháp, chính xác và trung thực của nội dung Thông báo này.
+#k Người ký tại Thông báo này cam kết là người có quyền và nghĩa vụ thực hiện thủ tục đăng ký doanh nghiệp theo quy định của pháp luật và Điều lệ công ty.
+::cot 40/60
+~
+||
+~
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#c {dd_chuc_danh}
+#ci (Ký và ghi họ tên)
+~
+~
+~
+#cb {dd_ho_ten}
+::

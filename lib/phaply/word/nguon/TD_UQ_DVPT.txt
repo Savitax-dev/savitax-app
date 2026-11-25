@@ -1,0 +1,49 @@
+// Giấy ủy quyền — THAY ĐỔI nội dung đăng ký hoạt động ĐƠN VỊ PHỤ THUỘC (chi nhánh / VPĐD / ĐĐKD), dùng chung 1TV / 2TV / CP.
+// Theo bản phòng (5_THAY ĐỔI_… / THAY ĐỔI_ĐƠN VỊ PHỤ THUỘC / 1_GUQ_v1.pdf): bên ủy quyền là CÁ NHÂN người đại diện theo pháp luật
+// (giới tính, ngày sinh, dân tộc, quốc tịch, giấy tờ, địa chỉ liên lạc) "là người đại diện theo pháp luật của CÔNG TY … (mã số doanh
+// nghiệp …) - Chức danh …"; xưng "tôi". Tên loại đơn vị theo {dv_loai}. {phong_dkkd}: ghi nơi đặt đơn vị qua ô "Kính gửi" nếu khác tỉnh.
+// Khác bản phòng: "CCCD số" → "Số định danh cá nhân" (như các giấy ủy quyền khác).
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+#ri …………….., ngày……/……/………
+~
+# GIẤY ỦY QUYỀN
+~
+#l Bên ủy quyền: **{dd_ho_ten}**[>60]Giới tính: {dd_gioi_tinh}
+#l Sinh ngày: {dd_ngay_sinh}[>35]Dân tộc: {dd_dan_toc}[>60]Quốc tịch: {dd_quoc_tich}
+#l Số định danh cá nhân: {dd_so_giay_to}[>60]Ngày cấp: {dd_ngay_cap}
+#l Nơi cấp: {dd_noi_cap}
+Địa chỉ liên lạc: {dd_dia_chi_lien_lac}
+Là người đại diện theo pháp luật của **{ten_cty}** (mã số doanh nghiệp: {ma_dn}) - Chức danh: {dd_chuc_danh}
+Bằng giấy này, chúng tôi ủy quyền cho:
+#l Bên được ủy quyền: **{uq_ho_ten}**[>60]Giới tính: {uq_gioi_tinh}
+#l Sinh ngày: {uq_ngay_sinh}[>35]Dân tộc: {uq_dan_toc}[>60]Quốc tịch: {uq_quoc_tich}
+#l Số định danh cá nhân: {uq_so_giay_to}[>60]Ngày cấp: {uq_ngay_cap}
+#l Nơi cấp: {uq_noi_cap}
+Địa chỉ liên lạc: {uq_dia_chi_lien_lac}
+Để thực hiện thay chúng tôi với các nội dung như sau:
+Thay mặt người đại diện theo pháp luật liên hệ {tt_kinh_gui}{^tt_kinh_gui}{phong_dkkd}{/tt_kinh_gui} để:
++ Nộp hồ sơ đăng ký thay đổi nội dung đăng ký hoạt động {dv_loai} **{tt_dv_ten}**, nhận thông báo sửa đổi, bổ sung hồ sơ, rút hồ sơ;
++ Nhận kết quả, ký nhận Giấy chứng nhận đăng ký hoạt động {dv_loai} sau khi thay đổi.
+- Tôi xin chịu trách nhiệm trước pháp luật về mọi cam kết do Bên được ủy quyền nhân danh tôi thực hiện trong phạm vi ủy quyền nêu trên.
+- Tôi công nhận đã hiểu rõ quyền, nghĩa vụ và lợi ích hợp pháp của mình và hậu quả pháp lý của việc ủy quyền.
+- Thời hạn ủy quyền: kể từ ngày ký cho đến khi bên được ủy quyền hoàn thành các thủ tục nêu trên./.
+~
+::cot 50/50
+#cb BÊN ĐƯỢC ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {uq_ho_ten}
+||
+#cb BÊN ỦY QUYỀN
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

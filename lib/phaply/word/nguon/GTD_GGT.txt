@@ -1,0 +1,49 @@
+// Giấy giới thiệu — CHẤM DỨT HOẠT ĐỘNG đơn vị phụ thuộc (chi nhánh / VPĐD), hồ sơ thuế. Dùng chung 1TV / 2TV / CP.
+// Theo bản phòng pháp lý (5_GIẢI THỂ_ĐƠN VỊ PHỤ THUỘC: 2_CHI NHÁNH\1_HS_THUE\1_GGT, 3_VPĐD\1_THUE\2_GGT — hai bản giống nhau):
+// "Kính gửi" IN SẴN cơ quan thuế quản lý đơn vị (khác GGT hồ sơ pháp lý ban đầu để chấm); người được giới thiệu để chấm viết tay.
+// Cơ quan thuế: ô "Cơ quan thuế quản lý đơn vị" của hồ sơ, để trống = cơ quan thuế của công ty, cũng trống = chỗ chấm.
+@co 12
+::cot 45/55
+#cb {ten_cty}
+#c --------------------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: ….../GGT
+||
+#ci …………….., ngày……/……/………
+::
+~
+# GIẤY GIỚI THIỆU
+#c Kính gửi: {tt_cqt_quan_ly}{^tt_cqt_quan_ly}{co_quan_thue}{^co_quan_thue}……………………………………………………………{/co_quan_thue}{/tt_cqt_quan_ly}
+~
+#b {ten_cty}
+#l Trân trọng giới thiệu:
+#l Ông (bà): [...]
+#l Chức vụ: [...]
+#l Được cử đến: [...]
+#l Để: [...]
+#l [...]
+#l [...]
+#l [...]
+#l [...]
+Đề nghị Quý cơ quan tạo điều kiện để ông (bà) có tên ở trên hoàn thành nhiệm vụ.
+#l Giấy này có giá trị đến hết ngày [..60]./.
+~
+::cot 45/55
+#lb12 Nơi nhận:
+#l12 - Như trên;
+#l12 - Lưu: VT.
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#cb {dd_chuc_danh}
+#ci (Ký, đóng dấu và ghi rõ họ tên)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

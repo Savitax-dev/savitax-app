@@ -1,0 +1,142 @@
+// Mẫu số 19 — Giấy đề nghị đăng ký thay đổi nội dung đăng ký hoạt động chi nhánh / văn phòng đại diện / địa điểm kinh doanh
+// (Phụ lục I). Chữ theo bản trắng chính thức; cách làm theo bản phòng (5_THAY ĐỔI_… / THAY ĐỔI_ĐƠN VỊ PHỤ THUỘC / 2_MAU_19_v1.pdf):
+// chỉ in mục của nội dung thay đổi đã chọn (cờ td_…), tên loại đơn vị theo {dv_loai}; mục B ghi các nội dung cập nhật.
+// Bản phòng ghi "Ban hành kèm theo Thông tư số 68/2025/TT-BTC" — ở đây theo TT 121/2026/TT-BTC như các mẫu Phụ lục I khác (hỏi phòng).
+// "Đổi người đại diện" của hồ sơ đơn vị phụ thuộc = đổi NGƯỜI ĐỨNG ĐẦU đơn vị: người mới lấy từ vai trò "Người đứng đầu" (ndd_).
+// Bỏ mục C (hiệu đính). Chưa in chú thích cuối trang.
+@gian 70
+#cb MẪU SỐ 19
+#ci (Ban hành kèm theo Thông tư số 121/2026/TT-BTC ngày 21 tháng 8 năm 2026
+#ci của Bộ trưởng Bộ Tài chính)
+~
+::cot 40/60
+#cb {ten_cty}
+#c -------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c ---------------
+==
+#c Số: …………..
+||
+#ci ……, ngày…… tháng…… năm ……
+::
+~
+# GIẤY ĐỀ NGHỊ
+#cb Đăng ký thay đổi nội dung đăng ký hoạt động {dv_loai}
+~
+#c Kính gửi: {tt_kinh_gui}{^tt_kinh_gui}{phong_dkkd}{/tt_kinh_gui}
+~
+#l Tên doanh nghiệp *(ghi bằng chữ in hoa)*: **{ten_cty}**
+#l Mã số doanh nghiệp/Mã số thuế: {ma_dn}
+#ck **Đăng ký thay đổi nội dung đăng ký hoạt động của {dv_loai} sau:**
+Tên {dv_loai} *(ghi bằng chữ in hoa)*: **{tt_dv_ten}**
+Mã số {dv_loai}{^la_ddkd} hoặc mã số thuế của {dv_loai}{/la_ddkd}: {tt_dv_ma_so}
+{#la_ddkd}
+{#tt_cn_chu_quan}
+Chi nhánh chủ quản *(chỉ kê khai đối với trường hợp địa điểm kinh doanh trực thuộc chi nhánh)*: {tt_cn_chu_quan}
+{/tt_cn_chu_quan}
+{/la_ddkd}
+~
+#bk A. ĐĂNG KÝ THAY ĐỔI NỘI DUNG ĐĂNG KÝ HOẠT ĐỘNG {dv_loai_hoa}
+{#td_ten}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI TÊN {dv_loai_hoa}
+Tên {dv_loai} viết bằng tiếng Việt sau khi thay đổi *(ghi bằng chữ in hoa)*: **{tt_ten_moi}**
+Tên {dv_loai} viết bằng tiếng nước ngoài sau khi thay đổi *(nếu có)*: {tt_ten_moi_nn}{^tt_ten_moi_nn}[...]{/tt_ten_moi_nn}
+Tên {dv_loai} viết tắt sau khi thay đổi *(nếu có)*: {tt_ten_moi_viet_tat}{^tt_ten_moi_viet_tat}[...]{/tt_ten_moi_viet_tat}
+{/td_ten}
+{#td_dia_chi}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI ĐỊA CHỈ {dv_loai_hoa}
+#l Địa chỉ {dv_loai} sau khi thay đổi:
+#l Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {tt_dia_chi_moi_so_nha}
+#l Xã/Phường/Đặc khu: {tt_dia_chi_moi_xa}
+#l Tỉnh/Thành phố trực thuộc trung ương: {tt_dia_chi_moi_tinh}
+#l Điện thoại *(nếu có)*: {tt_dv_dien_thoai}{^tt_dv_dien_thoai}[..45]{/tt_dv_dien_thoai}[>50]Số fax *(nếu có)*: [...]
+#l Thư điện tử *(nếu có)*: {tt_dv_email}{^tt_dv_email}[..45]{/tt_dv_email}[>50]Website *(nếu có)*: [...]
+- {dv_loai} nằm trong *(Doanh nghiệp phải đánh dấu X vào ô vuông tương ứng với khu công nghệ cao nếu nộp hồ sơ tới Ban quản lý khu công nghệ cao)*:
+#t Khu công nghiệp [ ][>40]Khu chế xuất [ ][>65]Khu kinh tế [ ]
+#t Khu công nghệ cao [ ]
+Doanh nghiệp cam kết trụ sở {dv_loai} thuộc quyền sở hữu/quyền sử dụng hợp pháp của doanh nghiệp và được sử dụng đúng mục đích theo quy định của pháp luật.
+{/td_dia_chi}
+{#td_nganh}
+~
+{^la_vpdd}
+#cbk ĐĂNG KÝ THAY ĐỔI NGÀNH, NGHỀ KINH DOANH
+#lk Ngành, nghề kinh doanh sau khi thay đổi *(chỉ kê khai đối với chi nhánh, địa điểm kinh doanh)*:
+::bang vien 8^ 60< 12^ 20^
+#c STT | #c Tên ngành | #c Mã ngành | #c Ngành, nghề kinh doanh chính *(đánh dấu X để chọn một trong các ngành, nghề đã kê khai)*
+---
+{#tt_nganh_sau}{stt} | {ten} | #c {ma} | #c {chinh}{/tt_nganh_sau}
+::
+~
+{/la_vpdd}
+{#la_vpdd}
+#cbk ĐĂNG KÝ THAY ĐỔI NỘI DUNG HOẠT ĐỘNG
+Nội dung hoạt động sau khi thay đổi *(chỉ kê khai đối với văn phòng đại diện)*: {tt_noi_dung_hd}
+{/la_vpdd}
+{/td_nganh}
+{#td_dai_dien}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI NGƯỜI ĐỨNG ĐẦU {dv_loai_hoa}
+#l Người đứng đầu {dv_loai} sau khi thay đổi:
+#l Họ, chữ đệm và tên *(ghi bằng chữ in hoa)*: **{ndd_ho_ten}**
+#l Ngày, tháng, năm sinh: {ndd_ngay_sinh}[>50]Giới tính: {ndd_gioi_tinh}
+#l Số định danh cá nhân: {ndd_so_giay_to}
+#l Địa chỉ liên lạc:
+#t Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {ndd_ll_so_nha}
+#t Xã/Phường/Đặc khu: {ndd_ll_xa}
+#t Tỉnh/Thành phố trực thuộc trung ương: {ndd_ll_tinh}
+#t Quốc gia: {ndd_ll_quoc_gia}
+#l Điện thoại *(nếu có)*: {ndd_dien_thoai}{^ndd_dien_thoai}[..45]{/ndd_dien_thoai}[>50]Thư điện tử *(nếu có)*: {ndd_email}{^ndd_email}[...]{/ndd_email}
+*Trường hợp không có số định danh cá nhân hoặc việc kết nối giữa Cơ sở dữ liệu quốc gia về đăng ký doanh nghiệp với Cơ sở dữ liệu quốc gia về dân cư bị gián đoạn thì đề nghị kê khai các thông tin cá nhân dưới đây:*
+#l Dân tộc: [..45] Quốc tịch: [...]
+#l Số Hộ chiếu / giấy tờ thay thế: [..60] Ngày cấp: [...]
+#l Nơi cấp: [..50] Nơi thường trú: [...]
+{/td_dai_dien}
+{#la_ddkd}
+{#tt_doi_cn_chu_quan}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI CHI NHÁNH CHỦ QUẢN
+#ci (Chỉ kê khai đối với trường hợp đăng ký hoạt động địa điểm kinh doanh trực thuộc chi nhánh)
+Thông tin chi nhánh chủ quản sau khi thay đổi: {tt_cn_chu_quan_moi}
+{/tt_doi_cn_chu_quan}
+{/la_ddkd}
+{#tt_doi_thue}
+~
+#cbk ĐĂNG KÝ THAY ĐỔI THÔNG TIN ĐĂNG KÝ THUẾ
+::bang vien 8^ 92<
+#c STT | #c Các chỉ tiêu thông tin đăng ký thuế
+---
+#c 1 | Thông tin về Kế toán trưởng/Phụ trách kế toán *(nếu có)*: // Họ, chữ đệm và tên Kế toán trưởng/Phụ trách kế toán: [...] // Ngày, tháng, năm sinh: ……/……/……[>50]Giới tính: [...] // Số định danh cá nhân: [...] // Điện thoại: [...]
+#c 2 | Địa chỉ nhận thông báo thuế *(chỉ kê khai nếu địa chỉ nhận thông báo thuế khác địa chỉ {dv_loai})*: // Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: [...] // Xã/Phường/Đặc khu: [...] // Tỉnh/Thành phố trực thuộc trung ương: [...] // Điện thoại *(nếu có)*: [..45] Số fax *(nếu có)*: [...] // Thư điện tử *(nếu có)*: [...]
+#c 3 | Ngày bắt đầu hoạt động: …../…../…….
+#c 4 | Hình thức hạch toán: [ ] Hạch toán độc lập[>45][ ] Có báo cáo tài chính hợp nhất // [>4][ ] Hạch toán phụ thuộc
+#c 5 | Năm tài chính: Áp dụng từ ngày …..…/..……. đến ngày …..…./.……. *(ghi ngày, tháng bắt đầu và kết thúc niên độ kế toán)*
+#c 6 | Tổng số lao động: [...]
+#c 7 | Hoạt động theo dự án BOT/BTO/BT/BOO, BLT, BTL, O&M: Có [ ][>45]Không [ ]
+::
+~
+{/tt_doi_thue}
+{#td_cap_nhat}
+~
+#bk B. BỔ SUNG, CẬP NHẬT THÔNG TIN ĐĂNG KÝ HOẠT ĐỘNG {dv_loai_hoa}
+{tt_cap_nhat}
+{/td_cap_nhat}
+~
+Doanh nghiệp cam kết hoàn toàn chịu trách nhiệm trước pháp luật về tính hợp pháp, chính xác và trung thực của nội dung Giấy đề nghị này.
+Người ký tại Giấy đề nghị này cam kết là người có quyền và nghĩa vụ thực hiện thủ tục đăng ký doanh nghiệp theo quy định của pháp luật và Điều lệ công ty.
+~
+::cot 40/60
+~
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#ci (Ký và ghi họ tên)
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

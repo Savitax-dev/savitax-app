@@ -1,0 +1,56 @@
+// Quyết định của HỘI ĐỒNG THÀNH VIÊN về việc chấm dứt hoạt động đơn vị phụ thuộc (chi nhánh / VPĐD / ĐĐKD) — công ty TNHH hai thành
+// viên trở lên. Theo bản phòng pháp lý (3_VĂN PHÒNG ĐẠI DIỆN\1_THUE\4_QD_HDTV, 2_SO\3_QD_HDTV — cùng nội dung): căn cứ Biên bản họp
+// HĐTV, 5 điều, ký TM. Hội đồng thành viên — Chủ tịch HĐTV. Cùng một tờ in ở CẢ hai bộ (bộ thuế dùng lại qua GTD_QD_HDTV_T).
+// Khác bản phòng: Điều 2 "Lý do giải thể" → "Lý do chấm dứt hoạt động"; Nơi nhận gộp cơ quan thuế + Phòng ĐKKD.
+@co 12
+::cot 42/58
+#cb {ten_cty}
+#c ----------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: ……/QĐ-HĐTV
+||
+#ci …………….., ngày….. tháng….. năm………
+::
+~
+# QUYẾT ĐỊNH
+#cb V/v: Chấm dứt hoạt động {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd}
+~
+#cb HỘI ĐỒNG THÀNH VIÊN
+~
+- Căn cứ Luật Doanh nghiệp số 59/2020/QH14 được Quốc hội thông qua ngày 17 tháng 06 năm 2020; Luật sửa đổi, bổ sung một số điều của Luật Doanh nghiệp ngày 17 tháng 06 năm 2025;
+- Căn cứ Điều lệ {ten_cty};
+- Căn cứ Biên bản họp số ……/BBH-HĐTV của Hội đồng thành viên thông qua ngày ……/……/……… về việc chấm dứt hoạt động {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd}.
+~
+#cb QUYẾT ĐỊNH
+~
+**Điều 1.** Chấm dứt hoạt động {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd} thuộc **{ten_cty}**
+#l Tên {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd}: **{tt_ten}**
+#l {#la_ddkd}Mã số địa điểm kinh doanh{/la_ddkd}{^la_ddkd}Mã số thuế{/la_ddkd}: {tt_ma_so}{^tt_ma_so}……………………{/tt_ma_so}[>55]Ngày cấp: {tt_ngay_cap}{^tt_ngay_cap}……/……/………{/tt_ngay_cap}
+#l Nơi cấp: {tt_noi_cap}{^tt_noi_cap}{phong_dkkd}{^phong_dkkd}[...]{/phong_dkkd}{/tt_noi_cap}
+Địa chỉ: {tt_dia_chi}{^tt_dia_chi}[...]{/tt_dia_chi}
+#l Người đứng đầu {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd}: {ndd_ho_ten}{^ndd_ho_ten}[...]{/ndd_ho_ten}
+**Điều 2.** Lý do chấm dứt hoạt động: {tt_ly_do}{^tt_ly_do}[...]{/tt_ly_do}
+**Điều 3.** Công ty chịu trách nhiệm thực hiện các hợp đồng, thanh toán các khoản nợ, nghĩa vụ tài sản khác, tiếp tục sử dụng lao động hoặc giải quyết đủ quyền lợi hợp pháp cho người lao động đã làm việc tại {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd}.
+**Điều 4.** Người đại diện theo pháp luật của công ty có trách nhiệm thi hành Quyết định này.
+#k **Điều 5.** Quyết định này có hiệu lực kể từ ngày ký./.
+::cot 40/60
+~
+#l ***Nơi nhận:***
+#l - Cơ quan thuế, Phòng ĐKKD;
+#l - Các chủ nợ;
+#l - Người lao động;
+#l - Lưu: VT.
+||
+#cb TM. HỘI ĐỒNG THÀNH VIÊN
+#cb CHỦ TỊCH HỘI ĐỒNG THÀNH VIÊN
+#ci (Ký, ghi rõ họ tên và đóng dấu)
+~
+~
+~
+~
+#cb {ct_ho_ten}
+::

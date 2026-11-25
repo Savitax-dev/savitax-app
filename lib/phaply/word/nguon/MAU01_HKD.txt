@@ -7,6 +7,7 @@
 //   cước (chú thích 5 của mẫu). Chủ thể "Cá nhân" → một hàng trống như bản phòng.
 // - Chưa in chú thích cuối trang 1–6 của mẫu (bộ dựng chưa hỗ trợ chú thích; MAU2 cũng bỏ).
 @co 12
+@gian 70
 #rb Mẫu số 1
 #cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
 #cb Độc lập - Tự do - Hạnh phúc
