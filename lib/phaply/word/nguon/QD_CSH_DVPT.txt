@@ -1,0 +1,76 @@
+// Quyết định của chủ sở hữu thành lập chi nhánh / văn phòng đại diện — công ty TNHH một thành viên (ĐĐKD không cần quyết định).
+// Theo bản phòng pháp lý (2_TLM_ĐƠN VỊ PHỤ THUỘC: 3_QD_CSH bản chi nhánh + bản VPĐD). Chi nhánh kê bảng ngành; VPĐD ghi nội dung hoạt động.
+// Chủ sở hữu là tổ chức: chỗ ký ghi tên tổ chức + người đại diện của tổ chức ký, đóng dấu.
+::cot 45/55
+#cb {ten_cty}
+#c --------------------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: 01/QĐ-CSH
+||
+#ci ………….., ngày ….. tháng ….. năm ………
+::
+~
+# QUYẾT ĐỊNH
+#cb Về việc: Thành lập mới {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}
+~
+#cb CHỦ SỞ HỮU
+~
+- Căn cứ Luật Doanh nghiệp số 59/2020/QH14 được Quốc hội thông qua ngày 17 tháng 06 năm 2020; Luật sửa đổi bổ sung một số điều của Luật Doanh nghiệp ngày 17 tháng 6 năm 2025;
+- Căn cứ Điều lệ {ten_cty};
+~
+#cb QUYẾT ĐỊNH
+~
+**Điều 1.** Thành lập {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} của công ty:
+#l 1. Tên {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} viết bằng tiếng Việt: **{tt_ten}**
+{#tt_ten_nn}
+#l Tên viết bằng tiếng nước ngoài: {tt_ten_nn}
+{/tt_ten_nn}
+{#tt_ten_viet_tat}
+#l Tên viết tắt: {tt_ten_viet_tat}
+{/tt_ten_viet_tat}
+#l 2. Địa chỉ {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}: {#tt_dia_chi}{tt_dia_chi}, Việt Nam{/tt_dia_chi}{^tt_dia_chi}[...]{/tt_dia_chi}
+{^la_vpdd}
+#lk 3. Ngành nghề kinh doanh của chi nhánh:
+::bang vien 8^ 58< 16^ 18^
+STT | Tên ngành, nghề kinh doanh | Mã ngành | Ngành, nghề kinh doanh chính
+---
+{#tt_nganh}{stt} | {ten} | {ma} | {chinh}{/tt_nganh}
+::
+~
+{/la_vpdd}
+{#la_vpdd}
+#l 3. Nội dung hoạt động của văn phòng đại diện: {tt_noi_dung_hd}{^tt_noi_dung_hd}[...]{/tt_noi_dung_hd}
+{/la_vpdd}
+#l 4. Thông tin người đứng đầu {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}:
+#l Họ và tên (ghi bằng chữ in hoa): **{ndd_ho_ten}**
+#l Sinh ngày: {ndd_ngay_sinh}[>28]Giới tính: {ndd_gioi_tinh}[>50]Số định danh cá nhân: {ndd_so_giay_to}
+#l Địa chỉ liên lạc: {ndd_dia_chi_lien_lac}
+**Điều 2.** Giao cho Người đại diện theo pháp luật tiến hành các thủ tục cần thiết theo quy định của pháp luật.
+**Điều 3.** Người đại diện theo pháp luật của công ty, người đứng đầu {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} có trách nhiệm thi hành Quyết định này.
+#k **Điều 4.** Quyết định này có hiệu lực kể từ ngày ký.
+::cot 45/55
+~
+||
+#cb CHỦ SỞ HỮU
+{#csh_la_ca_nhan}
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {csh_ho_ten}
+{/csh_la_ca_nhan}
+{#csh_la_to_chuc}
+#cb {csh_ho_ten}
+#ci (Người đại diện ký, ghi rõ họ tên, đóng dấu)
+~
+~
+~
+~
+#cb {csh_dai_dien_ten}
+{/csh_la_to_chuc}
+::

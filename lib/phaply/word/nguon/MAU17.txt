@@ -1,0 +1,130 @@
+// Mẫu số 17 — Giấy đề nghị đăng ký hoạt động chi nhánh / văn phòng đại diện; Thông báo lập địa điểm kinh doanh
+// (TT 121/2026/TT-BTC, Phụ lục I — như Mẫu 2). Một mẫu cho cả 3 loại đơn vị, đổi chữ theo cờ la_chi_nhanh / la_vpdd / la_ddkd.
+// Chép theo bản phòng pháp lý (2_TLM_ĐƠN VỊ PHỤ THUỘC): bản CHI NHÁNH "chỉnh sửa" làm gốc (bản VPĐD / ĐĐKD của phòng là bản trắng
+// chưa sửa, bản ĐĐKD còn sót chữ "văn phòng đại diện").
+// - Mục 3: chi nhánh / ĐĐKD kê bảng ngành ({tt_nganh}); VPĐD ghi nội dung hoạt động ({tt_noi_dung_hd}).
+// - Mục 5 (chi nhánh chủ quản, chỉ ĐĐKD trực thuộc chi nhánh): ô tt_cn_chu_quan_ten / _ma (để trống = chấm viết tay).
+// - Mục 6.2 địa chỉ nhận thông báo thuế: chi nhánh in sẵn trụ sở công ty mẹ (như bản chi nhánh phòng đã nộp); VPĐD / ĐĐKD để chấm.
+// - Mục 7 bảo hiểm xã hội: chỉ chi nhánh / VPĐD, theo lựa chọn của công ty mẹ; ĐĐKD để ô trống.
+@co 12
+@le 15/15/20/12
+#cb MẪU SỐ 17
+#ci (Ban hành kèm theo Thông tư số 121/2026/TT-BTC ngày 21 tháng 8 năm 2026
+#ci của Bộ trưởng Bộ Tài chính)
+~
+::cot 42/58
+#cb {ten_cty}
+#c -------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c ---------------
+==
+#c Số: 01/GDN
+||
+#ci ……………, ngày …… tháng …… năm ……
+::
+~
+# GIẤY ĐỀ NGHỊ
+#cb {#la_chi_nhanh}Đăng ký hoạt động chi nhánh{/la_chi_nhanh}{#la_vpdd}Đăng ký hoạt động văn phòng đại diện{/la_vpdd}{#la_ddkd}Thông báo lập địa điểm kinh doanh{/la_ddkd}
+~
+#c Kính gửi: {phong_dkkd}
+~
+#l Tên doanh nghiệp (ghi bằng chữ in hoa): {ten_cty}
+#l Mã số doanh nghiệp/Mã số thuế: {ma_dn}
+#c {#la_ddkd}Thông báo lập địa điểm kinh doanh{/la_ddkd}{^la_ddkd}Đăng ký hoạt động {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{/la_ddkd} với các nội dung sau:
+#b 1. Tên {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd}:
+Tên {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd} viết bằng tiếng Việt *(ghi bằng chữ in hoa)*: {tt_ten}
+#l Tên {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd} viết bằng tiếng nước ngoài (nếu có): {tt_ten_nn}{^tt_ten_nn}[...]{/tt_ten_nn}
+#l Tên {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd} viết tắt (nếu có): {tt_ten_viet_tat}{^tt_ten_viet_tat}[...]{/tt_ten_viet_tat}
+#b 2. Địa chỉ {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd}:
+#l Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {tt_dia_chi_so_nha}
+#l Xã/Phường/Đặc khu: {tt_dia_chi_xa}
+#l Tỉnh/Thành phố trực thuộc trung ương: {tt_dia_chi_tinh}
+#l Điện thoại (nếu có): {tt_dien_thoai}{^tt_dien_thoai}[..45]{/tt_dien_thoai}[>47]Số fax (nếu có): [...]
+#l Thư điện tử (nếu có): {tt_email}{^tt_email}[..45]{/tt_email}[>47]Website (nếu có): [...]
+- {dv_loai} nằm trong *(Đánh dấu X vào ô vuông tương ứng nếu doanh nghiệp đăng ký địa chỉ trụ sở của {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd} nằm trong khu công nghiệp/khu chế xuất/khu kinh tế/khu công nghệ cao)*:
+#t Khu công nghiệp[>38][ ]
+#t Khu chế xuất[>38][ ]
+#t Khu kinh tế[>38][ ]
+#t Khu công nghệ cao[>38][ ]
+#bk 3. Ngành, nghề kinh doanh, nội dung hoạt động:
+{^la_vpdd}
+::bang vien 8^ 58< 16^ 18^
+STT | Tên ngành, nghề kinh doanh | Mã ngành | Ngành, nghề kinh doanh chính
+---
+{#tt_nganh}{stt} | {ten} | {ma} | {chinh}{/tt_nganh}
+::
+{/la_vpdd}
+{#la_vpdd}
+#l Nội dung hoạt động của văn phòng đại diện: {tt_noi_dung_hd}{^tt_noi_dung_hd}[...]{/tt_noi_dung_hd}
+{^tt_noi_dung_hd}
+#l [...]
+{/tt_noi_dung_hd}
+{/la_vpdd}
+~
+#b 4. Người đứng đầu {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd}:
+#l Họ, chữ đệm và tên (ghi bằng chữ in hoa): {ndd_ho_ten}
+#l Ngày, tháng, năm sinh: {ndd_ngay_sinh}
+#l Giới tính: {ndd_gioi_tinh}
+#l Số định danh cá nhân: {ndd_so_giay_to}
+#l Địa chỉ liên lạc:
+#l Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {ndd_ll_so_nha}
+#l Xã/Phường/Đặc khu: {ndd_ll_xa}
+#l Tỉnh/Thành phố trực thuộc trung ương: {ndd_ll_tinh}
+#l Quốc gia: {ndd_ll_quoc_gia}
+#l Điện thoại (nếu có): {ndd_dien_thoai}{^ndd_dien_thoai}[..45]{/ndd_dien_thoai}[>47]Thư điện tử (nếu có): {ndd_email}{^ndd_email}[...]{/ndd_email}
+Trường hợp không có số định danh cá nhân hoặc việc kết nối giữa Cơ sở dữ liệu quốc gia về đăng ký doanh nghiệp với Cơ sở dữ liệu quốc gia về dân cư bị gián đoạn thì đề nghị kê khai các thông tin cá nhân dưới đây:
+#l Dân tộc: [..45] Quốc tịch: [...]
+Số Hộ chiếu (*đối với cá nhân Việt Nam không có số định danh cá nhân*)/Số Hộ chiếu nước ngoài hoặc giấy tờ có giá trị thay thế hộ chiếu nước ngoài (*đối với cá nhân là người nước ngoài*): [...]
+#l Ngày cấp: [..45] Nơi cấp: [...]
+#l Nơi thường trú:
+#l Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: [...]
+#l Xã/Phường/Đặc khu: [...]
+#l Tỉnh/Thành phố trực thuộc trung ương: [...]
+#l Quốc gia: [...]
+**5. Chi nhánh chủ quản** *(chỉ kê khai đối với trường hợp đăng ký hoạt động địa điểm kinh doanh trực thuộc chi nhánh)*:
+#l Tên chi nhánh: {tt_cn_chu_quan_ten}
+#l Mã số chi nhánh/Mã số thuế của chi nhánh: {tt_cn_chu_quan_ma}
+#bk 6. Thông tin đăng ký thuế:
+::bang vien 8^ 92<
+STT | Các chỉ tiêu thông tin đăng ký thuế
+---
+1 | Thông tin về Kế toán trưởng/Phụ trách kế toán (nếu có): // Họ, chữ đệm và tên Kế toán trưởng/Phụ trách kế toán: [...] // Ngày, tháng, năm sinh: [...] // Giới tính: [...] // Số định danh cá nhân: [...] // Điện thoại: [...]
+2 | Địa chỉ nhận thông báo thuế (chỉ kê khai nếu địa chỉ nhận thông báo thuế khác địa chỉ {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd}): // Số nhà/phòng, ngách/hẻm, ngõ/kiệt, đường/phố/đại lộ, tổ/xóm/ấp/thôn: {#la_chi_nhanh}{tru_so_so_nha}{/la_chi_nhanh}{^la_chi_nhanh}[...]{/la_chi_nhanh} // Xã/Phường/Đặc khu: {#la_chi_nhanh}{tru_so_xa}{/la_chi_nhanh}{^la_chi_nhanh}[...]{/la_chi_nhanh} // Tỉnh/Thành phố trực thuộc trung ương: {#la_chi_nhanh}{tru_so_tinh}{/la_chi_nhanh}{^la_chi_nhanh}[...]{/la_chi_nhanh} // Điện thoại (nếu có): {#la_chi_nhanh}{cty_dien_thoai}{/la_chi_nhanh}{^la_chi_nhanh}[...]{/la_chi_nhanh} // Fax (nếu có): [...] // Thư điện tử (nếu có): [...]
+3 | Ngày bắt đầu hoạt động (trường hợp {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd} được dự kiến bắt đầu hoạt động kể từ ngày được cấp Giấy chứng nhận đăng ký hoạt động thì không cần kê khai nội dung này): {tt_ngay_bat_dau}{^tt_ngay_bat_dau}…../…../…….{/tt_ngay_bat_dau}
+4 | Hình thức hạch toán (Đánh dấu X vào một trong hai ô “Hạch toán độc lập” hoặc “Hạch toán phụ thuộc”. Trường hợp chọn ô “Hạch toán độc lập” mà thuộc đối tượng phải lập và gửi báo cáo tài chính hợp nhất cho cơ quan có thẩm quyền theo quy định thì chọn thêm ô “Có báo cáo tài chính hợp nhất”):
+^^ | Hạch toán độc lập[>25][x:tt_hach_toan_doc_lap][>53]Có báo cáo tài chính hợp nhất[>88][ ]
+^^ | Hạch toán phụ thuộc[>25][x:tt_hach_toan_phu_thuoc]
+5 | Năm tài chính: // Áp dụng từ ngày {nam_tc_tu} đến ngày {nam_tc_den}
+6 | Tổng số lao động (dự kiến): {tt_so_lao_dong}{^tt_so_lao_dong}[...]{/tt_so_lao_dong}
+7 | Có hoạt động theo dự án BOT/BTO/BT/BOO, BLT, BTL, O&M không? // Có[>10][x:bot_co][>25]Không[>38][x:bot_khong]
+8 | Phương pháp tính thuế GTGT (chọn 1 trong 4 phương pháp): // Khấu trừ[>35][x:tt_pp_gtgt_khau_tru] // Trực tiếp trên GTGT[>35][x:tt_pp_gtgt_truc_tiep_gtgt] // Trực tiếp trên doanh số[>35][x:tt_pp_gtgt_truc_tiep_doanh_so] // Không phải nộp thuế GTGT[>35][x:tt_pp_gtgt_khong_nop]
+::
+~
+**7. Thông tin về việc đóng bảo hiểm xã hội** *(chỉ kê khai đối với chi nhánh/văn phòng đại diện)*:
+#l Phương thức đóng bảo hiểm xã hội (*chọn 1 trong 3 phương thức*):
+#l Hàng tháng[>17]{#la_ddkd}[ ]{/la_ddkd}{^la_ddkd}[x:bhxh_hang_thang]{/la_ddkd}[>30]03 tháng một lần[>52]{#la_ddkd}[ ]{/la_ddkd}{^la_ddkd}[x:bhxh_3_thang]{/la_ddkd}[>68]06 tháng một lần[>90]{#la_ddkd}[ ]{/la_ddkd}{^la_ddkd}[x:bhxh_6_thang]{/la_ddkd}
+#b *Lưu ý:*
+- Chi nhánh/văn phòng đại diện của doanh nghiệp đăng ký ngành, nghề kinh doanh chính là nông nghiệp, lâm nghiệp, ngư nghiệp, diêm nghiệp và trả lương theo sản phẩm, theo khoán: có thể lựa chọn 1 trong 3 phương thức đóng bảo hiểm xã hội: hàng tháng, 03 tháng một lần, 06 tháng một lần.
+- Chi nhánh/văn phòng đại diện của doanh nghiệp đăng ký ngành, nghề kinh doanh chính khác: đánh dấu vào phương thức đóng bảo hiểm xã hội hàng tháng.
+#b 8. Chi nhánh công ty chứng khoán nước ngoài/Chi nhánh công ty quản lý quỹ nước ngoài tại Việt Nam:
+[ ]  Đánh dấu X nếu là chi nhánh công ty chứng khoán nước ngoài/chi nhánh công ty quản lý quỹ nước ngoài tại Việt Nam và kê khai thêm các thông tin sau đây:
+#l Giấy phép thành lập và hoạt động số: … *(nếu có)* do Ủy ban Chứng khoán Nhà nước cấp ngày: …./…./…..
+#bk Doanh nghiệp cam kết:
+- Trụ sở {#la_chi_nhanh}chi nhánh{/la_chi_nhanh}{#la_vpdd}văn phòng đại diện{/la_vpdd}{#la_ddkd}địa điểm kinh doanh{/la_ddkd} thuộc quyền sở hữu/quyền sử dụng hợp pháp của doanh nghiệp và được sử dụng đúng mục đích theo quy định của pháp luật;
+- Hoàn toàn chịu trách nhiệm trước pháp luật về tính hợp pháp, chính xác và trung thực của nội dung {#la_ddkd}Thông báo{/la_ddkd}{^la_ddkd}Giấy đề nghị{/la_ddkd} này.
+#k Người ký tại {#la_ddkd}Thông báo{/la_ddkd}{^la_ddkd}Giấy đề nghị{/la_ddkd} này cam kết là người có quyền và nghĩa vụ thực hiện thủ tục đăng ký doanh nghiệp theo quy định của pháp luật và Điều lệ công ty.
+::cot 45/55
+~
+||
+#cb NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+#cb CỦA DOANH NGHIỆP
+#ci (Ký và ghi họ tên)
+~
+~
+~
+~
+~
+#cb {dd_ho_ten}
+::

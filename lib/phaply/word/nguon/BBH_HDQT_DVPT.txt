@@ -1,0 +1,106 @@
+// Biên bản họp Hội đồng quản trị thành lập chi nhánh / văn phòng đại diện — công ty cổ phần.
+// Theo bản phòng pháp lý (2_TLM_ĐƠN VỊ PHỤ THUỘC: 6_BBH_HDQT bản chi nhánh + bản VPĐD): mỗi thành viên HĐQT 1 phiếu biểu quyết.
+// ⚠ Dữ liệu hồ sơ CHƯA có danh sách thành viên HĐQT riêng → tạm lấy danh sách cổ đông sáng lập ({co_dong}, người có chu_tich =
+// Chủ tịch HĐQT), số thành viên = {so_co_dong}. Phòng đánh mục III là 4.1–4.4 và "0/4" ở dòng không có ý kiến → sửa 3.1–3.4, 0/{so}.
+// Bảng chương trình họp: gộp khung giờ chồng nhau như BBH_HDTV_DVPT.
+::cot 45/55
+#cb {ten_cty}
+#c --------------------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: 01/BBH-HĐQT
+||
+#ci …………….., ngày……/……/………
+::
+~
+# BIÊN BẢN HỌP HỘI ĐỒNG QUẢN TRỊ
+#cb Về việc: Thành lập mới {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}
+~
+#l Tên doanh nghiệp: **{ten_cty}**
+#l Mã số doanh nghiệp/Mã số thuế: {ma_dn}
+#l Địa chỉ trụ sở chính: {dia_chi_tru_so}
+#l Tổ chức cuộc họp Hội đồng quản trị của Công ty:
+#l - Thời gian: 08 giờ 30 phút, ngày …… tháng …… năm ………
+#l - Địa điểm họp: {dia_chi_tru_so}
+#b I. Thành phần tham dự:
+#l - {ct_danh_xung}: **{ct_ho_ten}** – Chủ tọa.
+#l - {tk_danh_xung}: **{tk_ho_ten}** – Người ghi biên bản họp.
+1. Tổng số thành viên dự họp trực tiếp tại cuộc họp (hoặc thông qua người đại diện theo ủy quyền) và cách thức dự họp:
+{#co_dong}
+- {danh_xung} **{ho_ten}** – {#chu_tich}Chủ tịch{/chu_tich}{^chu_tich}Thành viên{/chu_tich} Hội đồng quản trị, có tham dự cuộc họp và biểu quyết trực tiếp tại cuộc họp.
+{/co_dong}
+Tổng số thành viên dự họp: {so_co_dong}/{so_co_dong} thành viên Hội đồng quản trị. Tổng số phiếu biểu quyết: {so_co_dong} phiếu biểu quyết.
+#l 2. Họ và tên các thành viên không tham dự cuộc họp và lý do: Không có.
+Chủ tọa tuyên bố: Tổng số thành viên dự họp là {so_co_dong}/{so_co_dong} thành viên Hội đồng quản trị, đủ điều kiện tiến hành cuộc họp Hội đồng quản trị theo quy định pháp luật và Điều lệ Công ty.
+#b II. Chương trình và nội dung cuộc họp:
+#lk 2.1. Chương trình họp:
+::bang vien 22^ 78<
+Thời gian | Nội dung
+---
+08h30 – 08h45 | Đón tiếp thành viên
+08h45 – 09h00 | Tuyên bố lý do; giới thiệu thành phần tham dự; báo cáo kết quả kiểm tra tư cách thành viên tham dự cuộc họp, tuyên bố đủ điều kiện tiến hành cuộc họp
+09h00 – 09h30 | Hội đồng thảo luận và tiến hành biểu quyết về việc thành lập mới {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}
+09h30 – 09h45 | Giải lao
+09h45 – 10h00 | Biểu quyết thông qua Biên bản và quyết định; bế mạc
+::
+~
+#l 2.2. Nội dung cuộc họp:
+Hội đồng quản trị lấy ý kiến của các thành viên dự họp về việc quyết định thành lập {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} của Công ty, bao gồm việc thông qua tên, địa chỉ trụ sở, phạm vi hoạt động, {#la_vpdd}nội dung hoạt động{/la_vpdd}{^la_vpdd}ngành nghề kinh doanh{/la_vpdd} của {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}; đồng thời xem xét, quyết định việc bổ nhiệm người đứng đầu {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} và giao cho người đại diện theo pháp luật của Công ty thực hiện các thủ tục đăng ký hoạt động {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} theo quy định pháp luật.
+#b III. Vấn đề thảo luận và biểu quyết tại cuộc họp:
+#l 3.1. Tên {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} viết bằng tiếng Việt: **{tt_ten}**
+{#tt_ten_nn}
+#l Tên viết bằng tiếng nước ngoài: {tt_ten_nn}
+{/tt_ten_nn}
+{#tt_ten_viet_tat}
+#l Tên viết tắt: {tt_ten_viet_tat}
+{/tt_ten_viet_tat}
+#l 3.2. Địa chỉ {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}: {#tt_dia_chi}{tt_dia_chi}, Việt Nam{/tt_dia_chi}{^tt_dia_chi}[...]{/tt_dia_chi}
+{^la_vpdd}
+#lk 3.3. Ngành nghề kinh doanh của chi nhánh:
+::bang vien 8^ 58< 16^ 18^
+STT | Tên ngành, nghề kinh doanh | Mã ngành | Ngành, nghề kinh doanh chính
+---
+{#tt_nganh}{stt} | {ten} | {ma} | {chinh}{/tt_nganh}
+::
+~
+{/la_vpdd}
+{#la_vpdd}
+#l 3.3. Nội dung hoạt động của văn phòng đại diện: {tt_noi_dung_hd}{^tt_noi_dung_hd}[...]{/tt_noi_dung_hd}
+{/la_vpdd}
+#l 3.4. Thông tin người đứng đầu {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}:
+#l Họ và tên (ghi bằng chữ in hoa): **{ndd_ho_ten}**
+#l Sinh ngày: {ndd_ngay_sinh}[>28]Giới tính: {ndd_gioi_tinh}[>50]Số định danh cá nhân: {ndd_so_giay_to}
+#l Địa chỉ liên lạc: {ndd_dia_chi_lien_lac}
+#b IV. Tóm tắt ý kiến phát biểu của các thành viên dự họp theo trình tự diễn biến cuộc họp:
+Các thành viên Hội đồng quản trị tham dự cuộc họp đều nhất trí thông qua việc thành lập {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} tại mục III nêu trên.
+#b V. Kết quả biểu quyết:
+Về việc xem xét thành lập {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} như trình bày tại mục III, các thành viên dự họp đã biểu quyết với kết quả như sau:
+#l - Tổng số phiếu biểu quyết tán thành: {so_co_dong}/{so_co_dong} tổng số phiếu biểu quyết của các thành viên dự họp.
+#l - Tổng số phiếu biểu quyết không tán thành: 0/{so_co_dong} tổng số phiếu biểu quyết của các thành viên dự họp.
+#l - Tổng số phiếu biểu quyết không có ý kiến: 0/{so_co_dong} tổng số phiếu biểu quyết của các thành viên dự họp.
+Cụ thể thành viên tán thành là: {#co_dong}{danh_xung} {ho_ten}; {/co_dong}
+#b VI. Vấn đề được thông qua:
+Căn cứ vào kết quả biểu quyết trên đây, Hội đồng quản trị đã thông qua các vấn đề sau:
+- Thông qua việc thành lập {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} như mục III nêu trên. Tỷ lệ biểu quyết thông qua là {so_co_dong}/{so_co_dong} tổng số phiếu biểu quyết của thành viên dự họp tán thành.
+- Giao cho {dd_danh_xung} **{dd_ho_ten}** (người đại diện theo pháp luật) tiến hành các thủ tục cần thiết theo quy định pháp luật.
+#k Cuộc họp kết thúc vào lúc 10 giờ 00 phút cùng ngày.
+::cot 50/50
+#cb Thư ký cuộc họp
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {tk_ho_ten}
+||
+#cb Chủ tọa cuộc họp
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {ct_ho_ten}
+::

@@ -1,0 +1,116 @@
+// Biên bản họp Hội đồng thành viên thành lập chi nhánh / văn phòng đại diện — công ty TNHH hai thành viên trở lên.
+// Theo bản phòng pháp lý (2_TLM_ĐƠN VỊ PHỤ THUỘC: 4_BBH_HDTV_2TV bản chi nhánh + bản VPĐD). Bảng thành phần dự họp lặp theo thành
+// viên (vốn góp, tỷ lệ, số phiếu = vốn góp ÷ quy ước — duLieu.js). Bảng chương trình họp: phòng ghi giờ chồng nhau (8h45–09h00 rồi
+// 08h50–09h00) → gộp thành một khung 08h45–09h00; giờ bắt đầu họp 08 giờ 30 cho khớp bảng (bản phòng ghi 8 giờ 00).
+::cot 45/55
+#cb {ten_cty}
+#c --------------------
+||
+#cb CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+#cb Độc lập - Tự do - Hạnh phúc
+#c --------------------
+==
+#c Số: 01/BBH-HĐTV
+||
+#ci …………….., ngày……/……/………
+::
+~
+# BIÊN BẢN HỌP HỘI ĐỒNG THÀNH VIÊN
+#cb Về việc: Thành lập mới {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}
+~
+#l Tên công ty: **{ten_cty}**
+#l Mã số doanh nghiệp: {ma_dn}
+#l Trụ sở: {dia_chi_tru_so}
+#b 1. Thời gian và địa điểm họp:
+#l - Thời gian bắt đầu: vào lúc 08 giờ 30 phút, ngày …… tháng …… năm ………
+#l - Địa điểm: {dia_chi_tru_so}
+#b 2. Mục đích, chương trình họp:
+#l Mục đích: bàn về vấn đề thành lập mới {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}.
+#lk Chương trình họp:
+::bang vien 22^ 78<
+Thời gian | Nội dung
+---
+08h30 – 08h45 | Đón tiếp thành viên
+08h45 – 09h00 | Tuyên bố lý do; giới thiệu thành phần tham dự; báo cáo kết quả kiểm tra tư cách thành viên tham dự cuộc họp, tuyên bố đủ điều kiện tiến hành cuộc họp
+09h00 – 09h30 | Hội đồng thảo luận và tiến hành biểu quyết về việc thành lập mới {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}
+09h30 – 09h45 | Giải lao
+09h45 – 10h00 | Biểu quyết thông qua Biên bản và quyết định; bế mạc
+::
+~
+#bk 3. Thành phần dự họp:
+::bang vien 7^ 21< 17^ 15> 9^ 13> 18^ co=11
+STT | Họ và tên | Chức danh | Giá trị vốn góp (VNĐ) | Tỷ lệ (%) | Số phiếu có quyền biểu quyết (phiếu) | Số và ngày cấp giấy chứng nhận phần vốn góp
+---
+{#thanh_vien}{stt} | {ho_ten}{#la_to_chuc} (người đại diện theo ủy quyền: {nguoi_uq}){/la_to_chuc} | {#chu_tich}Chủ tịch Hội đồng thành viên{/chu_tich}{^chu_tich}Thành viên Hội đồng thành viên{/chu_tich} | {von_gop} | {ty_le} | {so_phieu} | Số: ................ // Ngày: ..../..../.....{/thanh_vien}
+::
+~
+#l - Chủ tọa cuộc họp: {ct_danh_xung} **{ct_ho_ten}**
+#l - Thư ký cuộc họp: {tk_danh_xung} **{tk_ho_ten}**
+- Các thành viên công ty có mặt dự họp đầy đủ, đại diện sở hữu 100% tổng vốn điều lệ của Công ty.
+#l Ban tổ chức Hội đồng công bố kết quả kiểm tra tư cách thành viên tham dự cuộc họp:
+#l + Số thành viên có mặt: {so_thanh_vien}
+#l + Số thành viên vắng mặt: không
+#l + Số thành viên được ủy quyền: không
+Theo quy định tại Luật Doanh nghiệp 2020, Hội đồng thành viên có đủ điều kiện tiến hành họp theo quy định của pháp luật.
+#b 4. Vấn đề được thảo luận và biểu quyết, tóm tắt ý kiến phát biểu của các thành viên:
+#l - Cuộc họp thảo luận và quyết định vấn đề thành lập mới {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}.
+#l - Nội dung biểu quyết:
+Sau khi thảo luận các thành viên nhất trí thành lập mới {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} với nội dung như sau:
+#l 4.1. Tên {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} viết bằng tiếng Việt: **{tt_ten}**
+{#tt_ten_nn}
+#l Tên viết bằng tiếng nước ngoài: {tt_ten_nn}
+{/tt_ten_nn}
+{#tt_ten_viet_tat}
+#l Tên viết tắt: {tt_ten_viet_tat}
+{/tt_ten_viet_tat}
+#l 4.2. Địa chỉ {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}: {#tt_dia_chi}{tt_dia_chi}, Việt Nam{/tt_dia_chi}{^tt_dia_chi}[...]{/tt_dia_chi}
+{^la_vpdd}
+#lk 4.3. Ngành nghề kinh doanh của chi nhánh:
+::bang vien 8^ 58< 16^ 18^
+STT | Tên ngành, nghề kinh doanh | Mã ngành | Ngành, nghề kinh doanh chính
+---
+{#tt_nganh}{stt} | {ten} | {ma} | {chinh}{/tt_nganh}
+::
+~
+{/la_vpdd}
+{#la_vpdd}
+#l 4.3. Nội dung hoạt động của văn phòng đại diện: {tt_noi_dung_hd}{^tt_noi_dung_hd}[...]{/tt_noi_dung_hd}
+{/la_vpdd}
+#l 4.4. Thông tin người đứng đầu {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}:
+#l Họ và tên (ghi bằng chữ in hoa): **{ndd_ho_ten}**
+#l Sinh ngày: {ndd_ngay_sinh}[>28]Giới tính: {ndd_gioi_tinh}[>50]Số định danh cá nhân: {ndd_so_giay_to}
+#l Địa chỉ liên lạc: {ndd_dia_chi_lien_lac}
+Tóm tắt ý kiến phát biểu của các thành viên về việc thành lập mới {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} như sau: các thành viên hoàn toàn đồng ý với nội dung và không có ý kiến khác.
+#b 5. Kết quả biểu quyết:
+#l - Phương thức biểu quyết: bỏ phiếu kín
+#l - Quy ước: {quy_uoc_phieu} đồng tương ứng 1 phiếu biểu quyết
+#l - Tổng số phiếu có quyền biểu quyết: {tong_phieu} (phiếu)
+#l Biểu quyết về vấn đề thành lập mới {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd}:
+#l - Tổng số phiếu biểu quyết hợp lệ: {tong_phieu} (phiếu)
+#l - Tổng số phiếu biểu quyết không hợp lệ: 0 (phiếu)
+- Tổng số phiếu biểu quyết tán thành: {tong_phieu} (phiếu) đạt tỷ lệ 100% trên tổng số phiếu biểu quyết của thành viên dự họp.
+#l - Tổng số phiếu không tán thành: 0 (phiếu)
+#l - Tổng số phiếu không có ý kiến: 0 (phiếu)
+#b 6. Các quyết định được thông qua và tỷ lệ phiếu biểu quyết tương ứng:
+#l - Thành lập mới {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} của công ty.
+- Tổng số phiếu biểu quyết thông qua vấn đề thành lập mới {#la_vpdd}văn phòng đại diện{/la_vpdd}{^la_vpdd}chi nhánh{/la_vpdd} của công ty: {tong_phieu}/{tong_phieu}, đạt tỷ lệ 100%.
+- Giao cho {dd_danh_xung} **{dd_ho_ten}** (người đại diện theo pháp luật) tiến hành các thủ tục cần thiết theo quy định của pháp luật.
+Biên bản đã được đọc lại cho các thành viên Hội đồng thành viên nghe, không ai có ý kiến gì thêm.
+#k Cuộc họp kết thúc vào lúc 10 giờ 00 phút cùng ngày.
+::cot 50/50
+#cb Thư ký cuộc họp
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {tk_ho_ten}
+||
+#cb Chủ tọa cuộc họp
+#ci (Ký, ghi rõ họ tên)
+~
+~
+~
+~
+#cb {ct_ho_ten}
+::

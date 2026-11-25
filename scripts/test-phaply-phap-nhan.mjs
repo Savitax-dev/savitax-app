@@ -61,7 +61,8 @@ for (const [lh, goc0] of Object.entries(DU_LIEU_GIA)) {
   const goc = chuanHoa(goc0)
   // bộ giả dùng thư ký = nhân viên pháp lý; DB lưu thư ký như một vai trò riêng → khứ hồi vẫn phải khớp
   // biến thể thủ tục + thông tin thủ tục nằm ở HỒ SƠ (legal_cases), không qua pháp nhân — route gắn thêm như xuatBo
-  const dv = { ...hoSoDauVao(tachDb(goc)), bien_the: goc.bien_the, don_vi_loai: goc.don_vi_loai, thong_tin: goc.thong_tin }
+  const HO_SO = ['bien_the', 'don_vi_loai', 'thong_tin', 'thu_tuc', 'tam_ngung_tu', 'tam_ngung_den', 'hoat_dong_lai_tu', 'noi_dung_thay_doi']
+  const dv = { ...hoSoDauVao(tachDb(goc)), ...Object.fromEntries(HO_SO.filter(k => k in goc).map(k => [k, goc[k]])) }
   const a = chuanBiDuLieu(goc), b = chuanBiDuLieu(dv)
   // thẻ bàn giao (bg_, sv_) lấy từ hồ sơ legal_cases + pháp nhân Savitax, không qua dữ liệu pháp nhân — kiểm ở test-phaply-ban-giao
   const lech = Object.keys({ ...a, ...b }).filter(k => !/^(bg|sv)_/.test(k) && JSON.stringify(a[k]) !== JSON.stringify(b[k]))

@@ -103,7 +103,9 @@ DU_LIEU_GIA.hkd_cn = { ...DU_LIEU_GIA.hkd, thanh_vien_ho: [], thong_tin: { chu_t
 // ── Đơn vị phụ thuộc (1c) — hồ sơ gắn CÔNG TY MẸ; thông tin đơn vị ở thong_tin, người đứng đầu = nguoi_dung_dau ──
 const dvpt = (goc, loai, ten) => ({ ...DU_LIEU_GIA[goc], bien_the: 'tlm_dvpt', don_vi_loai: loai, nguoi_dung_dau: CUONG,
   thong_tin: { ten, dia_chi: hcm('300 Đường Mẫu Số 5', 'Phường Bình Thạnh'), dien_thoai: '0283333333', email: 'donvi@vidu.vn',
-    nganh: [nganh[0], nganh[1]], hach_toan: 'phu_thuoc', so_lao_dong: 5 } })
+    nganh: [nganh[0], nganh[1]], hach_toan: 'phu_thuoc', so_lao_dong: 5,
+    ...(loai === 'vpdd' ? { noi_dung_hd: 'Thực hiện chức năng văn phòng liên lạc, xúc tiến thương mại; nghiên cứu thị trường cho công ty.' } : {}),
+    ...(loai === 'chi_nhanh' ? { pp_gtgt: 'khau_tru' } : {}) } })
 DU_LIEU_GIA.cn_1tv = dvpt('1tv', 'chi_nhanh', 'Chi nhánh Công ty TNHH Thương mại Dịch vụ An Phát - Bình Thạnh')
 DU_LIEU_GIA.cn_2tv = dvpt('2tv', 'chi_nhanh', 'Chi nhánh Công ty TNHH Công nghệ Bình Minh - Bình Thạnh')
 DU_LIEU_GIA.cn_cp = dvpt('cp', 'chi_nhanh', 'Chi nhánh Công ty Cổ phần Thương mại Cửu Long - Bình Thạnh')

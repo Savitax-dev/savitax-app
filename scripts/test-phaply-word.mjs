@@ -81,6 +81,8 @@ for (const m of dsMau) {
     if (trong) ghiChu.push(`${lh}: ${trong} ô thiếu dữ liệu`)
     writeFileSync(join(ra, `${m.ma}_${lh}.docx`), out); soFile++
   }
+  const boDung = m.loaiHinh.flatMap(l => [].concat(m.duLieuThu?.[l] || l)).filter(k => DU_LIEU_GIA[k])
+  if (!boDung.length) { console.log(`✗ ${m.ma} không có bộ dữ liệu giả nào (duLieuThu: ${JSON.stringify(m.duLieuThu || m.loaiHinh)})`); loi++; continue }
   const chuaSoi = [...new Set(pv.ds.map(t => [...t.pham_vi, t.ten].join('.')))].filter(k => !daSoi.has(k))
   if (chuaSoi.length) { console.log(`✗ ${m.ma} thẻ trong danh sách rỗng ở MỌI bộ dữ liệu giả (không kiểm được): ${chuaSoi.join(', ')}`); loi++; continue }
   console.log(`✓ ${m.ma.padEnd(11)} ${pv.ds.length} thẻ · ${m.loaiHinh.join('/')}${ghiChu.length ? ' · ' + ghiChu.join(', ') : ''}`)
