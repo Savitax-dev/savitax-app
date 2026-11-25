@@ -5,6 +5,7 @@
 import { requirePhapLy, xemDuoc, suaDuoc, loi } from '@/lib/phaply/quyen'
 import { COT_HO_SO, ghiNhatKy } from '@/lib/phaply/hoSoMayChu'
 import { dungBoWord, LOAI_CO_MAU, tenFile } from '@/lib/phaply/xuatBo'
+import { bienThe, dsBo, tenBo } from '@/lib/phaply/boHoSo'
 import { ensureFolder, uploadFile, DOCX_MIME } from '@/lib/googleDrive'
 import { coDrive, THU_MUC_BO, THU_MUC_CCCD, linkThuMuc } from '@/lib/phaply/drive'
 import { thuMucHoSo } from '@/lib/phaply/driveMayChu'
@@ -24,7 +25,8 @@ export async function POST(request, { params }) {
   if (!suaDuoc(auth, hs)) return loi(403, 'Không có quyền sửa hồ sơ này')
   if (!coDrive(hs.procedure_code)) return loi(400, 'Chưa cấu hình thư mục Drive cho thủ tục này (bản demo không lưu Drive)')
   const b = await request.json().catch(() => ({}))
-  const noiDung = new Set(Array.isArray(b.noi_dung) && b.noi_dung.length ? b.noi_dung : ['so', 'thue', 'cccd'])
+  const bt = bienThe(hs.procedure_code, hs.entity_type)
+  const noiDung = new Set(Array.isArray(b.noi_dung) && b.noi_dung.length ? b.noi_dung : [...dsBo(bt).map(x => x.dot), 'cccd'])
 
   try {
     const { folderId, con } = await thuMucHoSo(admin, hs)
@@ -32,9 +34,10 @@ export async function POST(request, { params }) {
     let soFile = 0
     const loiPdf = []
     if (LOAI_CO_MAU.includes(hs.entity_type)) {
-      for (const dot of ['so', 'thue'].filter(x => noiDung.has(x))) {
+      for (const dot of dsBo(bt).map(x => x.dot).filter(x => noiDung.has(x))) {
         const { files, huongDan } = await dungBoWord(admin, hs, dot)
-        const tm = (await ensureFolder(THU_MUC_BO[dot], con.soan)).id
+        if (!files.length) continue
+        const tm = (await ensureFolder(bt === 'tlm' ? THU_MUC_BO[dot] : tenFile(tenBo(bt, dot)), con.soan)).id
         for (const f of [huongDan, ...files]) { await uploadFile(tm, f.ten, DOCX_MIME, f.buf); soFile++ }
         if (coPdf()) {
           try {

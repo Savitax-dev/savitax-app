@@ -16,6 +16,8 @@ const veDb = p => ({
   loai_giay_to: p.loai_giay_to, so_giay_to: p.so_giay_to, ngay_cap: p.ngay_cap, noi_cap: p.noi_cap,
   thuong_tru: { ...p.thuong_tru, ma_xa: '26734', ma_tinh: '79' },
   lien_lac: p.lien_lac === p.thuong_tru ? {} : { ...p.lien_lac }, dien_thoai: p.dien_thoai, email: p.email,
+  la_to_chuc: !!p.la_to_chuc, ma_so_dn: p.ma_so_dn, ngay_cap_dn: p.ngay_cap_dn, noi_cap_dn: p.noi_cap_dn,
+  dai_dien_ten: p.dai_dien_ten, dai_dien_chuc_danh: p.dai_dien_chuc_danh,
 })
 
 function tachDb(hs) {
@@ -25,13 +27,16 @@ function tachDb(hs) {
     tru_so_so_nha: c.tru_so.so_nha, tru_so_xa: c.tru_so.xa, tru_so_tinh: c.tru_so.tinh, tru_so_ma_xa: '26734', tru_so_ma_tinh: '79',
     phone: c.dien_thoai, email: c.email, fax: c.fax, website: c.website, von_dieu_le: String(c.von_dieu_le),
     menh_gia: c.menh_gia ?? null, so_lao_dong: c.so_lao_dong, mo_hinh: c.mo_hinh, csh_la_to_chuc: !!c.csh_la_to_chuc,
+    thoi_han_hoat_dong: c.thoi_han_hoat_dong || null, so_lan_hop_hdtv: c.so_lan_hop_hdtv || null, dia_chi_cn_vpdd: c.dia_chi_cn_vpdd || null,
     co_ndt_nuoc_ngoai: !!hs.co_ndt_nuoc_ngoai, dien_thue_san: !!hs.dien_thue_san,
     phong_dkkd: null, co_quan_thue: null, // lấy từ gợi ý danh mục
     thue: hs.thue, so_sach: hs.so_sach, khau_hao: hs.khau_hao || null, quy_uoc_phieu: hs.quy_uoc_phieu,
   }
   const vaiTro = []
-  const them = (vai, p, x = {}, i = 0) => p && vaiTro.push({ vai_tro: vai, thu_tu: i, person_id: p.so_giay_to, chuc_danh: p.chuc_danh || null, nguoi: veDb(p), ...x })
-  them('dai_dien', hs.dai_dien)
+  const them = (vai, p, x = {}, i = 0) => p && vaiTro.push({ vai_tro: vai, thu_tu: i, person_id: p.person_id || p.so_giay_to, chuc_danh: p.chuc_danh || null, nguoi: veDb(p), ...x })
+  if (hs.ds_dai_dien?.length) hs.ds_dai_dien.forEach((p, i) => them('dai_dien', p, { quyen_han: p.quyen_han || null }, i))
+  else them('dai_dien', hs.dai_dien)
+  ;(hs.dai_dien_uy_quyen || []).forEach((p, i) => them('dai_dien_uy_quyen', p, { von_uy_quyen: p.von_uy_quyen, thoi_diem_dai_dien: p.thoi_diem_dai_dien, cua_person_id: p.cua_person_id, chuc_danh: null }, i))
   if (hs.giam_doc && hs.giam_doc !== hs.dai_dien) them('giam_doc', hs.giam_doc)
   them('chu_so_huu', hs.chu_so_huu); them('ke_toan', hs.ke_toan); them('thu_ky', hs.thu_ky)
   // thứ tự lưu đảo ngược để chắc hoSoDauVao sắp lại theo thu_tu
@@ -44,8 +49,11 @@ function tachDb(hs) {
 // Bộ giả chép nguyên người AN (chức danh "Giám đốc") vào danh sách cổ đông công ty cổ phần dù AN không làm giám đốc ở đó;
 // DB chỉ mang chức danh theo vai trò thật → chuẩn hoá bản gốc trước khi so
 const chuanHoa = hs => {
-  const gd = new Set([hs.dai_dien?.so_giay_to, hs.giam_doc?.so_giay_to])
-  const bo = v => (gd.has(v.so_giay_to) ? v : { ...v, chuc_danh: '' })
+  // DB gán chức danh cho thành viên / cổ đông kiêm người đại diện / giám đốc theo đúng thứ tự lưu (đại diện trước, giám đốc sau — sau thắng)
+  const cdCua = new Map()
+  for (const p of [...(hs.ds_dai_dien?.length ? hs.ds_dai_dien : [hs.dai_dien]), hs.giam_doc !== hs.dai_dien ? hs.giam_doc : null])
+    if (p?.so_giay_to && p.chuc_danh) cdCua.set(p.so_giay_to, p.chuc_danh)
+  const bo = v => ({ ...v, chuc_danh: cdCua.get(v.so_giay_to) || '' })
   return { ...hs, thanh_vien: hs.thanh_vien?.map(bo), co_dong: hs.co_dong?.map(bo) }
 }
 for (const [lh, goc0] of Object.entries(DU_LIEU_GIA)) {

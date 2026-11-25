@@ -6,6 +6,7 @@
 import { requirePhapLy, xemDuoc, suaDuoc, loi } from '@/lib/phaply/quyen'
 import { COT_HO_SO, ghiNhatKy } from '@/lib/phaply/hoSoMayChu'
 import { mauCuaBo } from '@/lib/phaply/word/danhMuc'
+import { bienThe, coBo, loaiHinhMau } from '@/lib/phaply/boHoSo'
 import { choTheoNop, lanKeTiep, maSoHopLe, CO_QUAN, KET_QUA, coQuanLabel, ketQuaLabel } from '@/lib/phaply/nop'
 import { goiYCoQuan } from '@/lib/phaply/phapNhanMayChu'
 import { coDrive } from '@/lib/phaply/drive'
@@ -74,12 +75,15 @@ export async function PATCH(request, { params }) {
 
   try {
     if (b.action === 'ky') {
-      if (!['so', 'thue'].includes(b.dot) || !mauCuaBo(b.dot, hs.entity_type).some(m => m.ma === b.ma)) return loi(400, 'Tờ hồ sơ không thuộc bộ của hồ sơ này')
+      const bt = bienThe(hs.procedure_code, hs.entity_type)
+      const lh = loaiHinhMau(hs.entity_type, (await admin.from('legal_entities').select('entity_type').eq('id', hs.entity_id || '00000000-0000-0000-0000-000000000000').maybeSingle()).data?.entity_type)
+      const mau = coBo(bt, b.dot) && lh ? mauCuaBo(b.dot, lh, bt, hs.entity_type).find(m => m.ma === b.ma) : null
+      if (!mau) return loi(400, 'Tờ hồ sơ không thuộc bộ của hồ sơ này')
       if (b.da_ky) {
         const { error } = await admin.from('legal_case_signing').upsert({ case_id: id, dot: b.dot, ma: b.ma, signed_at: new Date().toISOString(), signed_by: caller.staffId })
         if (error) throw new Error(error.message)
       } else await admin.from('legal_case_signing').delete().eq('case_id', id).eq('dot', b.dot).eq('ma', b.ma)
-      await ghi(`${b.da_ky ? 'Đã ký' : 'Bỏ dấu đã ký'}: ${mauCuaBo(b.dot, hs.entity_type).find(m => m.ma === b.ma).ten}`)
+      await ghi(`${b.da_ky ? 'Đã ký' : 'Bỏ dấu đã ký'}: ${mau.ten}`)
       return Response.json({ ok: true })
     }
 

@@ -4,8 +4,8 @@
 import PizZip from 'pizzip'
 import { requirePhapLy, xemDuoc, loi } from '@/lib/phaply/quyen'
 import { COT_HO_SO, ghiNhatKy } from '@/lib/phaply/hoSoMayChu'
-import { mauCuaBo } from '@/lib/phaply/word/danhMuc'
 import { dungBoWord, LOAI_CO_MAU, tenFile } from '@/lib/phaply/xuatBo'
+import { bienThe, coBo, tenBo } from '@/lib/phaply/boHoSo'
 import { coPdf, doiPdf, gopPdf } from '@/lib/phaply/pdf'
 
 export const maxDuration = 60
@@ -24,17 +24,17 @@ export async function GET(request, { params }) {
   if (!coPdf()) return loi(400, 'Chưa cấu hình dịch vụ PDF — dùng nút Word')
   const u = new URL(request.url).searchParams
   const dot = u.get('dot'), ma = u.get('ma')
-  if (!['so', 'thue', 'ban_giao'].includes(dot)) return loi(400, 'Chọn bộ hồ sơ (dot=so | thue | ban_giao)')
-  if (!LOAI_CO_MAU.includes(hs.entity_type)) return loi(400, 'Mẫu hiện chỉ có cho công ty TNHH 1TV, 2TV và cổ phần')
-  const laHuongDan = ma === 'HUONG_DAN' && ['so', 'thue'].includes(dot)   // tờ hướng dẫn in ký riêng (18/11/2026)
-  if (!laHuongDan && !mauCuaBo(dot, hs.entity_type).some(m => !ma || m.ma === ma)) return loi(404, 'Không có mẫu này cho loại hình của hồ sơ')
+  const bt = bienThe(hs.procedure_code, hs.entity_type)
+  if (!coBo(bt, dot)) return loi(400, 'Thủ tục này không có bộ hồ sơ ' + dot)
+  if (!LOAI_CO_MAU.includes(hs.entity_type)) return loi(400, 'Chưa có mẫu cho loại hình này')
+  const laHuongDan = ma === 'HUONG_DAN' && dot !== 'ban_giao'   // tờ hướng dẫn in ký riêng (18/11/2026)
   try {
     const { files, huongDan, dauVao } = await dungBoWord(auth.admin, hs, dot, { ma })
     // tờ hướng dẫn in ký: PDF riêng, KHÔNG gộp vào bộ trình ký (bộ gộp là thứ khách in ra ký)
     const kemHd = huongDan && (!ma || laHuongDan)
     const ds = await doiPdf(kemHd ? [huongDan, ...files] : files)
     const hd = kemHd ? ds[0] : null, pdfs = kemHd ? ds.slice(1) : ds
-    await ghiNhatKy(auth.admin, id, 'edit', null, null, auth.caller.staffId, `Xuất PDF: ${ma || 'cả bộ'} (${({ so: 'hồ sơ thành lập', thue: 'hồ sơ pháp lý ban đầu', ban_giao: 'biên bản bàn giao' })[dot]})`)
+    await ghiNhatKy(auth.admin, id, 'edit', null, null, auth.caller.staffId, `Xuất PDF: ${ma || 'cả bộ'} (${tenBo(bt, dot).toLowerCase()})`)
     const goc = tenFile(`${hs.code} ${dauVao.cty.ten || hs.title || ''}`)
     if (laHuongDan) return taiVe(hd.buf, `${goc} - ${hd.ten}`, 'application/pdf')
     if (ma) return taiVe(pdfs[0].buf, `${goc} - ${pdfs[0].ten}`, 'application/pdf')
@@ -42,6 +42,6 @@ export async function GET(request, { params }) {
     zip.file('00. Bo trinh ky (gop).pdf', await gopPdf(pdfs.map(p => p.buf)))
     if (hd) zip.file(hd.ten, hd.buf)
     for (const p of pdfs) zip.file(p.ten, p.buf)
-    return taiVe(zip.generate({ type: 'nodebuffer', compression: 'DEFLATE' }), `${goc} - ${TEN_DOT[dot]} (PDF).zip`, 'application/zip')
+    return taiVe(zip.generate({ type: 'nodebuffer', compression: 'DEFLATE' }), `${goc} - ${tenFile(tenBo(bt, dot).split(' — ')[0] + (tenBo(bt, dot).includes(' — ') ? ' - ' + tenBo(bt, dot).split(' — ')[1] : ''))} (PDF).zip`, 'application/zip')
   } catch (e) { return loi(502, e.message) }
 }

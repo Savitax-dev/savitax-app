@@ -55,3 +55,29 @@ export const DU_LIEU_GIA = {
       { ...DUNG, chuc_danh: 'Giám đốc', so_co_phan: 2000, thoi_han_gop: 'Trong thời hạn 90 ngày kể từ ngày được cấp Giấy chứng nhận đăng ký doanh nghiệp' },
     ] },
 }
+
+// ── Biến thể Điều lệ bổ sung (25/11/2026) — DANH_MUC.duLieuThu chọn bộ dữ liệu này cho mẫu tương ứng ──
+// Tổ chức GIẢ (MST 0399…, không có thật)
+const TO_CHUC = {
+  ho_ten: 'Công ty Cổ phần Đầu tư Mẫu Thử', la_to_chuc: true, ma_so_dn: '0399000001', ngay_cap_dn: '10/01/2020',
+  noi_cap_dn: 'Phòng Đăng ký kinh doanh thuộc Sở Tài chính Thành phố Hồ Chí Minh', thuong_tru: hcm('200 Đường Mẫu', 'Phường Bến Nghé'),
+  dien_thoai: '0287777777', email: 'mauthu@vidu.vn', dai_dien_ten: 'Đỗ Văn Em', dai_dien_chuc_danh: 'Tổng giám đốc', person_id: 'tc1',
+}
+const UQ = (p, von, cua = 'tc1') => ({ ...p, chuc_danh: '', von_uy_quyen: von, cua_person_id: cua, cua_ten: TO_CHUC.ho_ten,
+  thoi_diem_dai_dien: 'Kể từ ngày được cấp Giấy chứng nhận đăng ký doanh nghiệp' })
+const HAI_DAI_DIEN = [{ ...AN, chuc_danh: 'Chủ tịch công ty' }, { ...BINH, chuc_danh: 'Giám đốc', quyen_han: 'Ký kết hợp đồng lao động, hợp đồng mua bán hàng hóa có giá trị dưới 500.000.000 đồng; đại diện công ty làm việc với cơ quan thuế.' }]
+
+// 1TV — chủ sở hữu là TỔ CHỨC, 2 người đại diện theo ủy quyền, 2 người đại diện theo pháp luật
+DU_LIEU_GIA['1tv_tc'] = { ...DU_LIEU_GIA['1tv'],
+  cty: { ...DU_LIEU_GIA['1tv'].cty, csh_la_to_chuc: true, mo_hinh: 'chu_tich', thoi_han_hoat_dong: 'vô thời hạn' },
+  chu_so_huu: TO_CHUC, dai_dien_uy_quyen: [UQ(AN, 1200000000), UQ(BINH, 800000000)], ds_dai_dien: HAI_DAI_DIEN, dai_dien: HAI_DAI_DIEN[0], giam_doc: HAI_DAI_DIEN[1] }
+DU_LIEU_GIA['1tv_tc_hdtv'] = { ...DU_LIEU_GIA['1tv_tc'], cty: { ...DU_LIEU_GIA['1tv_tc'].cty, mo_hinh: 'hdtv' },
+  dai_dien_uy_quyen: [UQ(AN, 1000000000), UQ(BINH, 600000000), UQ(CUONG, 400000000)] }
+// 2TV — một thành viên là TỔ CHỨC (người đại diện theo ủy quyền: Đỗ Văn Em), 2 người đại diện theo pháp luật
+const DD_2TV = [{ ...AN, chuc_danh: 'Chủ tịch Hội đồng thành viên' }, { ...BINH, chuc_danh: 'Giám đốc', quyen_han: HAI_DAI_DIEN[1].quyen_han }]
+DU_LIEU_GIA['2tv_tc'] = { ...DU_LIEU_GIA['2tv'], ds_dai_dien: DD_2TV, dai_dien: DD_2TV[0], giam_doc: DD_2TV[1],
+  thanh_vien: [...DU_LIEU_GIA['2tv'].thanh_vien.slice(0, 2), { ...TO_CHUC, von_gop: 250000000, thoi_han_gop: DU_LIEU_GIA['2tv'].thanh_vien[2].thoi_han_gop }],
+  dai_dien_uy_quyen: [UQ(EM, 250000000)] }
+// CP — 3 người đại diện theo pháp luật (Chủ tịch HĐQT, Giám đốc, người thứ 3)
+const DD_CP = [{ ...EM, chuc_danh: 'Chủ tịch Hội đồng quản trị' }, { ...DUNG, chuc_danh: 'Giám đốc' }, { ...CUONG, chuc_danh: 'Phó Giám đốc', quyen_han: 'Đại diện công ty trong các giao dịch với ngân hàng.' }]
+DU_LIEU_GIA['cp_nhieu_dd'] = { ...DU_LIEU_GIA.cp, ds_dai_dien: DD_CP, dai_dien: DD_CP[0], giam_doc: DD_CP[1] }

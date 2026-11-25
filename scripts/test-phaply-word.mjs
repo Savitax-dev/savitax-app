@@ -56,7 +56,8 @@ for (const m of dsMau) {
   const pv = theVaPhamVi(chuTrongDocx(buf))
   if (pv.loi) { console.log(`✗ ${m.ma}: ${pv.loi}`); loi++; continue }
   const ghiChu = []
-  for (const lh of m.loaiHinh) {
+  // mỗi loại hình chạy MỌI bộ dữ liệu giả khai ở DANH_MUC.duLieuThu (VD 1TV: chủ sở hữu cá nhân + chủ sở hữu là tổ chức)
+  for (const lh of m.loaiHinh.flatMap(l => [].concat(m.duLieuThu?.[l] || l)).filter(k => DU_LIEU_GIA[k])) {
     const duLieu = chuanBiDuLieu(DU_LIEU_GIA[lh])
     const thieu = [...new Set(pv.ds.filter(t => !coTruong(duLieu, t)).map(t => [...t.pham_vi, t.ten].join('.')))]
     if (thieu.length) { console.log(`✗ ${m.ma} [${lh}] thẻ không có trong từ điển: ${thieu.join(', ')}`); loi++; continue }

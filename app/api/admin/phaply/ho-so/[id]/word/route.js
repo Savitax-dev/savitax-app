@@ -4,8 +4,8 @@
 import PizZip from 'pizzip'
 import { requirePhapLy, xemDuoc, loi } from '@/lib/phaply/quyen'
 import { COT_HO_SO, ghiNhatKy } from '@/lib/phaply/hoSoMayChu'
-import { mauCuaBo } from '@/lib/phaply/word/danhMuc'
 import { dungBoWord, LOAI_CO_MAU, tenFile } from '@/lib/phaply/xuatBo'
+import { bienThe, coBo, tenBo } from '@/lib/phaply/boHoSo'
 
 const TEN_DOT = { so: 'Ho so thanh lap', thue: 'Ho so phap ly ban dau', ban_giao: 'Ban giao' }
 const taiVe = (buf, ten, kieu) => new Response(buf, { headers: {
@@ -21,19 +21,19 @@ export async function GET(request, { params }) {
   if (!hs || hs.is_deleted || !xemDuoc(auth, hs)) return loi(404, 'Không tìm thấy hồ sơ')
   const u = new URL(request.url).searchParams
   const dot = u.get('dot'), ma = u.get('ma')
-  if (!['so', 'thue', 'ban_giao'].includes(dot)) return loi(400, 'Chọn bộ hồ sơ (dot=so | thue | ban_giao)')
-  if (!LOAI_CO_MAU.includes(hs.entity_type)) return loi(400, 'Mẫu Word hiện chỉ có cho công ty TNHH 1TV, 2TV và cổ phần')
-  const laHuongDan = ma === 'HUONG_DAN' && ['so', 'thue'].includes(dot)   // tờ hướng dẫn in ký riêng (18/11/2026)
-  if (!laHuongDan && !mauCuaBo(dot, hs.entity_type).some(m => !ma || m.ma === ma)) return loi(404, 'Không có mẫu này cho loại hình của hồ sơ')
+  const bt = bienThe(hs.procedure_code, hs.entity_type)
+  if (!coBo(bt, dot)) return loi(400, 'Thủ tục này không có bộ hồ sơ ' + dot)
+  if (!LOAI_CO_MAU.includes(hs.entity_type)) return loi(400, 'Chưa có mẫu cho loại hình này')
+  const laHuongDan = ma === 'HUONG_DAN' && dot !== 'ban_giao'   // tờ hướng dẫn in ký riêng (18/11/2026)
   try {
     const { files, huongDan, dauVao } = await dungBoWord(auth.admin, hs, dot, { ma })
-    await ghiNhatKy(auth.admin, id, 'edit', null, null, auth.caller.staffId, `Xuất Word: ${ma || 'cả bộ'} (${({ so: 'hồ sơ thành lập', thue: 'hồ sơ pháp lý ban đầu', ban_giao: 'biên bản bàn giao' })[dot]})`)
+    await ghiNhatKy(auth.admin, id, 'edit', null, null, auth.caller.staffId, `Xuất Word: ${ma || 'cả bộ'} (${tenBo(bt, dot).toLowerCase()})`)
     const goc = tenFile(`${hs.code} ${dauVao.cty.ten || hs.title || ''}`)
     if (laHuongDan) return taiVe(huongDan.buf, `${goc} - ${huongDan.ten}`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
     if (ma) return taiVe(files[0].buf, `${goc} - ${files[0].ten}`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
     const zip = new PizZip()
     for (const f of files) zip.file(f.ten, f.buf)
     if (huongDan) zip.file(huongDan.ten, huongDan.buf)
-    return taiVe(zip.generate({ type: 'nodebuffer', compression: 'DEFLATE' }), `${goc} - ${TEN_DOT[dot]}.zip`, 'application/zip')
+    return taiVe(zip.generate({ type: 'nodebuffer', compression: 'DEFLATE' }), `${goc} - ${tenFile(tenBo(bt, dot).split(' — ')[0] + (tenBo(bt, dot).includes(' — ') ? ' - ' + tenBo(bt, dot).split(' — ')[1] : ''))}.zip`, 'application/zip')
   } catch (e) { return loi(500, 'Không dựng được file Word: ' + e.message) }
 }

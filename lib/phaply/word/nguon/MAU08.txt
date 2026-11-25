@@ -32,7 +32,7 @@ I- Điều chỉnh, bổ sung thông tin trên tờ khai đăng ký thuế: | #c
 II- Điều chỉnh, bổ sung thông tin bảng kê kèm theo tờ khai đăng ký thuế: | #c // #c // #c // #c // #c | #c
 ::
 ~
-Người nộp thuế cam đoan những thông tin kê khai trên là hoàn toàn chính xác và chịu trách nhiệm trước pháp luật về những thông tin đã khai./.
+#k Người nộp thuế cam đoan những thông tin kê khai trên là hoàn toàn chính xác và chịu trách nhiệm trước pháp luật về những thông tin đã khai./.
 ::cot 50/50
 #cb NGƯỜI TRỰC TIẾP THỰC HIỆN
 #cb DỊCH VỤ LÀM THỦ TỤC VỀ THUẾ
