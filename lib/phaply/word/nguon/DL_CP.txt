@@ -57,7 +57,7 @@ a) Thực hiện quyền và nghĩa vụ được giao một cách trung thực,
 b) Trung thành với lợi ích của doanh nghiệp; không lạm dụng địa vị, chức vụ và sử dụng thông tin, bí quyết, cơ hội kinh doanh, tài sản khác của doanh nghiệp để tư lợi hoặc phục vụ lợi ích của tổ chức, cá nhân khác;
 c) Thông báo kịp thời, đầy đủ, chính xác cho doanh nghiệp về doanh nghiệp mà mình, người có liên quan của mình làm chủ hoặc có cổ phần, phần vốn góp theo quy định của Luật Doanh nghiệp.
 Người đại diện theo pháp luật của doanh nghiệp chịu trách nhiệm cá nhân đối với thiệt hại cho doanh nghiệp do vi phạm trách nhiệm quy định tại khoản 3 Điều này.
-#cbkp Chương II
+#cbk Chương II
 #cbk VỐN ĐIỀU LỆ, CỔ ĐÔNG SÁNG LẬP, QUYỀN VÀ NGHĨA VỤ
 #cbk CỦA CÁC CỔ ĐÔNG SÁNG LẬP
 #bk Điều 6. Vốn điều lệ, cổ phần của cổ đông sáng lập
@@ -213,7 +213,7 @@ e) Họ, tên, chữ ký của Chủ tịch Hội đồng quản trị và ngư�
 6. Trường hợp chi trả cổ tức bằng cổ phần, công ty không phải làm thủ tục chào bán cổ phần theo quy định tại các điều 123, 124 và 125 của Luật Doanh nghiệp. Công ty phải đăng ký tăng vốn điều lệ tương ứng với tổng mệnh giá các cổ phần dùng để chi trả cổ tức trong thời hạn 10 ngày kể từ ngày hoàn thành việc thanh toán cổ tức.
 #bk Điều 22. Thu hồi tiền thanh toán cổ phần được mua lại hoặc cổ tức
 Trường hợp việc thanh toán cổ phần được mua lại trái với quy định tại khoản 1 Điều 134 của Luật Doanh nghiệp hoặc trả cổ tức trái với quy định tại Điều 135 của Luật Doanh nghiệp, cổ đông phải hoàn trả cho công ty số tiền, tài sản khác đã nhận; trường hợp cổ đông không hoàn trả được cho công ty thì tất cả thành viên Hội đồng quản trị phải cùng liên đới chịu trách nhiệm về các khoản nợ và nghĩa vụ tài sản khác của công ty trong phạm vi giá trị số tiền, tài sản đã trả cho cổ đông mà chưa được hoàn lại.
-#cbkp Chương III
+#cbk Chương III
 #cbk CƠ CẤU TỔ CHỨC, QUẢN TRỊ VÀ KIỂM SOÁT;
 #cbk THỂ THỨC THÔNG QUA QUYẾT ĐỊNH
 #bk Điều 23. Cơ cấu tổ chức quản lý và kiểm soát của công ty
@@ -458,7 +458,7 @@ d) Báo cáo đánh giá kết quả hoạt động hằng năm của Hội đ�
 1. Dấu bao gồm dấu được làm tại cơ sở khắc dấu hoặc dấu dưới hình thức chữ ký số theo quy định của pháp luật về giao dịch điện tử.
 2. Doanh nghiệp quyết định loại dấu, số lượng, hình thức và nội dung dấu của doanh nghiệp, chi nhánh, văn phòng đại diện và đơn vị khác của doanh nghiệp.
 3. Việc quản lý và lưu giữ dấu thực hiện theo quy định của Điều lệ công ty hoặc quy chế do doanh nghiệp, chi nhánh, văn phòng đại diện hoặc đơn vị khác của doanh nghiệp có dấu ban hành. Doanh nghiệp sử dụng dấu trong các giao dịch theo quy định của pháp luật.
-#cbkp Chương IV
+#cbk Chương IV
 #cbk NĂM TÀI CHÍNH, PHÂN PHỐI LỢI NHUẬN
 #bk Điều 44. Năm tài chính
 Năm tài chính của Công ty bắt đầu từ ngày 01 tháng 01 và kết thúc vào cuối ngày 31 tháng 12 năm dương lịch.
@@ -474,12 +474,12 @@ Năm tài chính đầu tiên bắt đầu từ ngày cấp Giấy chứng nhậ
 8. Nguyên tắc xử lý lỗ trong kinh doanh: Trường hợp quyết toán năm tài chính bị lỗ, Đại hội đồng cổ đông công ty được quyết định theo các hướng sau:
 - Trích quỹ dự trữ để bù.
 - Chuyển sang năm sau để trừ vào lợi nhuận của năm tài chính sau trước khi phân phối lợi nhuận.
-#cbkp Chương V
+#cbk Chương V
 #cbk NGUYÊN TẮC GIẢI QUYẾT TRANH CHẤP NỘI BỘ
 #bk Điều 46. Nguyên tắc giải quyết tranh chấp nội bộ
 1. Các tranh chấp nội bộ giữa Công ty với cổ đông của công ty, giữa các cổ đông của công ty với nhau liên quan đến thành lập, hoạt động, giải thể Công ty trước hết phải được giải quyết thông qua thương lượng, hoà giải.
 2. Trường hợp giải quyết tranh chấp nội bộ theo phương thức thương lượng, hòa giải không đạt được kết quả thì bất kỳ bên nào cũng có quyền đưa tranh chấp ra Tòa án có thẩm quyền để giải quyết.
-#cbkp Chương VI
+#cbk Chương VI
 #cbk THÀNH LẬP, TỔ CHỨC LẠI, GIẢI THỂ
 #bk Điều 47. Thành lập, tổ chức lại
 Công ty được thành lập sau khi được Cơ quan đăng ký kinh doanh cấp Giấy chứng nhận đăng ký doanh nghiệp.
@@ -508,7 +508,7 @@ b) Nợ thuế;
 c) Các khoản nợ khác;
 5. Sau khi đã thanh toán chi phí giải thể doanh nghiệp và các khoản nợ, phần còn lại chia cho chủ doanh nghiệp tư nhân, các thành viên, cổ đông hoặc chủ sở hữu công ty theo tỷ lệ sở hữu phần vốn góp, cổ phần;
 6. Người đại diện theo pháp luật của doanh nghiệp gửi hồ sơ giải thể doanh nghiệp cho Cơ quan đăng ký kinh doanh trong thời hạn 05 ngày làm việc kể từ ngày thanh toán hết các khoản nợ của doanh nghiệp.
-#cbkp Chương VII
+#cbk Chương VII
 #cbk HIỆU LỰC THỰC HIỆN
 #bk Điều 50. Hiệu lực của Điều lệ
 Điều lệ này có hiệu lực kể từ ngày được Cơ quan đăng ký kinh doanh cấp Giấy chứng nhận đăng ký doanh nghiệp.

@@ -473,8 +473,8 @@ mới mỗi đêm nên chạy lại mỗi lần), máy chủ thử `pl-dev` cổ
   route bao-cao, Excel 4 sheet). Bộ kiểm `test-phaply-bao-cao [--that]` chạy 3 BẤT BIẾN trên kết quả API thật. Hướng dẫn nhân viên
   `docs/huong-dan-phan-he-phap-ly.md` = trang `/phaply/huong-dan` (TrangTaiLieu) + `.docx` dựng bằng `node scripts/phaply-huong-dan-docx.mjs`
   (Word trên máy; mỗi Phần sang trang mới). Sửa giao diện thì sửa cả tài liệu.
-- Mẫu Word: **mỗi Chương (từ Chương II) sang trang mới** — mã đoạn `#p` trong khung.js (pageBreakBefore, không sinh trang trắng); anh dặn
-  17/11/2026 — **TRỪ Điều lệ 1TV** (chương ngắn, sang trang thành nhiều nửa trang trắng — pháp lý báo "ngắt trang bừa bãi" 18/11): 1TV chạy
+- Mẫu Word: **KHÔNG ép sang trang, KHÔNG đánh số trang ở bất kỳ file nào** (pháp lý chốt 25/11/2026 — trước đó Chương II+ của Điều lệ
+  2TV/CP sang trang mới bằng `#p`, Mẫu 2/3/4 có số trang). Mã `#p` vẫn còn trong khung.js nhưng mẫu không dùng. Lịch sử: 17/11 — **TRỪ Điều lệ 1TV** (chương ngắn, sang trang thành nhiều nửa trang trắng — pháp lý báo "ngắt trang bừa bãi" 18/11): 1TV chạy
   liền như bản phòng nộp, tên chương + tiêu đề Điều luôn giữ cùng trang với đoạn sau (`#cbk` / `#bk`).
 - **Chuẩn trình bày mẫu Word** (pháp lý góp ý 18/11/2026, bộ kiểm `node scripts/test-phaply-word-chuan.mjs`): Times New Roman **12** (trừ
   bảng ngang 14–19 cột Mẫu 6/7/10); Điều lệ KHÔNG đánh số trang; `~` đơn = khoảng 6pt, `~~`/nhiều `~` liền = dòng trống đủ cao (chỗ ký) — trước

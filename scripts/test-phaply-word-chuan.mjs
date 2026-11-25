@@ -14,8 +14,9 @@ const NGUON = 'lib/phaply/word/nguon'
 const doc = ma => readFileSync(`${NGUON}/${ma}.txt`, 'utf8')
 
 // 1–3
-for (const ma of ['DL_1TV', 'DL_2TV', 'DL_CP']) ok(!/^@so-trang$/m.test(doc(ma)), `${ma} không đánh số trang`)
-ok(!/^#cbkp Chương/m.test(doc('DL_1TV')), 'Điều lệ 1TV không sang trang mỗi chương')
+// 25/11/2026: KHÔNG file nào đánh số trang, KHÔNG Điều lệ nào ép mỗi chương sang trang mới (pháp lý: "vẫn còn ngắt trang")
+for (const f of readdirSync(NGUON).filter(f => f.endsWith('.txt'))) ok(!/^@so-trang$/m.test(readFileSync(`${NGUON}/${f}`, 'utf8')), `${f} không đánh số trang`)
+for (const ma of ['DL_1TV', 'DL_2TV', 'DL_CP']) ok(!/^#cbkp Chương|^@ngat-trang$/m.test(doc(ma)), `${ma} không ép sang trang`)
 for (const ma of ['DL_1TV', 'DL_2TV', 'DL_CP']) {
   const d = doc(ma).split('\n')
   d.forEach((l, i) => { if (/^#cbkp? Chương/.test(l)) ok(/^#cbk /.test(d[i + 1]), `${ma}: tên chương sau "${l.slice(-12)}" giữ cùng trang`, d[i + 1]) })

@@ -5,7 +5,6 @@
 // Mẹo "{x}{^x}[...]{/x}" = có dữ liệu thì in, trống thì in dòng chấm.
 @co 12
 @le 15/15/20/12
-@so-trang
 #ci Mẫu số 3
 #ci (Ban hành kèm theo Thông tư số 121/2026/TT-BTC
 #ci ngày 21 tháng 08 năm 2026 của Bộ Tài chính)

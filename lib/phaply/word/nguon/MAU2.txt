@@ -4,7 +4,6 @@
 // giữ nguyên chữ + chỗ chấm như bản PDF. Mẹo "{x}{^x}[...]{/x}" = có dữ liệu thì in, trống thì in dòng chấm.
 @co 12
 @le 15/15/20/12
-@so-trang
 #cb MẪU SỐ 2
 #ci (Ban hành kèm theo Thông tư số 121/2026/TT-BTC ngày 21 tháng 8 năm 2026
 #ci của Bộ trưởng Bộ Tài chính)

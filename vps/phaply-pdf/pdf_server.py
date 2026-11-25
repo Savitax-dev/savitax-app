@@ -3,10 +3,11 @@
 #   POST /doi   Authorization: Bearer <PDF_SECRET>   body = .zip chứa các .docx  →  .zip chứa các .pdf cùng tên
 #   GET  /suc-khoe → "ok"
 # HTTPS chứng chỉ TỰ KÝ (app ghim đúng chứng chỉ này: PHAPLY_PDF_CA) — dữ liệu khách không đi chữ rõ trên mạng.
-# Đổi TỪNG gói một (máy chủ một luồng) bằng MỘT lần chạy LibreOffice cho cả gói; systemd giới hạn RAM / CPU / ưu tiên thấp để cron
+# Mỗi kết nối một luồng + hạn 60 giây (25/11/2026: bản một luồng bắt tay TLS ngay lúc accept, không hạn giờ → MỘT kết nối mở rồi im
+# (máy quét mạng) làm đứng cả dịch vụ từ 18/11). Đổi TỪNG gói một (khoá `KHOA_LO`, LibreOffice dùng chung một hồ sơ) bằng MỘT lần chạy cho cả gói; systemd giới hạn RAM / CPU / ưu tiên thấp để cron
 # ngân hàng luôn được ưu tiên (vps/phaply-pdf/phaply-pdf.service). KHÔNG ghi tên file / nội dung vào log — chỉ số file + thời gian.
-import json, os, re, shutil, ssl, subprocess, sys, tempfile, time, zipfile, io, hmac
-from http.server import HTTPServer, BaseHTTPRequestHandler
+import json, os, re, shutil, ssl, subprocess, sys, tempfile, threading, time, zipfile, io, hmac
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 SECRET = os.environ.get('PDF_SECRET', '')
 PORT = int(os.environ.get('PORT', '8443'))
@@ -16,6 +17,8 @@ TOI_DA_BODY = 20 * 1024 * 1024          # gói gửi lên
 TOI_DA_GIAI_NEN = 60 * 1024 * 1024      # chống zip bomb
 TOI_DA_FILE = 40
 HET_GIO = 150                            # giây cho cả gói
+HAN_KET_NOI = 60                         # giây mỗi lượt đọc / ghi trên một kết nối (gồm cả bắt tay TLS)
+KHOA_LO = threading.Lock()               # LibreOffice: mỗi lúc một gói
 TEN_HOP_LE = re.compile(r'^[^/\\\x00]{1,180}\.docx$', re.I)
 
 if len(SECRET) < 32:
@@ -28,6 +31,7 @@ def ghi_log(*a):
 
 class XuLy(BaseHTTPRequestHandler):
     server_version = 'phaply-pdf'
+    timeout = HAN_KET_NOI          # StreamRequestHandler đặt hạn cho socket của kết nối — kết nối im quá hạn tự đóng
     sys_version = ''
 
     def log_message(self, *a):   # tắt log mặc định (có đường dẫn) — tự ghi log gọn
@@ -82,6 +86,7 @@ class XuLy(BaseHTTPRequestHandler):
                     f.write(z.read(it))
                 ten.append((p, goc))
             try:
+              with KHOA_LO:
                 r = subprocess.run(['soffice', f'-env:UserInstallation=file://{PROFILE}', '--headless', '--norestore', '--nologo',
                                     '--convert-to', 'pdf', '--outdir', ra] + [p for p, _ in ten],
                                    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=HET_GIO)
@@ -109,10 +114,12 @@ class XuLy(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     os.makedirs(PROFILE, exist_ok=True)
-    srv = HTTPServer(('0.0.0.0', PORT), XuLy)
+    srv = ThreadingHTTPServer(('0.0.0.0', PORT), XuLy)
+    srv.daemon_threads = True
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     ctx.load_cert_chain(CERT, KEY)
-    srv.socket = ctx.wrap_socket(srv.socket, server_side=True)
+    # bắt tay TLS ở luồng của kết nối (lần đọc đầu, có hạn HAN_KET_NOI) — KHÔNG ở accept() của luồng chính
+    srv.socket = ctx.wrap_socket(srv.socket, server_side=True, do_handshake_on_connect=False)
     ghi_log(f'phaply-pdf nghe cổng {PORT}')
     srv.serve_forever()
