@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import { homNayVN } from '@/lib/phaply/hoSo'
-import { PageHead, StatCard, inputCls, btnGhost, useToast, api, fmt, dmy, thangLabel, ThanhPhapLy } from '../_ui'
+import { PageHead, StatCard, inputCls, btnGhost, useToast, api, fmt, dmy, thangLabel } from '../_ui'
 
 export default function BaoCaoPage() {
   const router = useRouter()
@@ -73,12 +73,11 @@ export default function BaoCaoPage() {
     <AppShell>
       <div className="pl-ui">
         <div className="px-4 md:px-8 py-5 space-y-4">
-          <PageHead title="Báo cáo pháp lý" sub={d.ca_phong ? 'Toàn phòng Pháp lý' : 'Hồ sơ bạn phụ trách'}>
+          <PageHead icon="📈" title="Báo cáo pháp lý" sub={d.ca_phong ? 'Toàn phòng Pháp lý' : 'Hồ sơ bạn phụ trách'}>
             <span className="text-sm">Từ</span><input type="month" className={inputCls + ' !w-auto'} value={tu} onChange={e => setTu(e.target.value)} />
             <span className="text-sm">đến</span><input type="month" className={inputCls + ' !w-auto'} value={toi} onChange={e => setToi(e.target.value)} />
             <button className={btnGhost} onClick={xuatExcel}>⬇ Excel</button>
           </PageHead>
-          <ThanhPhapLy dang="/phaply/bao-cao" />
           <div className="flex gap-1.5 flex-wrap">
             {[['tong', 'Tổng quan'], ['ho_so', `Theo hồ sơ (${d.ho_so.length})`], ['treo', `Hồ sơ treo (${d.treo.length})`]].map(([k, lb]) =>
               <button key={k} className={'p-chip' + (tab === k ? ' on' : '')} onClick={() => setTab(k)}>{lb}</button>)}

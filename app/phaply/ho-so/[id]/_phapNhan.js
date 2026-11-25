@@ -4,7 +4,7 @@
 // Máy chủ kiểm lại quyền + lọc cột — ở đây chỉ ẩn nút cho gọn.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Modal, Field, NumInput, inputCls, btnPrimary, btnGhost, api, fmt } from '../../_ui'
+import { Modal, Field, NumInput, inputCls, btnPrimary, btnGhost, api, fmt, Nhan } from '../../_ui'
 import { NguoiForm, DiaChiChon, noiDiaChiNgan } from '../../_nguoi'
 import { VAI_TRO, VAI_TRO_THEO_LOAI, CHUC_DANH, THOI_HAN_GOP } from '@/lib/phaply/phapNhan'
 import { mauCuaBo, luuYInKy } from '@/lib/phaply/word/danhMuc'
@@ -20,7 +20,7 @@ export function tabPhapNhan(procedureCode, entityType) {
   return [TAB_PHAP_NHAN[0], ['thu_tuc', 'Thông tin thủ tục'], ...TAB_PHAP_NHAN.slice(1)]
 }
 
-export default function PhapNhan({ id, tab, sua, loaiHinh, toast, taiLaiHoSo }) {
+export default function PhapNhan({ id, tab, sua, loaiHinh, toast, taiLaiHoSo, doiTab = () => {} }) {
   const [d, setD] = useState(null)
   const load = useCallback(async () => {
     const r = await api(`/api/admin/phaply/ho-so/${id}/phap-nhan`)
@@ -42,23 +42,57 @@ export default function PhapNhan({ id, tab, sua, loaiHinh, toast, taiLaiHoSo }) 
   const lh = d.entity?.entity_type || loaiHinh
   return (
     <div className="space-y-4">
-      {tab !== 'word' && <ThieuGon thieu={d.thieu} />}
+      {tab !== 'word' && <ThieuGon thieu={d.thieu} moi={() => doiTab('word')} />}
       {tab === 'doanh_nghiep' && <DoanhNghiep d={d} lh={lh} sua={coSua} goi={goi} />}
+      {tab === 'doanh_nghiep' && d.co_thong_tin && <ThongTinThuTuc d={d} sua={coSua} goi={goi} />}
       {tab === 'nguoi' && <Nguoi d={d} lh={lh} sua={coSua} goi={goi} id={id} toast={toast} />}
       {tab === 'nganh' && <Nganh d={d} sua={coSua} goi={goi} />}
       {tab === 'thu_tuc' && <ThongTinThuTuc d={d} sua={coSua} goi={goi} />}
-      {tab === 'word' && <XuatWord d={d} id={id} lh={lh} toast={toast} sua={coSua} taiLai={load} />}
+      {tab === 'word' && <XuatWord d={d} id={id} lh={lh} toast={toast} sua={coSua} taiLai={load} doiTab={doiTab} />}
     </div>
   )
 }
 
-// Dải "còn thiếu" gọn ở đầu mỗi tab
-function ThieuGon({ thieu }) {
-  const chan = [...new Map([...(thieu?.so || []), ...(thieu?.thue || [])].filter(t => t.chan).map(t => [t.muc, t])).values()]
-  if (!chan.length) return <div className="text-xs px-3 py-2 rounded-lg bg-green-50 text-green-800">✓ Đủ dữ liệu chính để xuất bộ hồ sơ.</div>
+// Dải "còn thiếu" gọn ở đầu mỗi tab — bấm để sang tab Xuất hồ sơ xem đủ
+function ThieuGon({ thieu, moi }) {
+  const chan = [...new Map(Object.values(thieu || {}).flat().filter(t => t.chan).map(t => [t.muc, t])).values()]
+  if (!chan.length) return <div className="text-xs px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-green-800">✓ Đủ dữ liệu chính để xuất bộ hồ sơ.</div>
   return (
-    <div className="text-xs px-3 py-2 rounded-lg bg-amber-50 text-amber-900">
-      <b>Còn thiếu {chan.length} mục:</b> {chan.slice(0, 6).map(t => t.muc).join(' · ')}{chan.length > 6 ? ` · … (+${chan.length - 6}, xem tab Còn thiếu & xuất Word)` : ''}
+    <button onClick={moi} className="w-full text-left text-xs px-3 py-2 rounded-lg bg-orange-50 border border-orange-200 text-orange-900 hover:border-orange-400">
+      <b>Còn thiếu {chan.length} mục:</b> {chan.slice(0, 6).map(t => t.muc).join(' · ')}{chan.length > 6 ? ` · … (+${chan.length - 6})` : ''} <b className="text-orange-700">→ xem ở tab Xuất hồ sơ</b>
+    </button>
+  )
+}
+
+// Mục "còn thiếu" thuộc nhóm nào → tab nào để nhập
+const TAB_CUA_NHOM = { 'Doanh nghiệp': 'doanh_nghiep', 'Hộ kinh doanh': 'doanh_nghiep', 'Thông tin thủ tục': 'doanh_nghiep', 'Sổ sách kế toán': 'doanh_nghiep',
+  'Vốn': 'nguoi', 'Người': 'nguoi', 'Ngành nghề': 'nganh' }
+const ICON_NHOM = { 'Doanh nghiệp': '🏢', 'Hộ kinh doanh': '🏠', 'Thông tin thủ tục': '📝', 'Sổ sách kế toán': '📒', 'Vốn': '💵', 'Người': '👥', 'Ngành nghề': '🏷️' }
+function ConThieu({ thieu, doiTab }) {
+  const ds = [...new Map(thieu.map(t => [t.nhom + '|' + t.muc, t])).values()]
+  const chan = ds.filter(t => t.chan).length, nhac = ds.length - chan
+  if (!ds.length) return <div className="p-panel px-4 py-3 text-sm text-green-800 bg-green-50">✓ Đủ dữ liệu để xuất các bộ hồ sơ.</div>
+  const nhom = [...new Set(ds.map(t => t.nhom))]
+  return (
+    <div className="p-panel">
+      <div className="p-panel-h flex justify-between items-center gap-2 flex-wrap">
+        <span>Còn thiếu — xuất vẫn được, chỗ thiếu in “…………” để viết tay</span>
+        <Nhan tone={chan ? 'amb' : 'xam'}>{chan} mục cần nhập{nhac ? ` · ${nhac} nhắc` : ''}</Nhan>
+      </div>
+      <div className="px-4 pt-3 pb-1.5">
+        {nhom.map(n => (
+          <div key={n} className="flex gap-2 items-start mb-1.5">
+            <div className="w-[130px] shrink-0 font-bold text-sm text-gray-700 pt-1 whitespace-nowrap">{ICON_NHOM[n] || '•'} {n}</div>
+            <div className="flex-1">
+              {ds.filter(t => t.nhom === n).map(t => (
+                <button key={t.muc} className={'p-thieu' + (t.chan ? '' : ' nhac')} onClick={() => doiTab(TAB_CUA_NHOM[n] || 'doanh_nghiep')} title="Bấm để sang chỗ nhập">
+                  {t.muc}{t.chan && <span className="di">→ nhập</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -533,7 +567,7 @@ function NganhDonVi({ o, v, nganhMe, sua, onChange }) {
 }
 
 // ─── Còn thiếu & xuất Word ────────────────────────────────────────────────────────────────────────────────
-function XuatWord({ d, id, lh, toast, sua, taiLai }) {
+function XuatWord({ d, id, lh, toast, sua, taiLai, doiTab }) {
   const [dang, setDang] = useState(null)
   const [luuDrive, setLuuDrive] = useState(false)
   const lhm = d.lh_mau || lh
@@ -572,43 +606,35 @@ function XuatWord({ d, id, lh, toast, sua, taiLai }) {
           {sua && <button className={btnPrimary + ' p-btn-sm'} disabled={luuDrive || !!dang} onClick={guiDrive}>{luuDrive ? 'Đang lưu… (có thể tới 1 phút)' : 'Lưu lên Drive'}</button>}
         </>) : <span className="text-xs text-gray-500">Chưa cấu hình thư mục Drive cho thủ tục này{process.env.NEXT_PUBLIC_DEMO_MODE === '1' ? ' (bản demo không lưu Drive)' : ''}.</span>}
       </div>
-      {bo.map(({ dot, ten }) => {
-        const thieu = d.thieu?.[dot] || []
-        const chan = thieu.filter(t => t.chan), nhac = thieu.filter(t => !t.chan)
+      <div className="lg:col-span-2"><ConThieu thieu={bo.flatMap(b => d.thieu?.[b.dot] || [])} doiTab={doiTab} /></div>
+      {bo.map(({ dot, ten }, iBo) => {
         return (
           <div key={dot} className="p-panel">
-            <div className="p-panel-h flex items-center justify-between gap-2">
-              <span>{ten}</span>
+            <div className="p-card-h justify-between flex-wrap">
+              <span>{'①②③④'[iBo] || ''} {ten}</span>
               <span className="flex gap-1.5">
-                <button className={btnPrimary + ' p-btn-sm'} disabled={!!dang} onClick={() => tai(dot)}>{dang === dot + 'word' ? 'Đang dựng…' : '⬇ Cả bộ Word'}</button>
-                {d.pdf && <button className={btnPrimary + ' p-btn-sm'} disabled={!!dang} onClick={() => tai(dot, null, 'pdf')} title="Từng PDF + 1 file gộp cả bộ để in">{dang === dot + 'pdf' ? 'Đang đổi PDF…' : '⬇ Cả bộ PDF'}</button>}
+                <button className="p-btn p-btn-sm p-btn-w" disabled={!!dang} onClick={() => tai(dot)}>{dang === dot + 'word' ? 'Đang dựng…' : '⬇ Cả bộ Word'}</button>
+                {d.pdf && <button className="p-btn p-btn-sm p-btn-pdf" disabled={!!dang} onClick={() => tai(dot, null, 'pdf')} title="Từng PDF + 1 file gộp cả bộ để in">{dang === dot + 'pdf' ? 'Đang đổi PDF…' : '⬇ Cả bộ PDF'}</button>}
               </span>
             </div>
-            <div className="p-4 space-y-3">
-              {chan.length ? (
-                <div className="text-sm rounded-lg bg-amber-50 px-3 py-2 text-amber-900">
-                  <b>Còn thiếu ({chan.length}) — xuất vẫn được, chỗ thiếu in “…………” để viết tay:</b>
-                  <ul className="list-disc ml-5 mt-1">{chan.map(t => <li key={t.muc}><span className="text-gray-500">{t.nhom}:</span> {t.muc}</li>)}</ul>
-                </div>
-              ) : <div className="text-sm rounded-lg bg-green-50 px-3 py-2 text-green-800">✓ Đủ dữ liệu chính.</div>}
-              {nhac.length > 0 && <ul className="text-xs text-gray-500 list-disc ml-5">{nhac.map(t => <li key={t.muc}>{t.muc}</li>)}</ul>}
-              <table className="p-tbl w-full"><tbody>
+            <div className="p-3 space-y-3">
+              <div className="border border-[#DCE2EB] rounded-[10px] overflow-hidden"><table className="p-tbl w-full"><tbody>
                 {mauCuaBo(dot, lhm, d.bt, d.don_vi).map((m, i) => (
                   <tr key={m.ma}>
                     <td className="l num w-8">{String(i + 1).padStart(2, '0')}</td>
-                    <td className="l">{m.ten}<div className="text-xs text-gray-500">{m.nguoiKy[lhm]}{m.dieuKien ? ' · chỉ có khi đúng trường hợp' : ''}</div></td>
-                    <td className="r whitespace-nowrap"><button className="p-btn p-btn-sm" disabled={!!dang} onClick={() => tai(dot, m.ma)}>{dang === dot + m.ma + 'word' ? '…' : '.docx'}</button>
-                      {d.pdf && <button className="p-btn p-btn-sm ml-1" disabled={!!dang} onClick={() => tai(dot, m.ma, 'pdf')}>{dang === dot + m.ma + 'pdf' ? '…' : '.pdf'}</button>}</td>
+                    <td className="l"><b>{m.ten}</b><div className="text-xs text-gray-500">{m.nguoiKy[lhm]}{m.dieuKien ? ' · chỉ có khi đúng trường hợp' : ''}</div></td>
+                    <td className="r whitespace-nowrap w-[120px]"><button className="p-btn p-btn-sm p-btn-w" title="Tải Word" disabled={!!dang} onClick={() => tai(dot, m.ma)}>{dang === dot + m.ma + 'word' ? '…' : 'W'}</button>
+                      {d.pdf && <button className="p-btn p-btn-sm p-btn-pdf ml-1" title="Tải PDF" disabled={!!dang} onClick={() => tai(dot, m.ma, 'pdf')}>{dang === dot + m.ma + 'pdf' ? '…' : 'PDF'}</button>}</td>
                   </tr>
                 ))}
-              </tbody></table>
+              </tbody></table></div>
               {/* Hướng dẫn in + ký: in kèm cho khách cùng bộ hồ sơ (phòng pháp lý yêu cầu 18/11/2026) */}
               <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <b className="text-sky-900">🖨 Hướng dẫn in + ký gửi khách</b>
                   <span className="flex gap-1">
-                    <button className="p-btn p-btn-sm" disabled={!!dang} onClick={() => tai(dot, 'HUONG_DAN')}>{dang === dot + 'HUONG_DANword' ? '…' : '.docx'}</button>
-                    {d.pdf && <button className="p-btn p-btn-sm" disabled={!!dang} onClick={() => tai(dot, 'HUONG_DAN', 'pdf')}>{dang === dot + 'HUONG_DANpdf' ? '…' : '.pdf'}</button>}
+                    <button className="p-btn p-btn-sm p-btn-w" disabled={!!dang} onClick={() => tai(dot, 'HUONG_DAN')}>{dang === dot + 'HUONG_DANword' ? '…' : 'W'}</button>
+                    {d.pdf && <button className="p-btn p-btn-sm p-btn-pdf" disabled={!!dang} onClick={() => tai(dot, 'HUONG_DAN', 'pdf')}>{dang === dot + 'HUONG_DANpdf' ? '…' : 'PDF'}</button>}
                   </span>
                 </div>
                 <ul className="list-disc ml-5 mt-1 text-sky-900">{luuYInKy(d.bt || 'tlm', dot, lhm).map(l => <li key={l}>{l}</li>)}</ul>

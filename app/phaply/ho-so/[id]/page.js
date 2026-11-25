@@ -9,7 +9,7 @@ import AppShell from '@/components/AppShell'
 import { THU_TUC, LOAI_HINH, NGUON, BUOC, BUOC_DONG, CHO, thuTucLabel, loaiHinhLabel, buocLabel, homNayVN } from '@/lib/phaply/hoSo'
 import { tachKhoanThu } from '@/lib/phaply/tien'
 import {
-  Modal, Field, NumInput, inputCls, btnPrimary, btnGhost, useToast, api, fmt, fmtMoney, dmy, dmyTime, StatCard, BuocChip, ChoChip,
+  Modal, Field, NumInput, inputCls, btnPrimary, btnGhost, useToast, api, fmt, fmtMoney, dmy, dmyTime, StatCard, BuocChip, ChoChip, Nhan, ThanhTabNut,
 } from '../../_ui'
 import PhapNhan, { tabPhapNhan } from './_phapNhan'
 import TabNop from './_nop'
@@ -20,7 +20,7 @@ export default function HoSoPage() {
   const { id } = useParams()
   const router = useRouter()
   const [d, setD] = useState(null)
-  const [tab, setTab] = useState('viec')
+  const [tab, setTab] = useState('tong_quan')
   const [hoi, setHoi] = useState(null)        // hộp hỏi lý do: { tieuDe, goi(note) }
   const [toastNode, toast] = useToast()
 
@@ -49,7 +49,12 @@ export default function HoSoPage() {
   if (d.loi) return <AppShell><div className="pl-ui p-8 text-sm text-gray-600">{d.loi} · <Link className="underline" href="/phaply">Về danh sách</Link>{toastNode}</div></AppShell>
 
   const hs = d.ho_so, q = d.q || {}, sua = d.sua_duoc, daDong = hs.stage >= BUOC_DONG
-  const tabs = [['thong_tin', 'Thông tin'], ['viec', 'Việc cần làm'], ...tabPhapNhan(hs.procedure_code, hs.entity_type), ['nop', 'Trình ký & nộp'], ...(q.tien ? [['tien', 'Công nợ']] : []), ['lich_su', 'Lịch sử & ghi chú']]
+  // 7 tab (mockup anh duyệt 25/11/2026 — trước là 11 nút): Tổng quan = việc cần làm + thông tin hồ sơ; Doanh nghiệp & thủ tục = doanh
+  // nghiệp + ô thông tin riêng của thủ tục; Công nợ & lịch sử = công nợ + lịch sử, ghi chú
+  const coThuTuc = tabPhapNhan(hs.procedure_code, hs.entity_type).some(t => t[0] === 'thu_tuc')
+  const tabs = [['tong_quan', '📋', 'Tổng quan'], ['doanh_nghiep', '🏢', coThuTuc ? 'Doanh nghiệp & thủ tục' : 'Doanh nghiệp'], ['nguoi', '👥', 'Người & CCCD'],
+    ['nganh', '🏷️', 'Ngành nghề'], ['word', '📄', 'Xuất hồ sơ'], ['nop', '✍️', 'Trình ký & nộp'], ['tien', q.tien ? '💰' : '🕘', q.tien ? 'Công nợ & lịch sử' : 'Lịch sử & ghi chú']]
+  const nhom = NHOM[nhomCuaThuTuc(hs.procedure_code)]
 
   const chuyenBuoc = n => {
     if (!sua || daDong || n === hs.stage) return
@@ -70,16 +75,24 @@ export default function HoSoPage() {
       <div className="pl-ui">
         <div className="px-4 md:px-8 py-5 space-y-4">
           <div className="p-topbar">
-            <Link href={NHOM[nhomCuaThuTuc(hs.procedure_code)].duong} className="p-back"><span className="ar">‹</span>{NHOM[nhomCuaThuTuc(hs.procedure_code)].ten}</Link>
-            <div className="min-w-0 flex-1">
+           <div className="p-topbar-r">
+            <div className="min-w-[280px] flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="num text-sm text-gray-500">{hs.code}</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100">{thuTucLabel(hs.procedure_code)} · {loaiHinhLabel(hs.entity_type, true)}</span>
+                <Link href={nhom.duong} className="p-back">‹ {nhom.ten}</Link>
+                <span className="num text-sm font-bold text-[#8B1A1A]">{hs.code}</span>
+                <Nhan>{thuTucLabel(hs.procedure_code)} · {loaiHinhLabel(hs.entity_type, true)}</Nhan>
                 <ChoChip k={hs.wait_state} />
-                {hs.is_deleted && <span className="text-xs text-red-700 font-bold">ĐÃ XOÁ</span>}
+                {!hs.assigned_to && <Nhan>Chưa giao</Nhan>}
+                {!daDong && hs.due_at && hs.due_at < homNayVN() && <Nhan tone="wine">⚠ Trễ hạn nội bộ</Nhan>}
+                {hs.is_deleted && <Nhan tone="red">ĐÃ XOÁ</Nhan>}
               </div>
-              <div className="font-bold text-lg leading-tight">{d.phap_nhan?.name || hs.contact_name || hs.title}</div>
-              <div className="text-xs text-gray-500">Nhận {dmy(hs.received_at)} · Hạn nội bộ {hs.due_at ? dmy(hs.due_at) : '—'} · Phụ trách: <b>{hs.ten_phu_trach || 'Chưa giao'}</b></div>
+              <div className="font-bold text-xl leading-tight mt-1.5 mb-1">{d.phap_nhan?.name || hs.contact_name || hs.title}</div>
+              <div className="text-xs text-gray-500 flex gap-x-4 gap-y-0.5 flex-wrap">
+                <span>Nhận <b className="num text-gray-700">{dmy(hs.received_at)}</b></span>
+                <span>Hạn nội bộ <b className="num text-gray-700">{hs.due_at ? dmy(hs.due_at) : '—'}</b></span>
+                <span>Phụ trách <b className="text-gray-700">{hs.ten_phu_trach || 'Chưa giao'}</b></span>
+                {(hs.contact_name || hs.contact_phone) && <span>Liên hệ <b className="text-gray-700">{[hs.contact_name, hs.contact_phone].filter(Boolean).join(' · ')}</b></span>}
+              </div>
             </div>
             <div className="flex gap-2 flex-wrap items-center">
               {!hs.assigned_to && q.sua && !q.ca_phong && <button className={btnPrimary} onClick={() => lam({ action: 'nhan' }, 'Bạn đã nhận hồ sơ')}>Nhận hồ sơ này</button>}
@@ -99,28 +112,34 @@ export default function HoSoPage() {
               {sua && !daDong && hs.stage === BUOC_DONG - 1 && <button className={btnPrimary} onClick={dongHoSo}>Đóng hồ sơ</button>}
               {daDong && q.dong && <button className={btnGhost} onClick={() => setHoi({ tieuDe: 'Mở lại hồ sơ — ghi lý do', batBuoc: true, goi: note => lam({ action: 'mo_lai', note }, 'Đã mở lại hồ sơ') })}>Mở lại</button>}
             </div>
-          </div>
-
-          <div className="p-steps">
-            {BUOC.map(b => {
-              const cls = b.n < hs.stage ? 'xong' : b.n === hs.stage ? 'dang' : ''
-              const C = sua && !daDong ? 'button' : 'div'
-              return <C key={b.n} className={'p-step ' + cls} onClick={() => chuyenBuoc(b.n)} title={sua && !daDong ? 'Chuyển sang bước này' : undefined}><b>{b.n}</b>{b.ngan}</C>
-            })}
+           </div>
+            {/* 10 bước — dải tiến độ mảnh: xong xanh lá, đang làm đỏ đô; bấm để chuyển bước */}
+            <div className="p-steps">
+              {BUOC.map(b => {
+                const cls = b.n < hs.stage || daDong ? 'xong' : b.n === hs.stage ? 'dang' : ''
+                const C = sua && !daDong ? 'button' : 'div'
+                return <C key={b.n} className={'p-step ' + cls} onClick={() => chuyenBuoc(b.n)} title={sua && !daDong ? 'Chuyển sang bước ' + b.n + '. ' + b.label : b.label}>
+                  <i />{b.n} {b.ngan}{cls === 'xong' ? ' ✓' : ''}</C>
+              })}
+            </div>
           </div>
           {daDong && <div className="text-sm p-panel px-4 py-2.5">Hồ sơ đã đóng {dmyTime(hs.closed_at)}{hs.ten_nguoi_dong ? ' bởi ' + hs.ten_nguoi_dong : ''}{hs.close_note ? ' — ' + hs.close_note : ''}.</div>}
 
-          <div className="flex gap-1.5 flex-wrap">
-            {tabs.map(([k, lb]) => <button key={k} className={'p-chip' + (tab === k ? ' on' : '')} onClick={() => setTab(k)}>{lb}</button>)}
-          </div>
+          <ThanhTabNut ds={tabs} dang={tab} chon={setTab} />
 
-          {tab === 'thong_tin' && <ThongTinThuTuc d={d} sua={sua} lam={lam} setHoi={setHoi} />}
-          {tab === 'thong_tin' && <TabThongTin d={d} sua={sua && !daDong} q={q} lam={lam} />}
-          {tab === 'viec' && <TabViec d={d} sua={sua && !daDong} id={id} load={load} toast={toast} />}
+          {tab === 'tong_quan' && (
+            <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 items-start">
+              <div className="xl:col-span-3"><TabViec d={d} sua={sua && !daDong} id={id} load={load} toast={toast} /></div>
+              <div className="xl:col-span-2 space-y-4">
+                <ThongTinThuTuc d={d} sua={sua} lam={lam} setHoi={setHoi} />
+                <TabThongTin d={d} sua={sua && !daDong} q={q} lam={lam} />
+              </div>
+            </div>
+          )}
           {tab === 'nop' && <TabNop id={id} sua={sua && !daDong} toast={toast} taiLaiHoSo={load} />}
-          <PhapNhan id={id} tab={tab} sua={sua && !daDong} loaiHinh={hs.entity_type} toast={toast} taiLaiHoSo={load} />
+          <PhapNhan id={id} tab={tab} sua={sua && !daDong} loaiHinh={hs.entity_type} toast={toast} taiLaiHoSo={load} doiTab={setTab} />
           {tab === 'tien' && q.tien && <TabTien d={d} sua={sua && !daDong} q={q} id={id} load={load} toast={toast} setHoi={setHoi} />}
-          {tab === 'lich_su' && <TabLichSu d={d} q={q} id={id} load={load} toast={toast} />}
+          {tab === 'tien' && <TabLichSu d={d} q={q} id={id} load={load} toast={toast} />}
 
           {q.dong && !hs.is_deleted && (
             <div className="text-right"><button className="text-xs text-red-700 underline" onClick={() => setHoi({ tieuDe: 'Xoá hồ sơ (xoá mềm, giữ mã) — ghi lý do', batBuoc: true, goi: async note => { if (await lam({ action: 'xoa', note }, 'Đã xoá hồ sơ')) router.push('/phaply') } })}>Xoá hồ sơ…</button></div>
@@ -168,7 +187,7 @@ function TabThongTin({ d, sua, q, lam }) {
   return (
     <div className="p-panel">
       <div className="p-panel-h">Thông tin hồ sơ</div>
-      <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
         <Field label="Tên doanh nghiệp" className="md:col-span-2"><input className={inputCls} value={f.ten_phap_nhan} disabled={!sua} onChange={e => set('ten_phap_nhan', e.target.value)} /></Field>
         {o('Mã số thuế', 'mst')}
         <Field label="Thủ tục"><select className={inputCls} value={f.procedure_code} disabled={!sua} onChange={e => set('procedure_code', e.target.value)}>{THU_TUC.map(t => <option key={t.k} value={t.k}>{t.label}</option>)}</select></Field>
@@ -179,7 +198,7 @@ function TabThongTin({ d, sua, q, lam }) {
         <Field label="Hạn nội bộ" hint={q.ca_phong ? 'trưởng phòng sửa được' : 'tự tính theo thủ tục'}>
           <input type="date" className={inputCls + ' num'} value={f.due_at || ''} disabled={!sua || !q.ca_phong} onChange={e => set('due_at', e.target.value)} /></Field>
         <div />
-        <Field label="Ghi chú hồ sơ" className="md:col-span-3"><textarea rows={3} className={inputCls} value={f.note} disabled={!sua} onChange={e => set('note', e.target.value)} /></Field>
+        <Field label="Ghi chú hồ sơ" className="md:col-span-2"><textarea rows={3} className={inputCls} value={f.note} disabled={!sua} onChange={e => set('note', e.target.value)} /></Field>
       </div>
       {sua && <div className="px-4 pb-4 flex justify-end gap-2">
         {doi && <button className={btnGhost} onClick={() => setF(dau())}>Bỏ thay đổi</button>}
@@ -199,15 +218,23 @@ function TabViec({ d, sua, id, load, toast }) {
     load()
   }
   const theoBuoc = BUOC.map(b => ({ ...b, viec: d.viec.filter(v => v.stage === b.n) })).filter(b => b.viec.length || b.n === d.ho_so.stage)
+  const xongHet = b => b.viec.length > 0 && b.viec.every(v => v.done_at)
+  const [mo, setMo] = useState(() => new Set(theoBuoc.filter(b => b.n === d.ho_so.stage || !xongHet(b) && b.n < d.ho_so.stage).map(b => b.n)))
+  const bat = n => setMo(o => { const x = new Set(o); x.has(n) ? x.delete(n) : x.add(n); return x })
+  const tongXong = d.viec.filter(v => v.done_at).length
   return (
     <div className="p-panel">
-      <div className="p-panel-h">Việc cần làm theo bước</div>
-      <div className="p-4 space-y-4">
-        {!d.viec.length && <div className="text-sm text-gray-500">Thủ tục này chưa có checklist mẫu — trưởng phòng thêm ở “Mẫu &amp; checklist”, hoặc thêm việc riêng bên dưới.</div>}
+      <div className="p-panel-h flex justify-between items-center gap-2"><span>Việc cần làm theo bước</span>
+        {d.viec.length > 0 && <span className="text-xs font-normal text-gray-500 num">{tongXong}/{d.viec.length} việc xong</span>}</div>
+      <div className="p-4">
+        {!d.viec.length && <div className="text-sm text-gray-500 mb-3">Thủ tục này chưa có checklist mẫu — trưởng phòng thêm ở “Mẫu &amp; checklist”, hoặc thêm việc riêng bên dưới.</div>}
         {theoBuoc.map(b => (
-          <div key={b.n}>
-            <div className={'text-sm font-bold mb-1 ' + (b.n === d.ho_so.stage ? 'text-[#8E1F1F]' : 'text-gray-600')}>{b.n}. {b.label}{b.n === d.ho_so.stage && ' — bước hiện tại'}</div>
-            <ul className="space-y-1">
+          <div key={b.n} className={'p-vb' + (b.n === d.ho_so.stage ? ' dang' : xongHet(b) ? ' xong' : '')}>
+            <button className="p-vb-h" onClick={() => bat(b.n)}>
+              <span>{xongHet(b) ? '✓ ' : ''}{b.n} · {b.label}{b.n === d.ho_so.stage && ' — bước hiện tại'}</span>
+              <span className="num text-xs">{b.viec.filter(v => v.done_at).length}/{b.viec.length} {mo.has(b.n) ? '▾' : '▸'}</span>
+            </button>
+            {mo.has(b.n) && <div className="p-vb-b"><ul className="space-y-1.5">
               {b.viec.map(v => (
                 <li key={v.id} className="flex items-start gap-2 text-sm">
                   <input type="checkbox" className="mt-1" checked={!!v.done_at} disabled={!sua} onChange={e => goi({ task_id: v.id, done: e.target.checked })} />
@@ -216,11 +243,12 @@ function TabViec({ d, sua, id, load, toast }) {
                   {sua && !v.template_item_id && <button className="text-xs text-red-700" onClick={() => goi({ xoa: v.id })}>Xoá</button>}
                 </li>
               ))}
-            </ul>
+              {!b.viec.length && <li className="text-xs text-gray-400">Chưa có việc cho bước này.</li>}
+            </ul></div>}
           </div>
         ))}
         {sua && (
-          <div className="flex gap-2 flex-wrap items-end pt-2 border-t">
+          <div className="flex gap-2 flex-wrap items-end pt-3 mt-3 border-t">
             <Field label="Thêm việc riêng cho hồ sơ này" className="flex-1 min-w-[240px]"><input className={inputCls} value={moi.title} onChange={e => setMoi(o => ({ ...o, title: e.target.value }))} /></Field>
             <Field label="Bước"><select className={inputCls + ' !w-auto'} value={moi.stage} onChange={e => setMoi(o => ({ ...o, stage: Number(e.target.value) }))}>
               {BUOC.map(b => <option key={b.n} value={b.n}>{b.n}. {b.label}</option>)}</select></Field>

@@ -12,7 +12,7 @@ import { THU_TUC, LOAI_HINH, NGUON, BUOC, BUOC_DONG, thuTucLabel, loaiHinhLabel,
 import { NHOM, nhomCuaThuTuc, NOI_DUNG_THAY_DOI, noiDungLabel, congNgay, denToiDa, hanThongBao, kiemTamNgung, MUC_TAM_NGUNG, canNhac } from '@/lib/phaply/nhom'
 import {
   PageHead, StatCard, Modal, Field, NumInput, inputCls, btnPrimary, btnGhost, useToast, api, fmt, fmtMoney, dmy, dmyTime,
-  BuocChip, ChoChip, ThanhPhapLy,
+  BuocChip, ChoChip, ThanhPhapLy, Nhan,
 } from './_ui'
 
 const boDau = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase()
@@ -89,7 +89,7 @@ export default function TrangDanhSach({ nhom = null }) {
     <AppShell>
       <div className="pl-ui">
         <div className="px-4 md:px-8 py-5 space-y-4">
-          <PageHead title={N ? `${N.bieuTuong} ${N.ten}` : 'Tất cả hồ sơ pháp lý'} sub={quyen.ca_phong ? 'Toàn phòng Pháp lý' : 'Hồ sơ bạn phụ trách + hồ sơ chưa ai nhận'}>
+          <PageHead icon="⚖️" title="Hồ sơ pháp lý" sub={(N ? N.ten + ' · ' : 'Tất cả thủ tục · ') + (quyen.ca_phong ? 'toàn phòng Pháp lý' : 'hồ sơ bạn phụ trách + hồ sơ chưa ai nhận')}>
             {taoDuoc && <button className={btnPrimary} onClick={() => setMoTao({ preset: { procedure_code: N?.thuTuc[0] || 'tlm' } })}>+ Tiếp nhận hồ sơ</button>}
           </PageHead>
           <ThanhPhapLy dang={N?.duong || '/phaply'} />
@@ -101,24 +101,20 @@ export default function TrangDanhSach({ nhom = null }) {
           )}
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
-            <StatCard label="Đang xử lý" value={fmt(the.dang_lam)} tone="wine" onClick={() => setLoc('')} on={!loc} />
-            <StatCard label="Chờ khách" value={fmt(the.cho_khach)} tone="amb" onClick={() => bam('khach')} on={loc === 'khach'} />
-            <StatCard label="Chờ Sở / Thuế" value={fmt(the.cho_co_quan)} tone="blue" onClick={() => bam('co_quan')} on={loc === 'co_quan'} />
-            <StatCard label="Cần bổ sung" value={fmt(the.bo_sung)} tone="red" onClick={() => bam('bo_sung')} on={loc === 'bo_sung'} />
-            <StatCard label="Trễ hạn nội bộ" value={fmt(the.tre_han)} tone="red" onClick={() => bam('tre')} on={loc === 'tre'} />
-            <StatCard label="Chưa giao" value={fmt(the.chua_giao)} tone="sky" onClick={() => bam('chua_giao')} on={loc === 'chua_giao'} />
-            {quyen.tien && <StatCard label="Nợ đến hạn" value={fmt(the.no_den_han)} unit="đ" tone="gold" onClick={() => bam('no')} on={loc === 'no'} />}
+            <StatCard label="● Đang xử lý" value={fmt(the.dang_lam)} tone="blue" onClick={() => setLoc('')} on={!loc} />
+            <StatCard label="● Chờ khách" value={fmt(the.cho_khach)} tone="amb" onClick={() => bam('khach')} on={loc === 'khach'} />
+            <StatCard label="● Chờ Sở / Thuế" value={fmt(the.cho_co_quan)} tone="tim" onClick={() => bam('co_quan')} on={loc === 'co_quan'} />
+            <StatCard label="● Cần bổ sung" value={fmt(the.bo_sung)} tone="red" onClick={() => bam('bo_sung')} on={loc === 'bo_sung'} />
+            <StatCard label="⚠ Trễ hạn nội bộ" value={fmt(the.tre_han)} tone="wine" onClick={() => bam('tre')} on={loc === 'tre'} />
+            <StatCard label="● Chưa giao" value={fmt(the.chua_giao)} tone="xam" onClick={() => bam('chua_giao')} on={loc === 'chua_giao'} />
+            {quyen.tien && <StatCard label="₫ Nợ đến hạn" value={fmt(the.no_den_han)} unit="đ" tone="gold" onClick={() => bam('no')} on={loc === 'no'} />}
           </div>
 
           {nhom === 'tam_ngung' && <TheoDoiTamNgung ds={res.theo_doi_tam_ngung || []} sua={taoDuoc} toast={toast} load={load}
             taoTiep={(c, loai) => api('/api/admin/phaply/ho-so/' + c.id).then(r => r.ok && setMoTao({ preset: presetTiepTheo(r.data.ho_so, r.data.phap_nhan, loai) }))} />}
 
           <div className="flex gap-2 flex-wrap items-center">
-            <div className="flex gap-1">
-              <button className={'p-chip' + (xem === 'ds' ? ' on' : '')} onClick={() => setXem('ds')}>Danh sách</button>
-              <button className={'p-chip' + (xem === 'buoc' ? ' on' : '')} onClick={() => setXem('buoc')}>Theo bước</button>
-            </div>
-            <input className={inputCls + ' !w-64'} placeholder="Tìm mã, tên, SĐT, MST…" value={q} onChange={e => setQ(e.target.value)} />
+            <input className={inputCls + ' !w-72'} placeholder="🔎 Tìm mã, tên, SĐT, MST…" value={q} onChange={e => setQ(e.target.value)} />
             {thuTucNhom.length > 1 && (
               <select className={inputCls + ' !w-auto'} value={fThuTuc} onChange={e => setFThuTuc(e.target.value)}>
                 <option value="">Mọi thủ tục</option>
@@ -132,7 +128,11 @@ export default function TrangDanhSach({ nhom = null }) {
                 {nv.map(n => <option key={n.id} value={n.id}>{n.ten}</option>)}
               </select>
             )}
-            <label className="text-sm flex items-center gap-1.5 ml-auto"><input type="checkbox" checked={coDong} onChange={e => setCoDong(e.target.checked)} /> Gồm hồ sơ đã đóng</label>
+            <div className="p-seg">
+              <button className={xem === 'ds' ? 'on' : ''} onClick={() => setXem('ds')}>Danh sách</button>
+              <button className={xem === 'buoc' ? 'on' : ''} onClick={() => setXem('buoc')}>Theo bước</button>
+            </div>
+            <label className="text-sm text-gray-600 flex items-center gap-1.5 ml-auto"><input type="checkbox" checked={coDong} onChange={e => setCoDong(e.target.checked)} /> Gồm hồ sơ đã đóng</label>
           </div>
 
           {xem === 'ds' ? <BangDanhSach ds={ds} tien={quyen.tien} nhom={nhom} moi={id => router.push('/phaply/ho-so/' + id)} />
@@ -225,32 +225,33 @@ function NhacKhach({ c, onClose, toast, load }) {
 function BangDanhSach({ ds, tien, nhom, moi }) {
   if (!ds.length) return <div className="p-panel p-8 text-center text-sm text-gray-500">Không có hồ sơ nào khớp bộ lọc.</div>
   return (
-    <div className="p-panel overflow-x-auto">
+    <div className="p-panel p-scroll">
       <table className="p-tbl">
         <thead><tr>
-          <th className="l">Mã</th><th className="l">Hồ sơ</th><th>Bước</th><th>Việc bước này</th><th className="l">Phụ trách</th>
-          <th>Nhận</th><th>Hạn</th>{tien && <><th className="r">Phí</th><th className="r">Đã thu</th><th className="r">Nợ đến hạn</th></>}
+          <th className="l w-[104px]">Mã</th><th className="l">Hồ sơ</th><th className="l w-[200px]">Bước · tình trạng</th><th className="w-[120px]">Việc bước này</th>
+          <th className="l w-[140px]">Phụ trách</th><th className="w-[116px]">Nhận → Hạn</th>{tien && <><th className="r w-[110px]">Phí</th><th className="r w-[110px]">Nợ đến hạn</th></>}
         </tr></thead>
         <tbody>
           {ds.map(r => (
             <tr key={r.id} className="p-click" onClick={() => moi(r.id)}>
-              <td className="l num whitespace-nowrap">{r.code}</td>
+              <td className="l num whitespace-nowrap font-bold text-[#8B1A1A]">{r.code}</td>
               <td className="l">
-                <div className="font-semibold">{r.ten_phap_nhan || r.contact_name || r.title}</div>
+                <div className="font-bold">{r.ten_phap_nhan || r.contact_name || r.title}</div>
                 <div className="text-xs text-gray-500">{thuTucLabel(r.procedure_code)} · {loaiHinhLabel(r.entity_type, true)}{r.mst ? ' · MST ' + r.mst : ''}{r.contact_phone ? ' · ' + r.contact_phone : ''}</div>
                 {r.procedure_code === 'thay_doi' && r.noi_dung_thay_doi?.length > 0 && <div className="flex gap-1 flex-wrap mt-1">
                   {r.noi_dung_thay_doi.map(k => <span key={k} className="text-[11px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-800">{noiDungLabel(k)}</span>)}</div>}
                 {r.procedure_code === 'tam_ngung' && r.tam_ngung_den && <div className="text-xs text-blue-800 mt-0.5">Tạm ngừng {dmy(r.tam_ngung_tu)} → {dmy(r.tam_ngung_den)}</div>}
                 {r.procedure_code === 'hoat_dong_lai' && r.hoat_dong_lai_tu && <div className="text-xs text-green-800 mt-0.5">Hoạt động lại từ {dmy(r.hoat_dong_lai_tu)}</div>}
               </td>
-              <td><div className="flex flex-col items-center gap-1"><BuocChip stage={r.stage} /><ChoChip k={r.wait_state} /></div></td>
-              <td className="num">{r.viec_buoc.tong ? `${r.viec_buoc.xong}/${r.viec_buoc.tong}` : '—'}</td>
-              <td className="l">{r.ten_phu_trach || <span className="text-amber-700 font-medium">Chưa giao</span>}</td>
-              <td className="num whitespace-nowrap">{dmy(r.received_at)}</td>
-              <td className={'num whitespace-nowrap' + (r.tre_han ? ' text-red-700 font-bold' : '')}>{r.due_at ? dmy(r.due_at) : '—'}{r.tre_han && ' ⚠'}</td>
+              <td className="l"><div className="flex flex-wrap gap-1"><BuocChip stage={r.stage} /><ChoChip k={r.wait_state} />{!r.assigned_to && <Nhan>Chưa giao</Nhan>}</div></td>
+              <td className="num whitespace-nowrap">{r.viec_buoc.tong
+                ? <span className="p-tien"><i><b style={{ width: Math.round(100 * r.viec_buoc.xong / r.viec_buoc.tong) + '%' }} /></i>{r.viec_buoc.xong}/{r.viec_buoc.tong}</span> : '—'}</td>
+              <td className="l">{r.ten_phu_trach || <span className="text-gray-400">—</span>}</td>
+              <td className="num whitespace-nowrap"><div className="text-xs text-gray-500">{dmy(r.received_at)}</div>
+                <div className={r.tre_han ? 'text-red-700 font-bold' : ''}>{r.due_at ? dmy(r.due_at) : '—'}{r.tre_han && ' ⚠'}</div></td>
               {tien && <>
-                <td className="r num">{fmt(r.phi)}</td><td className="r num">{fmt(r.da_thu)}</td>
-                <td className={'r num' + (r.no_den_han > 0 ? ' text-red-700 font-semibold' : '')}>{fmt(r.no_den_han)}</td>
+                <td className="r num">{fmt(r.phi)}</td>
+                <td className={'r num' + (r.no_den_han > 0 ? ' text-amber-700 font-bold' : '')} title={'Đã thu ' + fmt(r.da_thu)}>{fmt(r.no_den_han)}</td>
               </>}
             </tr>
           ))}

@@ -4,7 +4,8 @@
 // nên Next không coi là route.
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { BUOC, buocLabel, CHO, choLabel } from '@/lib/phaply/hoSo'
+import { BUOC, buocLabel, choLabel, BUOC_DONG } from '@/lib/phaply/hoSo'
+import { NHOM } from '@/lib/phaply/nhom'
 
 export const BRAND = '#8E1F1F'
 export const GOLD = '#C9A027'
@@ -15,16 +16,19 @@ export const dmy = iso => { if (!iso) return '—'; const [y, m, d] = String(iso
 export const dmyTime = ts => ts ? new Date(ts).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
 export const thangLabel = m => m ? m.slice(5, 7) + '/' + m.slice(0, 4) : '—'
 
-// Màu từng bước: xám → đỏ dần → xanh khi đóng
-const MAU_BUOC = ['#64748B', '#0369A1', '#4338CA', '#7C3AED', '#A21CAF', '#B91C1C', '#C2410C', '#A16207', '#15803D', '#334155']
+// Màu trạng thái CỐ ĐỊNH toàn phân hệ (anh duyệt mockup 25/11/2026) — thẻ số liệu, nhãn bảng, đầu hồ sơ dùng chung:
+// đang xử lý xanh dương · chờ khách cam · chờ Sở / Thuế tím · cần bổ sung đỏ · trễ hạn đỏ đậm · chưa giao xám · nợ vàng · xong xanh lá
+export const TONE_CHO = { khach: 'amb', so: 'tim', thue: 'tim', bo_sung: 'red' }
+export function Nhan({ tone = 'xam', children, title }) {
+  return <span className={'p-nhan tone-' + tone} title={title}>{children}</span>
+}
 export function BuocChip({ stage, ngan = true }) {
   const n = Number(stage) || 1
-  return <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap text-white" style={{ background: MAU_BUOC[n - 1] }}>{n}. {buocLabel(n, ngan)}</span>
+  return <Nhan tone={n >= BUOC_DONG ? 'grn' : n === 1 ? 'xam' : 'blue'}>{n} · {buocLabel(n, ngan)}</Nhan>
 }
 export function ChoChip({ k }) {
   if (!k) return null
-  const c = CHO.find(x => x.k === k)
-  return <span className="p-chip-cho" style={{ background: c?.mau || '#555' }}>{choLabel(k)}</span>
+  return <Nhan tone={TONE_CHO[k] || 'xam'}>{choLabel(k)}</Nhan>
 }
 export { BUOC }
 
@@ -86,7 +90,7 @@ export function useToast() {
 export function StatCard({ label, value, unit, foot, tone = 'wine', onClick, on }) {
   const C = onClick ? 'button' : 'div'
   return (
-    <C onClick={onClick} className={'p-tile tone-' + tone + ' text-left' + (on ? ' ring-2 ring-offset-1 ring-[#C9A027]' : '')}>
+    <C onClick={onClick} className={'p-tile tone-' + tone + (on ? ' on' : '')}>
       <span className="k">{label}</span>
       <span className="v num">{value}{unit && <small>{unit}</small>}</span>
       {foot && <span className="f">{foot}</span>}
@@ -94,10 +98,12 @@ export function StatCard({ label, value, unit, foot, tone = 'wine', onClick, on 
   )
 }
 
-export function PageHead({ title, sub, children }) {
+// Tiêu đề trang nhẹ như Soát xét / Rủi ro thuế: biểu tượng + tên + dòng phụ xám, không khung nền (anh chốt 25/11/2026)
+export function PageHead({ icon, title, sub, children }) {
   return (
     <div className="p-head">
-      <div className="min-w-0">
+      <div className="t">
+        {icon && <span className="ic">{icon}</span>}
         <h1>{title}</h1>
         {sub && <p>{sub}</p>}
       </div>
@@ -122,14 +128,27 @@ export async function api(url, opts = {}) {
   }
 }
 
-// Thanh chuyển giữa các trang của phân hệ
+// Thanh chuyển giữa các NHÓM thủ tục — chia đều một khung, có biểu tượng (như components/ThanhTab.js). Báo cáo / Mẫu / Thông tin
+// cá nhân / Hướng dẫn nằm ở menu trái, không lặp lại ở đây (mockup anh duyệt 25/11/2026).
+const NHAN_NGAN = { tam_ngung: 'Tạm ngừng / HĐ lại' }
 export function ThanhPhapLy({ dang }) {
-  const ds = [['/phaply/thanh-lap', 'Thành lập'], ['/phaply/thay-doi', 'Thay đổi'], ['/phaply/tam-ngung', 'Tạm ngừng'], ['/phaply/giai-the', 'Giải thể'],
-    ['/phaply/khac', 'Khác'], ['/phaply', 'Tất cả'], ['/phaply/bao-cao', 'Báo cáo'], ['/phaply/mau', 'Mẫu & checklist'], ['/phaply/toi', 'Thông tin cá nhân'],
-    ['/phaply/huong-dan', '📖 Hướng dẫn']]
+  const ds = [...Object.entries(NHOM).map(([k, n]) => [n.duong, n.bieuTuong, NHAN_NGAN[k] || n.ten]), ['/phaply', '🗂️', 'Tất cả hồ sơ']]
   return (
-    <div className="flex gap-1.5 flex-wrap">
-      {ds.map(([href, lb]) => <Link key={href} href={href} className={'p-chip' + (dang === href ? ' on' : '')}>{lb}</Link>)}
+    <div className="p-tabs" style={{ '--so-tab': ds.length }}>
+      {ds.map(([href, ic, lb]) => <Link key={href} href={href} className={'p-tab' + (dang === href ? ' on' : '')} title={lb}><span className="ic">{ic}</span><span className="tx">{lb}</span></Link>)}
+    </div>
+  )
+}
+
+// Thanh tab TRONG một trang (nút, không đổi đường dẫn) — cùng kiểu ThanhPhapLy. ds: [[khoá, biểu tượng, nhãn, đếm?]]
+export function ThanhTabNut({ ds, dang, chon }) {
+  return (
+    <div className="p-tabs" style={{ '--so-tab': ds.length }}>
+      {ds.map(([k, ic, lb, dem]) => (
+        <button key={k} className={'p-tab' + (dang === k ? ' on' : '')} onClick={() => chon(k)} title={lb}>
+          <span className="ic">{ic}</span><span className="tx">{lb}</span>{dem ? <span className="dem">{dem}</span> : null}
+        </button>
+      ))}
     </div>
   )
 }

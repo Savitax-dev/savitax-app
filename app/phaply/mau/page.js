@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import { BUOC } from '@/lib/phaply/hoSo'
-import { PageHead, Field, inputCls, btnPrimary, btnGhost, useToast, api, ThanhPhapLy } from '../_ui'
+import { PageHead, Field, inputCls, btnPrimary, btnGhost, useToast, api } from '../_ui'
 
 export default function MauPage() {
   const router = useRouter()
@@ -37,10 +37,9 @@ export default function MauPage() {
     <AppShell>
       <div className="pl-ui">
         <div className="px-4 md:px-8 py-5 space-y-4">
-          <PageHead title="Mẫu & checklist pháp lý" sub={d.sua_duoc ? 'Đổi mẫu chỉ áp cho hồ sơ tạo sau — việc của hồ sơ đang làm giữ nguyên' : 'Chỉ trưởng phòng sửa được'}>
+          <PageHead icon="🗂️" title="Mẫu & checklist pháp lý" sub={d.sua_duoc ? 'Đổi mẫu chỉ áp cho hồ sơ tạo sau — việc của hồ sơ đang làm giữ nguyên' : 'Chỉ trưởng phòng sửa được'}>
             {d.sua_duoc && <button className={btnPrimary} onClick={napMacDinh} title="Chỉ nạp cho thủ tục chưa có mẫu, không đè mẫu đã sửa">Nạp mẫu mặc định</button>}
           </PageHead>
-          <ThanhPhapLy dang="/phaply/mau" />
           {trong && <div className="p-panel px-4 py-3 text-sm">Chưa có mẫu nào. {d.sua_duoc ? 'Bấm “Nạp mẫu mặc định” để có sẵn checklist 9 thủ tục + 3 lịch thu, rồi sửa lại theo phòng.' : 'Nhờ trưởng phòng nạp mẫu.'}</div>}
 
           <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4">

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
-import { PageHead, btnPrimary, btnGhost, useToast, api, ThanhPhapLy } from '../_ui'
+import { PageHead, btnPrimary, btnGhost, useToast, api } from '../_ui'
 import { NguoiForm, NOI_CAP_CCCD } from '../_nguoi'
 
 export default function ThongTinCaNhan() {
@@ -35,8 +35,7 @@ export default function ThongTinCaNhan() {
     <AppShell>
       <div className="pl-ui">
         <div className="px-4 md:px-8 py-5 space-y-4">
-          <PageHead title="Thông tin cá nhân pháp lý" sub="In vào phần người được ủy quyền (Giấy ủy quyền nộp Phòng ĐKKD) ở các hồ sơ bạn phụ trách" />
-          <ThanhPhapLy dang="/phaply/toi" />
+          <PageHead icon="🪪" title="Thông tin cá nhân pháp lý" sub="In vào phần người được ủy quyền (Giấy ủy quyền nộp Phòng ĐKKD) ở các hồ sơ bạn phụ trách" />
           {!p ? <div className="text-sm text-gray-400">Đang tải…</div> : (
             <div className="p-panel">
               <div className="p-panel-h">Thông tin của tôi{!goc && <span className="ml-2 text-xs font-normal text-amber-800">chưa lưu lần nào</span>}</div>
