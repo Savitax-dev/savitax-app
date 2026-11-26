@@ -1714,6 +1714,12 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                             {t.name}
                           </span>
                         </button>
+                        {/* Mẫu ảnh + lời nhắn gửi khách qua Zalo (app/nhac-chung-tu) — đúng tháng chứng từ của việc này (tháng trước của checklist) */}
+                        {/^Gửi thông báo cung cấp chứng từ/i.test(t.name || '') && (
+                          <a href={`/nhac-chung-tu?nam=${clientMonth === 1 ? selYear - 1 : selYear}&thang=${clientMonth === 1 ? 12 : clientMonth - 1}`}
+                            target="_blank" rel="noreferrer" title="Mở mẫu ảnh + lời nhắn để gửi khách qua Zalo"
+                            className="text-[11px] px-1.5 py-0.5 rounded-md border border-sky-200 text-sky-700 hover:bg-sky-50 flex-shrink-0 whitespace-nowrap">📣 Mẫu</a>
+                        )}
                         <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                           <span className={'text-xs flex-shrink-0 ' + st.text}>
                             {isDone && t.rec && t.rec.done_at

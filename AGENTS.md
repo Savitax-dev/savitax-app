@@ -525,6 +525,24 @@ bộ quy tắc). Anh yêu cầu tách cho dễ sửa: đổi quy tắc bước n
 - ⏳ Chưa làm (chờ anh thử): nạp cấp bậc + lương cho toàn bộ nhân viên (anh gửi file Excel nhân sự
   gốc hoặc kế toán nội bộ tự đặt), chưa chốt tháng nào.
 
+## Mẫu nhắc khách gửi chứng từ (`/nhac-chung-tu`) + Zalo Bot (đang gác)
+
+Anh chốt 26/11/2026. Trang KHÔNG ở menu trái — mở từ Checklist: nút "📣 Mẫu nhắc chứng từ" đầu trang và nút "📣 Mẫu" cạnh việc
+"Gửi thông báo cung cấp chứng từ tháng M" (truyền `?nam=&thang=` = tháng chứng từ = tháng trước của checklist). App dựng ẢNH
+thông báo 1080×1350 (`components/AnhThongBaoChungTu.js`, bản khai quý / khai tháng, chụp bằng `html2canvas` trên trình duyệt) +
+LỜI NHẮN (`lib/nhacChungTu.js`, sửa được, nhớ ở localStorage) → nhân viên Chép ảnh (Ctrl+V vào Zalo PC) / Tải ảnh / Chép lời
+nhắn rồi TỰ TICK Checklist. Không gọi máy chủ, không lưu gì. Kiểm: `node scripts/test-nhac-chung-tu.mjs`.
+
+- ⚠ Zalo hiện MỖI lần xuống dòng thành một khoảng cách lớn → lời nhắn tự bỏ dòng trống (`dienLoiNhan`).
+- ⚠ html2canvas vẽ khác trình duyệt: `inline-flex` mất nội dung, `boxShadow` thành lớp phủ xám, chữ trong ô flex lệch xuống →
+  khung ảnh dùng `flex` có kích thước cố định, viền thay bóng, số trong vòng tròn căn bằng `lineHeight`.
+- **Zalo Bot ĐANG GÁC** (gỡ khỏi main 26/11, chờ Zalo ra gói Pro): bot chính thức (bot.zapps.me) trong nhóm CHỈ nhận tin có
+  nhắc tên bot; gói miễn phí 3 bot × **3 nhóm**, 50 người dùng, 3.000 tin/tháng; Pro 129.000 đ/tháng "sắp ra mắt"; nhóm OA
+  25–50k/nhóm/tháng — anh chê đắt. Code bot tự đăng ảnh vào nhóm khách + gắn nhóm ↔ công ty nằm ở nhánh local
+  `thu/zalo-bot-gui-nhom` (20e48c1). Trên Supabase còn bảng `zalo_tin_nhan` (sql/62) và `zalo_nhom` / `zalo_mau_anh` /
+  `zalo_gui` + bucket `zalo-mau` (sql/63, chỉ ở nhánh đó) — để nguyên, không mã nào dùng. Bot "Bot Kế Toán Savitax" khác
+  "Bot Savitax" của phòng KD (chỉ gửi form website, đừng đụng).
+
 ## Phân hệ Hóa đơn điện tử — ĐANG GÁC (13/10/2026)
 
 Cổng hoadondientu.gdt.gov.vn **chặn** cả đăng nhập gửi từ tiện ích lẫn lượt đọc chạy trong tab đã
