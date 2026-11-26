@@ -144,6 +144,9 @@ export default function ChecklistPage() {
               {' · '}{myClients.length} công ty
             </p>
           </div>
+          {/* Mẫu ảnh + lời nhắn "Thông báo cung cấp chứng từ" để gửi khách qua Zalo — không đặt ở menu trái cho gọn */}
+          <a href="/nhac-chung-tu" target="_blank" rel="noreferrer" title="Mẫu ảnh + lời nhắn nhắc khách gửi chứng từ (gửi qua Zalo)"
+            className="ml-auto mr-2 px-3 py-2 rounded-xl text-sm border border-sky-200 text-sky-700 bg-white hover:bg-sky-50 flex-shrink-0 whitespace-nowrap">📣 Mẫu nhắc chứng từ</a>
           <select
             value={selYear + '-' + String(selMonth).padStart(2,'0')}
             onChange={e => { const p = e.target.value.split('-'); setSelYear(Number(p[0])); setSelMonth(Number(p[1])) }}
