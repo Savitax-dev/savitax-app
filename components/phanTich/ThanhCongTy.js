@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { NAM_BAT_DAU } from '@/lib/phanTich/thuMuc'
+import { boCoTreo, CHU_TREO_QUYEN } from '@/lib/phanTich/khoMay'
 
 export function Bao({ mau, children }) {
   const lop = mau === 'red' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-amber-50 border-amber-200 text-amber-800'
@@ -131,7 +132,7 @@ export default function ThanhCongTy({ hs, duongDan, themTruoc, onDoiNam, chuChon
       </div>}
 
       {!hoTro && <Bao mau="amber">Trình duyệt này không mở được thư mục trên máy. Dùng Chrome hoặc Edge trên máy tính.</Bao>}
-      {loi && <Bao mau="red">{loi}</Bao>}
+      {loi && <Bao mau="red">{loi}{loi === CHU_TREO_QUYEN && <> <button type="button" onClick={boCoTreo} className="ml-1 px-2 py-0.5 rounded-lg border border-red-300 bg-white text-red-800 font-semibold hover:bg-red-100">↻ Thử lại</button></>}</Bao>}
       {(quet?.nhac || []).map((c, i) => <Bao key={'nhac' + i} mau="amber">⚠ {c}</Bao>)}
       {daChuyen && (
         <Bao mau="amber">Thư mục “{daChuyen}” là thư mục NĂM, không phải thư mục công ty — app đã chuyển nó sang “Thư mục năm trỏ riêng” và gỡ khỏi chỗ dùng chung với Tờ khai (để Tờ khai không tạo nhầm thư mục lồng bên trong). Tờ khai của công ty này cần trỏ lại vào thư mục CÔNG TY.</Bao>

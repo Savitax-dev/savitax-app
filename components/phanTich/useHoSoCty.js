@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import {
   coHoTro, chonThuMucChinh, layThuMucChinh, dsThuMucNamCu, themThuMucNamCu, boThuMucNamCu, quyenDoc,
-  khoaDem, layDem, ghiDem, quyenThuMucTreo, CHU_TREO_QUYEN,
+  khoaDem, layDem, ghiDem, quyenThuMucTreo, CHU_TREO_QUYEN, ngheHetTreo,
 } from '@/lib/phanTich/khoMay'
 import { quetCongTy, gopNamTroRieng } from '@/lib/phanTich/thuMuc'
 import { docToKhaiCuaNam, docBangKeCuaNam, docBangLuongCuaNam, docC12CuaNam, docSaoKeCuaNam, docSoTienCuaNam } from '@/lib/phanTich/docHoSo'
@@ -211,6 +211,8 @@ export function useHoSoCty(ctyId, { docNamTruoc = false, docLuong = false, chiQu
 
   useEffect(() => { namRef.current = nam; const c = NHO.get(id); if (c && nam) c.nam = nam }, [id, nam])
   const docLai = useCallback(() => setLanDoc(n => n + 1), [])
+  // Chrome hết treo (trả lời muộn / bấm "Thử lại") → bỏ câu báo treo, đọc lại thư mục
+  useEffect(() => ngheHetTreo(() => { setLoi(l => (l === CHU_TREO_QUYEN ? '' : l)); setLanDoc(n => n + 1) }), [])
   const troThuMuc = useCallback(async () => {
     try { await chonThuMucChinh(ctyId); setLanDoc(n => n + 1) } catch (e) { if (e?.name !== 'AbortError') setLoi(e.message) }
   }, [ctyId])
