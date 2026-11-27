@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppShell from '@/components/AppShell'
 import { OTongSinhDong, ChipMau, KieuBang } from '@/components/phanTich/phanTichUI'
-import { coHoTro, chonThuMucChinh, layThuMucChinh, dsThuMucNamCu, quyenThuMucTreo, CHU_TREO_QUYEN } from '@/lib/phanTich/khoMay'
+import { coHoTro, chonThuMucChinh, layThuMucChinh, dsThuMucNamCu, quyenThuMucTreo, CHU_TREO_QUYEN, boCoTreo, ngheHetTreo } from '@/lib/phanTich/khoMay'
 
 const VAI_TRO = { chinh: 'Phụ trách chính', phu: 'Phụ trách phụ', phong: 'Trong phòng', quan_tri: 'Quản trị' }
 const THU_MUC = {
@@ -33,6 +33,9 @@ export default function CongTyCuaToi({ tieuDe, bieuTuong, tab, nutMo }) {
   const [timKiem, setTimKiem] = useState('')
   const [phong, setPhong] = useState('')
   const [nhanVien, setNhanVien] = useState('')
+  const [lanThu, setLanThu] = useState(0)          // Chrome hết treo / bấm Thử lại → đọc lại thư mục đã nhớ
+
+  useEffect(() => ngheHetTreo(() => { setLoi(l => (l === CHU_TREO_QUYEN ? '' : l)); setLanThu(n => n + 1) }), [])
 
   useEffect(() => {
     createClient().auth.getSession().then(({ data }) => { if (!data.session) router.replace('/login') })
@@ -65,7 +68,7 @@ export default function CongTyCuaToi({ tieuDe, bieuTuong, tab, nutMo }) {
       if (quyenThuMucTreo()) setLoi(CHU_TREO_QUYEN)
     })().catch(e => { if (!huy) setLoi('Không đọc được thư mục đã trỏ trên máy: ' + (e?.message || e)) })
     return () => { huy = true }
-  }, [idCty, hoTro])
+  }, [idCty, hoTro, lanThu])
 
   async function troThuMuc(c) {
     try {
@@ -99,7 +102,7 @@ export default function CongTyCuaToi({ tieuDe, bieuTuong, tab, nutMo }) {
             Trình duyệt này không mở được thư mục trên máy. Dùng Chrome hoặc Edge trên máy tính.
           </div>
         )}
-        {loi && <div className="mb-4 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{loi}</div>}
+        {loi && <div className="mb-4 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{loi}{loi === CHU_TREO_QUYEN && <> <button type="button" onClick={boCoTreo} className="ml-1 px-2 py-0.5 rounded-lg border border-red-300 bg-white text-red-800 font-semibold hover:bg-red-100">↻ Thử lại</button></>}</div>}
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
           <OTongSinhDong so={dsHien.length} nhan="Công ty trong phạm vi" mau="xanhDuong" phu="Theo công ty phụ trách / phòng" />

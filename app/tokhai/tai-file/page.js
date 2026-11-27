@@ -21,7 +21,7 @@ import { OTong } from '@/components/tokhaiUI'
 import { kiemTraTienIch } from '@/lib/portalBridge'
 import { chayTaiFile } from '@/lib/tokhaiTaiFileClient'
 import {
-  coHoTro, chonThuMucCongTy, layThuMucCongTy, quenThuMucCongTy, soatThuMucCongTy, quyenThuMucTreo, CHU_TREO_QUYEN,
+  coHoTro, chonThuMucCongTy, layThuMucCongTy, quenThuMucCongTy, soatThuMucCongTy, quyenThuMucTreo, CHU_TREO_QUYEN, boCoTreo, ngheHetTreo,
 } from '@/lib/tokhaiLuuDia'
 
 const ngayChu = d => d.toISOString().slice(0, 10)
@@ -55,6 +55,7 @@ export default function TrangTaiFile() {
   const [loi, setLoi] = useState('')
   const [hoTro, setHoTro] = useState(true)
 
+  const [lanThu, setLanThu] = useState(0)          // Chrome hết treo / bấm Thử lại → đọc lại thư mục đã nhớ
   const [thuMucCty, setThuMucCty] = useState({})   // clientId → { tay, ten, trangThai, soat }
 
   const homNay = ngayChu(new Date())
@@ -135,7 +136,14 @@ export default function TrangTaiFile() {
       if (!huy && quyenThuMucTreo()) setLoi(CHU_TREO_QUYEN)
     })().catch(e => { if (!huy) setLoi('Không đọc được thư mục đã chọn trên máy: ' + (e?.message || e)) })
     return () => { huy = true }
-  }, [dsHienId, hoTro])
+  }, [dsHienId, hoTro, lanThu])
+
+  // Chrome hết treo: bỏ các dòng đang ghi "treo" (không thì dòng cũ đè kết quả đọc lại) + câu báo, rồi đọc lại
+  useEffect(() => ngheHetTreo(() => {
+    setThuMucCty(p => Object.fromEntries(Object.entries(p).filter(([, v]) => v?.trangThai !== 'treo')))
+    setLoi(l => (l === CHU_TREO_QUYEN ? '' : l))
+    setLanThu(n => n + 1)
+  }), [])
 
   // Cột Thư mục chỉ hiện được TÊN thư mục, không hiện đường dẫn đầy đủ (trình duyệt không cho
   // biết). Hai công ty cùng trỏ vào một chỗ thì nhìn y hệt nhau — nên phải tự dò và nói ra.
@@ -296,7 +304,7 @@ export default function TrangTaiFile() {
       return (
         <div className="space-y-1">
           <p className="font-mono text-gray-700 break-all leading-tight">{tm.ten}</p>
-          <p className="text-red-700" title={CHU_TREO_QUYEN}>Chrome không trả lời — đóng hẳn Chrome rồi mở lại</p>
+          <p className="text-red-700" title={CHU_TREO_QUYEN}>Chrome không trả lời — xem dòng đỏ phía trên</p>
         </div>
       )
     }
@@ -385,7 +393,7 @@ export default function TrangTaiFile() {
             Trình duyệt này không ghi được vào thư mục. Dùng <b>Chrome</b> hoặc <b>Edge</b> trên máy tính.
           </div>
         )}
-        {loi && <div className="mb-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">{loi}</div>}
+        {loi && <div className="mb-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">{loi}{loi === CHU_TREO_QUYEN && <> <button type="button" onClick={boCoTreo} className="ml-1 px-2 py-0.5 rounded-lg border border-red-300 bg-white text-red-800 font-semibold hover:bg-red-100">↻ Thử lại</button></>}</div>}
         {canhBaoLo && (
           <div className="mb-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">{canhBaoLo}</div>
         )}
