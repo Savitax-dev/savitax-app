@@ -91,6 +91,28 @@ kiem('MST công ty không có trong file → cảnh báo bảng kê công ty kh�
 kiem('không có MST công ty, có gợi ý tên file → theo gợi ý', docSheetBangKe({ ten: 's', hang: cong }, { chieu: 'mua_vao' }).chieu, 'mua_vao')
 kiem('không có gì → chiều null + cảnh báo', (b => [b.chieu, b.canhBao.length])(docSheetBangKe({ ten: 'sheet 1', hang: cong })), [null, 1])
 
+// File cổng "Chi tiết" (mỗi mặt hàng một dòng) ghi tiêu đề GỌN "MST người bán" / "MST người mua" — 127HOME T4–T7/2026 (27/11/2026):
+// trước đây lấy nhầm MST người bán (chính công ty) làm MST đối tác → bán ra Q2 báo 195/197 hóa đơn không khớp, Q3 384/384.
+console.log('\nMẫu cổng HĐĐT "Chi tiết" (tiêu đề gọn "MST người bán" / "MST người mua"):')
+const CT_TIEU_DE = ['Mẫu số HD', 'Ký hiệu hóa đơn', 'Số hóa đơn', 'Ngày lập hóa đơn', 'Ngày người bán ký số', 'MCCQT', 'Ngày CQT ký số', 'Đơn vị tiền tệ', 'Tỷ giá',
+  'Tên người bán', 'MST người bán', 'Địa chỉ người bán', 'Tên người mua', 'MST người mua', 'Địa chỉ người mua', 'Mã VT', 'Tên hàng hóa, dịch vụ', 'Đơn vị tính',
+  'Số lượng', 'Đơn giá', 'Chiết khấu', 'Thuế suất', 'Thành tiền chưa thuế', 'Tiền thuế']
+const dongCt = (kh, so, ngay, ban, mua, hang, tien, thue) => [1, kh, so, ngay, ngay, 'MA', ngay, 'VND', 1, ban[1], ban[0], 'Địa chỉ', mua[1], mua[0], 'Địa chỉ', null, hang, 'cái', 1, tien, 0, '10%', tien, thue]
+const ctBan = docSheetBangKe({ ten: 'Sheet1', hang: [CT_TIEU_DE,
+  dongCt('C26TYY', '178', '01/04/2026', CTY, ['0322222222', 'CÔNG TY KHÁCH A'], 'Thảm', 1000000, 100000),
+  dongCt('C26TYY', '179', '01/04/2026', CTY, ['0344444444', 'CÔNG TY KHÁCH B'], 'Đèn vách', 2000000, 200000),
+  dongCt('C26TYY', '179', '01/04/2026', CTY, ['0344444444', 'CÔNG TY KHÁCH B'], 'Đèn thả', 3000000, 300000),
+  dongCt('C26MYY', '1313', '03/04/2026', CTY, [null, 'khách lẻ'], 'Thảm nhựa', 500000, 50000)] }, { chieu: 'ban_ra', mstCty: CTY[0] })
+kiem('bán ra: MST đối tác = MST NGƯỜI MUA, không phải MST công ty', [ctBan.chieu, ...ctBan.hoaDon.map(h => h.mst)], ['ban_ra', '0322222222', '0344444444', '0344444444', ''])
+kiem('bán ra: tên đối tác = tên người mua', ctBan.hoaDon[0].ten, 'CÔNG TY KHÁCH A')
+const ctMua = docSheetBangKe({ ten: 'Sheet1', hang: [CT_TIEU_DE,
+  dongCt('C26TMH', '520', '08/04/2026', ['0311111111', 'CÔNG TY TNHH VẬT TƯ THÀNH ĐẠT'], CTY, 'Vật tư', 1000000, 100000)] }, { chieu: 'mua_vao', mstCty: CTY[0] })
+kiem('mua vào: MST đối tác = MST người bán', [ctMua.chieu, ctMua.hoaDon[0].mst, ctMua.hoaDon[0].ten], ['mua_vao', '0311111111', 'CÔNG TY TNHH VẬT TƯ THÀNH ĐẠT'])
+// File chỉ MỘT cột MST (cổng đơn chiều ghi "MST người mua" kể cả file mua vào) → cột đó là đối tác, giữ nguyên
+const motCot = docSheetBangKe({ ten: 'Sheet1', hang: [['Ký hiệu hóa đơn', 'Số hóa đơn', 'Ngày lập', 'MST người mua', 'Tên người mua', 'Tổng tiền chưa thuế', 'Tổng tiền thuế'],
+  ['C26TMH', '520', '08/04/2026', '0311111111', 'CÔNG TY TNHH VẬT TƯ THÀNH ĐẠT', 1000000, 100000]] }, { chieu: 'mua_vao', mstCty: CTY[0] })
+kiem('chỉ một cột "MST người mua" ở file mua vào → vẫn là MST đối tác', [motCot.hoaDon[0]?.mst, motCot.hoaDon[0]?.ten], ['0311111111', 'CÔNG TY TNHH VẬT TƯ THÀNH ĐẠT'])
+
 console.log('\nMẫu phần mềm kiểu 1 ("To khai thue GTGT khau tru 01GTGT.xlsx", tiêu đề 2 tầng, dòng nhóm thuế suất):')
 const pm1Mua = [['CÔNG TY TNHH MẪU'], ['Mã số thuế: 0300000001'], ['BẢNG KÊ HOÁ ĐƠN, CHỨNG TỪ CỦA HÀNG HOÁ, DỊCH VỤ MUA VÀO'],
   ['STT', 'Hóa đơn, chứng từ, biên lai nộp thuế', null, null, null, 'Tên người bán', 'Mã số thuế         người bán', 'Giá trị HHDV         mua vào chưa có thuế', 'Thuế GTGT', 'Thuế GTGT         được khấu trừ', 'Ghi chú', 'Diễn giải', 'Hàng hóa, dịch vụ nhập khẩu'],
