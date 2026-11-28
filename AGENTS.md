@@ -349,6 +349,11 @@ SQL `sql/40_phantich_xem_phi.sql` (đã chạy). **KHÔNG đưa vào bản clone
   và bỏ cả file → mọi chỗ đọc Excel đi qua `docWorkbook` (`lib/phanTich/doc/excel.js`, tự vá rồi đọc lại). Một năm có thể
   có 2 file lương mỗi file để trống nửa năm → tháng nào lấy sheet CÓ NGƯỜI. Một công ty có thể có NHIỀU mã đơn vị BHXH
   (người lao động + giám đốc), mỗi mã một C12 → cộng theo mã, cùng mã chỉ tính một lần.
+- **Soát kỳ hộ kinh doanh (01/CNKD)** (28/11/2026): `docHkd` (`lib/phanTich/doc/toKhai.js`) đọc 1240/1266 → `chiTieu` = ô TỔNG theo mã cột
+  mẫu (TT50 lùi 2) + `hkd` (từng địa điểm / nhóm ngành). `soatKy` có nhánh `soatHkd`: tổng = Σ dòng, thuế GTGT / TNCN = doanh thu ×
+  tỷ lệ nhóm (a)–(f) (`TY_LE_HKD`), **doanh thu được trừ nối kỳ** (trừ kỳ này + còn trừ = phần còn của kỳ trước; đầu năm = mức
+  `MUC_TRU_HKD` TT18 500 triệu / TT50 01 tỷ; đổi mẫu giữa năm cộng phần chênh mức), còn phải nộp, mục D; bán ra so [11] với bảng kê;
+  KHÔNG đòi mua vào / sổ quỹ (hộ khai theo doanh thu không khấu trừ). Chạy trên thư mục thật DUY PHƯƠNG Q1–Q3: khớp hết.
 - **Hạn nộp + trạng thái nộp** ở Soát kỳ lấy từ phân hệ Tờ khai (`api/admin/phantich/han-nop`, chỉ đọc), GỘP lịch nghĩa vụ +
   hồ sơ đồng bộ theo (kỳ, loại) — lịch có thể chỉ sinh từ giữa năm trong khi hồ sơ kỳ trước vẫn có. Hạn theo lịch (đã đẩy
   ngày nghỉ) ưu tiên hơn hạn app tự tính.

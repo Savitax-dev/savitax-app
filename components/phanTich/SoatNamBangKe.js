@@ -126,7 +126,7 @@ export default function SoatNamBangKe({ hs, nam, cty }) {
         <table className="text-sm">
           <thead><tr><th>Nguồn</th><th className="text-right">Số hóa đơn</th><th className="text-right">Tiền chưa thuế</th><th className="text-right">Thuế GTGT</th><th className="text-right">Thuế: chênh với bảng kê kèm tờ khai</th></tr></thead>
           <tbody>
-            {[['Bảng kê cổng HĐĐT', r.cong.so, r.cong.tien, r.cong.thue], ['Bảng kê kèm tờ khai', r.pm.so, r.pm.tien, r.pm.thue], [`Tờ khai 01/GTGT ${chieu === 'ban_ra' ? '[34] [35]' : '[23] [24]'}`, null, r.tk.tien, r.tk.thue]].map(([t, n, a, b], i) => {
+            {[['Bảng kê cổng HĐĐT', r.cong.so, r.cong.tien, r.cong.thue], ['Bảng kê kèm tờ khai', r.pm.so, r.pm.tien, r.pm.thue], [cty?.laHkd ? 'Tờ khai 01/CNKD — tổng doanh thu' : `Tờ khai 01/GTGT ${chieu === 'ban_ra' ? '[34] [35]' : '[23] [24]'}`, null, r.tk.tien, r.tk.thue]].map(([t, n, a, b], i) => {
               const d = i !== 1 && b != null && r.pm.thue != null ? b - r.pm.thue : null
               return <tr key={t}><td className="text-gray-800">{t}</td><td className="text-right tabular-nums">{n == null ? '' : n}</td><td className="text-right tabular-nums">{so(a)}</td><td className="text-right tabular-nums font-semibold">{so(b)}</td><td className={`text-right tabular-nums ${d && Math.abs(d) >= 1 ? 'font-semibold bg-amber-50/70' : 'text-gray-300'}`}>{i === 1 ? '' : d == null ? '—' : so(d)}</td></tr>
             })}

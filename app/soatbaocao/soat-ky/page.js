@@ -168,7 +168,7 @@ function SoatKy() {
                   <div className="flex-1 min-w-[260px]">
                     <p className="font-bold">
                       {kq.banSoat === 'chua_nop' ? 'Đang soát BẢN CHƯA NỘP' : kq.banSoat === 'da_nop' ? 'Đang soát BẢN ĐÃ NỘP' : 'Chưa có tờ khai của kỳ này'}
-                      {kq.toKhai && ` · tờ khai 01/GTGT ${kq.ky.loai === 'Q' ? 'quý ' + kq.ky.so : 'tháng ' + kq.ky.so}/${kq.nam}`}
+                      {kq.toKhai && ` · tờ khai ${kq.toKhai.loai || '01/GTGT'} ${kq.ky.loai === 'Q' ? 'quý ' + kq.ky.so : 'tháng ' + kq.ky.so}/${kq.nam}`}
                       {kq.toKhai?.lanBoSung ? ` · bổ sung lần ${kq.toKhai.lanBoSung}` : ''}{kq.toKhai?.nguon === 'pdf' ? ' · đọc từ PDF' : ''}
                     </p>
                     {kq.toKhai && <p className="text-[11px] font-mono opacity-90 truncate">{kq.toKhai.tep.duongDan.slice(-3).join('\\')}\{kq.toKhai.tep.ten}</p>}
