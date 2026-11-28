@@ -5,6 +5,8 @@ import { isPastEditDeadline } from '@/lib/feeDue'
 import { noTonChoDntt, vatPhieu } from '@/lib/noTonDntt'
 import { loadPermissionData, can } from '@/lib/permissions'
 import DichVuKhac from './DichVuKhac'
+import BaoCaoKhachHang from './BaoCaoKhachHang'
+import { kyMacDinh as kyBcMacDinh, kyTuTenViec } from '@/lib/baoCaoKh'
 import { layMe } from '@/lib/khoiDong'
 
 const fmt    = (n) => Number(n || 0).toLocaleString('vi-VN')
@@ -68,6 +70,8 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
   const [loading,      setLoading]      = useState(false)
   const [toggling,     setToggling]     = useState(null)
   const [panel,        setPanel]        = useState(defaultPanel)
+  // Kỳ mở sẵn của tab "📊 Báo cáo KH" — nút "📊 Lập BC" cạnh việc gửi báo cáo thuế truyền kỳ suy từ tên việc
+  const [bcKy,         setBcKy]         = useState(null)
   const [extraRows,    setExtraRows]    = useState([])
   const [b1Label,      setB1Label]      = useState('')
   const [b1Amount,     setB1Amount]     = useState('')
@@ -452,6 +456,7 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
     if (p === 'hcns_work') loadHcnsTasks()
     if (p === 'info') { setEditCred(null); setShowHistory(false); loadCreds() }
     if (p === 'files') { setFileError(''); loadFiles() }
+    if (p === 'bckh') setBcKy(null)
   }
 
   const saveCred = async () => {
@@ -837,6 +842,9 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
         {btn('debt', '💰', 'Công nợ',
           'bg-green-600 text-white border-green-600',
           'bg-green-50 text-green-700 border-green-200 hover:bg-green-100')}
+        {!hcnsOnly && btn('bckh', '📊', 'Báo cáo KH',
+          'bg-[#8B1A1A] text-white border-[#8B1A1A]',
+          'bg-[#FBF5EA] text-[#8B1A1A] border-[#E8D3A9] hover:bg-[#F6EAD2]')}
         {btn('files', '📁', 'Tài liệu',
           'bg-amber-600 text-white border-amber-600',
           'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100')}
@@ -864,10 +872,10 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
               + (review === undefined
                 ? 'bg-gray-50 text-gray-400 border-gray-200 border-dashed'
                 : !review
-                  ? 'bg-white text-teal-700 border-teal-300 border-dashed'
+                  ? 'bg-white text-[#8B1A1A] border-[#D9B978] border-dashed'
                   : review.changed
                     ? 'bg-amber-100 text-amber-800 border-amber-300'
-                    : 'bg-teal-600 text-white border-teal-600')}>
+                    : 'bg-[#8B1A1A] text-white border-[#8B1A1A]')}>
             {review === undefined
               ? '🔎 TP kiểm tra'
               : !review
@@ -1597,6 +1605,11 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
         </div>
       )}
 
+      {/* ── Panel: Báo cáo KH (sheet 5 SVT.MB07 trên app — sql/64) ── */}
+      {panel === 'bckh' && !hcnsOnly && (
+        <BaoCaoKhachHang client={client} kyBanDau={bcKy || kyBcMacDinh(client.report_type, clientMonth, selYear)} />
+      )}
+
       {/* ── Panel: Tài liệu ── */}
       {panel === 'files' && (
         <div className="mx-3 my-2 bg-white border border-amber-200 rounded-xl overflow-hidden">
@@ -1719,6 +1732,12 @@ export default function ClientChecklist({ client, clientMonth, onMonthChange, on
                           <a href={`/nhac-chung-tu?nam=${clientMonth === 1 ? selYear - 1 : selYear}&thang=${clientMonth === 1 ? 12 : clientMonth - 1}`}
                             target="_blank" rel="noreferrer" title="Mở mẫu ảnh + lời nhắn để gửi khách qua Zalo"
                             className="text-[11px] px-1.5 py-0.5 rounded-md border border-sky-200 text-sky-700 hover:bg-sky-50 flex-shrink-0 whitespace-nowrap">📣 Mẫu</a>
+                        )}
+                        {/* Báo cáo tình hình kinh doanh gửi khách (tab 📊 Báo cáo KH) — mở đúng kỳ suy từ tên việc */}
+                        {/^Gửi (bct|báo cáo thuế)/i.test(t.name || '') && (
+                          <button type="button" title="Lập báo cáo tình hình kinh doanh gửi khách (ảnh + lời nhắn Zalo)"
+                            onClick={() => { setBcKy(kyTuTenViec(t.name, clientMonth, selYear, client.report_type)); setPanel('bckh') }}
+                            className="text-[11px] px-1.5 py-0.5 rounded-md border border-[#E8D3A9] text-[#8B1A1A] hover:bg-[#FBF5EA] flex-shrink-0 whitespace-nowrap">📊 Lập BC</button>
                         )}
                         <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                           <span className={'text-xs flex-shrink-0 ' + st.text}>

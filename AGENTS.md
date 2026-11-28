@@ -543,6 +543,23 @@ nhắn rồi TỰ TICK Checklist. Không gọi máy chủ, không lưu gì. Ki�
   `zalo_gui` + bucket `zalo-mau` (sql/63, chỉ ở nhánh đó) — để nguyên, không mã nào dùng. Bot "Bot Kế Toán Savitax" khác
   "Bot Savitax" của phòng KD (chỉ gửi form website, đừng đụng).
 
+## Báo cáo khách hàng (tab "📊 Báo cáo KH" trên thẻ công ty)
+
+Anh chốt 28/11/2026: sheet "5. BC Tháng_Quý" của SVT.MB07 (báo cáo tình hình kinh doanh gửi khách, ngày 25 / 15–20) nhập
+TRÊN APP. Tab trong `ClientChecklist` + nút "📊 Lập BC" cạnh việc "Gửi BCT… / Gửi báo cáo thuế…" (kỳ suy từ tên việc,
+`kyTuTenViec`). Nhân viên TỰ TICK Checklist. Kế hoạch các đợt sau (tự điền từ thư mục, sheet 6 so sánh, sheet 7 thực trạng):
+`docs/bao-cao-khach-hang-ke-hoach.md`.
+
+- Bảng `bao_cao_khach` (sql/64, RLS bật không policy): một dòng mỗi (công ty, kỳ `T11.2026` / `Q4.2026` / `NAM.2025`),
+  `so_lieu` jsonb — máy chủ `chuanHoa` lại, không tin số trình duyệt gửi. Phạm vi = `canAccessCredentials` (NV chính/phụ, TP
+  phòng đó, quản trị). Route `app/api/admin/bao-cao-kh`.
+- Hàm thuần `lib/baoCaoKh.js`: dòng 7 = bán ra − mua vào − đầu kỳ, in bằng CHỮ "phải nộp" / "còn được khấu trừ" (không dấu
+  âm); hạn nộp lấy `tax_obligations` (01/GTGT, 01/CNKD; năm: 03/TNDN) rồi mới tự tính; đầu kỳ gợi ý = phần còn khấu trừ kỳ
+  trước. Dòng tùy chọn (1.2, 1.3, 8.x, 9–14) để trống HOẶC bằng 0 không in lên ảnh (anh chốt 28/11). Kiểm: `node scripts/test-bao-cao-kh.mjs`.
+- Ảnh `components/AnhBaoCaoKH.js` (1080px, Times New Roman, màu thương hiệu, chụp html2canvas — cùng lưu ý với mẫu nhắc chứng từ). ⚠ Ô bo tròn có chữ (Thời gian) PHẢI là `<img>` SVG data-URL: html2canvas làm lệch chữ Times trong inline-block và BỎ QUA thẻ `<svg>` đặt tuyệt đối. "Lưu + ảnh
+  vào Tài liệu" (gắn luôn vào nút Chép ảnh / Tải ảnh — anh yêu cầu 28/11, khỏi bấm 2 lần; số liệu không đổi thì không tải ảnh trùng) tải PNG vào bucket `client-files` (key base64url) tên `BCKD_<kỳ>_<MÃ KH>_<YYYYMMDD-HHmm>.png`; mỗi lần lưu
+  một file mới, `file_path` giữ ảnh mới nhất. Lời nhắn Zalo bỏ dòng trống.
+
 ## Phân hệ Hóa đơn điện tử — ĐANG GÁC (13/10/2026)
 
 Cổng hoadondientu.gdt.gov.vn **chặn** cả đăng nhập gửi từ tiện ích lẫn lượt đọc chạy trong tab đã
