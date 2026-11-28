@@ -257,5 +257,57 @@ console.log('\nHạn nộp + trạng thái nộp từ phân hệ Tờ khai (dữ
   kiem('nộp trễ → đỏ', trangThaiNop({ hoSo: [{ lanBoSung: 1, nop: '2026-08-05T02:00:00Z', dungHan: false, trangThai: 'accepted' }] }).mau, 'do')
 }
 
+// ── Hộ kinh doanh 01/CNKD (TT18 mã 1240 → TT50 mã 1266 giữa năm, ca thật DUY PHƯƠNG 2026 — ở đây số GIẢ, MST 9999…) ──
+{
+  console.log('\nHộ kinh doanh (01/CNKD):')
+  const { docToKhai } = await import('../lib/phanTich/doc/toKhai.js')
+  const { hanTheoLich } = await import('../lib/phanTich/hanNop.js')
+  // Một tờ khai HKD một địa điểm, các dòng { nhom, dt, thue, dtTncn, tru, tncn }; TT50 thêm cột 12/13 (= 0) nên lùi 2
+  const xmlHkd = (ma, q, dong, { truKyTiep = 0, suaThue } = {}) => {
+    const tt50 = ma === '1266', c = tt50 ? { thue: 14, dtTncn: 15, tru: 16, tncn: 17, tong: 18, mien: 19, con: 20 } : { thue: 12, dtTncn: 13, tru: 14, tncn: 15, tong: 16, mien: 17, con: 18 }
+    const sum = k => dong.reduce((s, r) => s + r[k], 0)
+    const thue = suaThue ?? sum('thue')
+    const ct = dong.map(r => `<CTietDoanhThu><ct09_ma>01</ct09_ma><ct09_ten>Phân phối</ct09_ten><ct10>(${r.nhom})</ct10><ct11>${r.dt}</ct11>${tt50 ? '<ct12>0</ct12><ct13>0</ct13>' : ''}`
+      + `<ct${c.thue}_soThue>${r.thue}</ct${c.thue}_soThue><ct${c.dtTncn}>${r.dtTncn}</ct${c.dtTncn}><ct${c.tru}>${r.tru}</ct${c.tru}><ct${c.tncn}_soThue>${r.tncn}</ct${c.tncn}_soThue></CTietDoanhThu>`).join('')
+    return `<HSoThueDTu><HSoKhaiThue><TTinChung><TTinTKhaiThue><TKhaiThue><maTKhai>${ma}</maTKhai><tenTKhai>Tờ khai thuế đối với hộ kinh doanh</tenTKhai><loaiTKhai>C</loaiTKhai><soLan>0</soLan>`
+      + `<KyKKhaiThue><kieuKy>Q</kieuKy><kyKKhai>${q}/2026</kyKKhai></KyKKhaiThue><ngayLapTKhai>2026-0${3 * q + 1}-15</ngayLapTKhai></TKhaiThue><NNT><mst>999900001</mst><tenNNT>HKD GIẢ</tenNNT></NNT></TTinTKhaiThue></TTinChung>`
+      + `<CTieuTKhaiChinh><Header><nopThueTNCNDoanhThu>true</nopThueTNCNDoanhThu><nopThueTNCNThunhapTinhThue>false</nopThueTNCNThunhapTinhThue></Header><KhaiThueGTGTTNCN><KinhDoanhDiaDiemCoDinh><DoanhThuThueGTGTTNCN id="1"><truSoChinh>true</truSoChinh><ma_diaDiemKD>00999</ma_diaDiemKD>${ct}</DoanhThuThueGTGTTNCN></KinhDoanhDiaDiemCoDinh>`
+      + `<TongCongCT${c.tong}><tongCT11>${sum('dt')}</tongCT11>${tt50 ? '<tongCT12>0</tongCT12><tongCT13>0</tongCT13>' : ''}<tongCT${c.thue}>${thue}</tongCT${c.thue}><tongCT${c.dtTncn}>${sum('dtTncn')}</tongCT${c.dtTncn}><tongCT${c.tru}>${sum('tru')}</tongCT${c.tru}><tongCT${c.tncn}>${sum('tncn')}</tongCT${c.tncn}></TongCongCT${c.tong}>`
+      + `<SoThueMienCT${c.mien}><soThueDuocMienCT${c.thue}>0</soThueDuocMienCT${c.thue}><soThueDuocMienCT${c.tncn}>0</soThueDuocMienCT${c.tncn}></SoThueMienCT${c.mien}>`
+      + `<SoThueConPhaiNopCT${c.con}><soThueGTGT_ct${c.thue}>${thue}</soThueGTGT_ct${c.thue}><soThueTNCN_ct${c.tncn}>${sum('tncn')}</soThueTNCN_ct${c.tncn}></SoThueConPhaiNopCT${c.con}></KhaiThueGTGTTNCN>`
+      + `<HoTroThongTinNopThue><tongTienCT${tt50 ? 47 : 44}>${thue + sum('tncn')}</tongTienCT${tt50 ? 47 : 44}></HoTroThongTinNopThue><soTienTruKyTiep>${truKyTiep}</soTienTruKyTiep></CTieuTKhaiChinh></HSoKhaiThue></HSoThueDTu>`
+  }
+  const doc = (x, ma) => ({ ...docToKhai(x), nguon: 'xml', tep: { ten: `TK_CNKD_${ma}.xml`, duongDan: DD(ma) } })
+  // Q1 TT18: doanh thu 100 triệu, trừ hết 100 triệu → còn 400 triệu (mức 500 triệu)
+  const h1 = doc(xmlHkd('1240', 1, [{ nhom: 'a', dt: 100e6, thue: 1e6, dtTncn: 100e6, tru: 100e6, tncn: 0 }], { truKyTiep: 400e6 }), 'Q1')
+  // Q2 TT50 (mức 1 tỷ): còn 400 triệu + chênh mức 500 triệu = 900 triệu; doanh thu 1 tỷ (a) + 40 triệu cho thuê (c)
+  const h2 = doc(xmlHkd('1266', 2, [{ nhom: 'a', dt: 1e9, thue: 10e6, dtTncn: 1e9, tru: 900e6, tncn: 500e3 }, { nhom: 'c', dt: 40e6, thue: 2e6, dtTncn: 40e6, tru: 0, tncn: 2e6 }]), 'Q2')
+  // Q3: thuế GTGT tổng khai sai 1 triệu; còn trừ = 0 mà kỳ này lại trừ thêm 50 triệu
+  const h3 = doc(xmlHkd('1266', 3, [{ nhom: 'a', dt: 200e6, thue: 2e6, dtTncn: 200e6, tru: 50e6, tncn: 750e3 }], { suaThue: 3e6 }), 'Q3')
+  kiem('mã 1240 / 1266 → 01/CNKD, kỳ đọc từ tờ khai', [h1.loai, h1.maKy, h2.loai, h2.hkd.mau], ['01/CNKD', 'Q1.2026', '01/CNKD', 'TT50'])
+  kiem('chỉ tiêu = các ô tổng theo mã cột mẫu (TT50 lùi 2)', [h1.chiTieu['12'], h2.chiTieu['14'], h2.chiTieu['17']], [1e6, 12e6, 2.5e6])
+  const ds = [h1, h2, h3]
+  kiem('dải kỳ HKD nhận tờ khai 01/CNKD', daiKy(2026, 'Q', ds, '2026-11-28').map(k => k.tt), ['da_nop', 'da_nop', 'da_nop', 'chua_den'])
+  kiem('doanh thu năm HKD = Σ tổng doanh thu', doanhThuNam(ds, 2026).tong, 1.34e9)
+  const s1 = soatKy({ nam: 2026, ma: 'Q1', toKhai: ds, cty: { kyKhai: 'quy', laHkd: true } })
+  kiem('Q1: không có phép kiểm 01/GTGT ([22], [27]…)', s1.dong.some(d => /\[22\]|\[27\]|\[40a\]/.test(d.ten)), false)
+  kiem('Q1: được trừ + còn trừ = mức 500 triệu (TT18)', [dong(s1, 'Doanh thu được trừ').kq, dong(s1, 'Doanh thu được trừ').so2], ['khop', 500e6])
+  const s2 = soatKy({ nam: 2026, ma: 'Q2', toKhai: ds, cty: { kyKhai: 'quy', laHkd: true } })
+  kiem('Q2 đổi mẫu TT18 → TT50: còn trừ Q1 + chênh mức', [dong(s2, 'Doanh thu được trừ').kq, dong(s2, 'Doanh thu được trừ').so2], ['khop', 900e6])
+  kiem('Q2: thuế GTGT theo tỷ lệ (a 1% + c 5%) khớp', dong(s2, 'Thuế GTGT [14]').kq, 'khop')
+  kiem('Q2: thuế TNCN = (dt − được trừ) × tỷ lệ (a 0,5% + c 5%) khớp', [dong(s2, 'Thuế TNCN [17]').kq, dong(s2, 'Thuế TNCN [17]').so2], ['khop', 2.5e6])
+  const s3 = soatKy({ nam: 2026, ma: 'Q3', toKhai: ds, cty: { kyKhai: 'quy', laHkd: true } })
+  kiem('Q3: tổng thuế GTGT ≠ Σ dòng → Có chênh lệch', dong(s3, 'thuế GTGT = Σ').kq, 'chenh')
+  kiem('Q3: hết mức trừ mà vẫn trừ 50 triệu → Có chênh lệch', [dong(s3, 'Doanh thu được trừ').kq, dong(s3, 'Doanh thu được trừ').chenh], ['chenh', 50e6])
+  // Bán ra: [11] ↔ bảng kê cổng (hóa đơn bán hàng: tiền + thuế nếu có tách)
+  const hd = (so, ngay, tien) => ({ mst: '999900001', mauSo: '2', kyHieu: 'C26THH', so, ngay, tienChuaThue: tien, thue: 0, trangThai: '' })
+  const bk = [{ mau: 'cong', chieu: 'ban_ra', hoaDon: [hd('1', '2026-07-05', 150e6), hd('2', '2026-08-05', 50e6)], tep: { ten: 'cong.xlsx' } },
+    { mau: 'pm_kem_tk', chieu: 'ban_ra', kyThuMuc: { loai: 'Q', so: 3, nam: 2026 }, hoaDon: [hd('1', '2026-07-05', 150e6), hd('2', '2026-08-05', 50e6)], tep: { ten: 'BK_BR.xlsx' } }]
+  const s3b = soatKy({ nam: 2026, ma: 'Q3', toKhai: ds, bangKe: bk, cty: { kyKhai: 'quy', laHkd: true } })
+  kiem('Q3: [11] doanh thu ↔ bảng kê cổng bán ra khớp, không có dòng thuế GTGT đầu ra', [dong(s3b, '[11] tờ khai ↔ doanh thu trên bảng kê cổng').kq, s3b.dong.some(d => /thuế GTGT trên bảng kê/.test(d.ten))], ['khop', false])
+  kiem('HKD không đòi bảng kê mua vào / sổ quỹ', s3b.dong.filter(d => d.kq === 'thieu' && /mua vào|tiền mặt/.test(d.ten)).length, 0)
+  kiem('hạn nộp HKD lấy lịch 01/CNKD', hanTheoLich([{ ma: '01/CNKD', ky: 'Q3.2026', han: '2026-10-31' }], { loai: 'Q', so: 3 }, 2026), '2026-10-31')
+}
+
 console.log(hong ? `\n${hong} kiểm tra HỎNG` : '\nTất cả đạt.')
 process.exit(hong ? 1 : 0)

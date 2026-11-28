@@ -353,6 +353,11 @@ hạn nộp app tự sinh, rồi tải file về đúng thư mục từng công 
   tên người ký B+118,9. Bảng HTML của cổng có lề đáy 6,48 sau hàng cuối. Kết quả so bản gốc: 03/TNDN 10/10 trang (tờ khai tr.1,
   03-1A, 03-3A, 01/KHBS khớp 100%), BCTC 8/8 (B02, B03 100%); còn khác duy nhất chỗ cổng cắt đôi hàng qua trang. Đo mẫu mới:
   `scripts/do-pdf-cong.mjs`, `do-net-pdf-cong.mjs`, `so-hai-pdf.mjs` (bản cổng in có dấu cách là ký tự `\u0003` — phải lọc).
+- **01/CNKD hộ kinh doanh** (maTKhai **1240** TT18/2026 Q1/2026 · **1266** TT50/2026 từ Q2/2026, 28/11/2026): PDF đúng mẫu cổng khổ NGANG
+  `lib/tokhaiPdfCnkd.js` (+ phụ lục 01/BK-STK thông báo số tài khoản, đánh số riêng). Đo từ bản cổng in Q1 (PD4ML, ca HKD PHẠM DUY
+  PHƯƠNG); Q2/Q3 anh gửi là bản in lại qua Microsoft Print (chữ thành nét vẽ) — chỉ lấy nội dung mẫu TT50 + mép cột. Mọi bảng dùng
+  `dongCot` (lib/tokhaiKhbs.js) — khớp cột cổng ≤ 1,1pt ở cả 4 bảng. Mẫu 1240 in đủ 6 nhóm ngành + "khung trống" mục III/B/C,
+  1266 chỉ in dòng có trong XML (theo đúng hai bản cổng). Có dòng chi tiết TTĐB / tài nguyên / mục III LPS hay phụ lục khác → chỉ XML.
 - **Hộ kinh doanh**: `clients.is_hkd` (ô tick ở hồ sơ công ty). Từ 28/10/2026 (anh chốt, `sql/41`):
   nộp **01/CNKD** (TT40/2021, gộp GTGT + TNCN chủ hộ, kỳ/hạn như 01/GTGT); **05/KK-TNCN và 01/GTGT CHỈ
   sinh lịch khi hộ đã TỪNG nộp loại đó** trên cổng (có người lao động…), không quyết toán năm; doanh
@@ -413,6 +418,11 @@ SQL `sql/40_phantich_xem_phi.sql` (đã chạy). **KHÔNG đưa vào bản clone
   và bỏ cả file → mọi chỗ đọc Excel đi qua `docWorkbook` (`lib/phanTich/doc/excel.js`, tự vá rồi đọc lại). Một năm có thể
   có 2 file lương mỗi file để trống nửa năm → tháng nào lấy sheet CÓ NGƯỜI. Một công ty có thể có NHIỀU mã đơn vị BHXH
   (người lao động + giám đốc), mỗi mã một C12 → cộng theo mã, cùng mã chỉ tính một lần.
+- **Soát kỳ hộ kinh doanh (01/CNKD)** (28/11/2026): `docHkd` (`lib/phanTich/doc/toKhai.js`) đọc 1240/1266 → `chiTieu` = ô TỔNG theo mã cột
+  mẫu (TT50 lùi 2) + `hkd` (từng địa điểm / nhóm ngành). `soatKy` có nhánh `soatHkd`: tổng = Σ dòng, thuế GTGT / TNCN = doanh thu ×
+  tỷ lệ nhóm (a)–(f) (`TY_LE_HKD`), **doanh thu được trừ nối kỳ** (trừ kỳ này + còn trừ = phần còn của kỳ trước; đầu năm = mức
+  `MUC_TRU_HKD` TT18 500 triệu / TT50 01 tỷ; đổi mẫu giữa năm cộng phần chênh mức), còn phải nộp, mục D; bán ra so [11] với bảng kê;
+  KHÔNG đòi mua vào / sổ quỹ (hộ khai theo doanh thu không khấu trừ). Chạy trên thư mục thật DUY PHƯƠNG Q1–Q3: khớp hết.
 - **Hạn nộp + trạng thái nộp** ở Soát kỳ lấy từ phân hệ Tờ khai (`api/admin/phantich/han-nop`, chỉ đọc), GỘP lịch nghĩa vụ +
   hồ sơ đồng bộ theo (kỳ, loại) — lịch có thể chỉ sinh từ giữa năm trong khi hồ sơ kỳ trước vẫn có. Hạn theo lịch (đã đẩy
   ngày nghỉ) ưu tiên hơn hạn app tự tính.
